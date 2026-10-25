@@ -14,11 +14,13 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           path: src
-      - uses: dtolnay/rust-toolchain@1.98.0
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
         with:
+          toolchain: 1.98.0
           components: clippy,rustfmt
       - name: Install build dependencies
         run: brew install libusb xcodegen
@@ -66,8 +68,9 @@ jobs:
         run: scripts/build.sh
       - name: Preserve application permissions
         run: tar -czf dist/Switch.app.tar.gz -C dist Switch.app
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: Switch-app
           path: dist/Switch.app.tar.gz
           if-no-files-found: error
+          retention-days: 7

@@ -1,0 +1,36 @@
+name: Audit Rust dependencies
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'rust/Cargo.toml'
+      - 'rust/Cargo.lock'
+      - 'rust/crates/**/Cargo.toml'
+  workflow_dispatch:
+  schedule:
+    - cron: '17 2 * * 1'
+
+permissions:
+  contents: read
+  checks: write
+  issues: write
+
+concurrency:
+  group: switch-security-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rustsec:
+    name: RustSec advisory database
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998 # v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          working-directory: rust
