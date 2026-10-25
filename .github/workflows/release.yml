@@ -45,7 +45,9 @@ jobs:
           python3 scripts/build-evs.py
           python3 scripts/build-module-supervisor.py
           (cd rust && cargo +1.98.0 fmt --all -- --check)
-          (cd rust && cargo +1.98.0 test --locked --workspace)
+          (cd rust && cargo +1.98.0 test --locked --workspace --exclude proletariusd)
+          (cd rust && cargo +1.98.0 test --locked -p proletariusd --bin switchd-rs --no-run)
+          (cd rust && cargo +1.98.0 test --locked -p proletariusd --bin switchd-rs native_serial_module_supervision_tests -- --test-threads=1)
       - name: Build app (no disk image)
         working-directory: src
         run: scripts/build.sh
