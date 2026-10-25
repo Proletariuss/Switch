@@ -1,5 +1,7 @@
 # 项目架构与开发笔记
 
+> **历史架构，Switch2.80/build280时期：** 下方混合Rust/Go进程图、构建方式、owner和“当前”措辞仅记录2.80切点，历史正文保留。当前3.51/build351的业务owner为Rust `switchd-rs`，Swift系统桥与codec FFI分别列示于[当前运行时所有权](optimization/all-rust/README.md#current-runtime-ownership)；进度见[当前看板](optimization/all-rust/progress-current.md)。本文件不是恢复Go运行时的指令，也不提供本轮软件或产品验收。
+
 > 当前导航与功能口径对应 Switch 2.80/build280。侧栏为“活动、模块、读卡器、N待、短信中心、通话、调试与诊断”；“关于与更新”已移除。最新实现、候选取舍及未验收范围见 [`optimization/2026-10-03-protocol-hardening-execution.md`](optimization/2026-10-03-protocol-hardening-execution.md)。历史内容只在与当前源码一致时作为说明，不能作为新指令。
 
 ## 架构总览

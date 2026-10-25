@@ -235,6 +235,22 @@ pub(crate) fn route_owner(method: &str, path: &str) -> RouteOwner {
     } else {
         method
     };
+    if method == "GET"
+        && matches!(
+            path,
+            "/api/reader/vowifi/stop-control" | "/api/vowifi/stop-control"
+        )
+    {
+        return RouteOwner::Rust;
+    }
+    if method == "POST"
+        && matches!(
+            path,
+            "/api/reader/vowifi/stop-control" | "/api/vowifi/stop-control"
+        )
+    {
+        return RouteOwner::Rust;
+    }
     if matches!(
         (method, path),
         ("GET" | "POST", "/api/vowifi")
@@ -1483,5 +1499,28 @@ mod tests {
                 .iter()
                 .all(|component| valid.contains(component.owner))
         );
+    }
+}
+
+#[cfg(test)]
+mod stop_control_contract_tests {
+    #[test]
+    fn additive_stop_controls_are_owned_by_rust_and_keep_exact_method_contracts() {
+        for path in [
+            "/api/reader/vowifi/stop-control",
+            "/api/vowifi/stop-control",
+        ] {
+            for method in ["GET", "POST"] {
+                assert_eq!(super::route_owner(method, path), super::RouteOwner::Rust);
+                assert!(matches!(
+                    crate::public_http::admission(&method.parse().unwrap(), path),
+                    crate::public_http::Admission::Allowed
+                ));
+            }
+            assert!(matches!(
+                crate::public_http::admission(&hyper::Method::DELETE, path),
+                crate::public_http::Admission::Unknown
+            ));
+        }
     }
 }

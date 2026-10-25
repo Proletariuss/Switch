@@ -167,6 +167,7 @@ impl Fixture {
             cleanup_confirmed: false,
         });
         let record = Arc::new(Record {
+            control: Default::default(),
             id,
             expected,
             driver,

@@ -82,6 +82,9 @@ final class ModuleVoWiFiStore: ObservableObject {
     private var refreshRevision: UInt64 = 0
     private var operationRevision: UInt64 = 0
     private var ownerOperation: VoWiFiOperation?
+    private var stopTargetCache: VoWiFiStopTarget?
+    private var activeStopTarget: VoWiFiStopTarget?
+    private var temporaryStopMessage: String?
     private var observedProfileICCID: String?
     private var consecutiveStatusReadFailures = 0
     private(set) var lastHealthRefreshAt: Date?
@@ -110,6 +113,9 @@ final class ModuleVoWiFiStore: ObservableObject {
     }
 
     func reset() {
+        stopTargetCache = nil
+        activeStopTarget = nil
+        temporaryStopMessage = nil
         lifecycleGeneration &+= 1
         refreshRevision &+= 1
         operationRevision &+= 1
@@ -152,6 +158,7 @@ final class ModuleVoWiFiStore: ObservableObject {
     }
 
     private func invalidateProfileScopedState() {
+        stopTargetCache = nil
         refreshRevision &+= 1
         operationRevision &+= 1
         refreshTask?.cancel()
@@ -192,6 +199,7 @@ final class ModuleVoWiFiStore: ObservableObject {
                       self.isCurrentRefresh(expectedRefresh, generation: expectedGeneration) else { return }
                 self.refreshTask = nil
                 self.consecutiveStatusReadFailures = 0
+                if self.activeStopTarget == nil, !self.state.actionInFlight, let target = latest.stopTarget, target.valid(for: "module") { self.stopTargetCache = target }
                 if !self.state.actionInFlight {
                     self.requestedEnabled = nil
                 }
@@ -245,6 +253,9 @@ final class ModuleVoWiFiStore: ObservableObject {
         operationRevision &+= 1
         let expectedOperation = operationRevision
         let expectedGeneration = lifecycleGeneration
+        if enabled { stopTargetCache = nil }
+        if !enabled { activeStopTarget = stopTargetCache }
+        let originalStopTarget = activeStopTarget
         requestedEnabled = enabled
         let clientRequestID = UUID().uuidString
         let connection = enabled ? connectionIntent() : .automatic
@@ -263,7 +274,9 @@ final class ModuleVoWiFiStore: ObservableObject {
         do {
             pendingCheckpoint = try checkpoints.begin(id: clientRequestID, enable: enabled, request: request)
         } catch {
+            checkpointFailure = true
             markOperationObservationPending("无法持久化 VoWiFi 请求：\(error.localizedDescription)；操作保持锁定")
+            if !enabled { Task { await fallbackStop(target: originalStopTarget, operation: expectedOperation, generation: expectedGeneration) } }
             return
         }
         operationTask?.cancel()
@@ -285,6 +298,7 @@ final class ModuleVoWiFiStore: ObservableObject {
                         clientRequestID: clientRequestID)
                     return
                 }
+                if self.activeStopTarget == nil, let target = accepted.stopTarget, target.valid(for: "module") { self.stopTargetCache = target }
                 self.ownerOperation = owner
                 try await self.pollResult(
                     operation: expectedOperation,
@@ -294,6 +308,9 @@ final class ModuleVoWiFiStore: ObservableObject {
                 return
             } catch {
                 guard self.isCurrentOperation(expectedOperation, generation: expectedGeneration) else { return }
+                if !enabled, fallbackAllowed(error) {
+                    await self.fallbackStop(target: originalStopTarget, operation: expectedOperation, generation: expectedGeneration)
+                }
                 if mutationFailureRequiresStatusReconciliation(error) {
                     self.markOperationObservationPending(
                         "操作请求已发出，但回执暂不可见；正在从 Rust owner 恢复")
@@ -309,6 +326,40 @@ final class ModuleVoWiFiStore: ObservableObject {
                     operation: expectedOperation, generation: expectedGeneration,
                     requestedEnable: enabled, clientRequestID: clientRequestID)
             }
+        }
+    }
+
+    private func fallbackAllowed(_ error: Error) -> Bool {
+        if let code = (error as? APIError)?.code,
+           ["vowifi_request_ledger_full", "vowifi_request_ledger_unavailable"].contains(code) { return true }
+        return mutationFailureRequiresStatusReconciliation(error)
+    }
+
+    private func fallbackStop(target: VoWiFiStopTarget?, operation: UInt64, generation: UInt64) async {
+        guard let target, target.valid(for: "module"), target == activeStopTarget else { return }
+        let query = target.query
+        var first = true
+        while !Task.isCancelled, isCurrentOperation(operation, generation: generation) {
+            do {
+                let result: VoWiFiStopControlResponse
+                if first { result = try await APIClient(timeoutInterval: 10).upload("api/vowifi/stop-control?\(query)", data: Data()) }
+                else { result = try await APIClient(timeoutInterval: 10).get("api/vowifi/stop-control?\(query)") }
+                guard isCurrentOperation(operation, generation: generation), target == activeStopTarget,
+                      result.stopControl.matches(target) else { return }
+                first = false
+                temporaryStopMessage = result.stopControl.displayMessage
+                markOperationObservationPending("临时控制没有耐久回执或重启保证")
+                if result.stopControl.finished || result.stopControl.pollAfterMS == 0 { return }
+            } catch is CancellationError { return }
+            catch {
+                guard isCurrentOperation(operation, generation: generation) else { return }
+                temporaryStopMessage = "原会话临时停止结果未确认：\(error.localizedDescription)"
+                markOperationObservationPending("原请求检查点保持不变")
+                first = false
+                if let code = (error as? APIError)?.code,
+                   ["vowifi_stop_target_stale", "invalid_vowifi_stop_target"].contains(code) { return }
+            }
+            do { try await Task.sleep(for: .milliseconds(1_500)) } catch { return }
         }
     }
 
@@ -433,6 +484,8 @@ final class ModuleVoWiFiStore: ObservableObject {
                     resumeCheckpoint()
                     return
                 }
+                activeStopTarget = nil
+                temporaryStopMessage = nil
                 let completion = deferredTerminal ?? projection
                 deferredTerminal = nil
                 if completion.succeeded {
@@ -492,7 +545,8 @@ final class ModuleVoWiFiStore: ObservableObject {
         let displayMessage = detail.isEmpty
             ? "操作结果待确认；后台 owner 仍在工作"
             : detail
-        commit(status: state.status, loaded: true, error: displayMessage, actionInFlight: true)
+        let combinedMessage = temporaryStopMessage.map { "临时停止：\($0)；永久请求回执仍待核对。\(displayMessage)" } ?? displayMessage
+        commit(status: state.status, loaded: true, error: combinedMessage, actionInFlight: true)
     }
 
     private func finishOperationFailure(_ message: String, status: VoWiFiStatus?) {

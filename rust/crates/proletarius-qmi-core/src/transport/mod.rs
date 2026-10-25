@@ -13,6 +13,11 @@ use std::time::{Duration, Instant};
 pub trait Transport: Send + Sync {
     fn read(&self, buffer: &mut [u8]) -> io::Result<usize>;
     fn write_all(&self, data: &[u8]) -> io::Result<()>;
+    /// Write with the caller's remaining total request budget. Implementers
+    /// that may block must override this fallback and bound their own waits.
+    /// Failure can follow a partial/full write; it is not a non-submission ACK.
+    /// The core checks its absolute deadline again after this call returns,
+    /// but cannot interrupt a synchronous implementation that ignores timeout.
     fn write_all_timeout(&self, data: &[u8], _timeout: Duration) -> io::Result<()> {
         self.write_all(data)
     }

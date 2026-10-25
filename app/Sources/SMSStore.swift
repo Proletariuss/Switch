@@ -323,6 +323,7 @@ final class SMSStore: ObservableObject {
 
     /// 确保已获得通知授权（未决定时弹出系统授权框），返回是否可用
     func ensureAuthorization() async -> Bool {
+        guard !AcceptanceBootstrap.isAcceptance else { return false }
         let center = UNUserNotificationCenter.current()
         let settings = await center.notificationSettings()
         switch settings.authorizationStatus {
@@ -391,6 +392,7 @@ final class SMSStore: ObservableObject {
     }
 
     private func postNotification(for item: SMSItem) {
+        guard !AcceptanceBootstrap.isAcceptance else { return }
         let content = UNMutableNotificationContent()
         let privacyMaskEnabled = UserDefaults.standard.object(
             forKey: AppPreferenceKeys.privacyMaskEnabled) as? Bool ?? true
@@ -500,6 +502,7 @@ final class SMSStore: ObservableObject {
 
     /// 模拟一条新短信通知（走与真实短信相同的发送路径），返回结果描述
     func simulateNotification() async -> String {
+        guard !AcceptanceBootstrap.isAcceptance else { return "隔离验收中通知不可用" }
         guard await ensureAuthorization() else {
             let settings = await UNUserNotificationCenter.current().notificationSettings()
             if settings.authorizationStatus == .denied {

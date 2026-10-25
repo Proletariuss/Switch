@@ -330,3 +330,169 @@ extension VoWiFiReadinessTests {
     }
 
 }
+
+extension VoWiFiReadinessTests {
+    static func stopTargetJSON(_ scope: String, owner: String = "original") -> String {
+        #"{"scope":"\#(scope)","daemon_epoch":"daemon-1","owner_id":"\#(owner)","owner_generation":1}"#
+    }
+    static func stopControlPath(_ scope: String) -> String {
+        "api/\(scope == "reader" ? "reader/vowifi" : "vowifi")/stop-control?scope=\(scope)&daemon_epoch=daemon-1&owner_id=original&owner_generation=1"
+    }
+    static func stopControlJSON(_ scope: String, owner: String = "original", joined: Bool = true) -> String {
+        """
+        {"stop_control":{"scope":"\(scope)","daemon_epoch":"daemon-1","owner_id":"\(owner)","owner_generation":1,
+        "signal_state":"published","receipt_durability":"not_requested","owner_join":"\(joined ? "joined" : "pending")",
+        "cleanup":"\(joined ? "confirmed" : "unconfirmed")","restart_effect":"none","poll_after_ms":\(joined ? 0 : 1500),"message":"fixture closed wording must not override fields"}}
+        """
+    }
+    static func withTarget(_ json: String, scope: String, owner: String = "original") -> String {
+        String(json.dropLast()) + ",\"stop_target\":" + stopTargetJSON(scope, owner: owner) + "}"
+    }
+    @MainActor static func targetedReader(root: URL) -> ReaderRuntimeStore {
+        let reader = ReaderRuntimeStore(backend: BackendProcess(), checkpointRoot: root)
+        let json = readerSnapshotJSON.replacingOccurrences(of: statusJSON(smsReady: true), with: withTarget(statusJSON(smsReady: true), scope: "reader"))
+        let snapshot = try! JSONDecoder().decode(ReaderDeviceSnapshot.self, from: Data(json.utf8))
+        reader.applySnapshot(snapshot, issues: [], expectedGeneration: reader.generation, autoConnect: false, instanceID: "rust-instance")
+        return reader
+    }
+    @MainActor static func stopControlDTOSeparatesPendingFromCleanup() {
+        let target = try! JSONDecoder().decode(VoWiFiStopTarget.self, from: Data(stopTargetJSON("reader").utf8))
+        expect(target.valid(for: "reader") && !target.valid(for: "module"), "target scope is exact")
+        let query = URLComponents(string: "fixture://local/?\(target.query)")!.queryItems!
+        expect(query.first { $0.name == "owner_id" }?.value == "original", "target query roundtrips exactly")
+        let invalid = VoWiFiStopTarget(scope: "reader", daemonEpoch: "daemon-1", ownerID: "owner:1", ownerGeneration: 1)
+        expect(!invalid.valid(for: "reader"), "both Rust and Swift reject colon/noncanonical opaque IDs")
+        let pending = try! JSONDecoder().decode(VoWiFiStopControlResponse.self, from: Data(stopControlJSON("reader", joined: false).utf8)).stopControl
+        expect(pending.matches(target) && !pending.finished && pending.displayMessage.contains("尚未确认"), "published pending cannot present closed")
+        expect(!pending.displayMessage.contains("closed"), "wire message cannot override authoritative pending facts")
+        for wrong in [VoWiFiStopTarget(scope: "module", daemonEpoch: "daemon-1", ownerID: "original", ownerGeneration: 1),
+                      VoWiFiStopTarget(scope: "reader", daemonEpoch: "successor-epoch", ownerID: "original", ownerGeneration: 1),
+                      VoWiFiStopTarget(scope: "reader", daemonEpoch: "daemon-1", ownerID: "successor", ownerGeneration: 1),
+                      VoWiFiStopTarget(scope: "reader", daemonEpoch: "daemon-1", ownerID: "original", ownerGeneration: 2)] {
+            expect(!pending.matches(wrong), "temporary receipt cannot borrow another scope/epoch/owner/generation")
+        }
+
+    }
+    @MainActor static func readerFreshEnableWithoutTargetNeverStopsPreviousOwner() async {
+        let root = fixtureCheckpointRoot(); defer { try? FileManager.default.removeItem(at: root) }
+        let reader = targetedReader(root: root) // Old authoritative owner A.
+        let first = api.requests.count
+        reader.enableVoWiFi()
+        await waitForRequest(first, path: "api/reader/vowifi")
+        let startRequestID = requestID(at: first)
+        api.complete(first, json: "{\"operation\":\(operationJSON("fresh-new-owner", generation: 2, enable: true, phase: "submitted"))}")
+        await waitForRequest(first + 1, path: "api/reader/vowifi?observe_operation=true")
+        reader.disableVoWiFi()
+        await waitForRequest(first + 2, path: "api/reader/vowifi")
+        let stop = first + 2
+        let journal = root.appendingPathComponent("vowifi-reader-gui-requests.json")
+        let original = try! Data(contentsOf: journal)
+        let stopRequestID = requestID(at: stop)
+        api.fail(stop, error: APIError(code: "vowifi_request_ledger_full"))
+        await waitForRequest(stop + 1, path: "api/reader/vowifi?observe_operation=true")
+        expect(!api.requests.dropFirst(first).contains { $0.path.contains("stop-control") },
+               "fresh operation without a target must fail closed instead of POSTing to old owner A")
+        expect(api.requests[stop + 1].path.contains(stopRequestID),
+               "ledger refusal still reconciles the exact durable stop request")
+        expect(try! Data(contentsOf: journal) == original && reader.voWiFiActionInFlight,
+               "missing current target preserves the durable checkpoint and action fence")
+        api.complete(stop + 1, json: withOperation(#"{"available":true,"tunnel_state":"disconnected","ims_state":"idle"}"#,
+            operationJSON("rejected-\(stopRequestID)", generation: 0, enable: false, terminal: true, phase: "rejected", outcome: "failed")))
+        await waitForRequest(stop + 2, path: "api/reader/vowifi?observe_operation=true")
+        expect(api.requests[stop + 2].path.contains(startRequestID),
+               "stop terminal cannot discard the original start checkpoint")
+        api.complete(stop + 2, json: withOperation(#"{"available":true,"tunnel_state":"disconnected","ims_state":"idle"}"#,
+            operationJSON("fresh-new-owner", generation: 2, enable: true, terminal: true, phase: "cancelled", outcome: "cancelled")))
+        await waitForRequest(stop + 3, path: "api/reader/vowifi")
+        api.complete(stop + 3, json: #"{"available":true,"tunnel_state":"disconnected","ims_state":"idle"}"#)
+        await waitUntil { !reader.voWiFiActionInFlight }
+        reader.reset()
+        api.fail(first + 1) // Release the canceled old start observer.
+        for _ in 0..<30 { await Task.yield() }
+        expect(!api.requests.dropFirst(first).contains { $0.path.contains("stop-control") },
+               "late canceled start observation cannot send an old-target temporary POST")
+    }
+    @MainActor static func readerStopFallbackFreezesTargetAndNeverClearsCheckpoint() async {
+        let root = fixtureCheckpointRoot(); defer { try? FileManager.default.removeItem(at: root) }
+        let reader = targetedReader(root: root)
+        var successes = 0; reader.onToast = { _, success, _ in if success { successes += 1 } }
+        let first = api.requests.count
+        reader.disableVoWiFi()
+        await waitForRequest(first, path: "api/reader/vowifi")
+        let journal = root.appendingPathComponent("vowifi-reader-gui-requests.json")
+        let original = try! Data(contentsOf: journal)
+        let requestID = requestID(at: first)
+        // A fresh status can describe a successor, but cannot replace the
+        // action token captured before the original failed mutation.
+        let successorJSON = readerSnapshotJSON.replacingOccurrences(of: statusJSON(smsReady: true), with: withTarget(statusJSON(smsReady: true), scope: "reader", owner: "successor"))
+        let successor = try! JSONDecoder().decode(ReaderDeviceSnapshot.self, from: Data(successorJSON.utf8))
+        reader.applySnapshot(successor, issues: [], expectedGeneration: reader.generation, autoConnect: false, instanceID: "rust-instance")
+        api.fail(first, error: APIError(code: "vowifi_request_ledger_full"))
+        await waitForRequest(first + 1, path: stopControlPath("reader"))
+        expect(api.requests[first + 1].method == "POST" && api.requests[first + 1].body == Data(), "temporary POST carries only empty Data")
+        expect(api.requests[first + 1].path.contains("owner_id=original") && !api.requests[first + 1].path.contains("successor"), "fallback never recaptures a successor")
+        api.complete(first + 1, json: stopControlJSON("reader"))
+        await waitForRequest(first + 2, path: "api/reader/vowifi?observe_operation=true")
+        expect(api.requests[first + 2].path.contains(requestID), "durable reconciliation retains original ID")
+        expect(try! Data(contentsOf: journal) == original, "temporary joined/cleanup must not change original journal bytes")
+        expect(reader.voWiFiActionInFlight && successes == 0, "temporary cleanup never unlocks original request or emits durable success")
+        // Only this explicit authoritative durable terminal receipt may
+        // settle the unchanged original checkpoint after the assertions.
+        api.complete(first + 2, json: withOperation(#"{"available":true,"tunnel_state":"disconnected","ims_state":"idle"}"#, operationJSON("rejected-\(requestID)", generation: 0, enable: false, terminal: true, phase: "rejected", outcome: "failed")))
+        await waitForRequest(first + 3, path: "api/reader/vowifi")
+        api.complete(first + 3, json: #"{"available":true,"tunnel_state":"disconnected","ims_state":"idle"}"#)
+        await waitUntil { !reader.voWiFiActionInFlight }
+        reader.reset()
+    }
+    @MainActor static func checkpointWriteFailureStillStopsCachedReaderAndModule() async {
+        for scope in ["reader", "module"] {
+            let root = fixtureCheckpointRoot(); defer { try? FileManager.default.removeItem(at: root) }
+            let journal = root.appendingPathComponent("vowifi-\(scope)-gui-requests.json")
+            let first = api.requests.count
+            if scope == "reader" {
+                let reader = targetedReader(root: root)
+                try! FileManager.default.createDirectory(at: journal, withIntermediateDirectories: true)
+                reader.disableVoWiFi()
+                await waitForRequest(first, path: stopControlPath("reader"))
+                expect(api.requests[first].body == Data(), "reader journal failure still sends empty exact-target POST")
+                api.complete(first, json: stopControlJSON("reader"))
+                await waitUntil { reader.error?.contains("临时停止") == true }
+                expect(reader.voWiFiActionInFlight && FileManager.default.fileExists(atPath: journal.path), "temporary result preserves failed journal fence")
+                reader.reset()
+            } else {
+                let module = ModuleVoWiFiStore(backend: BackendProcess(), checkpointRoot: root)
+                await waitForRequest(first, path: "api/vowifi")
+                api.complete(first, json: withTarget(moduleStatusJSON, scope: "module"))
+                await waitUntil { module.state.loaded }
+                try! FileManager.default.createDirectory(at: journal, withIntermediateDirectories: true)
+                module.disable()
+                await waitForRequest(first + 1, path: stopControlPath("module"))
+                expect(api.requests[first + 1].body == Data(), "module journal failure still sends empty exact-target POST")
+                api.complete(first + 1, json: stopControlJSON("module"))
+                await waitUntil { module.state.error?.contains("临时停止") == true }
+                expect(module.state.actionInFlight && FileManager.default.fileExists(atPath: journal.path), "module temporary result never clears failed checkpoint")
+                module.reset()
+            }
+        }
+    }
+    @MainActor static func moduleUnknownStopReplyUsesOriginalTargetAndPreservesCheckpoint() async {
+        let root = fixtureCheckpointRoot(); defer { try? FileManager.default.removeItem(at: root) }
+        let module = ModuleVoWiFiStore(backend: BackendProcess(), checkpointRoot: root)
+        let first = api.requests.count
+        await waitForRequest(first, path: "api/vowifi")
+        api.complete(first, json: withTarget(moduleStatusJSON, scope: "module"))
+        await waitUntil { module.state.loaded }
+        module.disable()
+        await waitForRequest(first + 1, path: "api/vowifi")
+        let journal = root.appendingPathComponent("vowifi-module-gui-requests.json")
+        let original = try! Data(contentsOf: journal)
+        api.failUnknown(first + 1)
+        await waitForRequest(first + 2, path: stopControlPath("module"))
+        expect(api.requests[first + 2].path.contains("owner_id=original") && api.requests[first + 2].body == Data(), "unknown durable stop uses frozen target")
+        api.complete(first + 2, json: stopControlJSON("module"))
+        await waitForRequest(first + 3, path: "api/vowifi/result?observe_operation=true")
+        expect(try! Data(contentsOf: journal) == original && module.state.actionInFlight, "module temporary cleanup never clears durable unknown")
+        module.reset(); api.fail(first + 3)
+        for _ in 0..<30 { await Task.yield() }
+    }
+}

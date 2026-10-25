@@ -26,7 +26,7 @@ pub(crate) fn state(root: &std::path::Path) -> crate::ServerState {
         multistandby_operations: crate::multistandby_operations::Store::open(root).unwrap(),
         device_send_store: crate::device_send_store::Store::open(&root.join("device")).unwrap(),
         forwarding_handoff_store: crate::forwarding_handoff_store::Store::open(root).unwrap(),
-        sms_forwarding: crate::sms_forwarding::Service::default(),
+        sms_forwarding: crate::sms_forwarding::Service::new(root),
         sms_inbox: inbox.clone(),
         usb_sms_receive: crate::test_usb_sms_receiver(inbox, root.join("sms-archive.json")),
         usb_at: crate::usb_at::Owner::new("usb-producer-fixture".into()),
@@ -55,6 +55,31 @@ pub(crate) fn state(root: &std::path::Path) -> crate::ServerState {
             crate::multistandby_runtime_report::Journal::default(),
         )),
     }
+}
+
+#[tokio::test]
+async fn g3_shared_gateway_fixture_keeps_forwarding_in_its_private_root() {
+    let root = crate::tests::test_directory("g3-private-forwarding-fixture");
+    let state = state(&root);
+    // Construction itself enrolls the forwarding receipt store. These exact
+    // files must belong to the supplied root before any request is dispatched.
+    for file in [
+        "sms-forwarding-test-receipts-v1.json",
+        ".sms-forwarding-test-receipts-v1.json.presence-v1",
+        "sms-forwarding-test-receipts-v1.json.lock",
+    ] {
+        assert!(root.join(file).is_file(), "forwarding escaped fixture root");
+    }
+    state.sms_forwarding.shutdown().await.unwrap();
+    state
+        .native_vowifi_lifecycle
+        .finish_shutdown(tokio::time::Instant::now() + std::time::Duration::from_secs(2))
+        .await
+        .unwrap();
+    state.reader_pcsc.shutdown().await.unwrap();
+    drop(state);
+    std::fs::remove_dir_all(&root).unwrap();
+    assert!(!root.exists());
 }
 
 async fn request(

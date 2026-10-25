@@ -10,6 +10,7 @@ cd "$SWITCH_SOURCE_ROOT"
 "$SWITCH_SOURCE_ROOT/scripts/build-handoff-core.sh"
 HANDOFF_ARCHIVE="$CARGO_TARGET_DIR/release/libproletarius_handoff_core.a"
 xcrun swiftc -parse-as-library \
+  app/Sources/AcceptanceContext.swift \
   app/Sources/MultiStandbyModels.swift app/Sources/MultiStandbyStore.swift \
   app/Sources/SMSModels.swift app/Sources/CallModels.swift app/Sources/AttentionStore.swift \
   app/Sources/SMSForwardingStore.swift app/Sources/SMSForwardingCheckpoint.swift \

@@ -61,6 +61,7 @@ mod registration_candidates;
 mod service;
 mod startup_diagnostics;
 mod startup_transport;
+mod stop_control;
 pub(crate) use service::NativeSmsBinding;
 
 /// Compile-time evidence for the ordinary reader owner. The retained actor
@@ -508,6 +509,17 @@ impl ReaderObservation {
             subscription_id: None,
         }
     }
+}
+
+/// New stop controls validate syntax/body synchronously before even selecting
+/// a retained service. In particular, invalid requests never open a ledger.
+pub(crate) fn stop_control_rejection<B: hyper::body::Body>(
+    request: &Request<B>,
+    scope: &str,
+) -> Option<Response<Full<Bytes>>> {
+    stop_control::Target::request(request, scope)
+        .err()
+        .map(|code| stop_control::response(Err(code)))
 }
 
 impl NativeLifecycle {

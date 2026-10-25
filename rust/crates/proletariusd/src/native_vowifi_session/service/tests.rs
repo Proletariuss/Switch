@@ -153,6 +153,7 @@ impl reader_session_lease::NativeSessionSupplier for Supplier {
 }
 pub(super) struct Fixture {
     pub(super) service: Service,
+    data_root: PathBuf,
     lifecycle: Arc<NativeLifecycle>,
     identity: Arc<Identity>,
     supplier: Arc<Supplier>,
@@ -199,9 +200,11 @@ impl Fixture {
             imsi: "234330000000001".into(),
         })));
         let data_root = PathBuf::from(std::env::var("SWITCH_BUILD_DIR").unwrap()).join(format!(
-            "tmp/iteration-484-service-{id}-{}",
+            "iteration-484-service-{id}-{}",
             crate::snapshot::new_instance_id()
         ));
+        // Exclusive creation proves ownership; never reuse a historical root.
+        std::fs::create_dir(&data_root).unwrap();
         let lifecycle = Arc::new(NativeLifecycle::default());
         lifecycle.activate().unwrap();
         let resources = Resources {
@@ -228,6 +231,7 @@ impl Fixture {
                 mutation: tokio::sync::Mutex::new(()),
             })),
             lifecycle,
+            data_root,
             identity,
             supplier,
             apdu,
@@ -269,6 +273,9 @@ impl Fixture {
             expected: self.identity.capture().unwrap(),
             request: request(),
         }
+    }
+    pub(super) fn hold(&self) {
+        self.supplier.held.store(true, Ordering::SeqCst);
     }
     pub(super) fn resume(&self) {
         self.supplier.held.store(false, Ordering::SeqCst);
@@ -321,7 +328,33 @@ impl Fixture {
             .pcsc
             .native_close(&self.supplier.session)
             .unwrap();
+        self.service.0.resources.pcsc.shutdown().await.unwrap();
+        let data_root = self.data_root.clone();
+        // Release the remaining stores only after the actual owners drained.
+        drop(self);
+        std::fs::remove_dir_all(&data_root).unwrap();
+        assert!(!data_root.exists(), "fixture root retained after close");
     }
+}
+
+#[tokio::test]
+async fn g3_fixture_close_removes_only_its_private_root_after_drain() {
+    let first = Fixture::new(false);
+    let second = Fixture::new(false);
+    let first_root = first.data_root.clone();
+    let second_root = second.data_root.clone();
+    assert_ne!(first_root, second_root);
+    std::fs::create_dir(first_root.join("empty-leaf")).unwrap();
+    std::fs::write(first_root.join("owned-file"), b"first").unwrap();
+    std::fs::write(second_root.join("owned-file"), b"second").unwrap();
+    first.close().await;
+    assert!(!first_root.exists());
+    assert_eq!(
+        std::fs::read(second_root.join("owned-file")).unwrap(),
+        b"second"
+    );
+    second.close().await;
+    assert!(!second_root.exists());
 }
 pub(super) fn request() -> intent::FrozenRequest {
     intent::FrozenRequest {
@@ -815,6 +848,7 @@ impl Fixture {
             task.subscribe()
         };
         let record = Arc::new(Record {
+            control: Default::default(),
             id: 1,
             expected,
             driver: self.driver(),
@@ -890,6 +924,7 @@ async fn receipt_observation_fences_successor_publication_and_keeps_new_clock_re
     )
     .unwrap();
     let second = Arc::new(Record {
+        control: Default::default(),
         id: 2,
         expected,
         driver: f.driver(),
@@ -1126,6 +1161,7 @@ async fn joined_cleanup_harvest_allows_observation_and_shutdown_and_revalidates_
     )
     .unwrap();
     let record = Arc::new(Record {
+        control: Default::default(),
         id: 1,
         expected,
         driver: driver.clone(),
@@ -2009,6 +2045,7 @@ async fn typed_recovery_start_retries_only_transient_and_only_after_exact_cleanu
         )
         .unwrap();
         let record = Arc::new(Record {
+            control: Default::default(),
             id: 1,
             expected,
             driver: f.driver(),

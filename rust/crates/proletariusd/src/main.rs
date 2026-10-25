@@ -1,5 +1,8 @@
 #![forbid(unsafe_code)]
 
+mod acceptance_capsule;
+#[allow(dead_code)]
+mod acceptance_phase_a;
 mod archive_io;
 mod availability;
 mod b0_auth;
@@ -23,6 +26,7 @@ mod call_mode_state;
 mod call_mode_status;
 mod call_mutation_intent;
 mod carrier;
+mod connection_pools;
 mod daemon_args;
 mod daemon_lifetime;
 mod data_root;
@@ -182,9 +186,7 @@ use bytes::Bytes;
 use http_body_util::Full;
 use hyper::body::Incoming;
 use hyper::header::{HeaderName, HeaderValue};
-use hyper::service::service_fn;
 use hyper::{Method, Request, Response, StatusCode};
-use hyper_util::rt::TokioIo;
 use nix::unistd::{Pid, getppid};
 use proletarius_api_contract::{ErrorResponse, RuntimeResponse};
 use proletarius_call::CALL_PROTOCOL_CONTRACT;
@@ -457,6 +459,12 @@ impl Drop for SocketGuard {
 #[tokio::main]
 async fn main() -> std::process::ExitCode {
     let startup_arguments: Vec<std::ffi::OsString> = env::args_os().skip(1).collect();
+    // G8 proof is checked before credentials, data roots, stores and owners.
+    // Even valid capsules refuse: acceptance composition has no admission yet.
+    if let Err(_error) = acceptance_capsule::pre_entry(&startup_arguments) {
+        eprintln!("switchd-rs: acceptance/arguments rejected; runtime admission NO-GO");
+        return std::process::ExitCode::from(78);
+    }
     if startup_arguments.len() == 1
         && startup_arguments[0] == std::ffi::OsStr::new(call_mode_adb::INTERNAL_PROBE_ARGUMENT)
     {
@@ -495,6 +503,7 @@ async fn main() -> std::process::ExitCode {
 }
 
 async fn run(arguments: Vec<std::ffi::OsString>) -> Result<(), BackendFailure> {
+    acceptance_capsule::pre_entry(&arguments).map_err(BackendFailure::Io)?;
     let arguments = daemon_args::parse(arguments).map_err(BackendFailure::Io)?;
     // A shipping daemon is always an authenticated child of the macOS app.
     // Refuse startup before acquiring the data-root lease, opening stores or
@@ -1026,9 +1035,7 @@ async fn run_with_sms_stores(
         ))
     };
     availability.mark_ready();
-    let mut public_tasks = JoinSet::new();
-    let mut callback_tasks = JoinSet::new();
-    let mut internal_tasks = JoinSet::new();
+    let mut connection_pools = connection_pools::Driver::default();
     let mut eap_exchange_cleanup = interval(Duration::from_secs(30));
     let mut parent_monitor = interval(Duration::from_millis(500));
 
@@ -1061,44 +1068,44 @@ async fn run_with_sms_stores(
     }
     loop {
         tokio::select! {
-            accepted = listener.accept(), if public_tasks.len() < PUBLIC_CONNECTION_LIMIT => {
-                let Some((stream, _)) = shutdown::accepted(&mut exit_report, "public accept", accepted) else {
-                    break;
-                };
-                let connection_state = state.clone();
-                public_tasks.spawn(async move {
-                    if let Err(error) = serve_connection(stream, connection_state).await
-                        && !benign_connection_error_message(&error.to_string())
-                    {
-                        crate::diagnostics::write_line(format_args!("switchd-rs connection: {error}"));
+            event = connection_pools.next(&listener, &callback_listener, &internal_listener) => {
+                match event {
+                    connection_pools::Event::Accepted(pool, accepted) => {
+                        let Some(stream) = shutdown::accepted(&mut exit_report, pool.accept_owner(), accepted) else {
+                            break;
+                        };
+                        let connection_state = state.clone();
+                        connection_pools.spawn(pool, async move {
+                            let result = match pool {
+                                connection_pools::Pool::Public | connection_pools::Pool::Callback => {
+                                    serve_connection(stream, connection_state).await
+                                }
+                                connection_pools::Pool::Internal => {
+                                    serve_internal_connection(stream, connection_state).await
+                                }
+                            };
+                            if let Err(error) = result
+                                && !benign_connection_error_message(&error.to_string())
+                            {
+                                let surface = match pool {
+                                    connection_pools::Pool::Public => "connection",
+                                    connection_pools::Pool::Callback => "callback",
+                                    connection_pools::Pool::Internal => "internal store",
+                                };
+                                crate::diagnostics::write_line(format_args!(
+                                    "switchd-rs {surface}: {error}"
+                                ));
+                            }
+                        });
                     }
-                });
-            }
-            accepted = callback_listener.accept(), if callback_tasks.len() < NATIVE_CALLBACK_CONNECTION_LIMIT => {
-                let Some((stream, _)) = shutdown::accepted(&mut exit_report, "callback accept", accepted) else {
-                    break;
-                };
-                let connection_state = state.clone();
-                callback_tasks.spawn(async move {
-                    if let Err(error) = serve_connection(stream, connection_state).await
-                        && !benign_connection_error_message(&error.to_string())
-                    {
-                        crate::diagnostics::write_line(format_args!("switchd-rs callback: {error}"));
+                    connection_pools::Event::Completed(pool, completed) => {
+                        if let Err(error) = completed {
+                            crate::diagnostics::write_line(format_args!(
+                                "switchd-rs {}: {error}", pool.task_owner()
+                            ));
+                        }
                     }
-                });
-            }
-            accepted = internal_listener.accept(), if internal_tasks.len() < INTERNAL_STORE_CONNECTION_LIMIT => {
-                let Some((stream, _)) = shutdown::accepted(&mut exit_report, "internal accept", accepted) else {
-                    break;
-                };
-                let connection_state = state.clone();
-                internal_tasks.spawn(async move {
-                    if let Err(error) = serve_internal_connection(stream, connection_state).await
-                        && !benign_connection_error_message(&error.to_string())
-                    {
-                        crate::diagnostics::write_line(format_args!("switchd-rs internal store: {error}"));
-                    }
-                });
+                }
             }
             _ = terminate.recv() => break,
             _ = interrupt.recv() => break,
@@ -1123,21 +1130,6 @@ async fn run_with_sms_stores(
                 let current_parent = getppid();
                 if parent_process_changed(initial_parent, current_parent) {
                     break;
-                }
-            }
-            completed = public_tasks.join_next(), if !public_tasks.is_empty() => {
-                if let Some(Err(error)) = completed {
-                    crate::diagnostics::write_line(format_args!("switchd-rs public task: {error}"));
-                }
-            }
-            completed = callback_tasks.join_next(), if !callback_tasks.is_empty() => {
-                if let Some(Err(error)) = completed {
-                    crate::diagnostics::write_line(format_args!("switchd-rs callback task: {error}"));
-                }
-            }
-            completed = internal_tasks.join_next(), if !internal_tasks.is_empty() => {
-                if let Some(Err(error)) = completed {
-                    crate::diagnostics::write_line(format_args!("switchd-rs internal task: {error}"));
                 }
             }
         }
@@ -1189,12 +1181,8 @@ async fn run_with_sms_stores(
         shutdown_observer_join("reader hotplug", reader_hotplug_task, &mut report).await;
         reader_presence_task.abort();
         shutdown_observer_join("reader presence", reader_presence_task, &mut report).await;
-        public_tasks.abort_all();
-        callback_tasks.abort_all();
-        internal_tasks.abort_all();
-        shutdown_connection_joins("public requests", &mut public_tasks, &mut report).await;
-        shutdown_connection_joins("callback requests", &mut callback_tasks, &mut report).await;
-        shutdown_connection_joins("internal requests", &mut internal_tasks, &mut report).await;
+        connection_pools.abort_all();
+        connection_pools.drain(&mut report).await;
         forwarding_admission_task.abort();
         shutdown_observer_join(
             "forwarding admission",
@@ -1605,33 +1593,29 @@ async fn serve_shutdown_callback_with_gate(
     state: ServerState,
     gate: shutdown::CleanupGate,
 ) {
-    let _ = http_server::builder()
-        .serve_connection(
-            TokioIo::new(stream),
-            service_fn(move |request| {
-                let rejection = shutdown_rejection(&request, state.app_token.as_deref());
-                let state = state.clone();
-                let gate = gate.clone();
-                async move {
-                    if let Some(response) = rejection {
-                        return Ok::<_, Infallible>(response);
-                    }
-                    let _permit = match gate.enter().await {
-                        Some(permit) => permit,
-                        None => return Ok::<_, Infallible>(cleanup_finished_response()),
-                    };
-                    let task = tokio::spawn(async move {
-                        let _permit = _permit;
-                        eap_identity::handle(request, &state.eap_exchanges).await
-                    });
-                    Ok::<_, Infallible>(
-                        task.await
-                            .unwrap_or_else(|_| cleanup_worker_failed_response()),
-                    )
-                }
-            }),
-        )
-        .await;
+    let _ = http_server::serve_full_response(stream, move |request| {
+        let rejection = shutdown_rejection(&request, state.app_token.as_deref());
+        let state = state.clone();
+        let gate = gate.clone();
+        async move {
+            if let Some(response) = rejection {
+                return Ok::<_, Infallible>(response);
+            }
+            let _permit = match gate.enter().await {
+                Some(permit) => permit,
+                None => return Ok::<_, Infallible>(cleanup_finished_response()),
+            };
+            let task = tokio::spawn(async move {
+                let _permit = _permit;
+                eap_identity::handle(request, &state.eap_exchanges).await
+            });
+            Ok::<_, Infallible>(
+                task.await
+                    .unwrap_or_else(|_| cleanup_worker_failed_response()),
+            )
+        }
+    })
+    .await;
 }
 
 #[cfg(test)]
@@ -1644,26 +1628,22 @@ async fn serve_internal_shutdown_with_gate(
     state: ServerState,
     gate: shutdown::CleanupGate,
 ) {
-    let _ = http_server::builder()
-        .serve_connection(
-            TokioIo::new(stream),
-            service_fn(move |request| {
-                let state = state.clone();
-                let gate = gate.clone();
-                async move {
-                    // Keep route classification and authentication in the common handler.
-                    // Its cleanup permit belongs to this retained task, not the HTTP waiter.
-                    let task = tokio::spawn(async move {
-                        handle_internal_request(request, &state, true, Some(&gate)).await
-                    });
-                    Ok::<_, Infallible>(
-                        task.await
-                            .unwrap_or_else(|_| cleanup_worker_failed_response()),
-                    )
-                }
-            }),
-        )
-        .await;
+    let _ = http_server::serve_full_response(stream, move |request| {
+        let state = state.clone();
+        let gate = gate.clone();
+        async move {
+            // Keep route classification and authentication in the common handler.
+            // Its cleanup permit belongs to this retained task, not the HTTP waiter.
+            let task = tokio::spawn(async move {
+                handle_internal_request(request, &state, true, Some(&gate)).await
+            });
+            Ok::<_, Infallible>(
+                task.await
+                    .unwrap_or_else(|_| cleanup_worker_failed_response()),
+            )
+        }
+    })
+    .await;
 }
 
 fn cleanup_worker_failed_response() -> Response<Full<Bytes>> {
@@ -1958,27 +1938,24 @@ fn benign_connection_error_message(message: &str) -> bool {
 }
 
 async fn serve_connection(stream: UnixStream, state: ServerState) -> Result<(), hyper::Error> {
-    http_server::builder()
-        .serve_connection(
-            TokioIo::new(stream),
-            service_fn(move |request| handle_request(request, state.clone())),
-        )
-        .await
+    http_server::serve_full_response(stream, move |request| {
+        handle_request(request, state.clone())
+    })
+    .await
 }
 
 async fn serve_internal_connection(
     stream: UnixStream,
     state: ServerState,
 ) -> Result<(), hyper::Error> {
-    http_server::builder()
-        .serve_connection(
-            TokioIo::new(stream),
-            service_fn(move |request| {
+    http_server::serve_full_response(
+            stream,
+            move |request| {
                 let state = state.clone();
                 async move {
                     Ok::<_, Infallible>(handle_internal_request(request, &state, false, None).await)
                 }
-            }),
+            },
         )
         .await
 }
@@ -2001,7 +1978,18 @@ async fn handle_request(
     }
     let head = request.method() == Method::HEAD;
     let native_get = head && public_http::head_uses_get(request.uri().path());
-    let response = handle_request_inner(request, state).await?;
+    let stop_control = matches!(
+        request.uri().path().trim_end_matches('/'),
+        "/api/reader/vowifi/stop-control" | "/api/vowifi/stop-control"
+    );
+    let mut response = handle_request_inner(request, state).await?;
+    if stop_control {
+        // Includes authentication, method, admission and no-retained rejections.
+        response.headers_mut().insert(
+            hyper::header::CACHE_CONTROL,
+            hyper::header::HeaderValue::from_static("no-store"),
+        );
+    }
     Ok(if head {
         public_http::without_head_body(response, native_get)
     } else {
@@ -2710,6 +2698,41 @@ async fn handle_request_inner(
         return Ok(
             multistandby_store::handle(request, state.multistandby_store.clone(), false).await,
         );
+    }
+    match (request.method(), request.uri().path()) {
+        (&Method::GET, "/api/reader/vowifi/stop-control")
+        | (&Method::POST, "/api/reader/vowifi/stop-control") => {
+            if let Some(rejection) =
+                native_vowifi_session::stop_control_rejection(&request, "reader")
+            {
+                return Ok(rejection);
+            }
+            return Ok(match state.native_vowifi_lifecycle.ordinary_service() {
+                Some(service) => service.handle_public(request).await,
+                None => json_response(
+                    StatusCode::CONFLICT,
+                    &json!({"code":"vowifi_stop_target_stale","error":"vowifi_stop_target_stale"}),
+                ),
+            });
+        }
+        (&Method::GET, "/api/vowifi/stop-control")
+        | (&Method::POST, "/api/vowifi/stop-control") => {
+            if let Some(rejection) =
+                native_vowifi_session::stop_control_rejection(&request, "module")
+            {
+                return Ok(rejection);
+            }
+            return Ok(
+                match state.native_vowifi_lifecycle.retained_module_service() {
+                    Some(service) => service.handle(request).await,
+                    None => json_response(
+                        StatusCode::CONFLICT,
+                        &json!({"code":"vowifi_stop_target_stale","error":"vowifi_stop_target_stale"}),
+                    ),
+                },
+            );
+        }
+        _ => {}
     }
     if matches!(
         (request.method().as_str(), request.uri().path()),
@@ -5233,7 +5256,7 @@ mod tests {
                     device_send_store: super::device_send_store::Store::open(&root).unwrap(),
                     forwarding_handoff_store: super::forwarding_handoff_store::Store::open(&root)
                         .unwrap(),
-                    sms_forwarding: super::sms_forwarding::Service::default(),
+                    sms_forwarding: super::sms_forwarding::Service::new(&root.join("forwarding")),
                     sms_inbox: sms_inbox.clone(),
                     usb_sms_receive: crate::test_usb_sms_receiver(
                         sms_inbox.clone(),
@@ -5295,6 +5318,11 @@ mod tests {
             server.await.unwrap();
             let _ = connection.await;
         }
+        fs::remove_dir_all(&root).unwrap();
+        assert!(
+            !root.exists(),
+            "shutdown listener test root survived cleanup"
+        );
     }
 
     #[tokio::test]

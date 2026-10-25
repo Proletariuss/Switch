@@ -227,7 +227,10 @@ impl GuardedArchive {
 fn fault_kind(error: &StoreError) -> Option<u8> {
     match error {
         StoreError::Configuration(code) => match code.as_str() {
-            "ledger_corrupt" | "invalid_store_schema" | "invalid_durable_presence_store" => Some(1),
+            "ledger_corrupt"
+            | "device_forwarding_ledger_corrupt"
+            | "invalid_store_schema"
+            | "invalid_durable_presence_store" => Some(1),
             // Invalid user input, stale revisions, missing records and capacity
             // refusals do not mean previously persisted evidence is untrusted.
             _ => None,
@@ -892,6 +895,8 @@ mod tests {
             "profile_not_found",
             "ledger_full",
             "store_capacity",
+            "device_forwarding_state_conflict",
+            "device_forwarding_id_limit",
         ] {
             assert!(
                 archive

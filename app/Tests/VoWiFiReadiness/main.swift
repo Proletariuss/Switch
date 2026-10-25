@@ -15,6 +15,16 @@ struct VoWiFiReadinessTests {
 
     @MainActor
     static func main() async {
+        if CommandLine.arguments.contains("--stop-control-only") {
+            stopControlDTOSeparatesPendingFromCleanup()
+            await readerFreshEnableWithoutTargetNeverStopsPreviousOwner()
+            await readerStopFallbackFreezesTargetAndNeverClearsCheckpoint()
+            await checkpointWriteFailureStillStopsCachedReaderAndModule()
+            await moduleUnknownStopReplyUsesOriginalTargetAndPreservesCheckpoint()
+            expect(api.pendingCount == 0, "temporary stop fixtures leave no continuations: \(api.pendingRequestPaths)")
+            print("PASS: temporary exact-target stop fallback, immutable checkpoints, GUI write failure and unknown receipt fencing")
+            return
+        }
         if CommandLine.arguments.contains("--durable-ledger-only") {
             await durableLedgerGUIRestartAndExactReceiptFencing()
             await readerLostMutationReplyReconcilesWithoutReplay()

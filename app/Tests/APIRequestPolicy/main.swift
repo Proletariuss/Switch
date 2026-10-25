@@ -347,6 +347,29 @@ private struct RequiredRadioResult:Decodable {let started:Bool}
         let laterFields=try JSONSerialization.jsonObject(with:UnixSocketURLProtocol.requests[0].httpBody!) as! [String:Any]
         try expect(laterFields["client_request_id"] as? String != radioID,"confirmed new radio action reused old identity")
         print("PASS: actual APIClient persists radio ID/body across lost responses and replacement, blocks drift before upload, and retains decode-failed receipts")
+        let retainedRadioJournal = PublicRadioMutationCheckpoint.defaults.data(forKey: "publicRadioMutationCheckpoint.v1")!
+        for path in ["api/reader/vowifi/stop-control", "api/vowifi/stop-control"] {
+            let scope = path.contains("reader") ? "reader" : "module"
+            let query = "scope=\(scope)&daemon_epoch=epoch-1&owner_id=owner-1&owner_generation=7"
+            UnixSocketURLProtocol.configure(body: "{}")
+            let _: EmptyResponse = try await APIClient().upload("\(path)?\(query)", data: Data())
+            try expect(UnixSocketURLProtocol.requests.count == 1 && (UnixSocketURLProtocol.requests[0].httpBody?.isEmpty ?? true)
+                           && UnixSocketURLProtocol.requests[0].httpBodyStream == nil,
+                       "temporary stop was replayed or acquired a nonempty/unknown body")
+            try expect(UnixSocketURLProtocol.requests[0].url?.query == query, "temporary target query was rewritten")
+            try expect(PublicRadioMutationCheckpoint.defaults.data(forKey: "publicRadioMutationCheckpoint.v1") == retainedRadioJournal,
+                       "temporary stop changed unrelated permanent radio checkpoint")
+            PublicRadioMutationCheckpoint.defaults.set(Data("corrupt".utf8), forKey: "publicRadioMutationCheckpoint.v1")
+            var request = URLRequest(url: URL(string: "http://fixture/\(path)?\(query)")!)
+            request.httpMethod = "POST"; request.httpBody = Data()
+            let token = try PublicRadioMutationCheckpoint.prepare(&request)
+            try expect(token == nil,
+                       "unrelated corrupt radio journal blocked temporary stop")
+            try expect(request.httpBody == Data(), "non-allowlisted empty stop payload was rewritten")
+            PublicRadioMutationCheckpoint.defaults.set(retainedRadioJournal, forKey: "publicRadioMutationCheckpoint.v1")
+        }
+        print("PASS: production APIClient stop-control uploads bypass permanent radio journal and preserve exact empty body/query")
+
 
     }
 }

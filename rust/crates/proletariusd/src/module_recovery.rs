@@ -1330,7 +1330,7 @@ mod tests {
                 "empty" => root.write(LEGACY_EXECUTION_PENDING, b""),
                 "unreadable" => {
                     root.write(LEGACY_EXECUTION_PENDING, b"unknown");
-                    fs::set_permissions(&pending, fs::Permissions::from_mode(0)).unwrap();
+                    fs::set_permissions(&pending, fs::Permissions::from_mode(0o000)).unwrap();
                 }
                 "directory" => fs::create_dir(&pending).unwrap(),
                 "symlink" | "dangling" | "hardlink" => {

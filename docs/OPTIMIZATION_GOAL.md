@@ -1,4 +1,4 @@
-> **当前已批准项目目标（2026-10-04，持续实施）：** 按 [Switch 全 Rust 后端改造方案](optimization/2026-10-04-all-rust-backend-plan.md) 推进至全部必需验收完成。目标为 SwiftUI + 单 Rust 后端、零 Go 构建和运行依赖；保留现有功能、必要平台桥及正常 LPA，9eSIM `6982` 继续排除。实际进度见 [实施记录](optimization/2026-10-04-all-rust-execution.md)，不以组件计数或离线测试代替全部完成。中间不生成 DMG，除非用户要求。下方历史“长期保留 Go”的取舍不再限定新方向。
+> **当前已批准项目目标（2026-10-04，2026-10-25执行导航更新）：** 按 [Switch 全 Rust 后端改造方案](optimization/2026-10-04-all-rust-backend-plan.md) 推进至全部必需验收完成。目标为 SwiftUI + 单 Rust 后端、零 Go 构建和运行依赖；保留现有功能、必要平台桥及正常 LPA，9eSIM `6982` 继续排除。实际状态见[当前进度](optimization/all-rust/progress-current.md)和[当前运行时所有权](optimization/all-rust/README.md#current-runtime-ownership)，旧[实施记录](optimization/2026-10-04-all-rust-execution.md)保留历史切点。当前3.51/build351为 `source-not-final-G0B`，G0B/G8/G9仍NO_GO、正式长稳0小时；不以组件计数或离线测试代替全部完成。中间不生成 DMG，除非用户要求。下方历史“长期保留 Go”的取舍不再限定新方向。
 
 > **上一批已完成目标（2.80）：** [协议加固与可用性优化目标](optimization/2026-10-03-protocol-hardening-goal.md)。具体结果与未测边界见 [实施记录](optimization/2026-10-03-protocol-hardening-execution.md)。
 

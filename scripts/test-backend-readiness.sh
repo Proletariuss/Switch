@@ -10,6 +10,7 @@ TEST_DIR=$(mktemp -d "${TEST_TMP_ROOT%/}/switch-readiness.XXXXXX")
 # Only remove this test's generated executable; fixture logs stay available on failure.
 trap 'rm -f "$TEST_DIR/backend-readiness"' EXIT INT TERM
 xcrun swiftc -parse-as-library \
+    "$TEST_ROOT/app/Sources/AcceptanceContext.swift" \
     "$TEST_ROOT/app/Sources/BackendProcess.swift" \
     "$TEST_ROOT/app/Sources/UnixSocketURLProtocol.swift" \
     "$TEST_ROOT/app/Sources/LocalBackendAuthentication.swift" \

@@ -332,7 +332,7 @@ fn stable_real_root_preserves_pristine_formats_runtime_hashes_and_metadata() {
         fs::set_permissions(root.path.join(name), fs::Permissions::from_mode(0o644)).unwrap();
     }
     // The historical empty marker was metadata-only, including mode 0000.
-    fs::set_permissions(root.path.join(PRISTINE), fs::Permissions::from_mode(0)).unwrap();
+    fs::set_permissions(root.path.join(PRISTINE), fs::Permissions::from_mode(0o000)).unwrap();
     let directory = root.directory();
     let before = (Stamp::of(&directory).unwrap(), snapshot(&directory));
     assert!(root.scan(&artifacts).is_empty());

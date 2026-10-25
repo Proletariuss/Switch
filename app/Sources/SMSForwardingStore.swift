@@ -906,7 +906,10 @@ private final class SMSForwardingInitialSetupWorker: @unchecked Sendable {
 
 @MainActor
 final class SMSForwardingStore: ObservableObject {
-    static let shared = SMSForwardingStore()
+    static let shared: SMSForwardingStore = {
+        precondition(!AcceptanceBootstrap.isAcceptance, "Forwarding credentials unavailable in acceptance mode")
+        return SMSForwardingStore()
+    }()
 
     @Published var telegramEnabled = false
     @Published var telegramBotToken = ""

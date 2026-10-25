@@ -16,7 +16,7 @@ Switch 是基于 Proletarius 的 DJI One 4G 模块的原生 macOS 管理应用�
 
 ## Positioning
 
-应用通过本地 Go 后端、直接 USB AT/ADB 通道和 macOS 原生音频设备完成端到端模块管理；通话运行时按需下载并部署到模块，不随应用安装包捆绑。
+应用通过本地 Rust 后端 `switchd-rs` 持有业务/API、持久化、协议和设备控制；SwiftUI 及 CoreAudio、CoreBluetooth、Keychain 等 macOS 系统桥负责界面和平台能力，保留 codec FFI。模块管理使用 USB AT/ADB 通道，通话运行时按需下载并部署到模块，不随应用安装包捆绑。当前所有权与验收边界见[运行时所有权](docs/optimization/all-rust/README.md#current-runtime-ownership)。
 
 ## Operating Context
 
@@ -50,7 +50,8 @@ Switch 是基于 Proletarius 的 DJI One 4G 模块的原生 macOS 管理应用�
 ## Evidence on Hand
 
 - 当前产品与导航：`app/Sources/Views/ContentView.swift`
-- 当前模块控制和通话 API：`backend/cmd/proletarius-macos/main.go`
+- 当前公开 API 和所有权：`rust/crates/proletariusd/src/main.rs`、`rust/crates/proletariusd/src/ownership.rs`
+- 当前模块控制和通话：`rust/crates/proletariusd/src/module_radio.rs`、`rust/crates/proletariusd/src/unified_call_control.rs`
 - 当前主机音频桥：`app/Sources/AudioBridge.swift`
 - 当前模块研究记录：`docs/MODULE_RESEARCH.md`
 - 当前第三方软件披露方式：`THIRD_PARTY_NOTICES.md`

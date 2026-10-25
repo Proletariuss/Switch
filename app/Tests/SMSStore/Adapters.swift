@@ -64,7 +64,8 @@ struct UNNotificationRequest {
 }
 @MainActor final class UNUserNotificationCenter {
     static let shared = UNUserNotificationCenter()
-    static func current() -> UNUserNotificationCenter { shared }
+    static var currentCalls = 0
+    static func current() -> UNUserNotificationCenter { currentCalls += 1; return shared }
     var posts: [UNNotificationRequest] = []
     var holdSettings = false
     var settingsWaiter: CheckedContinuation<UNNotificationSettings, Never>?

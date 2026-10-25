@@ -67,12 +67,14 @@
 		977791FF6397486A769ED6CD /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13E43D18F35EF52924B67A11 /* ContentView.swift */; };
 		9814CB677FFE954AD8FDC940 /* GlassComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = E21A5AD10CE0BF427F865907 /* GlassComponents.swift */; };
 		9BA48DC731DA0735AA9FBA69 /* ESIMQRCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10EEADBB8133A33BD9093E0 /* ESIMQRCode.swift */; };
+		9BB304174C6850A9C77B9107 /* SwitchEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9705EC55145D9CF30368ECAE /* SwitchEntry.swift */; };
 		9C0BA9B36103938E852F37D4 /* ReaderAudioAdmission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 938BBB5EB370B1382D3EDD2B /* ReaderAudioAdmission.swift */; };
 		9DD96F85C94994F592038F62 /* IncomingCallCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19837C11A46CE5E24339A458 /* IncomingCallCard.swift */; };
 		9E4CC9ED5846633F9055A055 /* SMSExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E27AC88BF9B1402406759435 /* SMSExportView.swift */; };
 		9EF5B488FDA0DA82587E7D45 /* ReaderCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF288656D3DC9AE774E7564A /* ReaderCardView.swift */; };
 		A3FA2E074E99A73CF949A95A /* SMSForwardingSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B6A2E55AB40D378B61E6EB /* SMSForwardingSettingsView.swift */; };
 		A55DED59BC9CF66899ACEC9C /* Ringtone.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05B92019B741382AB38D32A2 /* Ringtone.swift */; };
+		ACCF6EC3E5A62E779F03F2D4 /* AcceptanceCompanionPhaseA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15BC028691A575975E9D4366 /* AcceptanceCompanionPhaseA.swift */; };
 		AF13298CDCEEC6F2C5A4143F /* UDPProxyDiagnosticModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97DBDAE5D027E5DD484B174F /* UDPProxyDiagnosticModels.swift */; };
 		AF4AB5614DC902DCAD121055 /* CallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60422194D88A577BF1E3301A /* CallView.swift */; };
 		B0831CF6F838D5F6BD83C94F /* ModuleESIMView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F864E18D5D42C9E7625065C3 /* ModuleESIMView.swift */; };
@@ -90,6 +92,7 @@
 		D3A9479A51DD56B14F5340AD /* DiagnosticEventStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4896B4CB370CA7E818800FD3 /* DiagnosticEventStore.swift */; };
 		D3AE938C8C55C34FD8DBABBA /* CallModeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DE03DF82A85377A6805FBC /* CallModeStore.swift */; };
 		D5F81C6CB38B77A5EEE6BE9E /* DiagnosticEventModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F41951BDA90046C1E4237D4 /* DiagnosticEventModels.swift */; };
+		D712B668E1578040EFC3A68A /* AcceptanceContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BD0CC75A490FE5F1FF3CED5 /* AcceptanceContext.swift */; };
 		D88E33F5EB27885D63906C57 /* DiagnosticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6BE8439E8A3DAFD7F136D20 /* DiagnosticsView.swift */; };
 		DB604E86CBFDF0258C97EA58 /* CarrierDisplayMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65EAEAB87016301697410D6D /* CarrierDisplayMetadata.swift */; };
 		DC7BCF2FD06EBA6611482A2B /* ReaderBLEOperationLedger.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6ADF2CE9B596CE663813901 /* ReaderBLEOperationLedger.swift */; };
@@ -124,6 +127,7 @@
 		12EF0E8AC8D76E0D57E5858B /* DiagnosticEventsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticEventsView.swift; sourceTree = "<group>"; };
 		13E43D18F35EF52924B67A11 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		14DDD3A5D3D876A84C3DD949 /* DeviceSMSSendStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceSMSSendStore.swift; sourceTree = "<group>"; };
+		15BC028691A575975E9D4366 /* AcceptanceCompanionPhaseA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AcceptanceCompanionPhaseA.swift; sourceTree = "<group>"; };
 		169648BA3EDC372306B45616 /* CallHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallHistoryStore.swift; sourceTree = "<group>"; };
 		170516B2AABE9FFC25BC5824 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		1972E2DB665F4BF8D93BB5FD /* CallAudioStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallAudioStore.swift; sourceTree = "<group>"; };
@@ -131,6 +135,7 @@
 		246B6CA012A5CFF0DEEA437C /* DeviceSnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceSnapshotStore.swift; sourceTree = "<group>"; };
 		29C356EE14A709068952CD1D /* DashboardStore+Reader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DashboardStore+Reader.swift"; sourceTree = "<group>"; };
 		2A2841B216B51A85A22A38F3 /* UDPProxyDiagnosticView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UDPProxyDiagnosticView.swift; sourceTree = "<group>"; };
+		2BD0CC75A490FE5F1FF3CED5 /* AcceptanceContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AcceptanceContext.swift; sourceTree = "<group>"; };
 		2D643DFA1608EA63D482902A /* WorkspaceViewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceViewport.swift; sourceTree = "<group>"; };
 		34D80FC00B3E4E7E8DC0B93F /* SMSStoreHealthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMSStoreHealthView.swift; sourceTree = "<group>"; };
 		3536037299A0DCEB8D8D9EC9 /* ModuleRecoveryStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModuleRecoveryStatusView.swift; sourceTree = "<group>"; };
@@ -175,6 +180,7 @@
 		8E6CC00A3F9EBA3B5BD2492A /* TelegramPlaneIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelegramPlaneIcon.swift; sourceTree = "<group>"; };
 		91AC5094BF9A881229B7DBFE /* CallModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallModels.swift; sourceTree = "<group>"; };
 		938BBB5EB370B1382D3EDD2B /* ReaderAudioAdmission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderAudioAdmission.swift; sourceTree = "<group>"; };
+		9705EC55145D9CF30368ECAE /* SwitchEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchEntry.swift; sourceTree = "<group>"; };
 		972B2BF0A30D5EFE9C2F8A46 /* SMSForwardingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMSForwardingStore.swift; sourceTree = "<group>"; };
 		97B383518BEA5EEE5E3D61FF /* SMSModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMSModels.swift; sourceTree = "<group>"; };
 		97DBDAE5D027E5DD484B174F /* UDPProxyDiagnosticModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UDPProxyDiagnosticModels.swift; sourceTree = "<group>"; };
@@ -264,6 +270,8 @@
 		7D48A802A675FE102489873B /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				15BC028691A575975E9D4366 /* AcceptanceCompanionPhaseA.swift */,
+				2BD0CC75A490FE5F1FF3CED5 /* AcceptanceContext.swift */,
 				E6C79019817D65DC5C4CF5A6 /* APIClient.swift */,
 				DBEEDFEC4E974C28DFD1181F /* AppPreferences.swift */,
 				6C45D6294DCC8D072E43AB46 /* AttentionStore.swift */,
@@ -325,6 +333,7 @@
 				97B383518BEA5EEE5E3D61FF /* SMSModels.swift */,
 				9CC73D8994EF3201504D1AE8 /* SMSStore.swift */,
 				DB36DB4B1966E2DB1617B1EB /* SMSStoreHealth.swift */,
+				9705EC55145D9CF30368ECAE /* SwitchEntry.swift */,
 				8B0BB0430E93774C437EE0BF /* ToastItem.swift */,
 				97DBDAE5D027E5DD484B174F /* UDPProxyDiagnosticModels.swift */,
 				5256751E0E901F30AAD72EE8 /* UnifiedStateRevision.swift */,
@@ -501,6 +510,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				64AD15F9F8F1375FF8282045 /* APIClient.swift in Sources */,
+				ACCF6EC3E5A62E779F03F2D4 /* AcceptanceCompanionPhaseA.swift in Sources */,
+				D712B668E1578040EFC3A68A /* AcceptanceContext.swift in Sources */,
 				E08A35382FA611957FAE8927 /* ActivityView.swift in Sources */,
 				6C1627E9241EE03F5F11B8B1 /* AppPreferences.swift in Sources */,
 				7B68B5BAC0995D0324312618 /* AppSection.swift in Sources */,
@@ -589,6 +600,7 @@
 				3051B577BBD7E6E62FF39A5A /* SMSView.swift in Sources */,
 				B7BE79E49E0D716533F64933 /* SafeDiagnosticSummary.swift in Sources */,
 				D2B6E4B5C9C2843ABC78EDA1 /* SettingsView.swift in Sources */,
+				9BB304174C6850A9C77B9107 /* SwitchEntry.swift in Sources */,
 				B8391B77384D2FCF39F58EE4 /* TelegramPlaneIcon.swift in Sources */,
 				C63F62F6A2EF646F3455E210 /* ToastItem.swift in Sources */,
 				AF13298CDCEEC6F2C5A4143F /* UDPProxyDiagnosticModels.swift in Sources */,

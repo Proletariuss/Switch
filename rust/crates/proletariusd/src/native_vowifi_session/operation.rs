@@ -389,6 +389,8 @@ pub(super) struct RequestLedger {
     failed: bool,
     #[cfg(test)]
     fail_after_persist: std::cell::Cell<bool>,
+    #[cfg(test)]
+    fail_write: std::cell::Cell<Option<std::io::ErrorKind>>,
 }
 
 impl RequestLedger {
@@ -429,6 +431,8 @@ impl RequestLedger {
             failed: false,
             #[cfg(test)]
             fail_after_persist: std::cell::Cell::new(false),
+            #[cfg(test)]
+            fail_write: Default::default(),
         };
         if !ledger.entries.is_empty() {
             ledger.persist().map_err(str::to_owned)?;
@@ -467,6 +471,12 @@ impl RequestLedger {
     }
 
     fn persist(&self) -> Result<(), &'static str> {
+        // Deterministic storage-admission fault injection, not a claim that a
+        // mounted read-only filesystem or real ENOSPC has been exercised.
+        #[cfg(test)]
+        if self.fail_write.get().is_some() {
+            return Err("vowifi_request_ledger_unavailable");
+        }
         if let Some(store) = &self.store {
             let values = self
                 .entries
@@ -495,6 +505,31 @@ impl RequestLedger {
     #[cfg(test)]
     pub(super) fn test_fail_after_next_persist(&self) {
         self.fail_after_persist.set(true);
+    }
+
+    #[cfg(test)]
+    pub(super) fn test_write_fault(&self, kind: std::io::ErrorKind) {
+        self.fail_write.set(Some(kind));
+    }
+    #[cfg(test)]
+    pub(super) fn test_fill_capacity(&mut self) -> usize {
+        let template = self.entries.values().next().expect("seed request").clone();
+        let mut snapshot = template.snapshot.clone().expect("seed projection");
+        snapshot.terminal = true;
+        snapshot.outcome = Some("failed".into());
+        snapshot.succeeded = false;
+        for index in self.entries.len()..100_000 {
+            let id = format!("g3-capacity-{index}");
+            self.entries.insert(
+                id.clone(),
+                Receipt::capture(&id, &template.fingerprint, &snapshot),
+            );
+        }
+        self.entries.len()
+    }
+    #[cfg(test)]
+    pub(super) fn test_count(&self) -> usize {
+        self.entries.len()
     }
 
     pub(super) fn observe(&mut self, current: Option<Projection>) -> Result<(), &'static str> {

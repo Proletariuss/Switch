@@ -5,6 +5,7 @@
 pub mod fanout;
 pub mod qmap;
 mod transport;
+mod write_gate;
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fmt;
@@ -146,6 +147,8 @@ pub enum ClientError {
     Io(io::Error),
     Wire(DecodeError),
     Encode(proletarius_qmi_wire::EncodeError),
+    /// The deadline can expire before submission or after a partial/full
+    /// transport write. This error alone never proves the request had no effect.
     Timeout,
     Busy,
     Closed,
@@ -242,7 +245,7 @@ pub struct ServiceVersion {
 
 struct Inner {
     transport: Box<dyn Transport>,
-    writes: Mutex<()>,
+    writes: write_gate::WriteGate,
     transport_shutdown: Mutex<Option<CloseResult>>,
     final_close: Mutex<Option<CloseResult>>,
     transactions: Mutex<HashMap<u64, SyncSender<Result<OwnedPacket, ClientError>>>>,
@@ -259,6 +262,8 @@ struct Inner {
     coalesced_indications: AtomicU64,
     reader: Mutex<Option<JoinHandle<()>>>,
     options: ClientOptions,
+    #[cfg(test)]
+    request_hooks: Mutex<Vec<RequestHook>>,
 }
 
 // io::Error is not Clone. Preserve the I/O classification and diagnostic for
@@ -404,7 +409,7 @@ impl Client {
         let (events_tx, events_rx) = mpsc::sync_channel(options.event_queue_size);
         let inner = Arc::new(Inner {
             transport,
-            writes: Mutex::new(()),
+            writes: write_gate::WriteGate::default(),
             transport_shutdown: Mutex::new(None),
             final_close: Mutex::new(None),
             transactions: Mutex::new(HashMap::new()),
@@ -421,6 +426,8 @@ impl Client {
             coalesced_indications: AtomicU64::new(0),
             reader: Mutex::new(None),
             options,
+            #[cfg(test)]
+            request_hooks: Mutex::new(Vec::new()),
         });
         let weak = Arc::downgrade(&inner);
         let reader = thread::Builder::new()
@@ -504,6 +511,11 @@ impl Client {
         )
     }
 
+    /// One deadline covers reservation/encoding, write serialization,
+    /// transport I/O and response observation. Once transport I/O is invoked,
+    /// an error (including Timeout/Closed) does not prove non-submission.
+    /// Transport implementations must honor their remaining write budget;
+    /// this synchronous owner never detaches or falsely cancels active I/O.
     pub fn send_request_with_timeout(
         &self,
         service: u16,
@@ -512,48 +524,73 @@ impl Client {
         tlvs: &[Tlv<'_>],
         timeout: Duration,
     ) -> Result<OwnedPacket, ClientError> {
+        let deadline = Instant::now()
+            .checked_add(timeout)
+            .ok_or(ClientError::Timeout)?;
         if self.is_closed() {
             return Err(ClientError::Closed);
         }
+        remaining(deadline)?;
         let reservation = reserve_transaction(&self.inner, service, client_id)?;
-        let started = Instant::now();
-        let transaction_id = reservation.transaction_id;
-        let key = reservation.key;
-        let meta = PacketMeta::request(service, client_id, transaction_id, message_id);
-        let size = match encoded_len(meta, tlvs) {
-            Ok(size) => size,
-            Err(error) => {
-                lock(&self.inner.transactions).remove(&key);
-                return Err(ClientError::Encode(error));
-            }
-        };
-        let mut request = vec![0u8; size];
-        if let Err(error) = encode_packet(meta, tlvs, &mut request) {
-            lock(&self.inner.transactions).remove(&key);
-            return Err(ClientError::Encode(error));
-        }
+        let result = (|| {
+            #[cfg(test)]
+            self.request_checkpoint(RequestStage::Reserved);
+            remaining(deadline)?;
+            let meta =
+                PacketMeta::request(service, client_id, reservation.transaction_id, message_id);
+            let size = encoded_len(meta, tlvs).map_err(ClientError::Encode)?;
+            let mut request = vec![0u8; size];
+            encode_packet(meta, tlvs, &mut request).map_err(ClientError::Encode)?;
+            #[cfg(test)]
+            self.request_checkpoint(RequestStage::Encoded);
 
-        let write_result = {
-            let _write = lock(&self.inner.writes);
-            self.inner.transport.write_all_timeout(&request, timeout)
-        };
-        if let Err(error) = write_result {
-            lock(&self.inner.transactions).remove(&key);
-            return Err(ClientError::Io(error));
-        }
-
-        let remaining = timeout.saturating_sub(started.elapsed());
-        if remaining.is_zero() {
-            lock(&self.inner.transactions).remove(&key);
-            return Err(ClientError::Timeout);
-        }
-        match reservation.receiver.recv_timeout(remaining) {
-            Ok(response) => response,
-            Err(RecvTimeoutError::Timeout) => {
-                lock(&self.inner.transactions).remove(&key);
-                Err(ClientError::Timeout)
+            {
+                let _write = self.inner.writes.request(deadline)?;
+                #[cfg(test)]
+                self.request_checkpoint(RequestStage::WriteAcquired);
+                // Closure and the clock can change while a request queues or
+                // between gate acquisition and transport invocation.
+                if self.is_closed() {
+                    return Err(ClientError::Closed);
+                }
+                let budget = remaining(deadline)?;
+                self.inner
+                    .transport
+                    .write_all_timeout(&request, budget)
+                    .map_err(ClientError::Io)?;
             }
-            Err(RecvTimeoutError::Disconnected) => Err(ClientError::Closed),
+            #[cfg(test)]
+            self.request_checkpoint(RequestStage::Written);
+            let budget = remaining(deadline)?;
+            match reservation.receiver.recv_timeout(budget) {
+                Ok(Ok(response)) => {
+                    remaining(deadline)?;
+                    Ok(response)
+                }
+                Ok(Err(error)) => Err(error),
+                Err(RecvTimeoutError::Timeout) => Err(ClientError::Timeout),
+                Err(RecvTimeoutError::Disconnected) => Err(ClientError::Closed),
+            }
+        })();
+        if result.is_err() {
+            // Includes pre-write deadline/close refusals. Submitted timeouts
+            // remove only their waiter; they grant no replay authorization.
+            lock(&self.inner.transactions).remove(&reservation.key);
+        }
+        result
+    }
+
+    #[cfg(test)]
+    fn request_checkpoint(&self, stage: RequestStage) {
+        let hook = {
+            let mut hooks = lock(&self.inner.request_hooks);
+            hooks
+                .iter()
+                .position(|(point, _)| *point == stage)
+                .map(|index| hooks.remove(index).1)
+        };
+        if let Some(hook) = hook {
+            hook();
         }
     }
 
@@ -690,6 +727,7 @@ impl Client {
             raw_os_error: None,
         }));
         self.inner.closed.store(true, Ordering::Release);
+        self.inner.writes.close_admission();
         // Admission closure alone is not a completion receipt. This also
         // recovers a shutdown error retained by a fatal reader exit.
         let shutdown_result = shutdown_transport(&self.inner);
@@ -724,6 +762,27 @@ impl Client {
     }
 }
 
+fn remaining(deadline: Instant) -> Result<Duration, ClientError> {
+    deadline
+        .checked_duration_since(Instant::now())
+        .filter(|budget| !budget.is_zero())
+        .ok_or(ClientError::Timeout)
+}
+
+#[cfg(test)]
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum RequestStage {
+    Reserved,
+    Encoded,
+    WriteAcquired,
+    Written,
+}
+#[cfg(test)]
+type RequestHook = (RequestStage, Box<dyn FnOnce() + Send>);
+#[cfg(test)]
+#[path = "deadline_tests.rs"]
+mod deadline_tests;
+
 fn shutdown_transport(inner: &Inner) -> CloseResult {
     let mut receipt = lock(&inner.transport_shutdown);
     if let Some(result) = &*receipt {
@@ -734,7 +793,7 @@ fn shutdown_transport(inner: &Inner) -> CloseResult {
         message: "QMI transport shutdown did not reach a confirmed result".to_owned(),
         raw_os_error: None,
     }));
-    let _write = lock(&inner.writes);
+    let _write = inner.writes.shutdown();
     // This boundary owns transport teardown. A panic is an unknown physical
     // result, but must not bypass the caller's retained reader-thread join.
     let result =
@@ -853,6 +912,7 @@ fn reader_loop(weak: Weak<Inner>) {
             Err(_) if inner.closed.load(Ordering::Acquire) => return,
             Err(error) => {
                 inner.closed.store(true, Ordering::Release);
+                inner.writes.close_admission();
                 inner.parse_errors.fetch_add(1, Ordering::Relaxed);
                 fail_transactions(&inner);
                 lock(&inner.events_tx).take();

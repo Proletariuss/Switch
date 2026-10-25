@@ -7,7 +7,7 @@ struct SMSView: View {
     @EnvironmentObject private var dashboardStore: DashboardStore
     @EnvironmentObject private var multiStandbyStore: MultiStandbyStore
     @AppStorage(AppPreferenceKeys.privacyMaskEnabled) private var privacyMaskEnabled = true
-    @StateObject private var forwardingStore = SMSForwardingStore.shared
+    @StateObject private var forwardingAccess = SMSForwardingViewAccess()
     @ObservedObject private var deviceSends = DeviceSMSSendStore.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.workspaceViewport) private var viewport
@@ -212,7 +212,11 @@ struct SMSView: View {
                 onDone: { smsStore.refresh(force: true) })
         }
         .sheet(isPresented: $showForwardingSettings) {
-            SMSForwardingSettingsView(store: forwardingStore)
+            if let store = forwardingAccess.store {
+                SMSForwardingSettingsView(store: store)
+            } else {
+                Text("隔离验收中不可用").padding()
+            }
         }
         .sheet(isPresented: $showExport) {
             SMSExportView(profiles: exportProfiles, subscriptions: exportSubscriptions)
@@ -459,6 +463,13 @@ struct SMSView: View {
             }
         }
     }
+}
+
+/// Retains the same production singleton at view construction, without even
+/// constructing its Keychain/real-user-lock authority in the acceptance lane.
+@MainActor
+private final class SMSForwardingViewAccess: ObservableObject {
+    let store: SMSForwardingStore? = AcceptanceBootstrap.isAcceptance ? nil : .shared
 }
 
 private enum SMSDeleteTarget: Identifiable {

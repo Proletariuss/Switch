@@ -19,7 +19,7 @@ private final class FaultingCallCheckpointDefaults: CallCheckpointDefaults {
 @main private enum CorrectnessTests {
     @MainActor static func main() async throws {
         let isolationPrefix = "switch.call-correctness.\(UUID().uuidString)"
-        let isolatedSuites = ["runtime", "dial-boundary", "history", "owner"]
+        let isolatedSuites = ["runtime", "dial-boundary", "history", "owner", "polled-module-owner"]
         func isolatedDefaults(_ suffix: String) -> UserDefaults {
             let name = "\(isolationPrefix).\(suffix)"
             let defaults = UserDefaults(suiteName: name)!
@@ -217,6 +217,36 @@ private final class FaultingCallCheckpointDefaults: CallCheckpointDefaults {
                      "ended IMS call must keep the archive failure visible")
         historyRuntime.reset()
         precondition(historyRuntime.status.historyError == nil)
+
+        let polledModule = CallRuntimeStore(
+            backend: BackendProcess(), defaults: isolatedDefaults("polled-module-owner"))
+        polledModule.poll()
+        await settle()
+        precondition(api.requests.last?.path == "api/call/status")
+        api.complete(api.requests.count - 1, json: #"{"state":"active","number":"module-call"}"#)
+        await wait { polledModule.status.isActive }
+        polledModule.readerAvailable = { true }
+        polledModule.poll()
+        await settle()
+        api.complete(api.requests.count - 1, json: #"{"generation":99,"source":"reader","call":{"state":"active","media_ready":true,"early_media":false,"signaling_ready":true}}"#)
+        await wait { api.requests.last?.path == "api/call/status" }
+        api.complete(api.requests.count - 1, json: #"{"state":"active","number":"module-call"}"#)
+        await settle()
+        polledModule.selectEndpoint("reader")
+        precondition(polledModule.endpoint == "module" && polledModule.status.number == "module-call",
+                     "VoWiFi poll/UI selection stole the module owner first observed by polling")
+        polledModule.poll()
+        await settle()
+        api.complete(api.requests.count - 1, json: #"{"generation":99,"source":"reader","call":{"state":"active","media_ready":true,"early_media":false,"signaling_ready":true}}"#)
+        await wait { api.requests.last?.path == "api/call/status" }
+        api.complete(api.requests.count - 1, json: #"{"state":"idle"}"#)
+        await wait { polledModule.status.isIdle }
+        polledModule.poll()
+        await settle()
+        api.complete(api.requests.count - 1, json: #"{"generation":100,"source":"module","call":{"state":"active","media_ready":true,"early_media":false,"signaling_ready":true}}"#)
+        await wait { polledModule.endpoint == "module-vowifi" && polledModule.status.isActive }
+        polledModule.reset()
+        print("PASS: first module poll binds endpoint owner; later VoWiFi cannot steal it before module terminal idle")
 
         let ownerRuntime = CallRuntimeStore(
             backend: BackendProcess(), defaults: isolatedDefaults("owner"))

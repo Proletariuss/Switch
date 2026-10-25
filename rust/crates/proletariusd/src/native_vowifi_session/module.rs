@@ -13,6 +13,8 @@ mod projection;
 #[cfg(test)]
 mod reconcile_tests;
 mod request;
+#[path = "module/stop_control.rs"]
+mod stop_control;
 #[cfg(test)]
 mod tests;
 
@@ -87,6 +89,7 @@ struct Inner {
 }
 #[derive(Default)]
 struct State {
+    last_stop: super::stop_control::Retired,
     stopping: bool,
     transport_recovering: bool,
     next: u64,
@@ -112,6 +115,7 @@ impl State {
     }
 }
 struct Record {
+    control: Arc<super::stop_control::Owner>,
     id: u64,
     claim: Arc<Claim>,
     /// Exact connection intent captured when this public operation was
@@ -121,7 +125,7 @@ struct Record {
     stop: watch::Sender<bool>,
     state: Mutex<RecordState>,
     completed: Notify,
-    task: Mutex<Option<tokio::task::JoinHandle<()>>>,
+    join: super::stop_control::TaskJoin,
 }
 #[derive(Default)]
 struct RecordState {
@@ -229,7 +233,7 @@ impl NativeLifecycle {
                     transactions: state.ims_sms_transactions.clone(),
                     calls: state.call_facts.clone(),
                     root: state.multistandby_store.data_root().to_path_buf(),
-                    epoch: crate::snapshot::new_instance_id(),
+                    epoch: super::stop_control::new_epoch()?,
                     state: Mutex::new(State {
                         requests: super::operation::RequestLedger::open(
                             state.multistandby_store.data_root(),
@@ -252,6 +256,17 @@ impl NativeLifecycle {
     }
 }
 impl Service {
+    fn stop_target_for(
+        &self,
+        projection: &super::operation::Projection,
+    ) -> Option<super::stop_control::Target> {
+        let state = self.0.state.lock().ok()?;
+        let record = state.record.as_ref()?;
+        let (current, _) = self.operation_observation_in_state(&state, Some(record));
+        (current.operation_id == projection.operation_id
+            && current.generation == projection.generation)
+            .then(|| record.control.target("module", &self.0.epoch, record.id))
+    }
     fn lookup_request(
         &self,
         request_id: &str,
@@ -365,6 +380,9 @@ impl Service {
             // normal retained worker/RF join below in stop_before.
             return Ok(());
         }
+        if record.join.started() {
+            return Err("module_vowifi_cleanup_unconfirmed");
+        }
         #[cfg(test)]
         if self.0.persistence_hooks.fail_release() {
             return Err("module_vowifi_cleanup_unconfirmed");
@@ -379,6 +397,7 @@ impl Service {
         }
         status.provisional = false;
         status.cleanup_error = None;
+        record.join.confirm_unspawned()?;
         status.complete_cleanup();
         drop(status);
         record.completed.notify_waiters();
@@ -387,6 +406,12 @@ impl Service {
 
     fn reject_provisional(&self, state: &mut State, record: Arc<Record>, error: &'static str) {
         let previous = state.record.replace(record.clone());
+        if let Some(previous) = &previous {
+            let target = previous
+                .control
+                .target("module", &self.0.epoch, previous.id);
+            super::stop_control::retire(&mut state.last_stop, &previous.control, target);
+        }
         {
             let mut status = record.state.lock().unwrap_or_else(|e| e.into_inner());
             status.error = Some(format!("模块 Wi-Fi Calling: {error}"));
@@ -637,48 +662,18 @@ impl Service {
             state.stopping = true;
         }
         record.stop.send_replace(true);
-        loop {
-            let notified = record.completed.notified();
-            if record
-                .state
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .retired
-            {
-                break;
-            }
-            tokio::time::timeout_at(deadline, notified)
-                .await
-                .map_err(|_| "module_vowifi_cleanup_unconfirmed")?;
+        let joined = tokio::time::timeout_at(deadline, record.join.wait())
+            .await
+            .map_err(|_| "module_vowifi_cleanup_unconfirmed")??;
+        if !joined {
+            return Err("module_vowifi_worker_failed");
         }
-        // A published retired bit is not a join. Keep the handle in Record
-        // across a cancelled waiter; only remove a handle already finished.
-        loop {
-            let joined = {
-                let mut task = record.task.lock().unwrap_or_else(|e| e.into_inner());
-                if task.as_ref().is_some_and(|v| v.is_finished()) {
-                    task.take()
-                } else {
-                    None
-                }
-            };
-            if let Some(task) = joined {
-                task.await.map_err(|_| "module_vowifi_worker_failed")?;
-                return Ok(());
-            }
-            if record
-                .task
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .is_none()
-            {
-                return Ok(());
-            }
-            if tokio::time::Instant::now() >= deadline {
-                return Err("module_vowifi_cleanup_unconfirmed");
-            }
-            tokio::time::sleep(Duration::from_millis(10)).await;
+        if !record.state.lock().map(|s| s.retired).unwrap_or(false)
+            || !matches!(record.claim.try_is_current(), Ok(false))
+        {
+            return Err("module_vowifi_cleanup_unconfirmed");
         }
+        Ok(())
     }
     fn request_with_observation(
         &self,
@@ -695,6 +690,9 @@ impl Service {
             return Ok((false, None, Some(receipt)));
         }
         state.check_request(enable)?;
+        if enable && state.record.as_ref().is_some_and(|r| r.control.busy()) {
+            return Err("module_vowifi_busy");
+        }
         if let Some(options) = options {
             if let Some(record) = &state.record {
                 let status = record.state.lock().unwrap_or_else(|e| e.into_inner());
@@ -805,6 +803,7 @@ impl Service {
         // Gate acquisition consumes this sequence even if persistence fails.
         state.next = id;
         let record = Arc::new(Record {
+            control: Default::default(),
             id,
             claim,
             connection,
@@ -820,7 +819,7 @@ impl Service {
                 ..Default::default()
             }),
             completed: Notify::new(),
-            task: Mutex::new(None),
+            join: Default::default(),
         });
         let receipt = match options
             .map(|options| self.remember_request(&mut state, options, fingerprint, Some(&record)))
@@ -847,6 +846,11 @@ impl Service {
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .provisional = false;
+        if let Some(previous) = &state.record {
+            let owner = previous.control.clone();
+            let target = owner.target("module", &self.0.epoch, previous.id);
+            super::stop_control::retire(&mut state.last_stop, &owner, target);
+        }
         state.record = Some(record.clone());
         let deadline = record
             .state
@@ -877,7 +881,7 @@ impl Service {
         });
         let resources = self.clone();
         let worker = record.clone();
-        *record.task.lock().unwrap_or_else(|e| e.into_inner()) = Some(tokio::spawn(async move {
+        record.join.spawn(async move {
             let retained = worker.clone();
             let work = tokio::spawn(async move { resources.run(retained).await });
             if work.await.is_err() {
@@ -898,7 +902,7 @@ impl Service {
             status.complete_cleanup();
             drop(status);
             worker.completed.notify_waiters();
-        }));
+        })?;
         Ok((false, Some(record), receipt))
     }
     async fn run(&self, record: Arc<Record>) {
@@ -1212,7 +1216,9 @@ impl Service {
             return self.status_without_record(idle_mode);
         };
         let status = record.state.lock().unwrap_or_else(|e| e.into_inner());
-        Self::status_for_locked(&record, &status, idle_mode)
+        let mut value = Self::status_for_locked(&record, &status, idle_mode);
+        value["stop_target"] = json!(record.control.target("module", &self.0.epoch, record.id));
+        value
     }
     fn status_without_record(&self, idle_mode: Option<u8>) -> Value {
         let mut value = Self::default_status();
@@ -1454,6 +1460,9 @@ impl Service {
         B::Error: std::error::Error + Send + Sync + 'static,
     {
         let path = request.uri().path().to_owned();
+        if path == super::stop_control::MODULE_PATH {
+            return self.handle_stop_control(&request);
+        }
         if path == "/api/vowifi/reconcile" {
             return if request.method() == hyper::Method::POST {
                 self.reconcile_unobserved(request).await
@@ -1624,7 +1633,7 @@ impl Service {
                 );
                 response(
                     StatusCode::ACCEPTED,
-                    json!({"accepted":true,"cancelling":cancelling,"operation":projection}),
+                    json!({"accepted":true,"cancelling":cancelling,"stop_target":self.stop_target_for(&projection),"operation":projection}),
                 )
             }
             Ok((true, _, _)) => response(

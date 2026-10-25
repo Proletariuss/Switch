@@ -1,7 +1,12 @@
-//! Shared pre-dispatch HTTP ingress limits. Never wrap accepted card work in a timeout.
+//! Ingress limits and response-only transfer limits. Accepted owners are never timed out.
 use hyper::server::conn::http1;
 use hyper_util::rt::TokioTimer;
 use std::time::Duration;
+
+mod response;
+pub(crate) use response::serve_full_response;
+#[cfg(test)]
+pub(crate) use response::serve_full_response_with_deadlines;
 
 const HEADER_READ_TIMEOUT: Duration = Duration::from_secs(5);
 const BODY_READ_TIMEOUT: Duration = Duration::from_secs(5);

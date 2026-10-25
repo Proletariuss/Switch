@@ -22,6 +22,7 @@ async fn production_preparation_caller_case(public_stop_during_reap: bool) {
         .acquire_native_module(&service.0.epoch, 1)
         .unwrap();
     let record = Arc::new(Record {
+        control: Default::default(),
         id: 1,
         claim,
         connection: request::automatic(),
@@ -31,7 +32,7 @@ async fn production_preparation_caller_case(public_stop_during_reap: bool) {
             ..Default::default()
         }),
         completed: Notify::new(),
-        task: Mutex::new(None),
+        join: Default::default(),
     });
     let card =
         ModuleSessionCard::begin_prepare(usb.clone(), radio.clone(), record.stop.subscribe());
@@ -189,6 +190,7 @@ fn registered_publication_cannot_overwrite_an_admitted_disable() {
     let claim = gate.acquire_native_module("register-stop-race", 1).unwrap();
     let (stop, observed_stop) = watch::channel(false);
     let record = Record {
+        control: Default::default(),
         id: 1,
         claim: claim.clone(),
         connection: request::automatic(),
@@ -200,7 +202,7 @@ fn registered_publication_cannot_overwrite_an_admitted_disable() {
             ..RecordState::default()
         }),
         completed: Notify::new(),
-        task: Mutex::new(None),
+        join: Default::default(),
     };
 
     record.stop.send_replace(true);
@@ -233,6 +235,7 @@ fn registered_publication_completes_a_live_start() {
     let claim = gate.acquire_native_module("register-live", 1).unwrap();
     let (stop, observed_stop) = watch::channel(false);
     let record = Record {
+        control: Default::default(),
         id: 1,
         claim: claim.clone(),
         connection: request::automatic(),
@@ -242,7 +245,7 @@ fn registered_publication_completes_a_live_start() {
             ..RecordState::default()
         }),
         completed: Notify::new(),
-        task: Mutex::new(None),
+        join: Default::default(),
     };
 
     publish_registered_operation(&record, &observed_stop);
@@ -271,6 +274,7 @@ fn failed_projection_fixture() -> (PathBuf, crate::ServerState, Service, Arc<Rec
         .acquire_native_module(&service.0.epoch, 1)
         .unwrap();
     let record = Arc::new(Record {
+        control: Default::default(),
         id: 1,
         claim,
         connection: request::automatic(),
@@ -285,7 +289,7 @@ fn failed_projection_fixture() -> (PathBuf, crate::ServerState, Service, Arc<Rec
             ..Default::default()
         }),
         completed: Notify::new(),
-        task: Mutex::new(None),
+        join: Default::default(),
     });
     service.0.state.lock().unwrap().record = Some(record.clone());
     (root, server, service, record)
@@ -502,6 +506,7 @@ async fn receipt_observation_fences_successor_admission_and_resamples_disable_se
             .release_confirmed()
             .unwrap();
         let successor = Arc::new(Record {
+            control: Default::default(),
             id: 2,
             claim: publisher
                 .0
@@ -519,7 +524,7 @@ async fn receipt_observation_fences_successor_admission_and_resamples_disable_se
                 ..Default::default()
             }),
             completed: Notify::new(),
-            task: Mutex::new(None),
+            join: Default::default(),
         });
         state.next = 2;
         state.record = Some(successor.clone());
@@ -698,13 +703,14 @@ fn transport_pause_fences_first_start_and_does_not_revive_stopped_attempt_or_shu
     let gate = Arc::new(crate::ordinary_vowifi_admission::Gate::default());
     let claim = gate.acquire_native_module("pause-fixture", 1).unwrap();
     let record = Arc::new(Record {
+        control: Default::default(),
         id: 1,
         claim,
         connection: request::automatic(),
         stop: watch::channel(false).0,
         state: Mutex::new(RecordState::default()),
         completed: Notify::new(),
-        task: Mutex::new(None),
+        join: Default::default(),
     });
     state.record = Some(record.clone());
     state.pause_transport();
@@ -810,6 +816,7 @@ fn internal_retry_keeps_operation_identity_and_never_projects_superseded() {
         .acquire_native_module(&service.0.epoch, 1)
         .unwrap();
     let record = Arc::new(Record {
+        control: Default::default(),
         id: 1,
         claim: claim.clone(),
         connection: request::automatic(),
@@ -825,7 +832,7 @@ fn internal_retry_keeps_operation_identity_and_never_projects_superseded() {
             ..Default::default()
         }),
         completed: Notify::new(),
-        task: Mutex::new(None),
+        join: Default::default(),
     });
     service.0.state.lock().unwrap().record = Some(record.clone());
 
@@ -1062,13 +1069,14 @@ async fn public_vowifi_routes_reject_identity_bypasses_before_any_dispatch() {
         .acquire_native_module("identity-fixture", 42)
         .unwrap();
     let record = Arc::new(Record {
+        control: Default::default(),
         id: 42,
         claim: claim.clone(),
         connection: request::automatic(),
         stop: watch::channel(false).0,
         state: Mutex::new(RecordState::default()),
         completed: Notify::new(),
-        task: Mutex::new(None),
+        join: Default::default(),
     });
     module.0.state.lock().unwrap().record = Some(record.clone());
     for body in [

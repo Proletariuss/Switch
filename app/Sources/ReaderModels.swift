@@ -519,12 +519,14 @@ struct ReaderVoWiFiStatus: Decodable {
     let progressStep: Int
     let progressDesc: String?
     let operation: VoWiFiOperation?
+    let stopTarget: VoWiFiStopTarget?
 
     enum CodingKeys: String, CodingKey {
 		case readerID = "reader_id"
 		case simID = "sim_id"
         case readerGeneration = "reader_generation"
         case available, operation
+        case stopTarget = "stop_target"
         case mcc, mnc, imsi, imei
         case epdgFqdn = "epdg_fqdn"
 		case epdgSource = "epdg_source"
@@ -584,6 +586,7 @@ struct ReaderVoWiFiStatus: Decodable {
         progressStep = try c.decodeIfPresent(Int.self, forKey: .progressStep) ?? 0
         progressDesc = try c.decodeIfPresent(String.self, forKey: .progressDesc) ?? ""
         operation = try c.decodeIfPresent(VoWiFiOperation.self, forKey: .operation)
+        stopTarget = try c.decodeIfPresent(VoWiFiStopTarget.self, forKey: .stopTarget)
     }
 }
 

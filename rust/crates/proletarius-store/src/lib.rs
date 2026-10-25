@@ -13,6 +13,7 @@ use serde_json::Value;
 
 #[cfg(any(test, feature = "device-sms-generation-seal"))]
 pub mod device_sms_seal;
+mod legacy_empty;
 pub mod raw;
 
 pub const STORE_CONTRACT: &str = "atomic-json-archive-v1";

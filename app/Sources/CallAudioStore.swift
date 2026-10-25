@@ -54,6 +54,16 @@ final class CallAudioStore: ObservableObject {
     }
     private var readerAudioBinding: ReaderAudioBinding?
     private var readerAudioSession: ReaderAudioSessionTicket?
+    // Platform ownership is independent of signalling selection and UI flags.
+    private enum AudioOwner { case moduleStarting, module, reader }
+    private var audioOwner: AudioOwner?
+    private var ownsModuleAudio: Bool { audioOwner == .moduleStarting || audioOwner == .module }
+    // Potential backend ownership survives refused/failed starts until a stop
+    // receipt settles the durable API generation. This is not a live HAL owner.
+    private var moduleBackendRevision: UInt64?
+    private var moduleBackendStart: Task<CallAudioStartResult, Error>?
+    private var moduleBackendRetirement: Task<Void, Never>?
+    private var moduleBackendResumeRevision: UInt64?
 
     init(backend: BackendProcess) {
         self.backend = backend
@@ -68,7 +78,8 @@ final class CallAudioStore: ObservableObject {
         stop(stopModuleRoute: false)
         readerHangupFence = nil
         moduleHangupPending = false
-        error = nil
+        if !AudioBridge.shared.lifecycleSnapshot.retirementPending,
+           moduleBackendRevision == nil { error = nil }
         readerInputName = "系统默认输入"
         readerOutputName = "系统默认输出"
         readerProcessingName = "软件抗干扰与限幅"
@@ -78,6 +89,9 @@ final class CallAudioStore: ObservableObject {
         let endpoint = currentEndpoint?() ?? "module"
         let readerCall = currentReaderState?()
         let readerIntent = ReaderAudioAdmission.decide(status: status, call: readerCall)
+        if isVoWiFiEndpoint(endpoint), ownsModuleAudio {
+            stop(stopModuleRoute: true, resumeAfterRetirement: true)
+        }
         var retiredReaderForEndpointChange = false
         if let binding = readerAudioBinding,
            !isVoWiFiEndpoint(endpoint) || readerCall.map(binding.matches) != true
@@ -105,14 +119,14 @@ final class CallAudioStore: ObservableObject {
         }
         if status.isActive {
             if endpoint == "module" {
-                if !previous.isActive || retiredReaderForEndpointChange { startModuleAudio() }
+                if !previous.isActive || retiredReaderForEndpointChange || audioOwner == nil { startModuleAudio() }
             } else if isVoWiFiEndpoint(endpoint),
                       readerIntent == .duplex,
                       let readerCall,
                       let port = readerCall.audioPort,
                       let token = readerCall.audioToken {
                 refreshReaderRouteDescription()
-                if running {
+                if audioOwner == .reader, running {
                     ReaderVoWiFiAudioBridge.shared.setLocalRingbackEnabled(false)
                     if !readerMicrophoneActive { enableReaderMicrophone() }
                 } else {
@@ -128,7 +142,7 @@ final class CallAudioStore: ObservableObject {
                   readerIntent.isReceiveOnly,
                   let port = readerCall.audioPort,
                   let token = readerCall.audioToken {
-            if running {
+            if audioOwner == .reader, running {
                 ReaderVoWiFiAudioBridge.shared.setLocalRingbackEnabled(
                     readerIntent.localRingback)
                 readerPhase = readerIntent.isIncomingReceiveOnly
@@ -171,18 +185,30 @@ final class CallAudioStore: ObservableObject {
     }
 
     private func startModuleAudio(activateBackendRoute: Bool) {
+        guard moduleRetirementAllowsReplacement() else { return }
         guard !moduleHangupPending, activationTask == nil, !running else { return }
+        if activateBackendRoute, moduleBackendRevision != nil {
+            retireModuleBackendRoute(resume: true)
+            return
+        }
         guard moduleCallModeReady?() == true else {
             error = "通话已接通，但通话模式尚未就绪。请挂断后完成运行时准备。"
             return
         }
         operationRevision &+= 1
         let revision = operationRevision
+        audioOwner = .moduleStarting
         error = nil
         activationTask = Task { [weak self] in
             guard let self else { return }
             defer {
-                if revision == self.operationRevision { self.activationTask = nil }
+                if revision == self.operationRevision {
+                    self.activationTask = nil
+                    if self.audioOwner == .moduleStarting {
+                        let snapshot = AudioBridge.shared.lifecycleSnapshot
+                        self.audioOwner = snapshot.running || snapshot.retirementPending ? .module : nil
+                    }
+                }
             }
             do {
                 try Task.checkCancellation()
@@ -200,12 +226,18 @@ final class CallAudioStore: ObservableObject {
                 guard revision == self.operationRevision, !self.moduleHangupPending,
                       self.currentStatus?().isActive == true,
                       self.currentEndpoint?() == "module" else { return }
+                guard self.moduleRetirementAllowsReplacement() else { return }
                 if activateBackendRoute {
-                    let result: CallAudioStartResult = try await APIClient(timeoutInterval: 60)
-                        .send("api/call/audio/start")
+                    self.moduleBackendRevision = revision
+                    let request = Task { () throws -> CallAudioStartResult in
+                        try await APIClient(timeoutInterval: 60).send("api/call/audio/start")
+                    }
+                    self.moduleBackendStart = request
+                    let result = try await request.value
                     guard revision == self.operationRevision else { return }
                     guard result.started else {
                         self.error = "模块没有确认通话音频路由已启动。"
+                        self.retireModuleBackendRoute()
                         return
                     }
                 }
@@ -213,19 +245,13 @@ final class CallAudioStore: ObservableObject {
                 guard revision == self.operationRevision,
                       self.currentStatus?().isActive == true,
                       self.currentEndpoint?() == "module" else {
-                    if activateBackendRoute {
-                        let _: CallAudioStopResult? = try? await APIClient(timeoutInterval: 20)
-                            .send("api/call/audio/stop")
-                    }
+                    if activateBackendRoute { self.retireModuleBackendRoute() }
                     return
                 }
                 if let bridgeError = AudioBridge.shared.start() {
                     self.error = bridgeError
-                    self.running = false
-                    if activateBackendRoute {
-                        let _: CallAudioStopResult? = try? await APIClient(timeoutInterval: 20)
-                            .send("api/call/audio/stop")
-                    }
+                    self.running = AudioBridge.shared.lifecycleSnapshot.running
+                    if activateBackendRoute { self.retireModuleBackendRoute() }
                     return
                 }
                 guard revision == self.operationRevision else {
@@ -235,12 +261,14 @@ final class CallAudioStore: ObservableObject {
                     return
                 }
                 self.running = true
+                self.audioOwner = .module
             } catch is CancellationError {
                 // The stop/hangup path owns route cleanup.
             } catch {
                 guard revision == self.operationRevision else { return }
                 self.error = "通话音频启动失败：\(error.localizedDescription)"
-                self.running = false
+                self.running = AudioBridge.shared.lifecycleSnapshot.running
+                self.retireModuleBackendRoute()
             }
         }
     }
@@ -251,7 +279,13 @@ final class CallAudioStore: ObservableObject {
         captureMicrophone: Bool,
         localRingback: Bool
     ) {
+        guard moduleRetirementAllowsReplacement(requireStopped: true) else { return }
+        if moduleBackendRevision != nil {
+            retireModuleBackendRoute(resume: true)
+            return
+        }
         guard readerHangupFence == nil, activationTask == nil, !running else { return }
+        audioOwner = .reader
         readerAudioBinding = ReaderAudioBinding(callID: currentReaderState?()?.callID, port: port, token: token)
         let session = ReaderAudioSessionTicket()
         readerAudioSession = session
@@ -281,6 +315,7 @@ final class CallAudioStore: ObservableObject {
             }
             guard !Task.isCancelled, revision == self.operationRevision,
                   self.matchesReaderAudio(port: port, token: token) else { return }
+            guard self.moduleRetirementAllowsReplacement(requireStopped: true) else { return }
             self.refreshReaderRouteDescription()
             let bridgeError = await ReaderVoWiFiAudioBridge.shared.start(
                 port: port,
@@ -294,6 +329,7 @@ final class CallAudioStore: ObservableObject {
                 ReaderVoWiFiAudioBridge.shared.stop(session: session)
                 return
             }
+            guard self.moduleRetirementAllowsReplacement(requireStopped: true) else { return }
             let completedIntent = ReaderAudioAdmission.decide(
                 status: self.currentStatus?(), call: self.currentReaderState?())
             guard self.matchesReaderAudio(port: port, token: token),
@@ -321,6 +357,7 @@ final class CallAudioStore: ObservableObject {
     }
 
     private func enableReaderMicrophone() {
+        guard moduleRetirementAllowsReplacement(requireStopped: true) else { return }
         guard readerHangupFence == nil, activationTask == nil, running, !readerMicrophoneActive,
               ReaderAudioAdmission.decide(
                   status: currentStatus?(), call: currentReaderState?()) == .duplex,
@@ -339,6 +376,7 @@ final class CallAudioStore: ObservableObject {
                   self.matchesReaderAudio(port: port, token: token),
                   ReaderAudioAdmission.decide(
                       status: self.currentStatus?(), call: self.currentReaderState?()) == .duplex else { return }
+            guard self.moduleRetirementAllowsReplacement(requireStopped: true) else { return }
             let bridgeError = await ReaderVoWiFiAudioBridge.shared.enableMicrophone(session: session)
             guard !Task.isCancelled,
                   revision == self.operationRevision,
@@ -348,6 +386,7 @@ final class CallAudioStore: ObservableObject {
                 ReaderVoWiFiAudioBridge.shared.stop(session: session)
                 return
             }
+            guard self.moduleRetirementAllowsReplacement(requireStopped: true) else { return }
             self.error = bridgeError
             self.readerMicrophoneActive = bridgeError == nil
             self.readerProcessingName = ReaderVoWiFiAudioBridge.shared.audioProcessingDescription()
@@ -355,12 +394,10 @@ final class CallAudioStore: ObservableObject {
         }
     }
 
-    func stop(stopModuleRoute: Bool = true) {
-        let shouldStopModuleRoute = stopModuleRoute
-            && currentEndpoint?() == "module"
-            && (running || activationTask != nil)
+    func stop(stopModuleRoute: Bool = true, resumeAfterRetirement: Bool = false) {
+        let shouldStopModuleRoute = stopModuleRoute && moduleBackendRevision != nil
         operationRevision &+= 1
-        let revision = operationRevision
+        moduleBackendResumeRevision = nil
         activationTask?.cancel()
         activationTask = nil
         routeChangeTask?.cancel()
@@ -371,28 +408,76 @@ final class CallAudioStore: ObservableObject {
         }
         readerAudioSession = nil
         readerAudioBinding = nil
-        running = false
+        let snapshot = AudioBridge.shared.lifecycleSnapshot
+        running = snapshot.running
+        audioOwner = snapshot.retirementPending || snapshot.running ? .module : nil
         readerMicrophoneActive = false
         readerPhase = "未连接"
         if let moduleAudioStopError {
             error = "本机模块音频清理未确认：\(moduleAudioStopError)"
         }
-        if shouldStopModuleRoute, case .running = backend.state {
-            Task { [weak self] in
-                do {
-                    let _: CallAudioStopResult = try await APIClient(timeoutInterval: 20)
-                        .send("api/call/audio/stop")
-                } catch {
-                    guard let self, revision == self.operationRevision else { return }
-                    let routeFailure = "模块音频路由关闭失败：\(error.localizedDescription)"
-                    if let moduleAudioStopError {
-                        self.error = "本机音频未确认停止（\(moduleAudioStopError)）；\(routeFailure)"
-                    } else {
-                        self.error = routeFailure
-                    }
+        if shouldStopModuleRoute { retireModuleBackendRoute(resume: resumeAfterRetirement) }
+    }
+
+    /// No successor backend start is admitted until this captured generation's
+    /// start has settled and its stop is acknowledged. APIClient supplies the
+    /// durable audio_generation; endpoint changes cannot retarget this cleanup.
+    private func retireModuleBackendRoute(resume: Bool = false) {
+        if resume { moduleBackendResumeRevision = operationRevision }
+        guard let owner = moduleBackendRevision else { return }
+        guard case .running = backend.state else {
+            error = "模块后端未运行，旧音频路由关闭未确认；恢复后请重试"
+            return
+        }
+        guard moduleBackendRetirement == nil else { return }
+        let start = moduleBackendStart
+        moduleBackendRetirement = Task { [weak self] in
+            _ = try? await start?.value
+            guard let self, self.moduleBackendRevision == owner else { return }
+            defer { self.moduleBackendRetirement = nil }
+            do {
+                let result: CallAudioStopResult = try await APIClient(timeoutInterval: 20)
+                    .send("api/call/audio/stop")
+                guard self.moduleBackendRevision == owner else { return }
+                guard result.stopped else {
+                    self.error = "模块音频路由关闭未确认，未启动替代音频"
+                    return
                 }
+                self.moduleBackendRevision = nil
+                self.moduleBackendStart = nil
+                // A newer UI operation may have stopped or changed intent.
+                // Re-evaluate current admission rather than captured endpoint.
+                if self.moduleBackendResumeRevision == self.operationRevision,
+                   let status = self.currentStatus?() {
+                    self.moduleBackendResumeRevision = nil
+                    self.handleStatusChange(previous: status, status: status)
+                }
+            } catch {
+                guard self.moduleBackendRevision == owner else { return }
+                self.error = "模块音频路由关闭未确认：\(error.localizedDescription)"
             }
         }
+    }
+
+    /// The platform owner's locked snapshot is authoritative even if a caller
+    /// changed the published UI flag. No reader graph may replace unretired HAL
+    /// registrations, including a stopped proc whose destroy is still pending.
+    private func moduleRetirementAllowsReplacement(requireStopped: Bool = false) -> Bool {
+        let snapshot = AudioBridge.shared.lifecycleSnapshot
+        guard snapshot.retirementPending || (requireStopped && snapshot.running) else { return true }
+        if let session = readerAudioSession {
+            ReaderVoWiFiAudioBridge.shared.stop(session: session)
+        }
+        readerAudioSession = nil
+        readerAudioBinding = nil
+        readerMicrophoneActive = false
+        readerPhase = "未连接"
+        running = snapshot.running
+        audioOwner = .module
+        if error?.contains("未确认") != true {
+            error = "本机模块音频清理未确认，请先重试停止旧路由"
+        }
+        return false
     }
 
     private func refreshReaderRouteDescription() {
@@ -415,9 +500,16 @@ final class CallAudioStore: ObservableObject {
             } catch {
                 return
             }
-            guard let self, self.running else { return }
+            guard let self, self.audioOwner != nil else { return }
             let endpoint = self.currentEndpoint?() ?? "module"
             if isVoWiFiEndpoint(endpoint) {
+                if self.ownsModuleAudio {
+                    self.stop(stopModuleRoute: true, resumeAfterRetirement: true)
+                    if let status = self.currentStatus?() {
+                        self.handleStatusChange(previous: status, status: status)
+                    }
+                    return
+                }
                 let call = self.currentReaderState?()
                 let status = self.currentStatus?()
                 let intent = ReaderAudioAdmission.decide(status: status, call: call)
@@ -430,7 +522,9 @@ final class CallAudioStore: ObservableObject {
                 self.operationRevision &+= 1
                 self.activationTask?.cancel()
                 self.activationTask = nil
-                ReaderVoWiFiAudioBridge.shared.stop()
+                if let session = self.readerAudioSession {
+                    ReaderVoWiFiAudioBridge.shared.stop(session: session)
+                }
                 self.running = false
                 self.readerMicrophoneActive = false
                 self.startReaderAudio(
@@ -440,12 +534,13 @@ final class CallAudioStore: ObservableObject {
                     localRingback: false)
                 return
             }
-            guard endpoint == "module", self.currentStatus?().isActive == true else { return }
+            guard endpoint == "module", self.audioOwner == .module,
+                  self.currentStatus?().isActive == true else { return }
             self.operationRevision &+= 1
             self.activationTask?.cancel()
             self.activationTask = nil
             let stopError = AudioBridge.shared.stop()
-            self.running = false
+            self.running = AudioBridge.shared.lifecycleSnapshot.running
             if let stopError {
                 self.error = "音频设备切换后未确认旧路由退休：\(stopError)"
                 return

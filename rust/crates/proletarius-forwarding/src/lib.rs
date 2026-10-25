@@ -37,6 +37,15 @@ pub mod test_support {
         crate::queue_store::hold_next_replace(path, lock_path, entered);
     }
 
+    /// Path-scoped real-file-lock fixture for synchronous identity reads.
+    pub fn hold_next_verification(
+        path: std::path::PathBuf,
+        lock_path: std::path::PathBuf,
+        entered: std::sync::mpsc::Sender<()>,
+    ) {
+        crate::queue_store::hold_next_verification(path, lock_path, entered);
+    }
+
     /// Inject a one-time post-rename durability fault for one queue path.
     /// This follows queue I/O when the daemon moves it to a blocking worker.
     pub fn fail_next_replace_after_rename_for_path(path: std::path::PathBuf) {

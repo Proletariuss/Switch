@@ -284,6 +284,44 @@ async fn retry_body(service: &Service, task_id: &str, request_id: &str) -> Value
         "expected_destination_revision":destination_revision(&active.id, task_id, "telegram", &task.updated_at, &status)})
 }
 
+/// Stops and joins the real autonomous runner without retiring the configured
+/// generation. Direct action-classification tests can then poison the shared
+/// queue without racing a periodic provider status observer. The caller must
+/// record the observed join result before invoking structured shutdown.
+async fn quiesce_real_runner(service: &Service) {
+    let runner = {
+        let mut state = service.0.state.lock().await;
+        let active = state.active.as_mut().unwrap();
+        active.shutdown.send(true).unwrap();
+        active.runner.take().expect("configured real runner")
+    };
+    runner.await.unwrap();
+}
+
+async fn record_quiesced_runner(service: &Service) {
+    let mut state = service.0.state.lock().await;
+    let active = state.active.as_mut().unwrap();
+    assert!(active.runner.is_none());
+    assert!(active.runner_result.is_none());
+    active.runner_result = Some(Ok(()));
+}
+
+async fn wait_provider_disk_settled(
+    worker: &ForwardingWorker<SystemForwardingClock>,
+) -> (usize, bool) {
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            let snapshot = worker.test_disk_snapshot();
+            if snapshot.0 == 0 {
+                return snapshot;
+            }
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .expect("provider disk owner did not settle")
+}
+
 #[tokio::test(flavor = "current_thread")]
 async fn wire_retry_aftercommit_keeps_public_id_unknown_and_reopen_observes_prior_authorization() {
     let root = tests::test_root();
@@ -386,6 +424,14 @@ async fn real_aftercommit_dispatch_returns503_explicit_uncertainty_before_receip
         .0,
         StatusCode::OK
     );
+    // This test isolates the direct queue-action response. Join the actual
+    // autonomous runner first so it cannot start a separate inspect against
+    // the deliberately poisoned QueueStore during shutdown.
+    quiesce_real_runner(&service).await;
+    let direct_owner = {
+        let state = service.0.state.lock().await;
+        state.active.as_ref().unwrap().queue_io.clone()
+    };
     let mut payload = retry_body(&service, &task_id, "direct-aftercommit-classification").await;
     payload.as_object_mut().unwrap().remove("client_request_id");
     let body = serde_json::from_value(payload).unwrap();
@@ -401,8 +447,132 @@ async fn real_aftercommit_dispatch_returns503_explicit_uncertainty_before_receip
     assert_eq!(value["uncertain"], true);
     assert_eq!(value["retryable"], false);
     assert_eq!(value["code"], "sms_forwarding_queue_persistence_uncertain");
+    assert_eq!(
+        direct_owner.test_snapshot(),
+        (0, false, 0, false),
+        "the direct command error was not delivered to its live observer"
+    );
+    record_quiesced_runner(&service).await;
     service.shutdown().await.unwrap();
     drop(service);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn poisoned_provider_disk_cancel_after_output_is_sticky_but_fully_drained() {
+    let root = tests::test_root();
+    let task_id = seed(&root, true);
+    let service = Service::new(&root);
+    assert_eq!(
+        wire(
+            &service,
+            "/api/sms/forwarding/configure",
+            configuration("http://127.0.0.1:9")
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    quiesce_real_runner(&service).await;
+    let (worker, telegram, bark, direct_owner) = {
+        let state = service.0.state.lock().await;
+        let active = state.active.as_ref().unwrap();
+        (
+            active.worker.clone(),
+            active.telegram_binding.clone(),
+            active.bark_binding.clone(),
+            active.queue_io.clone(),
+        )
+    };
+
+    // First prove the public operation's own observer receives the real
+    // post-rename uncertainty. This poisons the shared QueueStore without
+    // making the provider disk owner sticky.
+    let mut payload = retry_body(&service, &task_id, "provider-orphan-aftercommit").await;
+    payload.as_object_mut().unwrap().remove("client_request_id");
+    proletarius_forwarding::test_support::fail_next_replace_after_rename_for_path(
+        service.0.state_path.clone(),
+    );
+    let result = service
+        .execute_queue_action(
+            serde_json::from_value(payload).unwrap(),
+            ForwardingChannel::Telegram,
+        )
+        .await;
+    assert_eq!(result.status(), StatusCode::SERVICE_UNAVAILABLE);
+    let value: Value =
+        serde_json::from_slice(&result.into_body().collect().await.unwrap().to_bytes()).unwrap();
+    assert_eq!(value["code"], "sms_forwarding_queue_persistence_uncertain");
+    assert_eq!(value["uncertain"], true);
+    assert_eq!(direct_owner.test_snapshot(), (0, false, 0, false));
+
+    // Now start one real provider-disk inspect on the poisoned queue. Hold the
+    // blocking output after its Err exists, cancel only the Tokio observer,
+    // then release the actual job. JOB + OUTPUT + OBSERVER must all settle
+    // before pending reaches zero, and the unobserved error must stay sticky.
+    let call = worker.test_disk_call_count();
+    let (entered_signal, entered) = oneshot::channel();
+    let (release, release_wait) = std::sync::mpsc::channel();
+    worker.test_disk_hook(call, true, move || {
+        entered_signal.send(()).unwrap();
+        release_wait.recv_timeout(Duration::from_secs(10)).unwrap();
+    });
+    let inspection = {
+        let worker = worker.clone();
+        tokio::spawn(async move {
+            worker
+                .inspect_for_bindings(Some(telegram), Some(bark))
+                .await
+        })
+    };
+    tokio::time::timeout(Duration::from_secs(5), entered)
+        .await
+        .unwrap()
+        .unwrap();
+    inspection.abort();
+    assert!(inspection.await.unwrap_err().is_cancelled());
+    assert_eq!(worker.test_disk_snapshot().0, 1);
+    release.send(()).unwrap();
+    assert_eq!(wait_provider_disk_settled(&worker).await, (0, true));
+
+    record_quiesced_runner(&service).await;
+    assert_eq!(
+        service.shutdown().await,
+        Err("sms_forwarding_release_unconfirmed")
+    );
+    {
+        let state = service.0.state.lock().await;
+        let active = state.active.as_ref().unwrap();
+        assert_eq!(active.runner_result, Some(Ok(())));
+        assert_eq!(
+            active.stop_result,
+            Some(Err("sms_forwarding_release_unconfirmed"))
+        );
+        assert_eq!(worker.test_disk_snapshot(), (0, true));
+    }
+    drop(service);
+    drop(worker);
+
+    // A second provider attempt would have incremented attempts. Reopening the
+    // committed bytes proves cancellation caused neither replay nor a second
+    // provider submission; the explicit retry alone remains durable.
+    let key = StateKey::from_slice(&[17; 32]).unwrap();
+    let queue = QueueStore::open(
+        root.join("sms-forwarding/state.enc"),
+        key,
+        StateLimits::default(),
+    )
+    .unwrap();
+    let task = queue
+        .inspect()
+        .unwrap()
+        .tasks
+        .into_iter()
+        .find(|task| task.id == task_id)
+        .unwrap();
+    assert_eq!(task.telegram.attempts, 1);
+    assert!(!task.telegram.result_unknown);
+    drop(queue);
     fs::remove_dir_all(root).unwrap();
 }
 

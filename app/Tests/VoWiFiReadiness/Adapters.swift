@@ -84,6 +84,7 @@ final class ControlledAPI {
     }
 
     var pendingCount: Int { requests.count - completed.count }
+    var pendingRequestPaths: [String] { requests.enumerated().filter { !completed.contains($0.offset) }.map { $0.element.path } }
 }
 
 @MainActor

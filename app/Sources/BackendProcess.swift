@@ -138,6 +138,9 @@ enum SwitchRuntimePaths {
         environment: [String: String] = ProcessInfo.processInfo.environment,
         fileManager: FileManager = .default
     ) -> URL {
+        if let context = AcceptanceBootstrap.context {
+            return URL(fileURLWithPath: context.dataRoot, isDirectory: true)
+        }
         if let path = environment["SWITCH_DATA_DIR"], !path.isEmpty {
             precondition(path.hasPrefix("/"), "SWITCH_DATA_DIR must be an absolute path")
             return URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL
@@ -255,6 +258,17 @@ final class BackendProcess: ObservableObject {
         // but does not answer the standard QMI CTL handshake. Explicit
         // `-backend=qmi` remains available for standard QMI compositions.
         proc.arguments = ["-listen", "unix:\(socketPath)", "-backend=at"]
+        if let context = AcceptanceBootstrap.context {
+            do {
+                guard binary.path == context.backendPath else {
+                    throw AcceptanceContext.Rejection.invalid("backend-path")
+                }
+                proc.arguments?.append(AcceptanceContext.argumentPrefix + (try context.createDaemonCapsule()))
+            } catch {
+                state = .failed("隔离验收授权失效；拒绝启动后端")
+                return
+            }
+        }
         var environment = ProcessInfo.processInfo.environment
         environment["PROLETARIUS_APP_TOKEN"] = LocalBackendAuthentication.appToken
         environment["PROLETARIUS_BLE_SOCKET"] = bleSocketPath

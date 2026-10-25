@@ -1,5 +1,7 @@
 # Switch 稳定性修正与持续验收目标
 
+> **执行更新（2026-10-25，当前软件独审边界）：** 普通observed stop保留永久request ID和耐久回执；临时stop-control只作用于捕获并复核的同scope、daemon_epoch、owner_id、owner_generation，signal、耐久ACK、真实join/cleanup独立，receipt_durability=not_requested、restart_effect=none；pending不能closed，不清旧Unknown/ID，不保证重启desired-stop，不借用successor。GET/HEAD只查询，空body POST才发signal。G3后继独审为 WHOLE_G3_PASS_SOFTWARE_SCOPE_ONLY，两项原finding已限定关闭，见[G3后继组合独审](../../../../build/reports/stability-implementation-20261025/g3-successor-composition/REVIEW.md)；[原全范围FAIL](../../../../build/reports/stability-implementation-20261025/g3-whole-independent-review/REVIEW.md)保留。G4为 WHOLE_G4_PASS_SOFTWARE_SCOPE_ONLY_CURRENT_SOURCE，见[G4当前源码独审](../../../../build/reports/stability-implementation-20261025/g4-final-current-rebind/REVIEW.md)。G8只具Phase A状态修复/不可达脚手架边界，Phase B未实现；G0B的5项P2及1项P3工具finding修复中，G0B/G8/G9、shipping与release仍NO_GO。当前3.51/build351仍为source-not-final-G0B，formal_duration_seconds=0；P0 OPEN、P1–P4验收中、P5/P6 OPEN；整体分母未冻结，不报告总体百分比。本次G7刷新待独立复核/rebind，不继承原文档PASS；最新Phase A限定关闭与可恢复隔离状态见[当前进度](progress-current.md)。下方原批准目标保留，硬件/实网及整体验收仍未完成。
+
 2026-10-23 用户批准整体代码审议方案作为持续推进目标。唯一工作区为
 `/Users/StatTrak/Desktop/Switch_MAC/`，源码为 `src/`。本目标承接三轮静态审议，
 以代码完整性、数据持久性、资源归属和长期运行稳定为首要要求。

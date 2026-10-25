@@ -1,7 +1,9 @@
 # Reader service boundaries
 
-The currently working PC/SC reader, VoWiFi, SMS and call paths remain in place.
-This is an incremental boundary, not a claim that BLE card operations are live.
+Current ownership (2026-10-25, 3.51/build351, `source-not-final-G0B`): Rust
+owns reader/card business logic; Swift owns CoreBluetooth transport and UI.
+The service names below describe logical boundaries. Hardware, carrier SMS
+and calls remain separate acceptance gates. See [current runtime ownership](optimization/all-rust/README.md#current-runtime-ownership).
 
 ```text
 Reader UI ─► BluetoothReaderService ─► BluetoothReaderManager ─► CoreBluetooth
@@ -17,9 +19,11 @@ discovery, disconnection, reconnect backoff, published state and stable error
 codes. The reader UI only invokes `BluetoothReaderService`. A discovered or GATT-
 connected device is **not** considered a card session. The app-owned
 `ReaderBLEBridge` exposes a single-owner APDU channel over a token-authenticated
-Unix socket. The Go card adapter selects it only for `BLE:<CoreBluetooth UUID>`
-readers; USB PC/SC remains unchanged. Rust's reader inventory imports only a
-validated BLE identity reported by the authenticated compatibility owner.
+Unix socket. Rust's [BLE gateway](../rust/crates/proletariusd/src/reader_ble_gateway.rs)
+and [APDU consumer](../rust/crates/proletariusd/src/reader_ble_apdu.rs) select
+`BLE:<CoreBluetooth UUID>` readers and validate the authenticated bridge identity.
+Swift retains CoreBluetooth/GATT transport; Rust holds reader generation,
+card ownership and APDU business admission. PC/SC uses the Rust reader path.
 Opening the reader's Bluetooth sheet starts an unfiltered advertisement scan,
 then filters for the first-generation `ESTKme-RED` name. The sheet has an
 explicit rescan action. Once the bridge reports a powered card, the UI enables
@@ -56,13 +60,11 @@ adapter does not fabricate cellular registration or VoLTE from a PC/SC/BLE
 reader, which has no radio. `CallService` and `SmsService` depend only on the
 `Telephony` interface.
 
-`backend/cmd/proletarius-test-console` is a development-only Unix-socket
-client. It requires `--execute` for changes, hides response bodies by default,
-and never reads or stores the production app's ephemeral authentication token.
-Start an isolated development backend before using it; do not run it against a
-live production app. BLE scan/connect/disconnect/status are exposed through the
-same authenticated backend; connecting is asynchronous, so poll status before
-running card APDUs. A successful scan request alone is not a card test.
+The old Go `backend/cmd/proletarius-test-console` was a development-only
+client from the transition period and is retired; its historical procedure is
+not a current build or test instruction. BLE scan/connect/disconnect/status use
+the authenticated Rust backend. Connecting is asynchronous, so status must be
+confirmed before card APDUs. A successful scan request alone is not a card test.
 
 Structured operation logs contain timestamp, module, action, state, result and
 errorCode. Never include APDU contents, ICCID/IMSI, phone numbers, activation
@@ -70,7 +72,7 @@ codes, IMS identities or SMS bodies in those logs.
 
 ## Next integration gate
 
-1. When ESTKme-RED 2.0.3 is attached, verify the CoreBluetooth-to-Go APDU
+1. When separately authorized with ESTKme-RED 2.0.3 attached, verify the Swift CoreBluetooth-to-Rust APDU
    bridge, including claim, power-on, logical channel and USIM/ISIM selection.
 2. The offline suite now fault-injects BLE disconnect, lost notification,
    timeout, write-mode pacing and profile-switch identity mismatch; those tests

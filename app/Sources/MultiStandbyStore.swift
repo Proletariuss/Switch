@@ -1061,6 +1061,7 @@ final class MultiStandbyStore: ObservableObject {
     }
 
     private static func postNotification(_ message: MultiStandbyMessage, masked: Bool) async throws {
+        guard !AcceptanceBootstrap.isAcceptance else { return }
         let center = UNUserNotificationCenter.current()
         var settings = await center.notificationSettings()
         if settings.authorizationStatus == .notDetermined {
