@@ -297,24 +297,27 @@ async fn retain_serial_after_startup(
     intent: &crate::module_radio::NativeVoWiFiIntent,
 ) -> crate::modem_actor::SerialModuleHold {
     let binding = intent.serial_binding().unwrap();
-    tokio::time::timeout(Duration::from_secs(12), async {
-        loop {
-            match f
-                .state
-                .modem_actor
-                .retain_serial_module(&binding, intent.usb_inhibit())
-                .await
-            {
-                Ok(hold) => return hold,
-                Err(error) if error.code == "serial_card_busy" => {
-                    tokio::time::sleep(Duration::from_millis(2)).await;
-                }
-                Err(error) => panic!("serial fixture admission failed: {}", error.code),
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(12);
+    loop {
+        // Always settle an admitted retain request. Cancelling this await could
+        // lose the successful receipt while the actor keeps the physical hold.
+        match f
+            .state
+            .modem_actor
+            .retain_serial_module(&binding, intent.usb_inhibit())
+            .await
+        {
+            Ok(hold) => return hold,
+            Err(error) if error.code == "serial_card_busy" => {
+                assert!(
+                    tokio::time::Instant::now() < deadline,
+                    "serial fixture startup reached idle admission"
+                );
+                tokio::time::sleep(Duration::from_millis(2)).await;
             }
+            Err(error) => panic!("serial fixture admission failed: {}", error.code),
         }
-    })
-    .await
-    .expect("serial fixture startup reached idle admission")
+    }
 }
 async fn request(
     state: &crate::ServerState,

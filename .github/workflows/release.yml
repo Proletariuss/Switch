@@ -12,6 +12,7 @@ permissions:
 jobs:
   build:
     runs-on: macos-26
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,9 +48,9 @@ jobs:
           (cd rust && cargo +1.98.0 fmt --all -- --check)
           (cd rust && cargo +1.98.0 test --locked --workspace --exclude proletariusd)
           (cd rust && cargo +1.98.0 test --locked -p proletariusd --bin switchd-rs --no-run)
-          # These tests exercise a process-global reader admission gate. Run
-          # each exact case in a fresh test process so one fixture cannot leak
-          # ownership into the next case while still failing on any error.
+          # These tests combine retained serial fixtures with startup work. Run
+          # each exact case in a fresh process so fixture lifetimes stay
+          # isolated while every real test failure still stops the workflow.
           for test in \
             native_serial_module_supervision_tests::public_serial_module_start_stop_retains_real_identity_and_rf_until_enter_settles \
             native_serial_module_supervision_tests::module_vowifi_http_request_id_replays_exact_operation_and_rejects_payload_drift \
