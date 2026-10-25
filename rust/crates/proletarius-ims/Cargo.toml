@@ -13,7 +13,7 @@ md-5 = "=0.10.6"
 aes = { version = "=0.9.3", features = ["zeroize"] }
 cbc = { version = "=0.2.1", features = ["zeroize"] }
 des = { version = "=0.9.0", features = ["zeroize"] }
-quick-xml = "=0.38.2"
+quick-xml = "=0.41.0"
 mailparse = "=0.18.0"
 mime = "=0.3.17"
 hmac.workspace = true

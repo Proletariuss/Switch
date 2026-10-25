@@ -10,22 +10,25 @@ on:
       - 'rust/crates/**/Cargo.toml'
       - 'scripts/acceptance/daemon-capsule-fixture/Cargo.toml'
       - 'scripts/acceptance/daemon-capsule-fixture/Cargo.lock'
+      - '.github/workflows/security-audit.yml'
   workflow_dispatch:
   schedule:
     - cron: '17 2 * * 1'
 
 permissions:
   contents: read
-  checks: write
-  issues: write
 
 concurrency:
   group: switch-security-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  rustsec:
-    name: RustSec (${{ matrix.directory }})
+  rustsec-pr:
+    name: RustSec PR (${{ matrix.directory }})
+    if: github.event_name == 'pull_request'
+    # audit-check falls back to the job log when the Check API is denied on
+    # pull_request (GITHUB_HEAD_REF is set), and still fails on vulnerabilities.
+    # This also works for Dependabot/fork tokens, without requesting write access.
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     strategy:
@@ -42,3 +45,53 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           working-directory: ${{ matrix.directory }}
+
+  rustsec-manual:
+    name: RustSec manual (${{ matrix.directory }})
+    if: github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+      checks: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        directory:
+          - rust
+          - scripts/acceptance/daemon-capsule-fixture
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998 # v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          working-directory: ${{ matrix.directory }}
+
+  rustsec-scheduled:
+    name: RustSec scheduled lockfiles
+    if: github.event_name == 'schedule'
+    permissions:
+      contents: read
+      issues: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    # Run the two lockfiles sequentially to avoid racing the action's
+    # search-before-create advisory-ID deduplication across a matrix.
+    steps:
+      - id: checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Audit main workspace
+        uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998 # v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          working-directory: rust
+      - name: Audit independent fixture
+        if: always() && !cancelled() && steps.checkout.outcome == 'success'
+        uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998 # v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          working-directory: scripts/acceptance/daemon-capsule-fixture

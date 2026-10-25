@@ -443,9 +443,16 @@ async fn g3_raw_fragment_and_oversize_target_line_reject_before_business_dispatc
                 task.await.unwrap().unwrap();
                 assert!(response.starts_with(b"HTTP/1.1 400"));
                 let headers = std::str::from_utf8(&response)
-                    .unwrap().split("\r\n\r\n").next().unwrap().to_ascii_lowercase();
+                    .unwrap()
+                    .split("\r\n\r\n")
+                    .next()
+                    .unwrap()
+                    .to_ascii_lowercase();
                 assert_eq!(
-                    headers.lines().filter(|line| *line == "cache-control: no-store").count(),
+                    headers
+                        .lines()
+                        .filter(|line| *line == "cache-control: no-store")
+                        .count(),
                     1,
                 );
                 assert_eq!(

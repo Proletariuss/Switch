@@ -144,7 +144,7 @@ jobs:
       needs.classify.outputs.needs_macos == 'true' &&
       (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: macos-26
-    timeout-minutes: 22
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -184,7 +184,9 @@ jobs:
             # the baseline has been retired deliberately.
             cargo +1.98.0 clippy --locked --workspace --all-targets
             cargo +1.98.0 test --locked --workspace --exclude proletariusd
-            cargo +1.98.0 test --locked -p proletariusd --bin switchd-rs --no-run
+            # Run the full daemon suite, isolating the shared-state serial
+            # supervision cases into fresh processes below.
+            cargo +1.98.0 test --locked -p proletariusd -- --skip native_serial_module_supervision_tests::
           )
           python3 - <<'PY'
           import subprocess

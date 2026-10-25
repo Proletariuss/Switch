@@ -227,8 +227,15 @@ async fn g3_stop_control_public_rejections_always_disable_caching() {
             assert_eq!(invalid.status, 400);
             assert_eq!(invalid.header("cache-control"), Some("no-store"));
             let unauthorized = exchange(
-                fixture.state.clone(), Surface::Public, method, &target, None, None, &[],
-            ).await;
+                fixture.state.clone(),
+                Surface::Public,
+                method,
+                &target,
+                None,
+                None,
+                &[],
+            )
+            .await;
             assert_eq!(unauthorized.status, 401);
             assert_eq!(unauthorized.header("cache-control"), Some("no-store"));
         }

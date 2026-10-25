@@ -83,6 +83,10 @@ Bark 或 AWS 用户凭据。
 - XcodeGen、Homebrew `libusb` 及部分宿主工具未使用完全密封的二进制来源，因此当前
   是“有来源和锁文件的可复建快照”，不是位级可重现构建。
 
+GitHub 的 `macos-26` 托管 Runner 使用其镜像实际提供的 Xcode 26.6 与 macOS 26 SDK；
+它可以检查当前 deployment target 的编译，但不等于上述 macOS 27 SDK 构建基线，
+也不提供 macOS 27 运行时或真机、运营商验收证明。
+
 ## 发行资产边界
 
 - DMG：`Switch-3.51-macOS27.dmg`
