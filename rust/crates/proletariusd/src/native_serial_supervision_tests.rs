@@ -177,6 +177,10 @@ async fn request(
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn native_serial_public_status_health_are_cache_only_with_go_absent_or_trapped() {
     let f = Fixture::new().await;
+    // Freeze autonomous metadata/reconnect work and await the async SMS initial scan
+    // before measuring whether the two public GETs cause physical I/O.
+    f.startup.begin_shutdown();
+    f.state.modem_actor.finish_sms_receiver().await.unwrap();
     f.state.availability.mark_failed();
     assert!(!f.state.go_socket_path.exists());
     for trap_live in [false, true] {
