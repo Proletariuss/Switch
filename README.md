@@ -86,8 +86,10 @@ rustup toolchain install 1.98.0
 scripts/build.sh                 # 构建 ../dist/Switch.app，不生成 DMG
 scripts/launch.sh                # 使用隔离运行目录启动
 scripts/quit.sh                  # 正常退出应用与所属后端
-scripts/test-migration-gates.sh  # Rust/Swift/契约软件门禁，不操作真实号卡
+scripts/preflight-source.sh      # 可移植的版本、Rust-only 与运营商源契约检查
 ```
+
+GitHub Workflow 还会构建原生依赖、执行 Rust workspace 测试并构建 Release App。`scripts/test-migration-gates.sh` 是完整本地验收入口，其中包含冻结的宿主机来源台账；普通克隆不具备全部外部历史证据时，不应把其台账失败解释为业务源码或 DMG 失败。
 
 构建脚本只接受仓库约定的相邻 `build/` 与 `dist/` 工作区布局。发布来源与为私有发布进行的最小转换见 [SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md)。
 

@@ -33,9 +33,17 @@ jobs:
       - name: Fetch locked Rust build inputs
         working-directory: src
         run: CARGO_HOME="$GITHUB_WORKSPACE/build/cargo-home" cargo fetch --locked --manifest-path rust/Cargo.toml
-      - name: Run offline-capable gates
+      # The complete local migration gate also verifies frozen host-specific
+      # acceptance receipts. Those provenance records are intentionally kept in
+      # the source snapshot, but they are not a portable GitHub Runner gate.
+      - name: Run portable source and Rust gates
         working-directory: src
-        run: scripts/test-migration-gates.sh
+        run: |
+          scripts/preflight-source.sh
+          python3 scripts/build-evs.py
+          python3 scripts/build-module-supervisor.py
+          (cd rust && cargo +1.98.0 fmt --all -- --check)
+          (cd rust && cargo +1.98.0 test --locked --workspace)
       - name: Build app (no disk image)
         working-directory: src
         run: scripts/build.sh
