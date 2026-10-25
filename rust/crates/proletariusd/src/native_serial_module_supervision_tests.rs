@@ -148,6 +148,12 @@ pub(crate) struct Fixture {
 }
 impl Fixture {
     pub(crate) async fn new(reject_pdu: bool) -> Self {
+        Self::new_inner(reject_pdu, false).await
+    }
+    async fn new_quiesced(reject_pdu: bool) -> Self {
+        Self::new_inner(reject_pdu, true).await
+    }
+    async fn new_inner(reject_pdu: bool, quiesce_sms_receiver: bool) -> Self {
         let root =
             std::env::temp_dir().join(format!("s509-{}", crate::snapshot::new_instance_id()));
         std::fs::create_dir_all(&root).unwrap();
@@ -235,8 +241,19 @@ impl Fixture {
             port,
         );
         until(|| state.modem_actor.native_serial_observation().ready).await;
-        // Let the startup empty-SMS scan settle before racing a module hold.
-        tokio::time::sleep(Duration::from_millis(80)).await;
+        // `ready` and the radio bootstrap receipt are published by different
+        // retained owners. Wait for the public route predicate as well so a
+        // fixture cannot expose a transient "unavailable" state.
+        until(|| state.module_radio.native_vowifi_route_available()).await;
+        if quiesce_sms_receiver {
+            // This suite validates module lifecycle and card/RF ownership, not
+            // stored-SMS ingest. Join that unrelated retained worker so its
+            // empty-store scan cannot race the assertions below.
+            state.modem_actor.finish_sms_receiver().await.unwrap();
+        } else {
+            // Shared production-composition fixtures keep the receiver alive.
+            tokio::time::sleep(Duration::from_millis(80)).await;
+        }
         Self {
             root,
             state,
@@ -362,7 +379,7 @@ async fn request(
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn public_serial_module_start_stop_retains_real_identity_and_rf_until_enter_settles() {
-    let f = Fixture::new(false).await;
+    let f = Fixture::new_quiesced(false).await;
     let trap = UnixListener::bind(&f.state.go_socket_path).unwrap();
     let (code, idle) = request(&f.state, "GET", "/api/vowifi", json!({})).await;
     assert_eq!(code, StatusCode::OK, "{idle}");
@@ -463,7 +480,7 @@ async fn public_serial_module_start_stop_retains_real_identity_and_rf_until_ente
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn module_vowifi_http_request_id_replays_exact_operation_and_rejects_payload_drift() {
-    let f = Fixture::new(false).await;
+    let f = Fixture::new_quiesced(false).await;
     f.script.gate_enter.store(true, Ordering::Release);
     let body = json!({
         "enable": true,
@@ -628,7 +645,7 @@ async fn claimed_serial_before_radio_configuration_never_falls_back_to_live_usb_
 async fn serial_module_full_card_aka_works_without_pdu_ready_and_failed_restore_keeps_hold() {
     use crate::native_vowifi_session::card::OnDemandCard;
     use crate::reader_session_lease::ReaderAkaApplication;
-    let f = Fixture::new(true).await;
+    let f = Fixture::new_quiesced(true).await;
     // Startup owns the same serial actor while its initial empty-SMS scan is
     // settling. Acquire the production hold as a deterministic admission
     // barrier; ModuleSessionCard recovers this exact binding/token below.
@@ -701,7 +718,7 @@ async fn serial_module_full_card_aka_works_without_pdu_ready_and_failed_restore_
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn serial_module_changed_sim_sends_zero_authenticate_and_still_restores_exact_radio() {
     use crate::native_vowifi_session::card::OnDemandCard;
-    let f = Fixture::new(false).await;
+    let f = Fixture::new_quiesced(false).await;
     let intent = f.state.module_radio.native_vowifi_intent().unwrap();
     let _startup_hold = retain_serial_after_startup(&f, &intent).await;
     let (stop, stopped) = tokio::sync::watch::channel(false);
@@ -735,15 +752,11 @@ async fn serial_module_changed_sim_sends_zero_authenticate_and_still_restores_ex
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn captured_serial_intent_retired_before_hold_releases_without_touching_replacement_rf() {
-    let f = Fixture::new(false).await;
+    let f = Fixture::new_quiesced(false).await;
     let intent = f.state.module_radio.native_vowifi_intent().unwrap();
     // Freeze the automatic bootstrap owner so it cannot configure another RF
     // epoch while the deliberately stale captured capability is exercised.
-    // Join the unrelated retained SMS worker before taking the command
-    // baseline; otherwise its already-admitted empty-store scan can be
-    // mistaken for work caused by the rejected stale intent.
     f.startup.begin_shutdown();
-    f.state.modem_actor.finish_sms_receiver().await.unwrap();
     f.state
         .module_radio
         .retire_producer(PRODUCER.into())
