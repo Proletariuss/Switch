@@ -1,0 +1,50 @@
+version: 3
+kind: carrier_bundle
+id: apple_orange_jo
+bundle: Orange_jo.bundle
+supported_plmns:
+    - "41677"
+plmn_overrides:
+    "41677":
+        apns:
+            - apn: net.orange.jo
+              username: net
+              password: net
+              type_mask: 49
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4
+            - apn: mms.orange.jo
+              username: mmc
+              password: mmc
+              type_mask: 4
+            - apn: net.orange.jo
+              username: net
+              password: net
+              type_mask: 48
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4
+        ims:
+            register:
+                use_ipsec: true
+            signaling:
+                support_p_early_media: false
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - "403"
+                        - "408"
+                        - 5XX
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            media:
+                rtp_inactivity_seconds: 20
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true

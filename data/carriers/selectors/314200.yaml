@@ -1,0 +1,10 @@
+version: 2
+plmn: "314200"
+profiles:
+    - id: apple_comcast_nr_us
+      path: profiles/comcast_nr_us.yaml
+      generic: true
+      selectors:
+        - raw: "314200"
+          carrier_name: Xfinity Mobile
+          iso: US

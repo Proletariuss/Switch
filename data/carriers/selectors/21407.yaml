@@ -1,0 +1,131 @@
+version: 2
+plmn: "21407"
+profiles:
+    - id: apple_movistar_ar
+      path: profiles/movistar_ar.yaml
+      selectors:
+        - raw: 21407_ID-895407
+          carrier_name: Movistar
+          iso: AR
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "895407"
+    - id: apple_movistar_cl
+      path: profiles/movistar_cl.yaml
+      selectors:
+        - raw: 21407_ID-895602
+          carrier_name: movistar
+          iso: CL
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "895602"
+    - id: apple_movistar_co
+      path: profiles/movistar_co.yaml
+      selectors:
+        - raw: 21407_ID-8957123
+          carrier_name: movistar
+          iso: CO
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "8957123"
+    - id: apple_movistar_gt
+      path: profiles/movistar_gt.yaml
+      selectors:
+        - raw: 21407_ID-89502030
+          carrier_name: Movistar
+          iso: GT
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "89502030"
+    - id: apple_movistar_ni
+      path: profiles/movistar_ni.yaml
+      selectors:
+        - raw: 21407_ID-8950530
+          carrier_name: Tigo
+          iso: NI
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "8950530"
+    - id: apple_movistar_pa
+      path: profiles/movistar_pa.yaml
+      selectors:
+        - raw: 21407_ID-8950702
+          carrier_name: TIGO
+          iso: PA
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "8950702"
+    - id: apple_movistar_pe
+      path: profiles/movistar_pe.yaml
+      selectors:
+        - raw: 21407_ID-895106
+          carrier_name: movistar
+          iso: PE
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "895106"
+    - id: apple_movistar_sv
+      path: profiles/movistar_sv.yaml
+      selectors:
+        - raw: 21407_ID-89503040
+          carrier_name: movistar
+          iso: SV
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "89503040"
+    - id: apple_setar_aw
+      path: profiles/setar_aw.yaml
+      selectors:
+        - raw: 21407_ID-8929736301
+          carrier_name: SETAR
+          iso: AW
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "8929736301"
+    - id: apple_telefonica_es
+      path: profiles/telefonica_es.yaml
+      generic: true
+      selectors:
+        - raw: "21407"
+          carrier_name: Movistar
+          iso: ES
+    - id: apple_vivo_br
+      path: profiles/vivo_br.yaml
+      selectors:
+        - raw: 21407_ID-895506
+          carrier_name: VIVO
+          iso: BR
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "895506"
+        - raw: 21407_ID-895510
+          carrier_name: VIVO
+          iso: BR
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "895510"
+        - raw: 21407_ID-895511
+          carrier_name: VIVO
+          iso: BR
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "895511"
+        - raw: 21407_ID-895523
+          carrier_name: VIVO
+          iso: BR
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "895523"

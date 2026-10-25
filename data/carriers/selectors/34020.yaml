@@ -1,0 +1,17 @@
+version: 2
+plmn: "34020"
+profiles:
+    - id: apple_digicel_mq
+      path: profiles/digicel_mq.yaml
+      generic: true
+      selectors:
+        - raw: "34020"
+          carrier_name: Digicel
+          iso: MQ
+        - raw: 34020_ID-895962002
+          carrier_name: Wizzee
+          iso: MQ
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "895962002"

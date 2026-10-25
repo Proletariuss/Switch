@@ -1,0 +1,13 @@
+{
+  "rust_tag": "1.98.0",
+  "llvm_submodule_commit": "52ed14fcd56afc30f9cccd8ca8ce237c2eef7e04",
+  "llvm_gitlink_api": "https://api.github.com/repos/rust-lang/rust/contents/src/llvm-project?ref=1.98.0",
+  "llvm_license_url": "https://raw.githubusercontent.com/rust-lang/llvm-project/52ed14fcd56afc30f9cccd8ca8ce237c2eef7e04/libunwind/LICENSE.TXT",
+  "llvm_license_sha256": "b5efebcaca80879234098e52d1725e6d9eb8fb96a19fce625d39184b705f7b6d",
+  "musl_version": "1.2.5",
+  "musl_source_recipe": "https://raw.githubusercontent.com/rust-lang/rust/1.98.0/src/ci/docker/scripts/musl.sh",
+  "musl_source_url": "https://www.musl-libc.org/releases/musl-1.2.5.tar.gz",
+  "musl_source_sha256": "a9a118bbe84d8764da0ea0d28b3ab3fae8477fc7e4085d90102b8596fc7c75e4",
+  "musl_copyright_sha256": "f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af",
+  "extraction": "Only exact license member read in memory; no archive script executed or source tree installed"
+}

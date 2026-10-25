@@ -1,0 +1,46 @@
+version: 3
+kind: carrier_bundle
+id: apple_avantel_co
+bundle: Avantel_co.bundle
+supported_plmns:
+    - "20404"
+    - "732130"
+common:
+    apns:
+        - apn: lte.avantel.com.co
+          type_mask: 1048625
+        - apn: ims.avt.com
+          type_mask: 131072
+          allowed_ip_stack: ipv4
+          support_switch_over: true
+    ims:
+        apn: ims.avt.com
+        ip_stack: ipv4
+        media:
+            rtcp_interval_seconds: 5
+            rtp_inactivity_seconds: 25
+        register:
+            use_ipsec: true
+        signaling:
+            contact:
+                always_add_sip_instance: true
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - 3XX
+                    - 4XX
+                    - 5XX
+                    - 6XX
+            early_media_needs_header: true
+            preconditions: supported
+            require_preconditions_when_mandatory: false
+            sip_timers:
+                InviteResponseTimeout: 5000
+                T1: 2000
+                T2: 16000
+                T4: 20000
+            support_p_early_media: false
+        ussi:
+            enabled: false
+        volte:
+            enable_volte_by_default: true

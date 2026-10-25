@@ -1,0 +1,34 @@
+version: 3
+kind: carrier_bundle
+id: apple_telekomsrbija_rs
+bundle: TelekomSrbija_rs.bundle
+supported_plmns:
+    - "22003"
+plmn_overrides:
+    "22003":
+        apns:
+            - apn: gprswap
+              username: mts
+              password: "064"
+              type_mask: 32817
+            - apn: mms
+              username: mts
+              password: "064"
+              type_mask: 4
+            - apn: gprswap
+              username: mts
+              password: "064"
+              type_mask: 48
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 5121
+        entitlement:
+            entitlement_url: https://ses.telekom.rs
+        ims:
+            register:
+                use_ipsec: true
+            signaling:
+                support_p_early_media: true
+                early_media_needs_header: true
+            volte:
+                enable_volte_by_default: true

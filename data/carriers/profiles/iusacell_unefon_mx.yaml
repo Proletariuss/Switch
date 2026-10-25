@@ -1,0 +1,60 @@
+version: 3
+kind: carrier_bundle
+id: apple_iusacell_unefon_mx
+bundle: iusacell_Unefon_mx.bundle
+supported_plmns:
+    - "22201"
+    - "33405"
+    - "334050"
+common:
+    apns:
+        - apn: web.attmex.mx
+          type_mask: 1
+          allowed_ip_stack: ipv4
+          use_network_mtu: true
+        - apn: mms.attmex.mx
+          type_mask: 4
+        - apn: modem.attmex.mx
+          type_mask: 48
+          use_network_mtu: true
+        - apn: ims
+          type_mask: 131072
+          allowed_ip_stack: ipv4
+          roaming_ip_stack: ipv4v6
+          support_switch_over: true
+          no_cellular_reconnect_cause_codes:
+            - cause_codes:
+                - 27
+              recovers_on_airplane_mode: true
+              num_tries_allowed: 1
+              type: 3GPP
+    ims:
+        apn: ims
+        ip_stack: ipv4v6
+        media:
+            rtcp_inactivity_seconds: 36000
+            rtp_inactivity_seconds: 20
+        register:
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                always_add_sip_instance: true
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - 3XX
+                    - 4XX
+                    - 5XX
+                    - 6XX
+            early_media_needs_header: true
+            preconditions: unsupported
+            require_preconditions_when_mandatory: false
+            support_p_early_media: true
+        volte:
+            enable_volte_by_default: true

@@ -1,0 +1,1570 @@
+{
+  "crate": "proletarius-vowifi",
+  "example": "message_routing_fixture",
+  "kind": "go-computed",
+  "rows": [
+    {
+      "name": "0",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "1",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "2",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "3",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "invalid"
+        ],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "4",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "invalid"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "5",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "invalid"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "6",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "\u003ctel:+123\u003e"
+        ],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "tel:+123",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "7",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "\u003ctel:+123\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "tel:+123",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "8",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "\u003ctel:+123\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "tel:+123",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "9",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "\u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "10",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "\u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "11",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "\u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "12",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "\"Name, label\" \u003ctel:+123\u003e, \u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "13",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "\"Name, label\" \u003ctel:+123\u003e, \u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "14",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "\"Name, label\" \u003ctel:+123\u003e, \u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "15",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "\"Line\" \u003ctel:+44 7700-900123\u003e, \u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "16",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "\"Line\" \u003ctel:+44 7700-900123\u003e, \u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "17",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "\"Line\" \u003ctel:+44 7700-900123\u003e, \u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "18",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "tel:%2B447700900123",
+          "\u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": "+447700900123"
+      }
+    },
+    {
+      "name": "19",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "tel:%2B447700900123",
+          "\u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": "+447700900123"
+      }
+    },
+    {
+      "name": "20",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "tel:%2B447700900123",
+          "\u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": "+447700900123"
+      }
+    },
+    {
+      "name": "21",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "\u003csips:first@ims.example\u003e",
+          "\u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "22",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "\u003csips:first@ims.example\u003e",
+          "\u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "23",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "\u003csips:first@ims.example\u003e",
+          "\u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "24",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "\u003csip:configured@ims.example\u003e, \u003ctel:+123\u003e"
+        ],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "25",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "\u003csip:configured@ims.example\u003e, \u003ctel:+123\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "26",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "\u003csip:configured@ims.example\u003e, \u003ctel:+123\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "27",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "\u003csip:line@ims.example;user=phone\u003e, \u003ctel:+123\u003e"
+        ],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:line@ims.example;user=phone",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "28",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "\u003csip:line@ims.example;user=phone\u003e, \u003ctel:+123\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:line@ims.example;user=phone",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "29",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "\u003csip:line@ims.example;user=phone\u003e, \u003ctel:+123\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:line@ims.example;user=phone",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "30",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "unsupported:value, \u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "31",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "unsupported:value, \u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "32",
+      "args": [],
+      "stdin": {
+        "configured": "sip:configured@ims.example",
+        "associated": [
+          "unsupported:value, \u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "33",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:temporary@ims.example",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "34",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:temporary@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "35",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:temporary@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "36",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "invalid"
+        ],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:temporary@ims.example",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "37",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "invalid"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:temporary@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "38",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "invalid"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:temporary@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "39",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "\u003ctel:+123\u003e"
+        ],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "tel:+123",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "40",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "\u003ctel:+123\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "tel:+123",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "41",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "\u003ctel:+123\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "tel:+123",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "42",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "\u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "43",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "\u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "44",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "\u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "45",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "\"Name, label\" \u003ctel:+123\u003e, \u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "tel:+123",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "46",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "\"Name, label\" \u003ctel:+123\u003e, \u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "tel:+123",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "47",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "\"Name, label\" \u003ctel:+123\u003e, \u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "tel:+123",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "48",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "\"Line\" \u003ctel:+44 7700-900123\u003e, \u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "49",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "\"Line\" \u003ctel:+44 7700-900123\u003e, \u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "50",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "\"Line\" \u003ctel:+44 7700-900123\u003e, \u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "51",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "tel:%2B447700900123",
+          "\u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": "+447700900123"
+      }
+    },
+    {
+      "name": "52",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "tel:%2B447700900123",
+          "\u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": "+447700900123"
+      }
+    },
+    {
+      "name": "53",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "tel:%2B447700900123",
+          "\u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": "+447700900123"
+      }
+    },
+    {
+      "name": "54",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "\u003csips:first@ims.example\u003e",
+          "\u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sips:first@ims.example",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "55",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "\u003csips:first@ims.example\u003e",
+          "\u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sips:first@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "56",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "\u003csips:first@ims.example\u003e",
+          "\u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sips:first@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "57",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "\u003csip:configured@ims.example\u003e, \u003ctel:+123\u003e"
+        ],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "58",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "\u003csip:configured@ims.example\u003e, \u003ctel:+123\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "59",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "\u003csip:configured@ims.example\u003e, \u003ctel:+123\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "60",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "\u003csip:line@ims.example;user=phone\u003e, \u003ctel:+123\u003e"
+        ],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:line@ims.example;user=phone",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "61",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "\u003csip:line@ims.example;user=phone\u003e, \u003ctel:+123\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:line@ims.example;user=phone",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "62",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "\u003csip:line@ims.example;user=phone\u003e, \u003ctel:+123\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:line@ims.example;user=phone",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "63",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "unsupported:value, \u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "64",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "unsupported:value, \u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e",
+          "\u003csip:second@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    },
+    {
+      "name": "65",
+      "args": [],
+      "stdin": {
+        "configured": "sip:temporary@ims.example",
+        "associated": [
+          "unsupported:value, \u003csip:configured@ims.example\u003e"
+        ],
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "  \u003csip:third@ims.example;lr\u003e  "
+        ],
+        "fallback_routes": [
+          "\u003csip:fallback@ims.example;lr\u003e"
+        ]
+      },
+      "expected_json": {
+        "identity": "sip:configured@ims.example",
+        "routes": [
+          "\u003csip:first@ims.example;lr\u003e, \u003csip:second@ims.example;lr\u003e",
+          "\u003csip:third@ims.example;lr\u003e"
+        ],
+        "registered_msisdn": ""
+      }
+    }
+  ],
+  "schema": 1
+}

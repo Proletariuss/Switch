@@ -1,0 +1,89 @@
+version: 3
+kind: carrier_bundle
+id: apple_o2_giffgaff_uk
+bundle: O2_Giffgaff_UK.bundle
+supported_plmns:
+    - "23410"
+plmn_overrides:
+    "23410":
+        apns:
+            - apn: giffgaff.com
+              username: giffgaff
+              type_mask: 1048629
+              tech_type_mask: 1048576
+              allowed_ip_stack: ipv4v6
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv6
+              support_switch_over: true
+        e911:
+            over_itech_supported: true
+            wifi_calling_without_entitlement: true
+        ims:
+            apn: ims
+            ip_stack: ipv6
+            epdg:
+                address: epdg.epc.mnc010.mcc234.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 16384
+                      name: AssignedPCSCFIPv4
+                      type: v4
+                    - identifier: 16386
+                      name: AssignedPCSCFIPv6
+                      type: v6
+            ike:
+                proposals:
+                    - encryption:
+                        - aes256
+                      integrity:
+                        - sha512
+                      prf:
+                        - sha512
+                      dh_groups:
+                        - 14
+                      lifetime_seconds: 80000
+                      authentication_method: None
+                      eap_method: EAP-AKA
+                nat_keepalive_enabled: true
+                nat_keepalive_seconds: 20
+                dpd:
+                    enabled: false
+                    interval_seconds: 600
+                    max_retries: 4
+                    retry_interval_seconds: 10
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes256
+                          integrity:
+                            - sha512
+                          esn: auto
+                          install_policies: true
+                          lifetime_seconds: 80000
+                    replay_window_size: 12
+                local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+                validate_remote_certificate: false
+            register:
+                use_ipsec: true
+            signaling:
+                max_udp_message_size: 1000
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                require_preconditions_when_mandatory: false
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            media:
+                rtp_inactivity_seconds: 20
+                rtcp_interval_seconds: 5
+            volte:
+                enable_volte_by_default: true
+        roaming:
+            wifi_calling_allowed: false

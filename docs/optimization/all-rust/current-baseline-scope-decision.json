@@ -1,0 +1,121 @@
+{
+  "schema": "switch.current-baseline-scope-decision.v1",
+  "decision_id": "current-verifiable-baseline-2026-10-22",
+  "status": "ADOPTED_SCOPE_DECISION_NO_FUNCTIONAL_ACCEPTANCE",
+  "authority": {
+    "kind": "direct_user_instruction",
+    "local_date": "2026-10-22",
+    "decision": "改用当前可验证基线",
+    "this_round": "软件验收；DJI 实机验收待设备接入",
+    "earlier_availability_reply": "不保留了"
+  },
+  "historical_facts": {
+    "ledger": {
+      "path": "docs/optimization/all-rust/acceptance-ledger-2026-10-19.json",
+      "sha256": "c4d76f5b11e64316de4c9e69ac2d754c0a8e2ab96bbeba06f446c9d570cbba7d"
+    },
+    "baseline_provenance": {
+      "path": "docs/optimization/all-rust/baseline-provenance.json",
+      "sha256": "7c1a97894ae7f16cecd941e1fbc42d9b9281d53cbab45b1b56a4ce507a9ca72c"
+    },
+    "legacy_equivalence_proven": false,
+    "two_eighty_source_or_switch_time_restore_proven": false,
+    "old_leaf_dispositions": [
+      {
+        "id": "P0-1.working-baseline",
+        "historical_ledger_status": "NOT_REVIEWED",
+        "current_scope_disposition": "UNVERIFIABLE_HISTORICAL_NOT_PASS",
+        "functional_pass_awarded": false
+      },
+      {
+        "id": "P0-1.baseline-280",
+        "historical_ledger_status": "NOT_REVIEWED",
+        "current_scope_disposition": "UNVERIFIABLE_HISTORICAL_NOT_PASS",
+        "functional_pass_awarded": false
+      }
+    ]
+  },
+  "current_scope": {
+    "version": "current-baseline-v1",
+    "integration_status": "VERSIONED_SCOPE_DECISION_ONLY_NO_SCORING",
+    "old_to_new_leaf_map": [
+      {
+        "old_id": "P0-1.working-baseline",
+        "new_id": "P0-1.current-source-baseline",
+        "software_evidence_status": "VERIFIED_COLD_SOURCE_EXPORT_SUBSET",
+        "functional_acceptance_status": "NOT_PASS",
+        "remaining": "Restore a complete current source tree from the pinned manifest in an isolated location and compare raw bytes and modes."
+      },
+      {
+        "old_id": "P0-1.baseline-280",
+        "new_id": "P0-1.current-build-baseline",
+        "software_evidence_status": "VERIFIED_ISOLATED_COLD_BUILD_SUBSET",
+        "functional_acceptance_status": "NOT_PASS",
+        "remaining": "Review clean-machine dependency closure and any final release identity; this cut proves neither 2.80 compatibility nor hardware behavior."
+      }
+    ],
+    "all_other_requirement_leaves_retained_without_automatic_pass": true,
+    "device_card_carrier_qmi_mbim_upgrade_legacy_scope": "PENDING_REVIEW",
+    "historical_2_80_upgrade_compatibility": "UNVERIFIED_NOT_CLAIMED",
+    "source_cut_relation": "The verified final-b build predates this metadata-only decision file. Its digest identifies that immutable build input; the post-decision source tree has a different identity and requires a new build before release."
+  },
+  "current_release_candidate": {
+    "version": "3.48",
+    "build_number": "348",
+    "backend_version": "3.48.0",
+    "artifact_status": "NOT_BUILT",
+    "dmg_path": null,
+    "dmg_sha256": null,
+    "acceptance_scope": "SOFTWARE_ONLY",
+    "external_acceptance": "UNVERIFIED_EXCLUDED_BY_USER"
+  },
+  "verified_software_cut": {
+    "name": "iteration-663-current-code-final-b",
+    "build_source_identity_sha256": "035c20e02a7f881547c2188ae148c620f6e1b167f823af719c3b1105d5bde425",
+    "selective_source_snapshot": {
+      "path": "docs/optimization/all-rust/iteration-663-source-snapshot.json",
+      "sha256": "5402927239df01df534e7cf2996c68c61f6c63951c6bef5980a083be76553d9f"
+    },
+    "full_source_manifest": {
+      "path": "build/clean-build/iteration-663-current-code-final-b/audit.json#/source",
+      "entries": 3832,
+      "canonical_array_sha256": "293ca2162619ded2d1b6ffda506a7473315dbf76974e2a4800e659fe9b10317f"
+    },
+    "cold_build_audit": {
+      "path": "build/clean-build/iteration-663-current-code-final-b/audit.json",
+      "sha256": "39bc7e173b341d649c7e6007e5139782a64e9c03341f8d9f431238dcf3f58c09"
+    },
+    "artifact_audit": {
+      "path": "build/clean-build/iteration-663-current-code-final-b/artifact-audit.json",
+      "sha256": "a82a24e2a248ba1b6f90fcd5fb9aa7f777d3c2c9d2d844855dcd3c2d858061f3",
+      "status": "passed"
+    },
+    "app": {
+      "relative_path": "build/clean-build/iteration-663-current-code-final-b/dist/Switch.app",
+      "version": "3.46",
+      "build_number": "346",
+      "backend_version": "3.46.0",
+      "tree_manifest": "build/reports/iteration-663-final-b-app-tree-manifest.json",
+      "tree_manifest_sha256": "c07d69f26ab3d4fbe1ece66681f0fc0fe083a9c632b9f807169a2ecbe15532cf",
+      "tree_sha256": "e2c3299132e9f1595b12be235670672f53b9a4189b4997214f498b9887555b53",
+      "executable_sha256": "f52ac9c27767bcb2a59ec61b716254f6201ce5a90de1ddea85215b3d991030ad",
+      "backend_executable_sha256": "289434b696e95e3ee387733e8f4ef846b3ba24abe812bd4554d824e94efb9f6d",
+      "codesign_deep_strict_verified": true,
+      "signing_mode": "ad_hoc"
+    },
+    "software_gate": {
+      "path": "build/reports/iteration-663-migration-gates.log",
+      "sha256": "324d1010ae9a0267432360c3ef10abf69228f1d589fc036fe20228b96de82839",
+      "status": "passed"
+    }
+  },
+  "accounting": {
+    "historical_p0_passes_awarded": 0,
+    "new_current_p0_passes_awarded": 0,
+    "other_functional_passes_awarded": 0,
+    "overall_denominator_frozen": false,
+    "overall_denominator": null,
+    "overall_percentage": null,
+    "overall_product_complete": false
+  }
+}

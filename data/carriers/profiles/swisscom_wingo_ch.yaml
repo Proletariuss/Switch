@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_swisscom_wingo_ch
+bundle: Swisscom_Wingo_ch.bundle
+supported_plmns:
+    - "22801"
+plmn_overrides:
+    "22801":
+        apns:
+            - apn: gprs.swisscom.ch
+              type_mask: 51
+            - apn: event.swisscom.ch
+              type_mask: 4
+            - apn: gprs.swisscom.ch
+              type_mask: 50

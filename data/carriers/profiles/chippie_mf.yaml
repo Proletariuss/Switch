@@ -1,0 +1,13 @@
+version: 3
+kind: carrier_bundle
+id: apple_chippie_mf
+bundle: Chippie_mf.bundle
+supported_plmns:
+    - "34003"
+plmn_overrides:
+    "34003":
+        apns:
+            - apn: premium
+              type_mask: 49
+            - apn: premium
+              type_mask: 48

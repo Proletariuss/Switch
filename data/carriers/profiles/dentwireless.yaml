@@ -1,0 +1,30 @@
+version: 3
+kind: carrier_bundle
+id: apple_dentwireless
+bundle: DentWireless.bundle
+supported_plmns:
+    - "23450"
+    - "26001"
+    - "26003"
+    - "26006"
+    - "27877"
+    - "310240"
+    - "310260"
+    - "311882"
+    - "42501"
+    - "44011"
+    - "45403"
+    - "51503"
+common:
+    apns:
+        - apn: global.telcoequity
+          type_mask: 49
+selector_overrides:
+    26001_GID1-3597bfd534:
+        apns:
+            - apn: plus
+              type_mask: 49
+    26001_GID1-3597bfd535:
+        apns:
+            - apn: internet
+              type_mask: 49

@@ -1,0 +1,20 @@
+version: 3
+kind: carrier_bundle
+id: apple_xl_id
+bundle: XL_id.bundle
+supported_plmns:
+    - "51011"
+plmn_overrides:
+    "51011":
+        apns:
+            - apn: internet
+              type_mask: 49
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+            - apn: www.xlmms.net
+              type_mask: 4
+        ims:
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true

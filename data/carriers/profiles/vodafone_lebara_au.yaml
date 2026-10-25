@@ -1,0 +1,93 @@
+version: 3
+kind: carrier_bundle
+id: apple_vodafone_lebara_au
+bundle: Vodafone_Lebara_au.bundle
+supported_plmns:
+    - "50503"
+plmn_overrides:
+    "50503":
+        apns:
+            - apn: live.vodafone.com
+              type_mask: 32817
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4
+              xlat464_enabled: true
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+              support_switch_over: true
+              support_5g_sa_handover: true
+            - apn: HOS
+              type_mask: 1048582
+              tech_type_mask: 1048582
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4
+              support_5g_sa_handover: true
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 1
+        e911:
+            over_itech_supported: true
+            wifi_calling_without_entitlement: true
+        entitlement:
+            entitlement_url: https://ents.mnc003.mcc505.pub.3gppnetwork.org:8443
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            epdg:
+                address: epdg.epc.mnc003.mcc505.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 16384
+                      name: AssignedPCSCFIPv4
+                      type: v4
+                    - identifier: 16386
+                      name: AssignedPCSCFIPv6
+                      type: v6
+            ike:
+                proposals:
+                    - encryption:
+                        - aes256
+                      integrity:
+                        - sha512
+                      prf:
+                        - sha256
+                      dh_groups:
+                        - 14
+                      lifetime_seconds: 80000
+                      authentication_method: Certificate
+                      eap_method: EAP-AKA
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes256
+                          integrity:
+                            - sha512
+                          rekey_pfs_group: 14
+                          esn: auto
+                          install_policies: true
+                          lifetime_seconds: 80000
+                    replay_window_size: 12
+                local_identifier: vha@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+                remote_certificate_authority_name: DigiCert Global Root G2
+                remote_certificate_hostname: epdg.epc.mnc003.mcc505.pub.3gppnetwork.org
+                validate_remote_certificate: true
+            register:
+                use_ipsec: true
+                include_cellular_network_info: true
+            signaling:
+                support_p_early_media: true
+                early_media_needs_header: true
+                require_preconditions_when_mandatory: false
+                contact:
+                    always_add_sip_instance: true
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            volte:
+                enable_volte_by_default: true

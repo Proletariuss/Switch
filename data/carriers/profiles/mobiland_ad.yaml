@@ -1,0 +1,31 @@
+version: 3
+kind: carrier_bundle
+id: apple_mobiland_ad
+bundle: Mobiland_ad.bundle
+supported_plmns:
+    - "21303"
+plmn_overrides:
+    "21303":
+        apns:
+            - apn: internet
+              type_mask: 32817
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 5121
+        entitlement:
+            entitlement_url: https://aes.mnc003.mcc213.pub.3gppnetwork.org/des/ios
+        ims:
+            register:
+                use_ipsec: true
+            signaling:
+                support_p_early_media: true
+                early_media_needs_header: true
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            volte:
+                enable_volte_by_default: true

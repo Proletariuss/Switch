@@ -1,0 +1,34 @@
+version: 2
+plmn: "313340"
+profiles:
+    - id: apple_dish_us
+      path: profiles/dish_us.yaml
+      selectors:
+        - raw: 313340_GID1-6332
+          carrier_name: Boost
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6332"
+        - raw: 313340_GID1-6336
+          carrier_name: Boost
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6336"
+        - raw: 313340_GID1-6530
+          carrier_name: Boost
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6530"
+        - raw: 313340_GID2-6531
+          carrier_name: Boost
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: "6531"

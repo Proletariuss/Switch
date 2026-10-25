@@ -1,0 +1,43 @@
+[
+  {
+    "name": "valid_normalized_configuration",
+    "accepted": true,
+    "normalized_dns": ["8.8.8.8:53", "dns.example.net:5353"],
+    "yaml": "carrier_overrides:\n  '310/260':\n    id: shared_valid\n    custom_epdg: epdg.example.net\n    dns_servers: ['8.8.8.8', 'DNS.EXAMPLE.NET:5353']\n    nat_keepalive_seconds: 20\n    dpd_interval_seconds: 120\n    device_identity_imei: '351234567890124'\n    ims_register_template:\n      contact_mode: android_default\n      sec_agree_mode: auto\n      contact_param_order: [access_type, sip_instance, audio]\n      security_client_mechanisms:\n        - {alg: hmac-sha-1-96, ealg: aes-cbc, prot: esp, mode: trans}\n      register_policy:\n        temporary_status_codes: [408, 503]\n    e911:\n      enabled: true\n      provider: entitlement\n      entitlement_url: https://example.net/\n      websheet_host_policy: public_https\n"
+  },
+  {
+    "name": "unknown_field",
+    "accepted": false,
+    "yaml": "carrier_overrides:\n  '310/260': {unknown: true}\n"
+  },
+  {
+    "name": "invalid_imei_luhn",
+    "accepted": false,
+    "yaml": "carrier_overrides:\n  '310/260': {device_identity_imei: '351234567890123'}\n"
+  },
+  {
+    "name": "legacy_policy_without_gate",
+    "accepted": false,
+    "yaml": "carrier_overrides:\n  '310/260': {algorithm_policy: legacy_prefer, enable_legacy_ciphers: false}\n"
+  },
+  {
+    "name": "private_e911_host",
+    "accepted": false,
+    "yaml": "carrier_overrides:\n  '310/260':\n    e911: {enabled: true, provider: entitlement, entitlement_url: 'https://127.0.0.1/', websheet_host_policy: public_https}\n"
+  },
+  {
+    "name": "duplicate_contact_parameter",
+    "accepted": false,
+    "yaml": "carrier_overrides:\n  '310/260':\n    ims_register_template:\n      contact_param_order: [audio, AUDIO]\n"
+  },
+  {
+    "name": "duplicate_sip_status",
+    "accepted": false,
+    "yaml": "carrier_overrides:\n  '310/260':\n    ims_register_template:\n      register_policy:\n        temporary_status_codes: [503, 503]\n"
+  },
+  {
+    "name": "invalid_dns_port",
+    "accepted": false,
+    "yaml": "carrier_overrides:\n  '310/260':\n    dns_servers: ['dns.example.net:0']\n"
+  }
+]

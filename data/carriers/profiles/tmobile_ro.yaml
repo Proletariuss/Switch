@@ -1,0 +1,63 @@
+version: 3
+kind: carrier_bundle
+id: apple_tmobile_ro
+bundle: TMobile_ro.bundle
+supported_plmns:
+    - "22603"
+    - "22606"
+common:
+    apns:
+        - apn: ims
+          type_mask: 131072
+          allowed_ip_stack: ipv4
+          roaming_ip_stack: ipv4
+          no_cellular_reconnect_cause_codes:
+            - cause_codes:
+                - 30
+                - 33
+              recovers_on_airplane_mode: true
+              num_tries_allowed: 2
+              type: 3GPP
+              timeout: 86400
+        - apn: mms
+          username: mms
+          password: mms
+          type_mask: 4
+          allowed_ip_stack: ipv4
+          roaming_ip_stack: ipv4
+        - apn: broadband
+          type_mask: 49
+          allowed_ip_stack: ipv4
+          roaming_ip_stack: ipv4
+        - apn: hos
+          type_mask: 1048576
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4
+    ims:
+        apn: ims
+        ip_stack: ipv4
+        media:
+            rtcp_inactivity_seconds: 180
+            rtcp_interval_seconds: 5
+            rtp_inactivity_seconds: 20
+        register:
+            include_cellular_network_info: true
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*[primary]
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            early_media_needs_header: true
+            preconditions: supported
+            require_preconditions_when_mandatory: false
+            sip_timers:
+                InviteResponseTimeout: 4000
+            support_p_early_media: true
+        ussi:
+            enabled: false
+        volte:
+            enable_volte_by_default: true

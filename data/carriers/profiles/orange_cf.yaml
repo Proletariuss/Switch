@@ -1,0 +1,11 @@
+version: 3
+kind: carrier_bundle
+id: apple_orange_cf
+bundle: Orange_cf.bundle
+supported_plmns:
+    - "62303"
+plmn_overrides:
+    "62303":
+        apns:
+            - apn: orangecawap
+              type_mask: 49

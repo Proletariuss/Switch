@@ -1,0 +1,25 @@
+{
+  "ok": true,
+  "port": "DJI USB AT",
+  "esim_available": true,
+  "discovery_error": "",
+  "usb_device": {
+    "product": "Fixture Modem",
+    "vendor": "Fixture Vendor",
+    "vendor_id": "2ca3",
+    "product_id": "4006",
+    "location_id": "fixture-location",
+    "speed": "480 Mb/s",
+    "mode": "DJI",
+    "interfaces": [
+      {
+        "number": 2,
+        "class": 255,
+        "subclass": 255,
+        "protocol": 1,
+        "endpoints": 3
+      }
+    ]
+  },
+  "future_health_extension": true
+}

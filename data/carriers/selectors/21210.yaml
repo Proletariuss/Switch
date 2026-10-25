@@ -1,0 +1,10 @@
+version: 2
+plmn: "21210"
+profiles:
+    - id: apple_monacotel_mc
+      path: profiles/monacotel_mc.yaml
+      generic: true
+      selectors:
+        - raw: "21210"
+          carrier_name: Monaco Telecom
+          iso: MC

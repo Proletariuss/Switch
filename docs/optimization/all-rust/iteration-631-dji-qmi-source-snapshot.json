@@ -1,0 +1,40 @@
+{
+  "schema": "switch.iteration-source-snapshot.v1",
+  "iteration": 631,
+  "purpose": "Enable the existing optional Rust QMI owner for supported DJI first-generation USB/QMI modules; software-only validation, no device operation and no DMG.",
+  "application": {
+    "path": "/Users/StatTrak/Desktop/Switch_MAC/dist/Switch.app",
+    "version": "3.46",
+    "build": "346",
+    "architecture": "arm64",
+    "signature": "ad-hoc, codesign --verify --deep --strict passed",
+    "main_executable_sha256": "acbb29058f371add80afad150948ed5ad7d38df331c596a8545f89f299de2694",
+    "rust_daemon_sha256": "d5e1c46cc461529719c26eb402b38e1dcf714101c34f142ba911a8543d549387"
+  },
+  "reviewed_source_files": [
+    {
+      "path": "app/Sources/BackendProcess.swift",
+      "sha256": "92d87b7c8687b0cb7eb7a774e98ea86ddc12776e09216cf8fa894f9fda97ec1c",
+      "size_bytes": 22805
+    },
+    {
+      "path": "app/Tests/BackendReadiness/main.swift",
+      "sha256": "b6d98f11c45ee169b7421876c3c961ed00ce7027279478e3d48dabdec35e3c41",
+      "size_bytes": 41520
+    },
+    {
+      "path": "rust/crates/proletarius-qmi-libusb/src/selection.rs",
+      "device_id": "2ca3:4006"
+    },
+    {
+      "path": "docs/optimization/all-rust/api-contract-review.json",
+      "scope": "BackendProcess.swift normalized source fingerprint rebound after manual review"
+    }
+  ],
+  "verification_boundary": {
+    "hardware_tested": false,
+    "qmi_ui_status_integrated": false,
+    "dmg_generated": false,
+    "route_census": "294 Rust owners, 0 Go owners, 129 Swift HTTP call sites"
+  }
+}

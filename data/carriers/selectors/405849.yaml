@@ -1,0 +1,10 @@
+version: 2
+plmn: "405849"
+profiles:
+    - id: apple_idea_in
+      path: profiles/idea_in.yaml
+      generic: true
+      selectors:
+        - raw: "405849"
+          carrier_name: Vi
+          iso: IN

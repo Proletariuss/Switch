@@ -1,0 +1,14 @@
+version: 3
+kind: carrier_bundle
+id: apple_mts_ua
+bundle: MTS_ua.bundle
+supported_plmns:
+    - "25501"
+plmn_overrides:
+    "25501":
+        apns:
+            - apn: internet
+              type_mask: 49
+        ims:
+            register:
+                include_cellular_network_info: true

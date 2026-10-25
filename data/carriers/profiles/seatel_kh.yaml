@@ -1,0 +1,34 @@
+version: 3
+kind: carrier_bundle
+id: apple_seatel_kh
+bundle: Seatel_kh.bundle
+supported_plmns:
+    - "45611"
+plmn_overrides:
+    "45611":
+        apns:
+            - apn: seatel
+              type_mask: 1048625
+            - apn: ims
+              type_mask: 131072
+        ims:
+            apn: ims
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: unsupported
+                support_p_early_media: false
+                early_media_needs_header: false
+                require_preconditions_when_mandatory: false
+                contact:
+                    additional_contact_params:
+                        - selector: INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                sip_timers:
+                    InviteResponseTimeout: 0
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true

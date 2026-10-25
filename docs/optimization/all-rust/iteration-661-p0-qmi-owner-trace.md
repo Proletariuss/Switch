@@ -1,0 +1,5 @@
+# Iteration 661 — QMI finite trace source rebind
+
+The [i660 QMI trace](iteration-660-p0-qmi-owner-trace.json) and its 59 exact source anchors are unchanged. The nine reviewed QMI source files remain byte-identical to their i660 pins. The [i661 trace](iteration-661-p0-qmi-owner-trace.json) changes only the current-source snapshot reference to the 210-file [i661 snapshot](iteration-661-source-snapshot.json), records i660 as immutable predecessor, and declares zero newly reviewed QMI files and zero new anchors. Seven QMI files are included in that snapshot; `proletarius-qmi-services/src/client.rs` and `uim.rs` continue to have independent SHA-256 pins in the trace.
+
+The three typed `probe`, `set-ims` and `operator` route/auth/request/writer/response/error/exit chains and their UNKNOWN physical boundaries remain as reviewed in [i660](iteration-660-p0-qmi-owner-trace.md). This rebind grants no `P0-2.owner-map` or `P2B-4.qmi-control` functional PASS, does not close `P2B-4.qmi-uim`, and does not freeze the overall denominator. No DJI module was contacted by this metadata update.

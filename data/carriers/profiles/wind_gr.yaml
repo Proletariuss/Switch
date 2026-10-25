@@ -1,0 +1,85 @@
+version: 3
+kind: carrier_bundle
+id: apple_wind_gr
+bundle: Wind_gr.bundle
+supported_plmns:
+    - "20210"
+plmn_overrides:
+    "20210":
+        apns:
+            - apn: gint.b-online.gr
+              type_mask: 49
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv6
+              support_switch_over: true
+              use_network_mtu: true
+              no_cellular_reconnect_cause_codes:
+                - cause_codes:
+                    - 33
+                  recovers_on_airplane_mode: true
+                  num_tries_allowed: 3
+                  type: 3GPP
+                  timeout: 86400
+            - apn: mnet.b-online.gr
+              type_mask: 4
+            - apn: hos
+              type_mask: 1048576
+              tech_type_mask: 1048576
+              allowed_ip_stack: ipv4
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 1
+        e911:
+            over_itech_supported: true
+            wifi_calling_without_entitlement: true
+        entitlement:
+            entitlement_url: https://es.nova.gr
+        ims:
+            apn: ims
+            ip_stack: ipv6
+            epdg:
+                address: epdg.epc.mnc010.mcc202.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 16386
+                      name: AssignedPCSCFIPv6
+                      type: v6
+            ike:
+                nat_keepalive_enabled: true
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes256
+                          integrity:
+                            - sha256
+                          rekey_pfs_group: 14
+                          esn: auto
+                          lifetime_seconds: 86400
+            register:
+                use_ipsec: true
+                include_cellular_network_info: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 5XX
+                        - "403"
+                        - "380"
+                require_preconditions_when_mandatory: false
+                contact:
+                    always_add_sip_instance: true
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            media:
+                rtp_inactivity_seconds: 30
+            volte:
+                enable_volte_by_default: true

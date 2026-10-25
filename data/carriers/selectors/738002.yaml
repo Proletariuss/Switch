@@ -1,0 +1,10 @@
+version: 2
+plmn: "738002"
+profiles:
+    - id: apple_atn_gy
+      path: profiles/atn_gy.yaml
+      generic: true
+      selectors:
+        - raw: "738002"
+          carrier_name: ONE
+          iso: GY

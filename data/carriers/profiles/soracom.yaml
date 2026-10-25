@@ -1,0 +1,14 @@
+version: 3
+kind: carrier_bundle
+id: apple_soracom
+bundle: Soracom.bundle
+supported_plmns:
+    - "29505"
+    - "29510"
+    - "50212"
+common:
+    apns:
+        - apn: soracom.io
+          username: sora
+          password: sora
+          type_mask: 49

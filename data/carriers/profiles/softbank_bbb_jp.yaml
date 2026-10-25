@@ -1,0 +1,29 @@
+version: 3
+kind: carrier_bundle
+id: apple_softbank_bbb_jp
+bundle: Softbank_BBB_jp.bundle
+supported_plmns:
+    - "44015"
+plmn_overrides:
+    "44015":
+        apns:
+            - apn: internet
+              type_mask: 1081393
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv4v6
+            - apn: ""
+              type_mask: 262144
+              allowed_ip_stack: ipv4v6
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            register:
+                use_ipsec: true
+            signaling:
+                support_p_early_media: false
+                early_media_needs_header: false
+            volte:
+                enable_volte_by_default: true

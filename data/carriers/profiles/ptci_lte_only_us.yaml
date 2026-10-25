@@ -1,0 +1,65 @@
+version: 3
+kind: carrier_bundle
+id: apple_ptci_lte_only_us
+bundle: PTCI_LTE_only_US.bundle
+supported_plmns:
+    - "311450"
+plmn_overrides:
+    "311450":
+        apns:
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+            - apn: internet
+              type_mask: 1048583
+              allowed_ip_stack: ipv4v6
+            - apn: dun
+              type_mask: 48
+              allowed_ip_stack: ipv4v6
+            - apn: sos
+              type_mask: 262144
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+        e911:
+            wifi_calling_without_entitlement: false
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            register:
+                use_ipsec: true
+                expires: 7200
+                include_cellular_network_info: true
+            signaling:
+                max_udp_message_size: 1200
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - "380"
+                        - "414"
+                        - "499"
+                        - "606"
+                require_preconditions_when_mandatory: false
+                contact:
+                    always_add_sip_instance: true
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                additional_headers:
+                    - selector: INVITE[wifi,911]
+                      headers:
+                        - 'Supported: geolocation'
+                sip_timers:
+                    InviteResponseTimeout: 5000
+            media:
+                rtp_inactivity_seconds: 30
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true

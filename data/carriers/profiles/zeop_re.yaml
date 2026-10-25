@@ -1,0 +1,18 @@
+version: 3
+kind: carrier_bundle
+id: apple_zeop_re
+bundle: Zeop_re.bundle
+supported_plmns:
+    - "20801"
+    - "64704"
+common:
+    apns:
+        - apn: zeopdata
+          type_mask: 49
+          allowed_ip_stack: ipv4
+        - apn: zeopmms
+          type_mask: 4
+          allowed_ip_stack: ipv4
+    ims:
+        volte:
+            enable_volte_by_default: true

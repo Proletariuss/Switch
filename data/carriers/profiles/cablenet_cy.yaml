@@ -1,0 +1,12 @@
+version: 3
+kind: carrier_bundle
+id: apple_cablenet_cy
+bundle: Cablenet_cy.bundle
+supported_plmns:
+    - "20601"
+    - "28022"
+common:
+    apns:
+        - apn: cablenet
+          type_mask: 49
+          allowed_ip_stack: ipv4v6

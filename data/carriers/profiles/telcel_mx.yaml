@@ -1,0 +1,133 @@
+version: 3
+kind: carrier_bundle
+id: apple_telcel_mx
+bundle: Telcel_mx.bundle
+supported_plmns:
+    - "33402"
+    - "334020"
+    - "33420"
+common:
+    apns:
+        - apn: internet.itelcel.com
+          username: webgprs
+          password: webgprs2002
+          type_mask: 1081393
+        - apn: vvmip.itelcel.com
+          username: vvm
+          password: vvmtelcel
+          type_mask: 2
+        - apn: mms.itelcel.com
+          username: mmsgprs
+          password: mmsgprs2003
+          type_mask: 4
+        - apn: ims
+          type_mask: 131072
+          tech_type_mask: 131072
+          allowed_ip_stack: ipv6
+          roaming_ip_stack: ipv6
+          support_switch_over: true
+        - apn: internet.itelcel.com
+          username: webgprs
+          password: webgprs2002
+          type_mask: 48
+    apple:
+        carrier_entitlements:
+            supported_entitlements: 9233
+    e911:
+        over_itech_supported: false
+        wifi_calling_without_entitlement: true
+    entitlement:
+        entitlement_url: https://aes.mnc020.mcc334.pub.3gppnetwork.org/entitlement/
+    ims:
+        apn: ims
+        epdg:
+            address: epdg.ims.mnc020.mcc334.pub.3gppnetwork.org
+            configuration_attributes:
+                - identifier: 16390
+                  name: AssignedPCSCFIPv6
+                  type: v6
+        ike:
+            child_sa:
+                proposals:
+                    - source_branch: FirstChild
+                      encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      rekey_pfs_group: 14
+                      esn: auto
+                      install_policies: true
+                      lifetime_seconds: 87000
+                replay_window_size: 12
+            dpd:
+                enabled: false
+                interval_seconds: 600
+                max_retries: 4
+                retry_interval_seconds: 10
+            local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+            proposals:
+                - encryption:
+                    - aes256
+                  integrity:
+                    - sha256
+                  prf:
+                    - sha256
+                  dh_groups:
+                    - 14
+                  lifetime_seconds: 87000
+                  authentication_method: None
+                  eap_method: EAP-AKA
+        ip_stack: ipv6
+        media:
+            rtcp_inactivity_seconds: 25
+            rtp_inactivity_seconds: 30
+        register:
+            expires: 3600
+            include_cellular_network_info: true
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                    - selector: REGISTER,INVITE[-wifi]
+                      params:
+                        - +g.3gpp.accesstype="cellular2"
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                    - selector: REGISTER[wifi]
+                      params:
+                        - +g.3gpp.accesstype="wlan1"
+                always_add_sip_instance: true
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - "301"
+                    - "401"
+                    - "403"
+                    - "405"
+                    - "406"
+                    - "408"
+                    - "409"
+                    - "410"
+                    - "416"
+                    - "482"
+                    - "483"
+                    - "500"
+                    - "501"
+                    - "502"
+                    - "503"
+                    - "505"
+                    - "603"
+            early_media_needs_header: true
+            max_udp_message_size: 1300
+            require_preconditions_when_mandatory: false
+            support_p_early_media: true
+        volte:
+            enable_volte_by_default: true
+    roaming:
+        wifi_calling_allowed: false

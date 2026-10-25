@@ -1,0 +1,54 @@
+version: 3
+kind: carrier_bundle
+id: apple_tmobile_al
+bundle: TMobile_al.bundle
+supported_plmns:
+    - "27601"
+plmn_overrides:
+    "27601":
+        apns:
+            - apn: internet.one
+              type_mask: 49
+            - apn: ims
+              type_mask: 131072
+              no_cellular_reconnect_cause_codes:
+                - cause_codes:
+                    - 30
+                    - 33
+                  recovers_on_airplane_mode: true
+                  num_tries_allowed: 2
+                  type: 3GPP
+                  timeout: 86400
+            - apn: hos
+              type_mask: 1048576
+        ims:
+            apn: ims
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                        - 4XX
+                        - 5XX
+                        - 6XX
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*[primary]
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                sip_timers:
+                    InviteResponseTimeout: 4000
+            media:
+                rtp_inactivity_seconds: 10
+                rtcp_interval_seconds: 5
+            ussi:
+                enabled: false
+            volte:
+                enable_volte_by_default: true

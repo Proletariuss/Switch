@@ -1,0 +1,10 @@
+version: 2
+plmn: "52003"
+profiles:
+    - id: apple_ais_th
+      path: profiles/ais_th.yaml
+      generic: true
+      selectors:
+        - raw: "52003"
+          carrier_name: AIS
+          iso: TH

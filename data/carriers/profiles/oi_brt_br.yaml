@@ -1,0 +1,17 @@
+version: 3
+kind: carrier_bundle
+id: apple_oi_brt_br
+bundle: Oi_BrT_br.bundle
+supported_plmns:
+    - "72416"
+plmn_overrides:
+    "72416":
+        apns:
+            - apn: brt.br
+              username: brt
+              password: brt
+              type_mask: 1
+            - apn: mms.brt.br
+              username: brt
+              password: brt
+              type_mask: 4

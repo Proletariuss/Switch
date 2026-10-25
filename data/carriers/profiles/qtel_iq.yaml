@@ -1,0 +1,32 @@
+version: 3
+kind: carrier_bundle
+id: apple_qtel_iq
+bundle: Qtel_iq.bundle
+supported_plmns:
+    - "41805"
+plmn_overrides:
+    "41805":
+        apns:
+            - apn: net.asiacell.com
+              type_mask: 49
+            - apn: wap.asiacell.com
+              type_mask: 4
+            - apn: net.asiacell.com
+              type_mask: 48
+        ims:
+            register:
+                use_ipsec: true
+            signaling:
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                additional_headers:
+                    - selector: INVITE,INVITE:*
+                      headers:
+                        - 'Feature-Caps: *;+g.3gpp.srvcc-alerting'
+            volte:
+                enable_volte_by_default: true

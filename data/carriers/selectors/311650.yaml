@@ -1,0 +1,10 @@
+version: 2
+plmn: "311650"
+profiles:
+    - id: apple_unitedwireless_lte_us
+      path: profiles/unitedwireless_lte_us.yaml
+      generic: true
+      selectors:
+        - raw: "311650"
+          carrier_name: United
+          iso: US

@@ -1,0 +1,13 @@
+version: 3
+kind: carrier_bundle
+id: apple_digicel_sr
+bundle: Digicel_sr.bundle
+supported_plmns:
+    - "74603"
+plmn_overrides:
+    "74603":
+        apns:
+            - apn: web.digicelsr.com
+              type_mask: 49
+            - apn: web.digicelsr.com
+              type_mask: 48

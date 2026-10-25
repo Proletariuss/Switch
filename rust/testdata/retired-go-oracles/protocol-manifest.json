@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "capture_iteration": 511,
+  "source_revision": "ed1bf2a55c0aa1aa80b2f84bd0854bd62e656425",
+  "go_version": "go1.26.7",
+  "source_manifest_file": "legacy-source-hashes.json",
+  "source_manifest_sha256": "43e0366b2840a2c2350cd66da97dd008ca264551a640039bc235d603d39e70e6",
+  "source_archive_note": "Original code is preserved in iteration-511-baseline/source.tar.gz; three newly added exporters are preserved in build/reports/iteration-511-oracles/exporter-sources. No source or binary is required to run the frozen tests.",
+  "fixtures": [
+    {
+      "file": "pcma.json",
+      "sha256": "5b553ecff4ac1868ac3ac63e824dc4285f4efeb616241d79a0311e054f74b679",
+      "bytes": 398566,
+      "case_count": 4,
+      "provenance": "go-computed historical disabled codec",
+      "source_files_sha256": {
+        "backend/internal/vowifi/imscore/frozen_oracles_export_test.go": "8e50cf09cd28bb5113d98e789e913c4bd408911cbc74a577d81ab6401f42f3a1"
+      },
+      "generation_command": "SWITCH_ORACLE_OUTPUT_DIR=\"$SWITCH_BUILD_DIR/reports/iteration-511-oracles\" go test ./internal/vowifi/imscore -run ^TestExportFrozenIMSOracles$ -count=1 -v"
+    },
+    {
+      "file": "amr-nb.json",
+      "sha256": "7345d1465164f5e9177663e5c3f37dafdf95c12ee4d159c4d0c58c76dbdea74d",
+      "bytes": 16124,
+      "case_count": 64,
+      "provenance": "go-computed historical disabled codec",
+      "source_files_sha256": {
+        "backend/internal/vowifi/imscore/frozen_oracles_export_test.go": "8e50cf09cd28bb5113d98e789e913c4bd408911cbc74a577d81ab6401f42f3a1"
+      },
+      "generation_command": "SWITCH_ORACLE_OUTPUT_DIR=\"$SWITCH_BUILD_DIR/reports/iteration-511-oracles\" go test ./internal/vowifi/imscore -run ^TestExportFrozenIMSOracles$ -count=1 -v"
+    },
+    {
+      "file": "amr-wb.json",
+      "sha256": "167bc20f2271ad39648e36b058a2ab1220a1cc8a4680487a99f0359a955c733d",
+      "bytes": 7781,
+      "case_count": 24,
+      "provenance": "go-computed",
+      "source_files_sha256": {
+        "backend/internal/vowifi/imscore/frozen_oracles_export_test.go": "8e50cf09cd28bb5113d98e789e913c4bd408911cbc74a577d81ab6401f42f3a1"
+      },
+      "generation_command": "SWITCH_ORACLE_OUTPUT_DIR=\"$SWITCH_BUILD_DIR/reports/iteration-511-oracles\" go test ./internal/vowifi/imscore -run ^TestExportFrozenIMSOracles$ -count=1 -v"
+    },
+    {
+      "file": "message-routing.json",
+      "sha256": "1d3b119ba5c6b0a5dfeaa6a5edf17a7f325095fefc60c41e9d9c08843778fbff",
+      "bytes": 44121,
+      "case_count": 66,
+      "provenance": "go-computed",
+      "source_files_sha256": {
+        "backend/internal/vowifi/imscore/frozen_oracles_export_test.go": "8e50cf09cd28bb5113d98e789e913c4bd408911cbc74a577d81ab6401f42f3a1"
+      },
+      "generation_command": "SWITCH_ORACLE_OUTPUT_DIR=\"$SWITCH_BUILD_DIR/reports/iteration-511-oracles\" go test ./internal/vowifi/imscore -run ^TestExportFrozenIMSOracles$ -count=1 -v"
+    },
+    {
+      "file": "ussd-decode.json",
+      "sha256": "8d8bf76685cfebfdbca82dd1a0d785a7a9d9f328739f13f9d43e82ab68555917",
+      "bytes": 25329,
+      "case_count": 10,
+      "provenance": "go-computed",
+      "source_files_sha256": {
+        "backend/internal/vowifi/imscore/frozen_oracles_export_test.go": "8e50cf09cd28bb5113d98e789e913c4bd408911cbc74a577d81ab6401f42f3a1"
+      },
+      "generation_command": "SWITCH_ORACLE_OUTPUT_DIR=\"$SWITCH_BUILD_DIR/reports/iteration-511-oracles\" go test ./internal/vowifi/imscore -run ^TestExportFrozenIMSOracles$ -count=1 -v"
+    },
+    {
+      "file": "sip-wire.json",
+      "sha256": "6bbb1a2f2f7bf5b1778b88ed28d1f22d72c6bceae88e831c6c0196c59a966634",
+      "bytes": 7363,
+      "case_count": 4,
+      "provenance": "go-computed serializer contract; dialog composition separate",
+      "source_files_sha256": {
+        "backend/internal/vowifi/imscore/frozen_oracles_export_test.go": "8e50cf09cd28bb5113d98e789e913c4bd408911cbc74a577d81ab6401f42f3a1"
+      },
+      "generation_command": "SWITCH_ORACLE_OUTPUT_DIR=\"$SWITCH_BUILD_DIR/reports/iteration-511-oracles\" go test ./internal/vowifi/imscore -run ^TestExportFrozenIMSOracles$ -count=1 -v"
+    },
+    {
+      "file": "call-target.json",
+      "sha256": "f387e56aef3581c9e792ec458cd19b895231867fb852ef0e8fa6c96ad0fca026",
+      "bytes": 2659,
+      "case_count": 10,
+      "provenance": "go-computed",
+      "source_files_sha256": {
+        "backend/internal/vowifi/imscore/frozen_oracles_export_test.go": "8e50cf09cd28bb5113d98e789e913c4bd408911cbc74a577d81ab6401f42f3a1"
+      },
+      "generation_command": "SWITCH_ORACLE_OUTPUT_DIR=\"$SWITCH_BUILD_DIR/reports/iteration-511-oracles\" go test ./internal/vowifi/imscore -run ^TestExportFrozenIMSOracles$ -count=1 -v"
+    },
+    {
+      "file": "call-rejection.json",
+      "sha256": "9d116aa4d2c60a9a9072ce44dae27eeac6896bc41540a9945c0c95648be2d850",
+      "bytes": 2341,
+      "case_count": 8,
+      "provenance": "reviewed-literal",
+      "source_files_sha256": {
+        "backend/internal/vowifi/imscore/frozen_oracles_export_test.go": "8e50cf09cd28bb5113d98e789e913c4bd408911cbc74a577d81ab6401f42f3a1"
+      },
+      "generation_command": "SWITCH_ORACLE_OUTPUT_DIR=\"$SWITCH_BUILD_DIR/reports/iteration-511-oracles\" go test ./internal/vowifi/imscore -run ^TestExportFrozenIMSOracles$ -count=1 -v"
+    },
+    {
+      "file": "sdp-admission.json",
+      "sha256": "d13a281a1954a57cca2316dcfd82f252eaba670e97c1fb142cdbf2d2dcf90229",
+      "bytes": 18456,
+      "case_count": 57,
+      "provenance": "adapter-admission reviewed literals; explicit EVS and all AMRWB modes",
+      "source_files_sha256": {
+        "backend/internal/vowifi/imscore/frozen_oracles_export_test.go": "8e50cf09cd28bb5113d98e789e913c4bd408911cbc74a577d81ab6401f42f3a1"
+      },
+      "generation_command": "SWITCH_ORACLE_OUTPUT_DIR=\"$SWITCH_BUILD_DIR/reports/iteration-511-oracles\" go test ./internal/vowifi/imscore -run ^TestExportFrozenIMSOracles$ -count=1 -v"
+    },
+    {
+      "file": "sms-submit.json",
+      "sha256": "7dda876d4fb6d0a4bad30669c37dbbeec771cc7c321d02e29c4e733135d7a867",
+      "bytes": 25374,
+      "case_count": 50,
+      "provenance": "go-computed; only concat reference normalized to42",
+      "source_files_sha256": {
+        "backend/cmd/proletarius-macos/frozen_sms_export_test.go": "6218f0d58c3ae97ec0a701114b04d0b5b2788d3c798a918d38c4cf0fddf94c9c"
+      },
+      "generation_command": "SWITCH_ORACLE_OUTPUT_DIR=\"$SWITCH_BUILD_DIR/reports/iteration-511-oracles\" go test ./cmd/proletarius-macos -run ^TestExportFrozenSMSSubmit$ -count=1 -v"
+    }
+  ]
+}

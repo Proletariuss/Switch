@@ -1,0 +1,35 @@
+version: 3
+kind: carrier_bundle
+id: apple_sprint_boost_isim_lte_us
+bundle: Sprint_Boost_ISIM_LTE_US.bundle
+supported_plmns:
+    - "310120"
+    - "312530"
+common:
+    apns:
+        - apn: cinet.spcs
+          type_mask: 33335
+          allowed_ip_stack: ipv4
+        - apn: ims
+          type_mask: 131072
+          allowed_ip_stack: ipv6
+        - apn: x.boost.ispsn
+          type_mask: 7
+          allowed_ip_stack: ipv4v6
+          xlat464_enabled: true
+        - apn: otasn
+          type_mask: 33280
+          allowed_ip_stack: ipv4
+        - apn: boost.pamsn
+          type_mask: 48
+          allowed_ip_stack: ipv4
+    apple:
+        carrier_entitlements:
+            supported_entitlements: 257
+    entitlement:
+        entitlement_url: https://deg.spcsdns.net/ium-OEMInterface/servlet/IUMServlet
+    ims:
+        apn: ims
+        ip_stack: ipv6
+        volte:
+            enable_volte_by_default: false

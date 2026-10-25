@@ -1,0 +1,48 @@
+name: Build Switch
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: src
+      - uses: dtolnay/rust-toolchain@1.98.0
+        with:
+          components: clippy,rustfmt
+      - name: Install build dependencies
+        run: brew install libusb xcodegen
+      - name: Validate source version
+        working-directory: src
+        run: |
+          set -eu
+          set -- $(scripts/version.sh)
+          if [ "$GITHUB_REF_TYPE" = tag ]; then test "$GITHUB_REF_NAME" = "v$1"; fi
+      - name: Prepare pinned ARM Rust standard library
+        working-directory: src
+        run: python3 scripts/prepare-module-supervisor.py --fetch
+      - name: Fetch locked Rust build inputs
+        working-directory: src
+        run: CARGO_HOME="$GITHUB_WORKSPACE/build/cargo-home" cargo fetch --locked --manifest-path rust/Cargo.toml
+      - name: Run offline-capable gates
+        working-directory: src
+        run: scripts/test-migration-gates.sh
+      - name: Build app (no disk image)
+        working-directory: src
+        run: scripts/build.sh
+      - name: Preserve application permissions
+        run: tar -czf dist/Switch.app.tar.gz -C dist Switch.app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Switch-app
+          path: dist/Switch.app.tar.gz
+          if-no-files-found: error

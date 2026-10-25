@@ -1,0 +1,15 @@
+version: 2
+plmn: "90137"
+profiles:
+    - id: apple_transatel
+      path: profiles/transatel.yaml
+      generic: true
+      selectors:
+        - raw: "90137"
+          carrier_name: Transatel
+        - raw: 90137_ID-89882470001
+          carrier_name: Transatel
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "89882470001"

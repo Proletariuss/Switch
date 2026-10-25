@@ -1,0 +1,89 @@
+version: 3
+kind: carrier_bundle
+id: apple_qtel_kw
+bundle: Qtel_kw.bundle
+supported_plmns:
+    - "41903"
+plmn_overrides:
+    "41903":
+        apns:
+            - apn: action.ooredoo.com
+              type_mask: 32817
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4
+            - apn: mms.ooredoo.com
+              type_mask: 4
+              allowed_ip_stack: ipv4
+            - apn: IMS
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv4
+              support_switch_over: true
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 9217
+        e911:
+            over_itech_supported: true
+            wifi_calling_without_entitlement: true
+        entitlement:
+            entitlement_url: https://es-prod.ooredoo.com.kw/rest/deviceInterface/v1/service
+        ims:
+            apn: ims
+            ip_stack: ipv4
+            epdg:
+                address: epdg.epc.mnc003.mcc419.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 16384
+                      name: AssignedPCSCFIPv4
+                      type: v4
+            ike:
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes256
+                          integrity:
+                            - sha512
+                          rekey_pfs_group: 14
+                          esn: auto
+                          lifetime_seconds: 86400
+            register:
+                use_ipsec: true
+                include_cellular_network_info: true
+            signaling:
+                max_udp_message_size: 5000
+                preconditions: unsupported
+                support_p_early_media: true
+                early_media_needs_header: true
+                re_register_on:
+                    - method: REGISTER
+                      statuses:
+                        - "403"
+                        - "480"
+                        - "500"
+                        - "503"
+                        - "504"
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                        - 5XX
+                        - 6XX
+                require_preconditions_when_mandatory: false
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                additional_headers:
+                    - selector: INVITE,INVITE:*
+                      headers:
+                        - 'Feature-Caps: *;+g.3gpp.srvcc-alerting'
+            media:
+                rtp_inactivity_seconds: 15
+            volte:
+                enable_volte_by_default: true
+        roaming:
+            wifi_calling_allowed: false

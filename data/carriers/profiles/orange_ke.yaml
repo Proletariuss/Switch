@@ -1,0 +1,11 @@
+version: 3
+kind: carrier_bundle
+id: apple_orange_ke
+bundle: Orange_ke.bundle
+supported_plmns:
+    - "63907"
+plmn_overrides:
+    "63907":
+        apns:
+            - apn: telkom
+              type_mask: 49

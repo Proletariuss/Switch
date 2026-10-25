@@ -1,0 +1,10 @@
+[package]
+name = "proletarius-platform-fs"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Bounded held-directory enumeration for Switch startup evidence"
+
+[dependencies]
+nix.workspace = true

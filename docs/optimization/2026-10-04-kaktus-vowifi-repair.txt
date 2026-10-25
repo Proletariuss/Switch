@@ -1,0 +1,88 @@
+Switch / KAKTUS VoWiFi 调试与修复记录
+日期：2026-10-04（Asia/Shanghai）
+
+结果
+原始 INVALID_SYNTAX (Notify 7) 已消除；真实连接仍收到 AUTHENTICATION_FAILED (Notify 24)，发生在收到 EAP 挑战之前，尚未建立 IMS 注册。因此本次不能宣称 VoWiFi 已完全恢复。
+
+已完成的代码修复
+1. EAP_ONLY_AUTHENTICATION 的 Protocol ID 修正为 0，SPI Size 为 0，通知数据为空。
+2. 删除错误占用 CLONE_IKE_SA_SUPPORTED (16432) 的设备身份通知；仅发送 DEVICE_IDENTITY (41101)，包含两字节长度、身份类型与 15 位 IMEI 的 TBCD 编码。保留原有发送时机。
+3. IPv6 初始接入 INTERNAL_IP6_ADDRESS 改为零长度，避免将首次接入编码为既有地址切换；Go 与未来 Rust 路径均同步。
+4. 对端错误通知显示为 INVALID_SYNTAX、AUTHENTICATION_FAILED 等具体原因。
+5. 增加 KAKTUS（230/01、SPN KAKTUS）运营商选择与 NAI/APN/IP/ePDG/算法回归测试，使用合成卡数据。
+
+部署
+正在运行的 /Applications/Switch.app 已替换 Go 后端并重新签名。
+桌面 /Users/proletarius/Desktop/Switch/dist/Switch.app 已同步相同后端。
+工作源码 /Users/proletarius/Desktop/Switch/src 已直接保存全部代码及测试修复。
+已安装 Swift 主程序 PID 52125、Rust 网关 PID 52131 保持运行；仅重启 Go 子进程，最终 PID 58577。
+Go 热补丁取自逐文件校验过的 2.80 发布源码基线，只加入此次 7 个 Go 文件补丁，避免混入当前源码尚未部署的跨 Go/Rust 迁移。
+KAKTUS 当前正确匹配 apple_tmobile_cz：APN ims、IPv6、MCC230/MNC01、ePDG epdg.epc.mnc001.mcc230.pub.3gppnetwork.org。运营商数据无需更改，已有内嵌模板保留，新增回归测试防止后续变化。
+现有 DMG 文件未更新，本次没有生成新的 DMG；安装已修复版本应使用当前 Applications 或 dist 中的 Switch.app。
+
+真实连接对照（本地时间）
+17:29–17:30 原始软件：Notify 7。
+17:37 临时关闭设备身份通知：Notify 24，证明原错误与该通知有关。
+17:39 修正 EAP-only 字段、仍关闭设备身份：Notify 24。
+17:41 恢复设备身份、改用正确编码：Notify 24，不再出现 Notify 7。
+17:44 加入零长度 IPv6 初始接入请求：仍 Notify 24。
+临时诊断 carrier-overrides.yaml 已撤销，运行中使用内置模板，无强制禁用设备身份的残留覆盖。
+
+网络分流核验
+Surge 域名规则已将 ePDG 分流到 🇨🇿 VoWiFi-CZ -> 🇨🇿 捷克 家宽。
+真实 Switch UDP 连接记录命中 IP-CIDR 62.141.11.0/24，500 与 4500 两端口均使用该节点，有双向报文。
+Surge 节点出口测试：77.48.5.35；GeoIP：CZ；ASN：AS16019 Vodafone Czech Republic a.s.。
+该节点 UDP 测试成功，RTT 205ms。
+现有域名和 IP 分流已覆盖真实流量，本次无需新增重复规则。出口国家是独立探测结果，不是仅凭节点名称判断。
+
+验证
+当前源码与热补丁基线均通过：go test ./pkg/swu ./pkg/ikev2。
+基线和当前源码的 carrier/VoWiFi/override/API 针对性测试通过。
+Rust auth_config 测试 2/2 通过；KAKTUS carrier 集成测试 1/1 通过。
+两份 Switch.app 均通过 codesign --verify --deep --strict。
+热补丁独立审查确认只有预期的 7 个 Go 文件变化；Rust 源码修复及 KAKTUS 测试另行保存。
+没有以测试通过代替真实 IMS 注册结果；本次未进行实际短信发送或通话测试。
+
+剩余问题
+网关目前以 AUTHENTICATION_FAILED (24) 在 EAP 挑战前拒绝；没有足够信息判断号码开通、运营商策略或其他兼容条件是哪一项原因。
+已向用户询问该卡是否曾在手机上成功使用 Wi-Fi Calling。这个对照是下一步最有价值的信息。
+T-Mobile CZ 官方说明仅在捷克境内提供该服务，但当前分流和出口已是捷克，不能把国外出口直接认定为剩余失败原因。官方公开说明未单独确认 KAKTUS 这张号码的开通状态。
+
+回滚与审计
+原 Go/Rust 二进制、签名资源、冻结源码来源、仅 Switch 的分流日志保存在：
+/Users/proletarius/Desktop/Switch/build/kaktus-repair/
+本报告旁的 kaktus-vowifi-fix.patch 是相对已验证 2.80 基线的任务补丁；包含 9 个 Go/Rust 源码及测试文件，不含用户卡身份、认证密钥或凭证。
+
+标准和运营商来源
+RFC 5998 §3：https://www.rfc-editor.org/rfc/rfc5998.html
+TS 24.302 §7.2.2.1、§8.2.9.2：https://www.etsi.org/deliver/etsi_ts/124300_124399/124302/14.09.00_60/ts_124302v140900p.pdf
+IANA IKEv2：https://www.iana.org/assignments/ikev2-parameters
+T-Mobile CZ：https://www.t-mobile.cz/kvalita-volani
+T-Mobile CZ 服务条款：https://www.t-mobile.cz/dcpublic/OP-WiFi-volani.pdf
+
+已部署 Go SHA-256：e7073e64ea6c8efcd48017856433acf9de7eae0fd50af60992e2f9979df5e5f0
+
+
+第二轮排查（2026-10-04 18:02–18:07）
+用户反馈仍然无法连接，继续进行隔离首轮认证探测；未把未证实的兼容性猜测改入生产软件。
+所有探针已校验 IMSI/ICCID 与当前所选卡完全一致；探针只发送 IKE_SA_INIT 和首个 IKE_AUTH，收到首个响应立即结束，不访问读卡器、不执行 AKA、不进入 IMS，也不发送业务短信。
+
+实际结果：
+- 标准双栈、仅标准 CP、去掉设备身份和其他可选通知：Notify24，没有 EAP。
+- IPv6、去掉 EAP_ONLY 的证书/EAP 方式：Notify24，没有 EAP。
+- Android 的载荷顺序、双栈、EAP_ONLY/MOBIKE/INITIAL_CONTACT、标准 CP：Notify24，没有 EAP。
+- DNS 发布的另一 ePDG 地址 62.141.11.101 使用同一 Android 格式：Notify24，没有 EAP。
+这些探测显示第一响应在 0.7–1.3 秒内返回；响应通过完整性检查并成功解密，实际使用 AES-CBC 和 SHA256，首轮密钥协商一致。
+注意：诊断工具显示 PASS 仅表示成功完成报文探测和解析，不代表 VoWiFi 登录成功。
+
+进一步独立验证 UDP，而不只验证网页出口：
+经相同捷克节点发送 STUN Binding，请求返回 XOR-MAPPED-ADDRESS=77.48.5.35；GeoIP 为 CZ、AS16019 Vodafone Czech Republic a.s.。
+Surge 真实记录确认 IKE UDP500/4500 都走捷克节点。临时 STUN 专用测试规则已删除，临时规则列表为空。
+运营商 DNS 返回 62.141.11.56、62.141.11.59、62.141.11.101；这些地址均在既有捷克分流 IP 段内。
+
+第二轮结论：尚未恢复 VoWiFi，当前没有新的确定性代码错误可修；标准请求与实际 UDP 路径的主要差异已做对照。仍需同一卡在已知可工作的手机/客户端中的结果，才能进一步定位运营商对身份、号码开通或接入出口的拒绝。Notify24 本身不能证明哪项原因。
+
+新增参考来源：
+AOSP IMS APN（230/01 的 IMS 为 IPV4V6）：https://android.googlesource.com/device/sample/+/refs/heads/main/etc/apns-full-conf.xml
+AOSP NAI：https://android.googlesource.com/platform/packages/services/Iwlan/+/refs/heads/main/src/com/google/android/iwlan/IwlanHelper.java
+AOSP ePDG 配置：https://android.googlesource.com/platform/packages/services/Iwlan/+/refs/heads/main/src/com/google/android/iwlan/epdg/EpdgTunnelManager.java

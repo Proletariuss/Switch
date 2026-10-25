@@ -1,0 +1,11 @@
+version: 3
+kind: carrier_bundle
+id: apple_orange_lr
+bundle: Orange_lr.bundle
+supported_plmns:
+    - "61807"
+plmn_overrides:
+    "61807":
+        apns:
+            - apn: orangelbr
+              type_mask: 49

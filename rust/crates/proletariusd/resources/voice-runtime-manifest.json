@@ -1,0 +1,49 @@
+{
+  "commit": "0443dfdaf8aec086fd76ba2ee9152fd908114524",
+  "version": "qdc507-3.18.44-voice-20260712.5",
+  "kernel": "3.18.44",
+  "files": [
+    {
+      "name": "qdc507_aprv3.ko",
+      "size": 36664,
+      "sha256": "3d82d3dec4f1e323201bba87156df9d41438e08314097353f2607f9117211d4a",
+      "mode": 420,
+      "deploy": true
+    },
+    {
+      "name": "qdc507_voice.ko",
+      "size": 999236,
+      "sha256": "ed3821682d5309969a01c764192c83feff9669c61ef237c69475cd1619cf296c",
+      "mode": 420,
+      "deploy": true
+    },
+    {
+      "name": "mavo-pcm-bridge.armv7",
+      "size": 17860,
+      "sha256": "88d47c15e61d1428a59c821fed804c2e6490e82859a085062f21966b58d167fc",
+      "mode": 493,
+      "deploy": true
+    },
+    {
+      "name": "manifest.json",
+      "size": 729,
+      "sha256": "f4f6c266ced7015d4e61d993a6e31247c26a9e85a8fdf1c6d842c459e1e2970a",
+      "mode": 420,
+      "deploy": false
+    },
+    {
+      "name": "COPYING-GPL-2.0",
+      "size": 18693,
+      "sha256": "af8067302947c01fd9eee72befa54c7e3ef8a48fecde7fd71277f2290b2bf0f7",
+      "mode": 420,
+      "deploy": false
+    },
+    {
+      "name": "MODULE-REPORT.md",
+      "size": 7443,
+      "sha256": "fb9d58336bcfdad8938d7833c113a815c2153d9a04564eb73cddabea737f8be2",
+      "mode": 420,
+      "deploy": false
+    }
+  ]
+}

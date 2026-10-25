@@ -1,0 +1,78 @@
+version: 3
+kind: carrier_bundle
+id: apple_cmcc_cn
+bundle: CMCC_cn.bundle
+supported_plmns:
+    - "46000"
+    - "46002"
+    - "46007"
+    - "46008"
+common:
+    apns:
+        - apn: cmnet
+          type_mask: 1081395
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+        - apn: cmwap
+          type_mask: 4
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+        - apn: IMS
+          type_mask: 131072
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+          wait_for_bring_up_complete: true
+        - apn: cmnet
+          type_mask: 1081394
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+        - apn: SOS
+          type_mask: 262144
+          allowed_ip_stack: ipv4v6
+    apple:
+        carrier_entitlements:
+            supported_entitlements: 1024
+    e911:
+        emergency_urns:
+            "110": urn:service:sos.police
+            "119": urn:service:sos.fire
+            "120": urn:service:sos.ambulance
+            "122": urn:service:sos.traffic
+    entitlement:
+        entitlement_url: https://zdnlpz.yhdzd.chinamobile.com:8181/
+    ims:
+        apn: ims
+        ip_stack: ipv4v6
+        media:
+            rtcp_inactivity_seconds: 20
+            rtcp_interval_seconds: 5
+            rtp_inactivity_seconds: 20
+        register:
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: INVITE:200,PRACK:200,UPDATE:200
+                      params:
+                        - audio
+                    - selector: REGISTER
+                      params:
+                        - +g.3gpp.accesstype="cellular2"
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - "500"
+                    - "503"
+            early_media_needs_header: true
+            preconditions: supported
+            require_preconditions_when_mandatory: false
+            sip_timers:
+                InviteResponseTimeout: 6000
+            support_p_early_media: true
+        volte:
+            enable_volte_by_default: true

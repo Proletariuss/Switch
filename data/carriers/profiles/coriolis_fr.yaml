@@ -1,0 +1,64 @@
+version: 3
+kind: carrier_bundle
+id: apple_coriolis_fr
+bundle: Coriolis_fr.bundle
+supported_plmns:
+    - "20801"
+    - "20809"
+    - "20827"
+common:
+    apns:
+        - apn: coriolis
+          type_mask: 51
+        - apn: mmscoriolis
+          type_mask: 4
+        - apn: ims
+          type_mask: 131072
+          tech_type_mask: 131072
+          allowed_ip_stack: ipv4v6
+          support_switch_over: true
+          use_network_mtu: true
+    e911:
+        over_itech_supported: true
+        wifi_calling_without_entitlement: true
+    ims:
+        apn: ims
+        epdg:
+            address: epdg.epc.mnc027.mcc208.pub.3gppnetwork.org
+            configuration_attributes:
+                - identifier: 20
+                  name: AssignedPCSCFIPv4
+                  type: v4
+                - identifier: 21
+                  name: AssignedPCSCFIPv6
+                  type: v6
+        ike:
+            child_sa:
+                proposals:
+                    - source_branch: FirstChild
+                      encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      rekey_pfs_group: 14
+                      esn: auto
+                      lifetime_seconds: 86400
+            nat_keepalive_enabled: true
+        ip_stack: ipv4v6
+        media:
+            rtp_inactivity_seconds: 20
+        register:
+            use_ipsec: true
+        signaling:
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - "403"
+                    - "500"
+                    - "503"
+                    - "488"
+            early_media_needs_header: true
+            preconditions: supported
+            support_p_early_media: true
+    roaming:
+        wifi_calling_allowed: false

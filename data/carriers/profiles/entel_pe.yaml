@@ -1,0 +1,94 @@
+version: 3
+kind: carrier_bundle
+id: apple_entel_pe
+bundle: Entel_pe.bundle
+supported_plmns:
+    - "71617"
+plmn_overrides:
+    "71617":
+        apns:
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv4v6
+              support_switch_over: true
+              apple_options:
+                AllowedProtocolMaskInRoaming: "3"
+            - apn: entel.pe
+              type_mask: 32817
+            - apn: entel.pe
+              type_mask: 48
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 525329
+        e911:
+            over_itech_supported: false
+            wifi_calling_without_entitlement: true
+        entitlement:
+            entitlement_url: https://aes.mnc017.mcc716.pub.3gppnetwork.org:3443/entitlement/
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            epdg:
+                address: epdg.epc.mnc017.mcc716.pub.3gppnetwork.org
+            ike:
+                proposals:
+                    - encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      prf:
+                        - sha256
+                      dh_groups:
+                        - 16
+                      lifetime_seconds: 86400
+                      authentication_method: None
+                      eap_method: EAP-AKA
+                nat_keepalive_enabled: true
+                dpd:
+                    enabled: false
+                    interval_seconds: 600
+                    max_retries: 4
+                    retry_interval_seconds: 10
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes256
+                          integrity:
+                            - sha256
+                          protocol: esp
+                          rekey_pfs_group: 16
+                          esn: auto
+                          install_policies: true
+                          lifetime_seconds: 86400
+                    replay_window_size: 12
+                local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+            register:
+                expires: 3600
+                include_cellular_network_info: true
+            signaling:
+                preconditions: unsupported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                        - 4XX
+                        - 5XX
+                        - 6XX
+                contact:
+                    always_add_sip_instance: true
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            media:
+                rtp_inactivity_seconds: 15
+            volte:
+                enable_volte_by_default: true
+        roaming:
+            wifi_calling_allowed: true

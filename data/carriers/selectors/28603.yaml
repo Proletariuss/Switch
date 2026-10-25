@@ -1,0 +1,10 @@
+version: 2
+plmn: "28603"
+profiles:
+    - id: apple_avea_tr
+      path: profiles/avea_tr.yaml
+      generic: true
+      selectors:
+        - raw: "28603"
+          carrier_name: Turk Telekom
+          iso: TR

@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_digicel_vg
+bundle: Digicel_vg.bundle
+supported_plmns:
+    - "338050"
+    - "348770"
+common:
+    apns:
+        - apn: web
+          type_mask: 49
+        - apn: Wap
+          type_mask: 4
+        - apn: web
+          type_mask: 48

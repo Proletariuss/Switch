@@ -1,0 +1,89 @@
+version: 3
+kind: carrier_bundle
+id: apple_orange_sk
+bundle: Orange_sk.bundle
+supported_plmns:
+    - "23101"
+plmn_overrides:
+    "23101":
+        apns:
+            - apn: internet
+              type_mask: 32817
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4
+              use_network_mtu: true
+              xlat464_enabled: true
+            - apn: mms
+              username: wap
+              password: wap
+              type_mask: 4
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv4v6
+              support_switch_over: true
+              use_network_mtu: true
+            - apn: xcap
+              type_mask: 1048576
+              allowed_ip_stack: ipv4
+            - apn: sos
+              type_mask: 262144
+              tech_type_mask: 262144
+              allowed_ip_stack: ipv4v6
+              allow_no_dns: 1
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 5329
+        e911:
+            over_itech_supported: false
+            wifi_calling_without_entitlement: false
+        entitlement:
+            entitlement_url: https://aes.orange.sk/ium-OEMInterface/servlet/IUMServlet
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            epdg:
+                address: epdg.epc.mnc001.mcc231.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 20
+                      name: AssignedPCSCFIPv4
+                      type: v4
+            ike:
+                nat_keepalive_enabled: true
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes256
+                          integrity:
+                            - sha256
+                          rekey_pfs_group: 14
+                          esn: auto
+                          lifetime_seconds: 86400
+                remote_identifier_type: KeyID
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - "403"
+                        - "408"
+                        - 5XX
+                require_preconditions_when_mandatory: false
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                sip_timers:
+                    InviteResponseTimeout: 2000
+            media:
+                rtp_inactivity_seconds: 20
+                rtcp_interval_seconds: 5
+            volte:
+                enable_volte_by_default: true

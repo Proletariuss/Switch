@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_tcc_to
+bundle: TCC_to.bundle
+supported_plmns:
+    - "53901"
+plmn_overrides:
+    "53901":
+        apns:
+            - apn: tccwap
+              username: tccwap
+              password: "123456"
+              type_mask: 49
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4

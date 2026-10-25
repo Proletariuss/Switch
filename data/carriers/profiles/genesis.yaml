@@ -1,0 +1,11 @@
+version: 3
+kind: carrier_bundle
+id: apple_genesis
+bundle: Genesis.bundle
+supported_plmns:
+    - "26001"
+plmn_overrides:
+    "26001":
+        apns:
+            - apn: xdata
+              type_mask: 65585

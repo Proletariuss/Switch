@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>zh_CN</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleDisplayName</key>
+	<string>$(DISPLAY_NAME)</string>
+	<key>CFBundleName</key>
+	<string>$(DISPLAY_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+	<key>LSUIElement</key>
+	<false/>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>用于扫描运营商提供的 eSIM 二维码，画面仅在本机处理。</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>用于发现并连接 ESTKme-RED 蓝牙读卡器，仅在你打开蓝牙读卡器功能时扫描。</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>用于发现并连接 ESTKme-RED 蓝牙读卡器。</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>用于在通话中通过所选的 DJI 模块或读卡器 VoWiFi 发送你的声音。</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © Proletarius</string>
+</dict>
+</plist>

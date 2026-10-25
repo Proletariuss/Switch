@@ -1,0 +1,92 @@
+version: 3
+kind: carrier_bundle
+id: apple_mts_am
+bundle: MTS_am.bundle
+supported_plmns:
+    - "28305"
+plmn_overrides:
+    "28305":
+        apns:
+            - apn: inet.vivacell.am
+              type_mask: 49
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv4
+              support_switch_over: true
+            - apn: hos
+              type_mask: 1048576
+              tech_type_mask: 1048576
+              allowed_ip_stack: ipv4
+            - apn: sos
+              type_mask: 262144
+              tech_type_mask: 262144
+              allowed_ip_stack: ipv4
+              allow_no_dns: 1
+        e911:
+            over_itech_supported: false
+            wifi_calling_without_entitlement: true
+        ims:
+            apn: ims
+            ip_stack: ipv4
+            epdg:
+                address: epdg.epc.mnc005.mcc283.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 16384
+                      name: AssignedPCSCFIPv4
+                      type: v4
+                    - identifier: 16385
+                      name: AssignedPCSCFIPv6
+                      type: v6
+            ike:
+                proposals:
+                    - encryption:
+                        - aes128
+                      integrity:
+                        - sha256
+                      prf:
+                        - sha256
+                      dh_groups:
+                        - 15
+                      lifetime_seconds: 86400
+                      authentication_method: None
+                      eap_method: EAP-AKA
+                nat_keepalive_enabled: true
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes128
+                          integrity:
+                            - sha256
+                          rekey_pfs_group: 15
+                          esn: auto
+                          lifetime_seconds: 86400
+                    replay_window_size: 12
+            register:
+                use_ipsec: true
+                include_cellular_network_info: true
+            signaling:
+                support_p_early_media: true
+                early_media_needs_header: false
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                        - 4XX
+                        - 5XX
+                        - 6XX
+                contact:
+                    always_add_sip_instance: true
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            ussi:
+                enabled: false
+            volte:
+                enable_volte_by_default: true
+        roaming:
+            wifi_calling_allowed: true

@@ -1,0 +1,43 @@
+version: 3
+kind: carrier_bundle
+id: apple_dhiraagu_mv
+bundle: Dhiraagu_mv.bundle
+supported_plmns:
+    - "47201"
+plmn_overrides:
+    "47201":
+        apns:
+            - apn: internet.dhimobile
+              type_mask: 53
+            - apn: ims
+              type_mask: 131072
+            - apn: xcap
+              type_mask: 1048576
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 9217
+        entitlement:
+            entitlement_url: https://des.dhiraagu.com.mv/entitlement
+        ims:
+            apn: ims
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - "403"
+                        - "500"
+                        - "503"
+                contact:
+                    always_add_sip_instance: true
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+            volte:
+                enable_volte_by_default: true

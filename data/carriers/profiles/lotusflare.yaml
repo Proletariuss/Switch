@@ -1,0 +1,12 @@
+version: 3
+kind: carrier_bundle
+id: apple_lotusflare
+bundle: LotusFlare.bundle
+supported_plmns:
+    - "52501"
+plmn_overrides:
+    "52501":
+        apns:
+            - apn: e-ideas
+              username: 65ideas
+              type_mask: 65585

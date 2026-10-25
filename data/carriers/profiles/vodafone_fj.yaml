@@ -1,0 +1,13 @@
+version: 3
+kind: carrier_bundle
+id: apple_vodafone_fj
+bundle: Vodafone_fj.bundle
+supported_plmns:
+    - "54201"
+plmn_overrides:
+    "54201":
+        apns:
+            - apn: internet
+              type_mask: 49
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4

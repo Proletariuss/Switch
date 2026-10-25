@@ -1,0 +1,48 @@
+version: 3
+kind: carrier_bundle
+id: apple_unionwireless_us
+bundle: UnionWireless_US.bundle
+supported_plmns:
+    - "310020"
+plmn_overrides:
+    "310020":
+        apns:
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+            - apn: smart.com
+              type_mask: 51
+            - apn: union.mms.com
+              type_mask: 4
+            - apn: hos
+              type_mask: 1048576
+              allowed_ip_stack: ipv4v6
+            - apn: sos
+              type_mask: 262144
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            register:
+                use_ipsec: true
+                expires: 7200
+                include_cellular_network_info: true
+            signaling:
+                max_udp_message_size: 1200
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: false
+                contact:
+                    always_add_sip_instance: true
+                additional_headers:
+                    - selector: INVITE[911,wifi]
+                      headers:
+                        - 'Supported: geolocation'
+                sip_timers:
+                    InviteResponseTimeout: 5000
+            media:
+                rtp_inactivity_seconds: 10
+            volte:
+                enable_volte_by_default: true

@@ -1,0 +1,25 @@
+version: 3
+kind: carrier_bundle
+id: apple_faroesetelecom_fo
+bundle: FaroeseTelecom_fo.bundle
+supported_plmns:
+    - "28801"
+plmn_overrides:
+    "28801":
+        apns:
+            - apn: internet
+              type_mask: 32817
+              allowed_ip_stack: ipv4
+              use_network_mtu: true
+            - apn: hos
+              type_mask: 1048576
+              tech_type_mask: 1048576
+              allowed_ip_stack: ipv4
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 1
+        entitlement:
+            entitlement_url: https://ses.ims.mnc001.mcc288.pub.3gppnetwork.org
+        ims:
+            volte:
+                enable_volte_by_default: true

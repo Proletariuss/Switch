@@ -1,0 +1,11 @@
+version: 3
+kind: carrier_bundle
+id: apple_opt_nc
+bundle: OPT_nc.bundle
+supported_plmns:
+    - "54601"
+plmn_overrides:
+    "54601":
+        apns:
+            - apn: IM
+              type_mask: 51

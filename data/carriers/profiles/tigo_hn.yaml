@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_tigo_hn
+bundle: Tigo_hn.bundle
+supported_plmns:
+    - "70802"
+plmn_overrides:
+    "70802":
+        apns:
+            - apn: internet.tigo.hn
+              type_mask: 49
+            - apn: mms.tigo.hn
+              type_mask: 4
+            - apn: internet.tigo.hn
+              type_mask: 48

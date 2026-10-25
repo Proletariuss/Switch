@@ -1,0 +1,62 @@
+version: 3
+kind: carrier_bundle
+id: apple_docomo_gu
+bundle: Docomo_gu.bundle
+supported_plmns:
+    - "310370"
+    - "310470"
+    - "313110"
+    - "52505"
+common:
+    apns:
+        - apn: apple.internet
+          type_mask: 51
+        - apn: ims
+          type_mask: 131072
+          allowed_ip_stack: ipv4
+          roaming_ip_stack: ipv4
+        - apn: xcap
+          type_mask: 1048576
+          allowed_ip_stack: ipv4
+          roaming_ip_stack: ipv4
+        - apn: ""
+          type_mask: 262144
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+    ims:
+        apn: ims
+        ip_stack: ipv4
+        register:
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                        - +g.3gpp.mid-call
+                always_add_sip_instance: true
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - "403"
+                    - "500"
+                    - "503"
+            early_media_needs_header: false
+            preconditions: supported
+            require_preconditions_when_mandatory: false
+            support_p_early_media: false
+        volte:
+            enable_volte_by_default: true
+selector_overrides:
+    "313110":
+        apns:
+            - apn: firstnet-phone
+              type_mask: 49
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv4
+            - apn: xcap
+              type_mask: 1048576
+              allowed_ip_stack: ipv4

@@ -1,0 +1,17 @@
+version: 3
+kind: carrier_bundle
+id: apple_safaricom_ke
+bundle: Safaricom_ke.bundle
+supported_plmns:
+    - "63902"
+plmn_overrides:
+    "63902":
+        apns:
+            - apn: safaricom
+              username: saf
+              password: data
+              type_mask: 53
+            - apn: safaricom
+              username: saf
+              password: data
+              type_mask: 52

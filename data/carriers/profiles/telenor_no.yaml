@@ -1,0 +1,136 @@
+version: 3
+kind: carrier_bundle
+id: apple_telenor_no
+bundle: Telenor_no.bundle
+supported_plmns:
+    - "24201"
+plmn_overrides:
+    "24201":
+        apns:
+            - apn: telenor.smart
+              type_mask: 32817
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv6
+              roaming_ip_stack: ipv6
+              support_switch_over: true
+              no_cellular_reconnect_cause_codes:
+                - cause_codes:
+                    - 33
+                  recovers_on_airplane_mode: true
+                  num_tries_allowed: 5
+                  type: 3GPP
+                  timeout: 86400
+            - apn: telenor.mms
+              type_mask: 6
+              tech_type_mask: 6
+              allowed_ip_stack: ipv4
+            - apn: hos
+              type_mask: 1048576
+              tech_type_mask: 1048576
+              allowed_ip_stack: ipv6
+              roaming_ip_stack: ipv6
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 11265
+        e911:
+            over_itech_supported: true
+            wifi_calling_without_entitlement: true
+            emergency_urns:
+                "110": urn:service:sos.fire
+                "112": urn:service:sos.police
+                "113": urn:service:sos.ambulance
+        entitlement:
+            entitlement_url: https://ensp.telenor.no/entitlement
+        ims:
+            apn: ims
+            ip_stack: ipv6
+            epdg:
+                address: epdg.epc.mnc001.mcc242.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 16384
+                      name: AssignedPCSCFIPv4
+                      type: v4
+                    - identifier: 16390
+                      name: AssignedPCSCFIPv6
+                      type: v6
+            ike:
+                proposals:
+                    - encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      prf:
+                        - sha256
+                      dh_groups:
+                        - 15
+                      lifetime_seconds: 80000
+                      authentication_method: None
+                      eap_method: EAP-AKA
+                nat_keepalive_enabled: true
+                nat_keepalive_seconds: 20
+                ipsec_mtu: 1280
+                dpd:
+                    enabled: false
+                    interval_seconds: 600
+                    max_retries: 4
+                    retry_interval_seconds: 10
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes256
+                          integrity:
+                            - sha256
+                          esn: auto
+                          install_policies: true
+                          lifetime_seconds: 80000
+                    replay_window_size: 12
+                local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+                validate_remote_certificate: false
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                        - 5XX
+                require_preconditions_when_mandatory: false
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            media:
+                rtp_inactivity_seconds: 20
+                rtcp_interval_seconds: 5
+            volte:
+                enable_volte_by_default: true
+        roaming:
+            wifi_calling_allowed: false
+selector_overrides:
+    24201_ID-89470002:
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 1025
+    24201_ID-89470003:
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 1025
+    24201_ID-89470022:
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 1025
+    24201_ID-89470023:
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 1025

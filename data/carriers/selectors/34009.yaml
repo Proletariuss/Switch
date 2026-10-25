@@ -1,0 +1,10 @@
+version: 2
+plmn: "34009"
+profiles:
+    - id: apple_free_mq
+      path: profiles/free_mq.yaml
+      generic: true
+      selectors:
+        - raw: "34009"
+          carrier_name: Free
+          iso: MQ

@@ -1,0 +1,61 @@
+version: 3
+kind: carrier_bundle
+id: apple_dna_fi
+bundle: DNA_fi.bundle
+supported_plmns:
+    - "24403"
+    - "24412"
+common:
+    apns:
+        - apn: internet
+          type_mask: 32817
+          allowed_ip_stack: ipv4v6
+        - apn: mms
+          type_mask: 4
+          allowed_ip_stack: ipv4v6
+        - apn: ims
+          type_mask: 131072
+          allowed_ip_stack: ipv6
+          support_switch_over: true
+        - apn: internet
+          type_mask: 48
+          allowed_ip_stack: ipv4v6
+        - apn: hos
+          type_mask: 1048576
+          allowed_ip_stack: ipv6
+        - apn: sos
+          type_mask: 262144
+          allowed_ip_stack: ipv6
+    apple:
+        carrier_entitlements:
+            supported_entitlements: 13313
+    entitlement:
+        entitlement_url: https://ents.mnc012.mcc244.pub.3gppnetwork.org
+    ims:
+        apn: ims
+        ip_stack: ipv6
+        media:
+            rtcp_interval_seconds: 5
+            rtp_inactivity_seconds: 10
+        register:
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - 6XX
+            early_media_needs_header: true
+            preconditions: supported
+            require_preconditions_when_mandatory: false
+            support_p_early_media: true
+        ussi:
+            enabled: false
+        volte:
+            enable_volte_by_default: true

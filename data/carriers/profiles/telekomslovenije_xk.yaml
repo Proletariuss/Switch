@@ -1,0 +1,17 @@
+version: 3
+kind: carrier_bundle
+id: apple_telekomslovenije_xk
+bundle: TelekomSlovenije_xk.bundle
+supported_plmns:
+    - "22102"
+    - "29341"
+common:
+    apns:
+        - apn: ipko
+          username: ipko
+          password: ipko
+          type_mask: 53
+        - apn: ipko
+          username: ipko
+          password: ipko
+          type_mask: 52

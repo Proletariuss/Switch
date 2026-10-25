@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_zong_pk
+bundle: Zong_pk.bundle
+supported_plmns:
+    - "41004"
+plmn_overrides:
+    "41004":
+        apns:
+            - apn: zonginternet
+              type_mask: 1
+            - apn: zongmms
+              type_mask: 4
+            - apn: zongwap
+              type_mask: 48

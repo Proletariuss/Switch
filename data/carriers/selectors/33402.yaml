@@ -1,0 +1,20 @@
+version: 2
+plmn: "33402"
+profiles:
+    - id: apple_claro_pa
+      path: profiles/claro_pa.yaml
+      selectors:
+        - raw: 33402_ID-8950703
+          carrier_name: CLARO PA
+          iso: PA
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "8950703"
+    - id: apple_telcel_mx
+      path: profiles/telcel_mx.yaml
+      generic: true
+      selectors:
+        - raw: "33402"
+          carrier_name: Telcel
+          iso: MX

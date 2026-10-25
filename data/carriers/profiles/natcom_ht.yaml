@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_natcom_ht
+bundle: Natcom_ht.bundle
+supported_plmns:
+    - "37203"
+    - "45204"
+common:
+    apns:
+        - apn: natcom
+          type_mask: 49
+        - apn: WAP
+          type_mask: 4
+        - apn: natcom
+          type_mask: 48

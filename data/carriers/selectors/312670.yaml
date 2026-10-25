@@ -1,0 +1,17 @@
+version: 2
+plmn: "312670"
+profiles:
+    - id: apple_att_firstnet_us
+      path: profiles/att_firstnet_us.yaml
+      generic: true
+      selectors:
+        - raw: "312670"
+          carrier_name: FirstNet
+          iso: US
+        - raw: 312670_GID1-52FF
+          carrier_name: FirstNet
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 52FF

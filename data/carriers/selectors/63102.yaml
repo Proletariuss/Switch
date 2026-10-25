@@ -1,0 +1,10 @@
+version: 2
+plmn: "63102"
+profiles:
+    - id: apple_unitel_ao
+      path: profiles/unitel_ao.yaml
+      generic: true
+      selectors:
+        - raw: "63102"
+          carrier_name: UNITEL
+          iso: AO

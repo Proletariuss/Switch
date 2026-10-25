@@ -1,0 +1,88 @@
+# Reader VoWiFi carrier overrides for the native macOS backend.
+#
+# Lookup order for the ePDG is:
+#   1. ePDG/port entered in the app for this connection
+#   2. custom_epdg/epdg_port below
+#   3. the built-in carrier preset
+#   4. the standard 3GPP name
+#
+# dns_servers never replaces the ePDG hostname with a locally resolved "real"
+# address. With an upstream proxy, the original hostname is sent to that proxy
+# so mihomo fake-IP/TUN routing remains authoritative.
+
+carrier_overrides:
+  "310/260":
+    id: tmobile_custom
+
+    # ePDG / IKE
+    custom_epdg: epdg.epc.mnc260.mcc310.pub.3gppnetwork.org
+    epdg_port: 500
+    apn: ims
+    ip_stack: ipv4v6             # ipv4 | ipv6 | ipv4v6
+    dns_servers:
+      - "8.8.8.8"
+      - "1.1.1.1:53"
+    nat_keepalive_seconds: 20
+    dpd_interval_seconds: 600
+    reauth_interval_seconds: 3600
+    algorithm_policy: balanced   # strict | balanced | legacy_prefer
+    enable_legacy_ciphers: false
+    ike_proposals:               # present list replaces the effective defaults
+      - aes256-sha256-prfsha1-modp2048
+      - aes128-sha256-modp2048
+    esp_proposals:
+      - aes256-sha256
+    aka_challenge_mode: minimal  # minimal | omit | checkcode | recompute
+
+    # Device identity
+    device_model: "iphone15,4"
+    device_identity_enabled: true
+    device_identity_imei: "351234567890124" # 15 digits with a valid Luhn check digit
+
+    # IMS / SIP
+    ims_domain: ims.mnc260.mcc310.3gppnetwork.org
+    ims_realm: ims.mnc260.mcc310.3gppnetwork.org
+    # 本地号码/运营商短号的 phone-context；仅在与 IMS 身份域不同时配置。
+    ims_phone_context: ims.mnc260.mcc310.3gppnetwork.org
+    ims_pcscf: ""                # empty means no override
+    ims_transport: auto          # auto | tcp | udp
+    ims_identity_source: isim    # derived | isim | auto
+    ims_local_port: 5060
+    ims_tcp_keepalive_seconds: 30
+    ims_options_ping_interval_seconds: 45
+
+    # REGISTER template
+    ims_register_template:
+      id: tmobile_custom_reg
+      expires: 600000            # applied only when greater than zero
+      contact_mode: android_default
+      sec_agree_mode: auto       # auto | required | disabled
+      supported_header: path,sec-agree,gruu
+      access_type: wlan1
+      contact_param_order:       # present list replaces the preset order
+        - access_type
+        - sip_instance
+        - audio
+        - smsip
+        - icsi_ref
+      include_pani_authenticated: true
+      strict_security_server_offer: true
+      enable_initial_reject_fallback: true
+      security_client_mechanisms:
+        - alg: hmac-sha-1-96
+          ealg: aes-cbc
+          prot: esp
+          mode: trans
+      register_policy:
+        temporary_status_codes: [408, 429, 500, 502, 503, 504]
+        forbidden_status_codes: [403]
+        initial_reject_fallback_status_codes: [400, 403, 500]
+        temporary_retry_seconds: 60
+
+    # E911 entitlement is validated at load time. The reader runtime rejects an
+    # enabled provider that is not implemented instead of reporting false success.
+    e911:
+      enabled: true
+      provider: att_entitlement
+      entitlement_url: https://example.carrier.net/
+      websheet_host_policy: public_https

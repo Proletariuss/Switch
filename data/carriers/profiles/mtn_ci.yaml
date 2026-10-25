@@ -1,0 +1,21 @@
+version: 3
+kind: carrier_bundle
+id: apple_mtn_ci
+bundle: MTN_ci.bundle
+supported_plmns:
+    - "61205"
+plmn_overrides:
+    "61205":
+        apns:
+            - apn: web.mtn.ci
+              username: web.mtn.ci
+              password: web.mtn.ci
+              type_mask: 49
+            - apn: mms.mtn.ci
+              username: mms.mtn.ci
+              password: mms.mtn.ci
+              type_mask: 4
+            - apn: web.mtn.ci
+              username: web.mtn.ci
+              password: web.mtn.ci
+              type_mask: 48

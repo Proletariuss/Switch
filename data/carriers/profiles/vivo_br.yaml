@@ -1,0 +1,120 @@
+version: 3
+kind: carrier_bundle
+id: apple_vivo_br
+bundle: vivo_br.bundle
+supported_plmns:
+    - "21402"
+    - "21407"
+    - "72406"
+    - "72410"
+    - "72411"
+    - "72423"
+common:
+    apns:
+        - apn: zap.vivo.com.br
+          username: vivo
+          password: vivo
+          type_mask: 32817
+          allowed_ip_stack: ipv6
+          roaming_ip_stack: ipv4v6
+          domestic_roaming_ip_stack: ipv4v6
+          xlat464_enabled: true
+        - apn: mms.vivo.com.br
+          username: vivo
+          password: vivo
+          type_mask: 4
+        - apn: ims
+          type_mask: 131072
+          tech_type_mask: 131072
+          allowed_ip_stack: ipv4v6
+          support_switch_over: true
+          support_5g_sa_handover: true
+        - apn: xcap.ims
+          type_mask: 1048576
+          tech_type_mask: 1048576
+          allowed_ip_stack: ipv4
+          support_switch_over: true
+          support_5g_sa_handover: true
+    apple:
+        carrier_entitlements:
+            supported_entitlements: 4203537
+    e911:
+        over_itech_supported: false
+        wifi_calling_without_entitlement: true
+    entitlement:
+        entitlement_url: https://aes.mnc010.mcc724.pub.3gppnetwork.org/entitlement/
+    ims:
+        apn: ims
+        epdg:
+            configuration_attributes:
+                - identifier: 16384
+                  name: AssignedPCSCFIPv4
+                  type: v4
+                - identifier: 16386
+                  name: AssignedPCSCFIPv6
+                  type: v6
+        ike:
+            child_sa:
+                proposals:
+                    - source_branch: FirstChild
+                      encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      esn: auto
+                      install_policies: true
+                      lifetime_seconds: 86400
+                replay_window_size: 12
+            dpd:
+                enabled: false
+                interval_seconds: 600
+                max_retries: 4
+                retry_interval_seconds: 10
+            local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+        ip_stack: ipv4v6
+        media:
+            rtcp_interval_seconds: 5
+            rtp_inactivity_seconds: 30
+        register:
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.srvcc-alerting
+            early_media_needs_header: true
+            preconditions: supported
+            require_preconditions_when_mandatory: false
+            sip_timers:
+                InviteResponseTimeout: 9000
+            support_p_early_media: true
+        volte:
+            enable_volte_by_default: true
+    roaming:
+        wifi_calling_allowed: true
+plmn_overrides:
+    "21402":
+        ims:
+            epdg:
+                address: epdg.epc.mnc002.mcc214.pub.3gppnetwork.org
+    "21407":
+        ims:
+            epdg:
+                address: epdg.epc.mnc007.mcc214.pub.3gppnetwork.org
+    "72406":
+        ims:
+            epdg:
+                address: epdg.epc.mnc006.mcc724.pub.3gppnetwork.org
+    "72410":
+        ims:
+            epdg:
+                address: epdg.epc.mnc010.mcc724.pub.3gppnetwork.org
+    "72411":
+        ims:
+            epdg:
+                address: epdg.epc.mnc011.mcc724.pub.3gppnetwork.org
+    "72423":
+        ims:
+            epdg:
+                address: epdg.epc.mnc023.mcc724.pub.3gppnetwork.org

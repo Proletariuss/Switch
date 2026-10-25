@@ -1,0 +1,263 @@
+{
+  "schema": "switch-baseline-provenance-v1",
+  "updated_iteration": 597,
+  "roles": {
+    "seed_263": {
+      "unscored_role_label": "Proletarius2.63/build263 copied seed",
+      "existing_leaf_links": [
+        "P0-1.working-baseline",
+        "P0-1.baseline-280"
+      ],
+      "provenance": "2026-09-30 implementation record and3087-fileP0manifest",
+      "payload_locators": [
+        "localGit commit ba1b4229efd698a7d687f3813401892303554abf",
+        "/Users/StatTrak/Desktop/Switch_MAC/src/.impeccable/surfaces/app-sources-views-callview-swift.md"
+      ],
+      "recoverable_content_files": 3087,
+      "recovery_state": "CONTENT_RESTORED_AND_RAW_VERIFIED_SEED_ONLY",
+      "missing_facts": [
+        "Manifest does not specify complete original modes/ownership/timestamps/ACL/xattrs; original working tree and excluded generated files remain outside this content proof"
+      ],
+      "cannot_substitute_for": [
+        "pre_280",
+        "final_280",
+        "pre_all_rust"
+      ],
+      "may_close_leaf_ids": [],
+      "recovery_result": {
+        "path": "build/reports/iteration-596-seed-recovery-result.json",
+        "sha256": "818bc26b367a33501889e53f951f9b0c9d58ce21964587708908faf3e75556f1"
+      },
+      "restored_directory": "build/baselines/iteration-596-seed-263-recovered",
+      "actual_content_files": 3087,
+      "actual_content_bytes": 46067337,
+      "historical_metadata_completeness_claimed": false,
+      "historical_modem_scope": {
+        "status": "PARTIAL_HISTORICAL_FACTS_SEED263_ONLY",
+        "source_report": {
+          "path": "build/reports/iteration-596-seed-modem-scope.json",
+          "sha256": "9d08eb65e245fa3eb2bce2d38339aca51c556c1b8749576bcd8fad856d3eb797"
+        },
+        "facts": [
+          "The default App and Rust gateway launch the2.63 Go backend with listen arguments only, so the default backend is AT.",
+          "Manual production CLI backend=qmi enters macOS cgo/libusb and QMI manager core; data-plane dialing is disabled. This is not proof of a working QMI VoWiFi business path.",
+          "QMI probe/set/operator wrappers have no non-test application caller in this seed.",
+          "MBIM library code exists, but the seed macOS CLI rejects backend=mbim and no production factory caller was established."
+        ],
+        "boundary": "Seed2.63 only. Unknown2.80/switch-time deltas and actual device/firmware support remain; do not remove the retained MBIM leaf."
+      }
+    },
+    "pre_280": {
+      "unscored_role_label": "pre-hardening2.79/build279 actual dirty worktree",
+      "existing_leaf_links": [
+        "P0-1.working-baseline"
+      ],
+      "provenance": "protocol-hardening-execution.md:3,7",
+      "documented_files": 3299,
+      "documented_source_bytes": 51739679,
+      "documented_archive_sha256": "29d304bad6199c982f373e6e61d955946068af4a06c99dc51298c7c17c2f8845",
+      "recovery_state": "exact_documented_locator_unlocated_in_currentworkspace",
+      "missing_facts": [
+        "Archive payload+manifest including dirty/untracked; complete environment/native build-input provenance"
+      ],
+      "cannot_substitute_for": [
+        "final2.80 unless exact complete delta and final manifest established"
+      ],
+      "may_close_leaf_ids": [],
+      "follow_up": "No repeated archive request. Historical documented locator/hash remain provenance only; payload is unavailable in the workspace."
+    },
+    "final_280": {
+      "unscored_role_label": "final hardening2.80/build280 source and delivery",
+      "existing_leaf_links": [
+        "P0-1.baseline-280"
+      ],
+      "provenance": "protocol-hardening-execution.md:67-76; allRustplan:101/379",
+      "documented_source_locator": "build/optimization/2026-10-03-protocol-hardening-final-source/",
+      "documented_DMGSHA256": "3c0e21f397b2c418201082e0b19d26b00744b39c15b4cf558254ff604318064c",
+      "documented_delta": {
+        "modified": 26,
+        "added": 11,
+        "removed": 0,
+        "modechanges": 0
+      },
+      "recovery_state": "UNAVAILABLE_USER_CONFIRMED_NOT_RETAINED",
+      "missing_facts": [
+        "Exact final source manifest/payload or complete pre2.80+ordered dirty-inclusive delta",
+        "Version/build/package/source/native-dependency linkage; package hash alone cannot restore source"
+      ],
+      "may_close_leaf_ids": [],
+      "previous_recovery_state": "source_manifest_and_payload_not_established_locally",
+      "user_availability_confirmation": {
+        "date": "2026-10-20",
+        "reply": "不保留了",
+        "evidence": "build/reports/iteration-597-user-history-availability.json",
+        "sha256": "3b87a3e0aeded7c3131c5827959dc0f437e9971bf2cf36611f02e8ff8fb1c571",
+        "repeat_archive_request": false,
+        "requirement_waiver_inferred": false
+      }
+    },
+    "pre_all_rust": {
+      "unscored_role_label": "actual allRust switch-time worktree distinct from named2.80release",
+      "existing_leaf_links": [
+        "P0-1.working-baseline",
+        "P0-1.baseline-280"
+      ],
+      "provenance": "allRustplan5P0 requires actual working tree rather thanGitHEAD; start base names2.80",
+      "recovery_state": "UNAVAILABLE_USER_CONFIRMED_NOT_RETAINED",
+      "missing_facts": [
+        "Actual switch timestamp/archive/manifest and changes after2.80 before migration",
+        "Oct8Git checkpoint2.93 is already a migration checkpoint; cannot silently relabel it pre-allRust"
+      ],
+      "may_close_leaf_ids": [],
+      "previous_recovery_state": "actual switch-time dirty/untracked snapshot not established by inspectedobjects",
+      "user_availability_confirmation": {
+        "date": "2026-10-20",
+        "reply": "不保留了",
+        "evidence": "build/reports/iteration-597-user-history-availability.json",
+        "sha256": "3b87a3e0aeded7c3131c5827959dc0f437e9971bf2cf36611f02e8ff8fb1c571",
+        "repeat_archive_request": false,
+        "requirement_waiver_inferred": false
+      }
+    },
+    "current": {
+      "unscored_role_label": "Actual3.44 delivery input cut, equivalent functional source to full3036 original597 cut; new binary verification separately pinned",
+      "existing_leaf_links": [
+        "P0-1.working-baseline"
+      ],
+      "manifest_path": "/Users/StatTrak/Desktop/Switch_MAC/build/reports/iteration-597-release-source-snapshot.json",
+      "manifest_sha256": "ef70f66355ce44364393bb3010b00fd3f8c683d7d0438ed840d4977b09fdd58d",
+      "manifest_files": 3003,
+      "mapped_current_files_with_raw_mismatch": [],
+      "version": "3.44",
+      "build": "344",
+      "recovery_state": "Current declared3003 inputs match actual files; production3.44 DMG and79 selected regressions verified. Original3036 full regression stays pinned to3.43 cut. No independent whole-worktree restore claimed.",
+      "missing_facts": [
+        "Declared compiled/schema/tooling inputs plus separately pinned documents do not reconstruct excluded historical working-tree metadata.",
+        "No independent restore of the complete current working tree is claimed."
+      ],
+      "cannot_substitute_for": [
+        "any older baseline role"
+      ],
+      "may_close_leaf_ids": [],
+      "software_evidence": [
+        {
+          "path": "build/reports/iteration-597-dmg-344-verification.json",
+          "sha256": "20438d5cb8fe097c5a75e4beb96d533af726a44f1d533da970a1ddcdc27a857e"
+        },
+        {
+          "path": "build/reports/iteration-597-release-tests-result.json",
+          "sha256": "452fa48e60bd4363b6cc6160072d656aafbfa46e3ecceea56bd9ab70e01c8506"
+        },
+        {
+          "path": "build/reports/iteration-597-release-version-only-delta.json",
+          "sha256": "81bbfb070f067805c1608904ccb87e310325717eaea9a9c7f33ae8fdc9486703"
+        },
+        {
+          "path": "build/reports/iteration-597-final-v1-daemon-full-result.json",
+          "sha256": "50827980587b79e36b35e07149db9ee0c8d80538bba4f707296b4660689d7dba"
+        }
+      ],
+      "previous_reviewed_role": {
+        "unscored_role_label": "Actual software-validated597 declared source-input cut; not a whole historic working-tree restore",
+        "existing_leaf_links": [
+          "P0-1.working-baseline"
+        ],
+        "manifest_path": "/Users/StatTrak/Desktop/Switch_MAC/build/reports/iteration-597-final-v1-source-snapshot.json",
+        "manifest_sha256": "eea99c8784a1253f2eec597316cfd370d35cdb6fce11db9054b0fe11fdde2653",
+        "manifest_files": 3003,
+        "mapped_current_files_with_raw_mismatch": [],
+        "version": "3.43",
+        "build": "343",
+        "recovery_state": "Current declared source-input map matches actual working files. Actual daemon3036 and signed candidate package verified; no isolated full-working-tree restore performed.",
+        "missing_facts": [
+          "Declared compiled/schema/tooling inputs plus separately pinned documents do not reconstruct excluded historical working-tree metadata.",
+          "No independent restore of the complete current working tree is claimed."
+        ],
+        "cannot_substitute_for": [
+          "any older baseline role"
+        ],
+        "may_close_leaf_ids": [],
+        "software_evidence": [
+          {
+            "path": "build/reports/iteration-597-final-v1-daemon-full-result.json",
+            "sha256": "50827980587b79e36b35e07149db9ee0c8d80538bba4f707296b4660689d7dba"
+          },
+          {
+            "path": "build/reports/iteration-597-candidate-app-verification.json",
+            "sha256": "d40bde99fa3a26436ab4b913924e92c74097b7d2e33372e5fd8e800d81d1e253"
+          }
+        ],
+        "previous_reviewed_role": {
+          "unscored_role_label": "Last software-verified595 cut;596 changes metadata/tooling only. No current app recompile is claimed.",
+          "existing_leaf_links": [
+            "P0-1.working-baseline"
+          ],
+          "manifest_path": "/Users/StatTrak/Desktop/Switch_MAC/build/reports/iteration-595-final-v1-source-snapshot.json",
+          "manifest_sha256": "1bf41f90a7f70cbbabcc9e9c51ce9755ded80be2960f2b732d344212ee91daff",
+          "manifest_files": 3000,
+          "mapped_current_files_with_raw_mismatch": [
+            "docs/optimization/all-rust/api-contract-inventory.json",
+            "docs/optimization/all-rust/api-contract-review.json"
+          ],
+          "version": "3.43",
+          "build": "343",
+          "recovery_state": "595 snapshot remains exact historical map; observed596 worktree has2API-review-document changes,2998mappedfiles raw-match; no isolatedrestore run",
+          "missing_facts": [
+            "This comparison does not reconstruct excluded historical files or independently establish no additional current source entries beyond the declared inventory",
+            "596 is in progress; the current worktree is not relabeled as the fully verified595 source cut. No edits by this audit agent."
+          ],
+          "cannot_substitute_for": [
+            "any older baseline role"
+          ],
+          "current_worktree_observations": [
+            {
+              "path": "/Users/StatTrak/Desktop/Switch_MAC/src/docs/optimization/all-rust/api-contract-inventory.json",
+              "595_expected_sha256": "cdd3f859e1626b16710670fe8021450f79ce0a6d9f4ea62a7e024bee569d7f73",
+              "596_observed_raw_sha256": "9a31f32a2d517baaf2ea284592d195524e3712742cc8a595e915512de4319d0d"
+            },
+            {
+              "path": "/Users/StatTrak/Desktop/Switch_MAC/src/docs/optimization/all-rust/api-contract-review.json",
+              "595_expected_sha256": "1e01481bdca812e08003203dec202357b86b5bdef3b24a990c3fdf2608fe2e2b",
+              "596_observed_raw_sha256": "673d38e5e34af97cffe7fab898adb7cea2b6d05cbf1810fffc5f5a84d63319ba"
+            }
+          ],
+          "may_close_leaf_ids": []
+        }
+      },
+      "full_regression_repeated_for_new_binary": false
+    }
+  },
+  "overall_historical_baseline_complete": false,
+  "unresolved_facts": [
+    {
+      "role": "pre_280",
+      "fact": "Exact documented archive29d304... and complete dirty/untracked manifest payload not located; only finite documented workspace locators inspected."
+    },
+    {
+      "role": "final_280",
+      "fact": "Complete2.80 source payload/manifest, or exact pre2.80 plus ordered complete delta, not established.",
+      "status": "UNAVAILABLE_USER_CONFIRMED_NOT_RETAINED",
+      "repeat_archive_request": false,
+      "legacy_equivalence_not_established": true
+    },
+    {
+      "role": "pre_all_rust",
+      "fact": "Actual switch-time dirty/untracked full worktree and post2.80 pre-migration delta not established.",
+      "status": "UNAVAILABLE_USER_CONFIRMED_NOT_RETAINED",
+      "repeat_archive_request": false,
+      "legacy_equivalence_not_established": true
+    }
+  ],
+  "scope_notes": [
+    "2.63 seed and2.80 have different temporal roles. Seed restoration cannot close P0 working-baseline or baseline-280.",
+    "An unlocated finite documented path is not proof of global absence. Only the authorized workspace was inspected.",
+    "Modes project Git executable bits; full historical ownership/ACL/xattrs/timestamps and supplement mode are not proven.",
+    "597 direct human reply confirms2.80 and pre-allRust archives no longer retained. Record unavailable, do not keep requesting paths, do not infer a functional-equivalence waiver or relabel263. No archive deletion was performed."
+  ],
+  "local_audit": {
+    "path": "build/reports/iteration-596-p0-baseline-provenance.json",
+    "sha256": "d2cd0848eef0882ad63bfb77c36f3bced559c5f1269ca3345c8aab47548957bf"
+  },
+  "new_acceptance_passes": 0,
+  "overall_product_complete": false
+}

@@ -1,0 +1,41 @@
+version: 3
+kind: carrier_bundle
+id: apple_cbn_cn
+bundle: CBN_cn.bundle
+supported_plmns:
+    - "46015"
+plmn_overrides:
+    "46015":
+        apns:
+            - apn: cbnet
+              type_mask: 1048625
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+            - apn: IMS
+              type_mask: 131072
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+              wait_for_bring_up_complete: true
+            - apn: cbnet
+              type_mask: 1048624
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                require_qos_before_ringing: true
+                require_preconditions_when_mandatory: false
+                sip_timers:
+                    InviteResponseTimeout: 6000
+            media:
+                rtp_inactivity_seconds: 20
+                rtcp_inactivity_seconds: 20
+                rtcp_interval_seconds: 5
+            volte:
+                enable_volte_by_default: true

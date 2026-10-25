@@ -1,0 +1,46 @@
+version: 3
+kind: carrier_bundle
+id: apple_vodafone_ho_it
+bundle: Vodafone_Ho_it.bundle
+supported_plmns:
+    - "22210"
+plmn_overrides:
+    "22210":
+        apns:
+            - apn: web.ho-mobile.it
+              type_mask: 1
+              allowed_ip_stack: ipv4
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv4
+            - apn: internet.ho-mobile.it
+              type_mask: 32816
+              allowed_ip_stack: ipv4
+        ims:
+            apn: ims
+            ip_stack: ipv4
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                        - 4XX
+                        - 5XX
+                        - 6XX
+                require_preconditions_when_mandatory: false
+                contact:
+                    always_add_sip_instance: true
+                    additional_contact_params:
+                        - selector: INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+            media:
+                rtp_inactivity_seconds: 20
+            volte:
+                enable_volte_by_default: true

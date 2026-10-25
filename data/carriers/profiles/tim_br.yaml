@@ -1,0 +1,55 @@
+version: 3
+kind: carrier_bundle
+id: apple_tim_br
+bundle: TIM_br.bundle
+supported_plmns:
+    - "72402"
+    - "72403"
+    - "72404"
+common:
+    apns:
+        - apn: timbrasil.br
+          username: tim
+          password: tim
+          type_mask: 1048629
+          allowed_ip_stack: ipv4v6
+        - apn: ims
+          type_mask: 131072
+          allowed_ip_stack: ipv6
+          support_switch_over: true
+    apple:
+        carrier_entitlements:
+            supported_entitlements: 4203537
+    entitlement:
+        entitlement_url: https://apple.entitlement.tim.com.br
+    ims:
+        apn: ims
+        ip_stack: ipv6
+        media:
+            rtcp_interval_seconds: 5
+            rtp_inactivity_seconds: 25
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                always_add_sip_instance: true
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - 3XX
+                    - 4XX
+                    - 5XX
+                    - 6XX
+            early_media_needs_header: true
+            max_udp_message_size: 1200
+            preconditions: unsupported
+            require_preconditions_when_mandatory: false
+            support_p_early_media: true
+        ussi:
+            enabled: true
+        volte:
+            enable_volte_by_default: true

@@ -1,0 +1,89 @@
+version: 3
+kind: carrier_bundle
+id: apple_globe_ph
+bundle: Globe_ph.bundle
+supported_plmns:
+    - "51502"
+plmn_overrides:
+    "51502":
+        apns:
+            - apn: internet.globe.com.ph
+              type_mask: 32817
+              allowed_ip_stack: ipv4v6
+              xlat464_enabled: true
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv4v6
+              support_switch_over: true
+              use_network_mtu: true
+            - apn: xcap
+              type_mask: 1048576
+              tech_type_mask: 1048576
+              allowed_ip_stack: ipv4v6
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 9233
+        e911:
+            over_itech_supported: true
+            wifi_calling_without_entitlement: true
+            emergency_urns:
+                "911": urn:service:sos
+        entitlement:
+            entitlement_url: https://esim-es-open-prod-globe.esimcloud.net/globe/prod/executeAppleActions
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            epdg:
+                address: weconnect.globe.com.ph
+                configuration_attributes:
+                    - identifier: 16384
+                      name: AssignedPCSCFIPv4
+                      type: v4
+                    - identifier: 16386
+                      name: AssignedPCSCFIPv6
+                      type: v6
+            ike:
+                nat_keepalive_enabled: true
+                ipsec_mtu: 1280
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes256
+                          integrity:
+                            - sha256
+                          rekey_pfs_group: 14
+                          esn: auto
+                          install_policies: true
+                          lifetime_seconds: 86400
+                    replay_window_size: 12
+            register:
+                use_ipsec: true
+                expires: 7200
+            signaling:
+                preconditions: supported
+                support_p_early_media: false
+                early_media_needs_header: false
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 4XX
+                        - 5XX
+                require_preconditions_when_mandatory: false
+                contact:
+                    always_add_sip_instance: true
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            media:
+                rtp_inactivity_seconds: 20
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true
+        roaming:
+            wifi_calling_allowed: false

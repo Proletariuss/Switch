@@ -1,0 +1,14 @@
+[package]
+name = "proletarius-audio-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["rlib", "staticlib"]
+
+[dependencies]
+proletarius-ble-core = { path = "../proletarius-ble-core" }
+proletarius-handoff-core = { path = "../proletarius-handoff-core" }
+

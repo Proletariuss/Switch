@@ -1,0 +1,10 @@
+version: 2
+plmn: "51402"
+profiles:
+    - id: apple_timortelecom_tl
+      path: profiles/timortelecom_tl.yaml
+      generic: true
+      selectors:
+        - raw: "51402"
+          carrier_name: TT
+          iso: TL

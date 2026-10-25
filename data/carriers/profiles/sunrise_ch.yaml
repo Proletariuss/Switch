@@ -1,0 +1,94 @@
+version: 3
+kind: carrier_bundle
+id: apple_sunrise_ch
+bundle: Sunrise_ch.bundle
+supported_plmns:
+    - "22802"
+plmn_overrides:
+    "22802":
+        apns:
+            - apn: internet
+              type_mask: 32819
+              allowed_ip_stack: ipv4
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv4
+              support_switch_over: true
+              support_5g_sa_handover: true
+            - apn: xcap
+              type_mask: 1048576
+              tech_type_mask: 1048576
+              allowed_ip_stack: ipv4
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 64529
+        e911:
+            over_itech_supported: false
+            wifi_calling_without_entitlement: true
+        entitlement:
+            entitlement_url: https://eserver.sunrise.net/entitlement/apple
+        ims:
+            apn: ims
+            ip_stack: ipv4
+            epdg:
+                address: epdg.epc.mnc002.mcc228.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 20
+                      name: AssignedPCSCFIPv4
+                      type: v4
+            ike:
+                proposals:
+                    - encryption:
+                        - aes128
+                      integrity:
+                        - sha256
+                      prf:
+                        - sha256
+                      dh_groups:
+                        - 14
+                      lifetime_seconds: 80000
+                      authentication_method: None
+                      eap_method: EAP-AKA
+                dpd:
+                    enabled: false
+                    interval_seconds: 600
+                    max_retries: 4
+                    retry_interval_seconds: 10
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes128
+                          integrity:
+                            - sha256
+                          esn: auto
+                          install_policies: true
+                          lifetime_seconds: 80000
+                    replay_window_size: 12
+                local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+            register:
+                use_ipsec: true
+                include_cellular_network_info: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                re_register_on:
+                    - method: REGISTER
+                      statuses:
+                        - "504"
+                    - method: INVITE
+                      statuses:
+                        - "504"
+                require_preconditions_when_mandatory: false
+                sip_timers:
+                    InviteResponseTimeout: 4000
+            media:
+                rtp_inactivity_seconds: 20
+                rtcp_inactivity_seconds: 180
+                rtcp_interval_seconds: 5
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true

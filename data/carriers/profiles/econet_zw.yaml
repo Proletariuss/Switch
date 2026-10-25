@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_econet_zw
+bundle: Econet_zw.bundle
+supported_plmns:
+    - "64804"
+plmn_overrides:
+    "64804":
+        apns:
+            - apn: econet.net
+              type_mask: 49
+            - apn: econet.mms
+              type_mask: 4
+            - apn: econet.net
+              type_mask: 48

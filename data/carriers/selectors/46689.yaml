@@ -1,0 +1,10 @@
+version: 2
+plmn: "46689"
+profiles:
+    - id: apple_vibo_tw
+      path: profiles/vibo_tw.yaml
+      generic: true
+      selectors:
+        - raw: "46689"
+          carrier_name: 台灣之星
+          iso: TW

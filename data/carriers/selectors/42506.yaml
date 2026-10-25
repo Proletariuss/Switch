@@ -1,0 +1,10 @@
+version: 2
+plmn: "42506"
+profiles:
+    - id: apple_qtel_ps
+      path: profiles/qtel_ps.yaml
+      generic: true
+      selectors:
+        - raw: "42506"
+          carrier_name: Ooredoo
+          iso: PS

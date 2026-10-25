@@ -1,0 +1,13 @@
+version: 3
+kind: carrier_bundle
+id: apple_digicel_vu
+bundle: Digicel_vu.bundle
+supported_plmns:
+    - "54105"
+plmn_overrides:
+    "54105":
+        apns:
+            - apn: web.digicelpacific.com
+              type_mask: 49
+            - apn: wap.digicelpacific.com
+              type_mask: 4

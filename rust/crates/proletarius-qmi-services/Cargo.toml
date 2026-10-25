@@ -1,0 +1,11 @@
+[package]
+name = "proletarius-qmi-services"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Switch IMS, NAS, and UIM QMI service codecs"
+
+[dependencies]
+proletarius-qmi-core = { path = "../proletarius-qmi-core" }
+proletarius-qmi-wire = { path = "../proletarius-qmi-wire" }

@@ -1,0 +1,25 @@
+version: 3
+kind: carrier_bundle
+id: apple_atn_viya_vi
+bundle: ATN_Viya_vi.bundle
+supported_plmns:
+    - "311040"
+    - "311320"
+common:
+    apns:
+        - apn: vvm.viyavi.com
+          type_mask: 2
+        - apn: web.viya.vi
+          type_mask: 49
+          allowed_ip_stack: ipv4
+        - apn: mms.viya.vi
+          type_mask: 4
+          allowed_ip_stack: ipv4
+        - apn: hos
+          type_mask: 1048576
+    ims:
+        signaling:
+            early_media_needs_header: false
+            support_p_early_media: false
+        volte:
+            enable_volte_by_default: true

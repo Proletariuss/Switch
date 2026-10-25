@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_inwi_ma
+bundle: INWI_ma.bundle
+supported_plmns:
+    - "60402"
+plmn_overrides:
+    "60402":
+        apns:
+            - apn: www.inwi.ma
+              type_mask: 49
+            - apn: mms.wana.ma
+              type_mask: 4
+            - apn: www.inwi.ma
+              type_mask: 48

@@ -1,0 +1,27 @@
+version: 2
+plmn: "34002"
+profiles:
+    - id: apple_sfr_caraibe_mq
+      path: profiles/sfr_caraibe_mq.yaml
+      selectors:
+        - raw: 34002_ID-8959002
+          carrier_name: SFR
+          iso: MQ
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "8959002"
+        - raw: 34002_ID-8959402
+          carrier_name: SFR
+          iso: MQ
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "8959402"
+        - raw: 34002_ID-8959602
+          carrier_name: SFR
+          iso: MQ
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "8959602"

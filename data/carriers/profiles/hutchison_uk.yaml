@@ -1,0 +1,109 @@
+version: 3
+kind: carrier_bundle
+id: apple_hutchison_uk
+bundle: Hutchison_uk.bundle
+supported_plmns:
+    - "23420"
+plmn_overrides:
+    "23420":
+        apns:
+            - apn: three.co.uk
+              type_mask: 1081349
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4
+              xlat464_enabled: true
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv6
+              support_switch_over: true
+            - apn: 3hotspot
+              type_mask: 48
+            - apn: sos
+              type_mask: 262144
+              allowed_ip_stack: ipv4v6
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 4207617
+        e911:
+            over_itech_supported: true
+            wifi_calling_without_entitlement: true
+        entitlement:
+            entitlement_url: https://esim-es-open-prod-tuk.esimcloud.net/tuk/prod/executeAppleActions
+        ims:
+            apn: ims
+            ip_stack: ipv6
+            transport: tcp
+            epdg:
+                address: epdg.epc.mnc020.mcc234.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 16384
+                      name: AssignedPCSCFIPv4
+                      type: v4
+                    - identifier: 16386
+                      name: AssignedPCSCFIPv6
+                      type: v6
+            ike:
+                proposals:
+                    - encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      prf:
+                        - sha256
+                      dh_groups:
+                        - 14
+                      lifetime_seconds: 80000
+                      authentication_method: Certificate
+                      eap_method: EAP-AKA
+                dpd:
+                    enabled: false
+                    interval_seconds: 600
+                    max_retries: 4
+                    retry_interval_seconds: 10
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes128
+                          integrity:
+                            - sha256
+                          esn: auto
+                          install_policies: true
+                          lifetime_seconds: 80000
+                    replay_window_size: 12
+                local_identifier: anonymous@nai.epc.mnc020.mcc234.3gppnetwork.org
+                username: 0$imsi@nai.epc.mnc020.mcc234.3gppnetwork.org
+                remote_certificate_authority_name: DigiCert Global Root G2
+                remote_certificate_hostname: epdg.epc.mnc020.mcc234.pub.3gppnetwork.org
+                validate_remote_certificate: true
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                re_register_on:
+                    - method: REGISTER
+                      statuses:
+                        - "500"
+                    - method: INVITE
+                      statuses:
+                        - "500"
+                require_preconditions_when_mandatory: false
+                contact:
+                    always_add_sip_instance: true
+                    additional_contact_params:
+                        - selector: INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                sip_timers:
+                    InviteResponseTimeout: 0
+            media:
+                rtp_inactivity_seconds: 20
+                rtcp_interval_seconds: 5
+            volte:
+                enable_volte_by_default: true
+        roaming:
+            wifi_calling_allowed: false

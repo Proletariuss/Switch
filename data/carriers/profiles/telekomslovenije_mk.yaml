@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_telekomslovenije_mk
+bundle: TelekomSlovenije_mk.bundle
+supported_plmns:
+    - "29402"
+plmn_overrides:
+    "29402":
+        apns:
+            - apn: internet
+              type_mask: 49
+            - apn: mms
+              type_mask: 4
+            - apn: internet
+              type_mask: 48

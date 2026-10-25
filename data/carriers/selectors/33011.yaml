@@ -1,0 +1,10 @@
+version: 2
+plmn: "33011"
+profiles:
+    - id: apple_claro_pr
+      path: profiles/claro_pr.yaml
+      generic: true
+      selectors:
+        - raw: "33011"
+          carrier_name: Claro Puerto Rico
+          iso: PR

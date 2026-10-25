@@ -1,0 +1,12 @@
+version: 3
+kind: carrier_bundle
+id: apple_uztelecom_uz
+bundle: UZTelecom_uz.bundle
+supported_plmns:
+    - "43408"
+plmn_overrides:
+    "43408":
+        apns:
+            - apn: internet.uzmobile.uz
+              type_mask: 49
+              allowed_ip_stack: ipv4

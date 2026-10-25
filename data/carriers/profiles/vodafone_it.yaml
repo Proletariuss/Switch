@@ -1,0 +1,59 @@
+version: 3
+kind: carrier_bundle
+id: apple_vodafone_it
+bundle: Vodafone_it.bundle
+supported_plmns:
+    - "22210"
+plmn_overrides:
+    "22210":
+        apns:
+            - apn: iphone.vodafone.it
+              type_mask: 1
+              allowed_ip_stack: ipv4
+            - apn: mms.vodafone.it
+              type_mask: 4
+              allowed_ip_stack: ipv4
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv4v6
+              support_switch_over: true
+            - apn: internet
+              type_mask: 32816
+              allowed_ip_stack: ipv4
+            - apn: sos
+              type_mask: 262144
+              tech_type_mask: 262144
+              allowed_ip_stack: ipv4v6
+              support_switch_over: true
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 9216
+        e911:
+            over_itech_supported: false
+            wifi_calling_without_entitlement: true
+        entitlement:
+            entitlement_url: https://es-it.vodafone.com:4447/ium-OEMInterface/servlet/IUMServlet
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            register:
+                use_ipsec: true
+                include_cellular_network_info: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                require_preconditions_when_mandatory: false
+                contact:
+                    always_add_sip_instance: true
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - text
+            media:
+                rtp_inactivity_seconds: 20
+            volte:
+                enable_volte_by_default: true

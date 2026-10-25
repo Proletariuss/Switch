@@ -1,0 +1,42 @@
+version: 3
+kind: carrier_bundle
+id: apple_vodafone_is
+bundle: Vodafone_is.bundle
+supported_plmns:
+    - "27402"
+plmn_overrides:
+    "27402":
+        apns:
+            - apn: internet
+              type_mask: 32817
+            - apn: mms.gprs.is
+              type_mask: 4
+              tech_type_mask: 4
+            - apn: hos
+              type_mask: 1048576
+              tech_type_mask: 1048576
+            - apn: sos
+              type_mask: 262144
+              tech_type_mask: 262144
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 5121
+        e911:
+            over_itech_supported: false
+        entitlement:
+            entitlement_url: https://entitlements.api-prod.c.is
+        ims:
+            register:
+                include_cellular_network_info: true
+            signaling:
+                support_p_early_media: false
+                early_media_needs_header: false
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            volte:
+                enable_volte_by_default: true

@@ -1,0 +1,21 @@
+version: 3
+kind: carrier_bundle
+id: apple_globacom_ng
+bundle: Globacom_ng.bundle
+supported_plmns:
+    - "62150"
+plmn_overrides:
+    "62150":
+        apns:
+            - apn: gloflat
+              username: flat
+              password: flat
+              type_mask: 49
+            - apn: glomms
+              username: mms
+              password: mms
+              type_mask: 4
+            - apn: gloflat
+              username: flat
+              password: flat
+              type_mask: 48

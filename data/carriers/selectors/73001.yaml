@@ -1,0 +1,10 @@
+version: 2
+plmn: "73001"
+profiles:
+    - id: apple_entelpcs_cl
+      path: profiles/entelpcs_cl.yaml
+      generic: true
+      selectors:
+        - raw: "73001"
+          carrier_name: entel
+          iso: CL

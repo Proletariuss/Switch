@@ -1,0 +1,16 @@
+version: 3
+kind: carrier_bundle
+id: apple_transatel
+bundle: Transatel.bundle
+supported_plmns:
+    - "90137"
+plmn_overrides:
+    "90137":
+        apns:
+            - apn: mobiledata
+              type_mask: 49
+selector_overrides:
+    90137_ID-89882470001:
+        apns:
+            - apn: mbb
+              type_mask: 49

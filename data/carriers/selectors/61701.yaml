@@ -1,0 +1,10 @@
+version: 2
+plmn: "61701"
+profiles:
+    - id: apple_orange_mu
+      path: profiles/orange_mu.yaml
+      generic: true
+      selectors:
+        - raw: "61701"
+          carrier_name: my.t
+          iso: MU

@@ -1,0 +1,58 @@
+version: 3
+kind: carrier_bundle
+id: apple_cyta_cy
+bundle: Cyta_cy.bundle
+supported_plmns:
+    - "28001"
+plmn_overrides:
+    "28001":
+        apns:
+            - apn: cytamobile
+              type_mask: 32821
+              allowed_ip_stack: ipv4v6
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 13313
+        e911:
+            wifi_calling_without_entitlement: true
+        entitlement:
+            entitlement_url: https://esim-es-open-prod-cyta.esimcloud.net/cyta/prod/executeAppleActions
+        ims:
+            epdg:
+                address: epdg.epc.mnc001.mcc280.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 16384
+                      name: AssignedPCSCFIPv4
+                      type: v4
+                    - identifier: 16386
+                      name: AssignedPCSCFIPv6
+                      type: v6
+            ike:
+                nat_keepalive_enabled: true
+                disable_switch_to_natt_port: true
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes256
+                          integrity:
+                            - sha256
+                          esn: auto
+                          lifetime_seconds: 28800
+            register:
+                use_ipsec: true
+                include_cellular_network_info: true
+            signaling:
+                support_p_early_media: true
+                early_media_needs_header: true
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            volte:
+                enable_volte_by_default: true
+        roaming:
+            wifi_calling_allowed: false

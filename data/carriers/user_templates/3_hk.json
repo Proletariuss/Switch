@@ -1,0 +1,115 @@
+{
+  "id": "3_hk",
+  "name": "3",
+  "template_level": "user",
+  "mcc": "454",
+  "mnc": "3",
+  "ike": {
+    "addr": "wlan.three.com.hk",
+    "proposals": [
+      "aes128-sha256-modp2048",
+      "aes256-sha256-modp2048",
+      "aes256-sha512-modp2048"
+    ],
+    "esp_proposals": [
+      "aes256-sha256"
+    ],
+    "reauth_interval": 7200,
+    "ip_stack": "ipv4",
+    "apn": "ims",
+    "rf_off_delay": 5,
+    "rekey_pfs": 14,
+    "local_port": 500,
+    "ticket_request": true,
+    "cp_in_first_auth": true,
+    "cp_in_final_auth": true,
+    "cookie_payload_type": "sa"
+  },
+  "eap": {
+    "challenge_mode": "minimal",
+    "identity_source": "isim"
+  },
+  "ims": {
+    "sec_agree_mode": "off",
+    "initial_authorization": "eap_direct",
+    "user_agent": "Apple iPhone17,2/26.6 (17,2; iOS 26.6; 23G82) Boot/3.0.0 VoIP/1.0 Carrier/59.0",
+    "supported_header": "path,gruu",
+    "allow_header": "OPTIONS,REGISTER,SUBSCRIBE,NOTIFY,PUBLISH,INVITE,ACK,BYE,CANCEL,UPDATE,PRACK,REFER,INFO,MESSAGE",
+    "contact_features": "ims_features",
+    "allow_plain_ims_transport": true,
+    "security_client_mechanisms": [
+      {
+        "alg": "hmac-md5-96",
+        "ealg": "des-ede3-cbc",
+        "prot": "esp",
+        "mode": "trans"
+      },
+      {
+        "alg": "hmac-md5-96",
+        "ealg": "aes-cbc",
+        "prot": "esp",
+        "mode": "trans"
+      },
+      {
+        "alg": "hmac-md5-96",
+        "ealg": "null",
+        "prot": "esp",
+        "mode": "trans"
+      },
+      {
+        "alg": "hmac-sha-1-96",
+        "ealg": "des-ede3-cbc",
+        "prot": "esp",
+        "mode": "trans"
+      },
+      {
+        "alg": "hmac-sha-1-96",
+        "ealg": "aes-cbc",
+        "prot": "esp",
+        "mode": "trans"
+      },
+      {
+        "alg": "hmac-sha-1-96",
+        "ealg": "null",
+        "prot": "esp",
+        "mode": "trans"
+      }
+    ],
+    "security_client_format": "full_spaced",
+    "transport_mode": "auto",
+    "strict_security_server_offer": true,
+    "expires": 7200,
+    "include_accept_contact": true,
+    "include_p_preferred_id": true,
+    "include_p_visited_network_id": true,
+    "include_p_access_network_info": true,
+    "include_pani": false,
+    "include_pani_authenticated": false,
+    "include_route": true,
+    "register_policy": {
+      "id": "adaptive-default",
+      "temporary_status_codes": [
+        408,
+        480,
+        500,
+        502,
+        503,
+        504
+      ],
+      "forbidden_status_codes": [
+        403
+      ],
+      "initial_reject_fallback_status_codes": [
+        400,
+        403,
+        480,
+        500
+      ]
+    }
+  },
+  "e911": {
+    "entitlement_endpoint": "https://device.three.com.hk:8181/ium-OEMInterface/servlet/IUMServlet"
+  },
+  "device": {},
+  "blocked": false
+}

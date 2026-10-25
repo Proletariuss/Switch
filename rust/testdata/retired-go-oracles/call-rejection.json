@@ -1,0 +1,88 @@
+{
+  "crate": "proletarius-ims",
+  "example": "call_rejection_fixture",
+  "kind": "reviewed-literal",
+  "rows": [
+    {
+      "name": "0",
+      "args": [
+        "487",
+        "UmVxdWVzdCBUZXJtaW5hdGVk",
+        "",
+        ""
+      ],
+      "expected_stdout": "ok 5ZG85Y+r6K+35rGC6KKr57uI5q2i77yaU0lQIDQ4NyBSZXF1ZXN0IFRlcm1pbmF0ZWQ="
+    },
+    {
+      "name": "1",
+      "args": [
+        "487",
+        "UmVxdWVzdCBUZXJtaW5hdGVk",
+        "US44NTA7Y2F1c2U9MQ==",
+        ""
+      ],
+      "expected_stdout": "ok 5ZG85Y+r5pyq5o6l6YCa77yaU0lQIDQ4NyAvIFEuODUwIDHvvIzlj7fnoIHkuI3lrZjlnKjmiJbmnKrliIbphY0="
+    },
+    {
+      "name": "2",
+      "args": [
+        "487",
+        "UmVxdWVzdCBUZXJtaW5hdGVk",
+        "",
+        "cS44NTA7Y2F1c2U9MjA7dGV4dD0iU3Vic2NyaWJlciBhYnNlbnQi"
+      ],
+      "expected_stdout": "ok 5ZG85Y+r5pyq5o6l6YCa77yaU0lQIDQ4NyAvIFEuODUwIDIw77yM6KKr5Y+r5pqC5pe25LiN5Y+v6L6+"
+    },
+    {
+      "name": "3",
+      "args": [
+        "487",
+        "UmVxdWVzdCBUZXJtaW5hdGVk",
+        "US44NTA7Y2F1c2U9O2NhdXNlPTIw",
+        ""
+      ],
+      "expected_stdout": "ok 5ZG85Y+r5pyq5o6l6YCa77yaU0lQIDQ4NyAvIFEuODUwIDIw77yM6KKr5Y+r5pqC5pe25LiN5Y+v6L6+"
+    },
+    {
+      "name": "4",
+      "args": [
+        "487",
+        "UmVxdWVzdCBUZXJtaW5hdGVk",
+        "U0lQO2NhdXNlPTQ4Nw==",
+        "US44NTA7Y2F1c2U9MjA7dGV4dD0iU3Vic2NyaWJlciBhYnNlbnQi"
+      ],
+      "expected_stdout": "ok 5ZG85Y+r6K+35rGC6KKr57uI5q2i77yaU0lQIDQ4NyBSZXF1ZXN0IFRlcm1pbmF0ZWTvvJtSZWFzb246IFNJUDtjYXVzZT00ODc="
+    },
+    {
+      "name": "5",
+      "args": [
+        "487",
+        "UmVxdWVzdCBUZXJtaW5hdGVk",
+        "US44NTA7IGNhdXNlID0gMTI3OyB0ZXh0PSJJbnRlcndvcmtpbmci",
+        ""
+      ],
+      "expected_stdout": "ok 5ZG85Y+r5pyq5o6l6YCa77yaU0lQIDQ4NyAvIFEuODUwIDEyNyDkupLpgJrlpLHotKU="
+    },
+    {
+      "name": "6",
+      "args": [
+        "487",
+        "UmVxdWVzdCBUZXJtaW5hdGVk",
+        "US44NTA7Y2F1c2U9MTY7dGV4dD0iY2F1c2U9MTI3Ig==",
+        ""
+      ],
+      "expected_stdout": "ok 5ZG85Y+r6K+35rGC6KKr57uI5q2i77yaU0lQIDQ4NyBSZXF1ZXN0IFRlcm1pbmF0ZWTvvJtSZWFzb246IFEuODUwO2NhdXNlPTE2O3RleHQ9ImNhdXNlPTEyNyI="
+    },
+    {
+      "name": "7",
+      "args": [
+        "403",
+        "Rm9yYmlkZGVu",
+        "",
+        ""
+      ],
+      "expected_stdout": "ok SU1TIGNhbGwgcmVqZWN0ZWQ6IFNJUCA0MDMgRm9yYmlkZGVu"
+    }
+  ],
+  "schema": 1
+}

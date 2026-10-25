@@ -1,0 +1,10 @@
+version: 2
+plmn: "41250"
+profiles:
+    - id: apple_etisalat_af
+      path: profiles/etisalat_af.yaml
+      generic: true
+      selectors:
+        - raw: "41250"
+          carrier_name: Etisalat
+          iso: AF

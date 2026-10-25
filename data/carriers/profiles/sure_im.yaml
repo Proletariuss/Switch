@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_sure_im
+bundle: Sure_im.bundle
+supported_plmns:
+    - "23455"
+plmn_overrides:
+    "23455":
+        apns:
+            - apn: Internet
+              type_mask: 49
+            - apn: mms
+              type_mask: 4
+            - apn: Internet
+              type_mask: 48

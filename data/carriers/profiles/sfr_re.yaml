@@ -1,0 +1,17 @@
+version: 3
+kind: carrier_bundle
+id: apple_sfr_re
+bundle: SFR_re.bundle
+supported_plmns:
+    - "20809"
+    - "64710"
+common:
+    apns:
+        - apn: sl2sfr
+          type_mask: 3
+          allow_no_dns: 1
+        - apn: mmssfr
+          type_mask: 4
+          allow_no_dns: 1
+        - apn: websfr
+          type_mask: 48

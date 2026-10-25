@@ -1,0 +1,13 @@
+version: 2
+plmn: "20839"
+profiles:
+    - id: apple_mysim
+      path: profiles/mysim.yaml
+      selectors:
+        - raw: 20839_GID1-434F423236303036
+          carrier_name: UPeSIM
+          iso: FR
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 434F423236303036

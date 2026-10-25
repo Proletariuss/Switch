@@ -1,0 +1,13 @@
+version: 3
+kind: carrier_bundle
+id: apple_almadar_ly
+bundle: Almadar_ly.bundle
+supported_plmns:
+    - "60601"
+plmn_overrides:
+    "60601":
+        apns:
+            - apn: almadar.net
+              type_mask: 49
+            - apn: almadar.net
+              type_mask: 48

@@ -1,0 +1,77 @@
+version: 3
+kind: carrier_bundle
+id: apple_webbing
+bundle: Webbing.bundle
+supported_plmns:
+    - "20404"
+    - "20801"
+    - "22201"
+    - "24007"
+    - "26006"
+    - "311588"
+    - "42402"
+    - "42501"
+    - "42504"
+    - "45400"
+    - "45403"
+    - "45412"
+    - "45435"
+    - "72418"
+    - "90101"
+    - "90131"
+common:
+    apns:
+        - apn: ims
+          type_mask: 131072
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+          use_network_mtu: true
+        - apn: wbdata
+          type_mask: 32817
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+        - apn: mms.wbdata
+          type_mask: 4
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+        - apn: xcap
+          type_mask: 1048576
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+        - apn: sos
+          type_mask: 262144
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+    apple:
+        carrier_entitlements:
+            supported_entitlements: 8209
+    e911:
+        over_itech_supported: false
+        wifi_calling_without_entitlement: false
+    entitlement:
+        entitlement_url: https://entitlement.iamwebbing.com
+    ims:
+        apn: ims
+        ip_stack: ipv4v6
+        media:
+            rtp_inactivity_seconds: 10
+        register:
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                always_add_sip_instance: true
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - 5XX
+                    - 6XX
+            early_media_needs_header: false
+            preconditions: supported
+            support_p_early_media: false
+        volte:
+            enable_volte_by_default: true

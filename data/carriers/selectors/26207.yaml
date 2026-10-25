@@ -1,0 +1,30 @@
+version: 2
+plmn: "26207"
+profiles:
+    - id: apple_o2_1and1_de
+      path: profiles/o2_1and1_de.yaml
+      selectors:
+        - raw: 26207_GID1-250109
+          carrier_name: 1&1
+          iso: DE
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "250109"
+    - id: apple_o2_debitel_de
+      path: profiles/o2_debitel_de.yaml
+      selectors:
+        - raw: 26207_GID1-000002
+          carrier_name: mobilcom-debitel
+          iso: DE
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "000002"
+    - id: apple_o2_germany
+      path: profiles/o2_germany.yaml
+      generic: true
+      selectors:
+        - raw: "26207"
+          carrier_name: o2-de
+          iso: DE

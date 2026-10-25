@@ -1,0 +1,39 @@
+version: 3
+kind: carrier_bundle
+id: apple_movistar_cr
+bundle: movistar_cr.bundle
+supported_plmns:
+    - "71204"
+plmn_overrides:
+    "71204":
+        apns:
+            - apn: internet.movistar.cr
+              username: movistarcr
+              password: movistarcr
+              type_mask: 49
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv4v6
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                contact:
+                    always_add_sip_instance: true
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            media:
+                rtp_inactivity_seconds: 10
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true

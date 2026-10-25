@@ -1,0 +1,61 @@
+version: 3
+kind: carrier_bundle
+id: apple_monacotel_mc
+bundle: MonacoTel_mc.bundle
+supported_plmns:
+    - "20801"
+    - "21210"
+common:
+    apns:
+        - apn: internet
+          type_mask: 55
+        - apn: ims
+          type_mask: 131072
+          tech_type_mask: 131072
+          allowed_ip_stack: ipv4
+          support_switch_over: true
+        - apn: hos
+          type_mask: 1048576
+          tech_type_mask: 1048576
+          allowed_ip_stack: ipv4
+    e911:
+        over_itech_supported: true
+        wifi_calling_without_entitlement: true
+    ims:
+        apn: ims
+        epdg:
+            address: epdg.monaco-telecom.mc
+            configuration_attributes:
+                - identifier: 16384
+                  name: AssignedPCSCFIPv4
+                  type: v4
+        ike:
+            child_sa:
+                proposals:
+                    - source_branch: FirstChild
+                      encryption:
+                        - aes256
+                      integrity:
+                        - sha512
+                      rekey_pfs_group: 14
+                      esn: auto
+                      lifetime_seconds: 86400
+            nat_keepalive_enabled: true
+        ip_stack: ipv4
+        register:
+            include_cellular_network_info: true
+            use_ipsec: true
+        signaling:
+            contact:
+                always_add_sip_instance: true
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - "503"
+            early_media_needs_header: false
+            preconditions: supported
+            support_p_early_media: false
+        volte:
+            enable_volte_by_default: true
+    roaming:
+        wifi_calling_allowed: true

@@ -1,0 +1,10 @@
+[package]
+name = "proletarius-qmi-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "MIT"
+description = "Bounded QMI transaction client core for Switch transports"
+
+[dependencies]
+proletarius-qmi-wire = { path = "../proletarius-qmi-wire" }

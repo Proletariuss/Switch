@@ -1,0 +1,24 @@
+version: 3
+kind: carrier_bundle
+id: apple_free_mq
+bundle: Free_mq.bundle
+supported_plmns:
+    - "20815"
+    - "34004"
+    - "34009"
+common:
+    apns:
+        - apn: free.gp
+          type_mask: 53
+          allowed_ip_stack: ipv4
+selector_overrides:
+    20815_GID1-f008:
+        apns:
+            - apn: free.mq
+              type_mask: 53
+              allowed_ip_stack: ipv4
+    "34004":
+        apns:
+            - apn: free.mq
+              type_mask: 53
+              allowed_ip_stack: ipv4

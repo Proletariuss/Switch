@@ -1,0 +1,118 @@
+version: 3
+kind: carrier_bundle
+id: apple_mobilkom_at
+bundle: mobilkom_at.bundle
+supported_plmns:
+    - "23201"
+    - "23202"
+    - "23211"
+    - "23212"
+common:
+    apns:
+        - apn: A1.net
+          username: ppp@A1plus.at
+          password: ppp
+          type_mask: 1081395
+          tech_type_mask: 1048576
+          allowed_ip_stack: ipv4v6
+        - apn: free.A1.net
+          username: ppp@A1plus.at
+          password: ppp
+          type_mask: 4
+          tech_type_mask: 0
+        - apn: ims
+          username: ppp@A1plus.at
+          password: ppp
+          type_mask: 131072
+          tech_type_mask: 131072
+          allowed_ip_stack: ipv4v6
+          support_switch_over: true
+    apple:
+        carrier_entitlements:
+            supported_entitlements: 9217
+    e911:
+        over_itech_supported: true
+        wifi_calling_without_entitlement: true
+    entitlement:
+        entitlement_url: https://esim-es-open-prod-aoneat.esimcloud.net/aoneat/prod/executeAppleActions
+    ims:
+        apn: ims
+        epdg:
+            address: epdg.epc.mnc001.mcc232.pub.3gppnetwork.org
+            configuration_attributes:
+                - identifier: 16389
+                  name: AssignedPCSCFIPv4
+                  type: v4
+                - identifier: 16390
+                  name: AssignedPCSCFIPv6
+                  type: v6
+        ike:
+            child_sa:
+                proposals:
+                    - source_branch: FirstChild
+                      encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      esn: auto
+                      install_policies: true
+                      lifetime_seconds: 80000
+                replay_window_size: 12
+            dpd:
+                enabled: false
+                interval_seconds: 600
+                max_retries: 4
+                retry_interval_seconds: 10
+            local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+            proposals:
+                - encryption:
+                    - aes256
+                  integrity:
+                    - sha256
+                  prf:
+                    - sha256
+                  dh_groups:
+                    - 14
+                  lifetime_seconds: 80000
+                  authentication_method: None
+                  eap_method: EAP-AKA
+            remote_identifier_type: KeyID
+            validate_remote_certificate: false
+        ip_stack: ipv4v6
+        media:
+            rtp_inactivity_seconds: 20
+        register:
+            expires: 7200
+            use_ipsec: true
+        signaling:
+            additional_headers:
+                - selector: INVITE
+                  headers:
+                    - 'Accept: application/sdp,application/3gpp-ims+xml'
+                - selector: INVITE,INVITE:*
+                  headers:
+                    - 'Feature-Caps: *;+g.3gpp.srvcc-alerting'
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*[primary]
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - 3XX
+                    - 4XX
+                    - 5XX
+                    - 6XX
+            early_media_needs_header: true
+            preconditions: supported
+            require_preconditions_when_mandatory: false
+            sip_timers:
+                InviteResponseTimeout: 4000
+            support_p_early_media: true
+        volte:
+            enable_volte_by_default: true
+    roaming:
+        wifi_calling_allowed: true

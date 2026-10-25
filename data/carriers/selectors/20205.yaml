@@ -1,0 +1,10 @@
+version: 2
+plmn: "20205"
+profiles:
+    - id: apple_vodafone_gr
+      path: profiles/vodafone_gr.yaml
+      generic: true
+      selectors:
+        - raw: "20205"
+          carrier_name: vf GR
+          iso: GR

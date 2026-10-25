@@ -1,0 +1,102 @@
+version: 3
+kind: carrier_bundle
+id: apple_meteor_ie
+bundle: Meteor_ie.bundle
+supported_plmns:
+    - "27203"
+plmn_overrides:
+    "27203":
+        apns:
+            - apn: data.myeirmobile.ie
+              type_mask: 32817
+              allowed_ip_stack: ipv4v6
+              roaming_lte_ip_stack: ipv4
+              roaming_umts_ip_stack: ipv4
+            - apn: mms.myeirmobile.ie
+              type_mask: 4
+              allowed_ip_stack: ipv4
+            - apn: data.myeirmobile.ie
+              type_mask: 32816
+              allowed_ip_stack: ipv4v6
+              roaming_lte_ip_stack: ipv4
+              roaming_umts_ip_stack: ipv4
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv6
+              support_switch_over: true
+              allow_no_dns: 1
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 8321
+        e911:
+            over_itech_supported: true
+            wifi_calling_without_entitlement: false
+        entitlement:
+            entitlement_url: https://ses.ics.meteor.ie
+        ims:
+            apn: ims
+            ip_stack: ipv6
+            epdg:
+                address: epdg.epc.mnc003.mcc272.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 20
+                      name: AssignedPCSCFIPv4
+                      type: v4
+                    - identifier: 21
+                      name: AssignedPCSCFIPv6
+                      type: v6
+            ike:
+                proposals:
+                    - encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      prf:
+                        - sha256
+                      dh_groups:
+                        - 14
+                      lifetime_seconds: 80000
+                      authentication_method: None
+                      eap_method: EAP-AKA
+                nat_keepalive_enabled: true
+                nat_keepalive_seconds: 20
+                dpd:
+                    enabled: false
+                    interval_seconds: 600
+                    max_retries: 4
+                    retry_interval_seconds: 10
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes256
+                          integrity:
+                            - sha256
+                          esn: auto
+                          install_policies: true
+                          lifetime_seconds: 80000
+                    replay_window_size: 12
+                local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+                remote_identifier_type: KeyID
+                validate_remote_certificate: false
+            register:
+                use_ipsec: true
+                include_cellular_network_info: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                        - 5XX
+                require_preconditions_when_mandatory: false
+            media:
+                rtp_inactivity_seconds: 20
+                rtcp_interval_seconds: 5
+            volte:
+                enable_volte_by_default: true
+        roaming:
+            wifi_calling_allowed: true

@@ -1,0 +1,17 @@
+version: 3
+kind: carrier_bundle
+id: apple_mtc_na
+bundle: MTC_na.bundle
+supported_plmns:
+    - "64901"
+plmn_overrides:
+    "64901":
+        apns:
+            - apn: internet
+              type_mask: 49
+            - apn: mms
+              username: mmsc
+              password: mmsc
+              type_mask: 4
+            - apn: internet
+              type_mask: 48

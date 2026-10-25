@@ -1,0 +1,117 @@
+version: 3
+kind: carrier_bundle
+id: apple_telstra_au
+bundle: Telstra_au.bundle
+supported_plmns:
+    - "50501"
+    - "50571"
+    - "50572"
+common:
+    apns:
+        - apn: ims
+          type_mask: 131072
+          tech_type_mask: 131072
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+          support_switch_over: true
+          support_5g_sa_handover: true
+        - apn: telstra.wap
+          type_mask: 32771
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4
+          domestic_roaming_ip_stack: ipv4
+          xlat464_enabled: true
+        - apn: telstra.internet
+          type_mask: 52
+          tech_type_mask: 4
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4
+        - apn: hos
+          type_mask: 1048576
+          tech_type_mask: 1048576
+          roaming_ip_stack: ipv4
+        - apn: sos
+          type_mask: 262144
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+          allow_no_dns: 1
+    apple:
+        carrier_entitlements:
+            supported_entitlements: 535553
+    e911:
+        over_itech_supported: true
+        wifi_calling_without_entitlement: true
+    entitlement:
+        entitlement_url: https://telentprod.mobile.telstra.com
+    ims:
+        apn: ims
+        epdg:
+            address: epdg.epc.mnc001.mcc505.pub.3gppnetwork.org
+            configuration_attributes:
+                - identifier: 16384
+                  name: AssignedPCSCFIPv4
+                  type: v4
+                - identifier: 16386
+                  name: AssignedPCSCFIPv6
+                  type: v6
+        ike:
+            child_sa:
+                proposals:
+                    - source_branch: FirstChild
+                      encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      rekey_pfs_group: 14
+                      esn: auto
+                      install_policies: true
+                      lifetime_seconds: 80000
+                replay_window_size: 12
+            dpd:
+                enabled: false
+                interval_seconds: 300
+                max_retries: 4
+                retry_interval_seconds: 10
+            local_identifier: Telstra@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+            proposals:
+                - encryption:
+                    - aes256
+                  integrity:
+                    - sha256
+                  prf:
+                    - sha256
+                  dh_groups:
+                    - 14
+                  lifetime_seconds: 80000
+                  authentication_method: Certificate
+                  eap_method: EAP-AKA
+            remote_certificate_authority_name: DigiCert Global Root G2
+            remote_certificate_hostname: epdg.epc.mnc001.mcc505.pub.3gppnetwork.org
+            username: 0$imsi@nai.epc.mnc001.mcc505.3gppnetwork.org
+            validate_remote_certificate: true
+        ip_stack: ipv4v6
+        media:
+            rtcp_interval_seconds: 5
+            rtp_inactivity_seconds: 30
+        register:
+            include_cellular_network_info: true
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                always_add_sip_instance: true
+            early_media_needs_header: true
+            preconditions: supported
+            require_preconditions_when_mandatory: false
+            sip_timers:
+                T1: 2000
+                T2: 16000
+                T4: 17000
+            support_p_early_media: true
+        volte:
+            enable_volte_by_default: true

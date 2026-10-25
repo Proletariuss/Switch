@@ -1,0 +1,18 @@
+version: 3
+kind: carrier_bundle
+id: apple_telekomsrbija_ba
+bundle: TelekomSrbija_ba.bundle
+supported_plmns:
+    - "21805"
+plmn_overrides:
+    "21805":
+        apns:
+            - apn: 3g1
+              type_mask: 49
+              allowed_ip_stack: ipv4
+            - apn: 3g1
+              type_mask: 48
+              allowed_ip_stack: ipv4
+            - apn: mtelmms
+              type_mask: 4
+              allowed_ip_stack: ipv4

@@ -1,0 +1,17 @@
+version: 3
+kind: carrier_bundle
+id: apple_alfa_lb
+bundle: Alfa_lb.bundle
+supported_plmns:
+    - "41501"
+plmn_overrides:
+    "41501":
+        apns:
+            - apn: ALFA
+              type_mask: 49
+            - apn: mms.mic1.com.lb
+              username: mic1
+              password: mic1
+              type_mask: 4
+            - apn: ALFA
+              type_mask: 48

@@ -1,0 +1,23 @@
+version: 3
+kind: carrier_bundle
+id: apple_8ta_za
+bundle: 8ta_za.bundle
+supported_plmns:
+    - "65502"
+plmn_overrides:
+    "65502":
+        apns:
+            - apn: internet
+              type_mask: 49
+            - apn: mms
+              type_mask: 4
+            - apn: internet
+              type_mask: 48
+        ims:
+            register:
+                use_ipsec: true
+            signaling:
+                support_p_early_media: false
+                early_media_needs_header: false
+            volte:
+                enable_volte_by_default: true

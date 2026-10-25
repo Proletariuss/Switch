@@ -1,0 +1,10 @@
+version: 2
+plmn: "40402"
+profiles:
+    - id: apple_bhartiairtel_in
+      path: profiles/bhartiairtel_in.yaml
+      generic: true
+      selectors:
+        - raw: "40402"
+          carrier_name: AirTel
+          iso: IN

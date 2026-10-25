@@ -1,0 +1,30 @@
+version: 3
+kind: carrier_bundle
+id: apple_telia_md
+bundle: Telia_md.bundle
+supported_plmns:
+    - "25902"
+plmn_overrides:
+    "25902":
+        apns:
+            - apn: internet
+              type_mask: 49
+            - apn: mms
+              type_mask: 4
+            - apn: hos
+              type_mask: 1048576
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+        ims:
+            signaling:
+                support_p_early_media: false
+                early_media_needs_header: false
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            volte:
+                enable_volte_by_default: true

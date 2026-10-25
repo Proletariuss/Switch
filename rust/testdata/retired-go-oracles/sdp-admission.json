@@ -1,0 +1,521 @@
+{
+  "crate": "proletarius-call",
+  "example": "sdp_fixture",
+  "kind": "adapter-admission reviewed literals; explicit EVS and all AMRWB modes",
+  "rows": [
+    {
+      "name": "static PCMA answer disabled",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.8\r\nm=audio 49170 RTP/AVP 8 101\r\na=rtpmap:101 telephone-event/8000\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "dynamic PCMA offer disabled",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.9\r\nm=audio 49171 RTP/AVP 110 112\r\na=rtpmap:110 PCMA/8000/1\r\na=rtpmap:112 telephone-event/8000/1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "giffgaff bandwidth efficient AMR offer",
+      "args": [
+        "offer",
+        "v=0\r\no=- 1 1 IN IP6 2001:db8::10\r\ns=-\r\nc=IN IP6 2001:db8::20\r\nt=0 0\r\nm=audio 40000 RTP/AVP 96 101\r\na=rtpmap:96 AMR/8000\r\na=fmtp:96 mode-set=0,2,4,7\r\na=rtpmap:101 telephone-event/8000\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "octet aligned mode seven AMR answer",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 octet-align=1;mode-set=7\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "AMR offer alternate mode-set spellings",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=+7,07\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "AMR answer alternate equivalent mode seven spellings",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=+7,07;octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "mixed case audio token rejected",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=Audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=7\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "mixed case RTP transport rejected",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 rtp/avp 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=7\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "whitespace after m equals rejected",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm= audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=7\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "unicode Fields whitespace accepted",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=7\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "media port accepts Go Atoi plus spelling",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio +40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=7\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "connection extra fields ignored and session address retained",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=7\r\nc=IN IP4 192.0.2.17 ignored\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "connection noncanonical spacing rejected",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN  IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=7\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "AMR raw rtpmap key mismatch rejected",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 097\r\na=rtpmap:97 AMR/8000\r\na=fmtp:097 mode-set=7\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "AMR raw plus and leading zero token accepted",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP +097\r\na=rtpmap:+097 AMR/8000\r\na=fmtp:+097 mode-set=7\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "AMR raw fmtp key mismatch rejected",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 097\r\na=rtpmap:097 AMR/8000\r\na=fmtp:97 mode-set=7\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "AMR fmtp outer whitespace accepted",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 097\r\na=rtpmap:097 AMR/8000\r\na=fmtp:\t 097 mode-set=7\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "AMR fmtp tab remains part of raw key",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 097\r\na=rtpmap:097 AMR/8000\r\na=fmtp:097\t mode-set=7\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "hostname rejected",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 media.example.test\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=7\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "invalid media address cannot fall back to session address",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=7\r\nc=IN IP4 media.example.test\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "mixed EVS AMR and PCMA offer selects AMR",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.27\r\nm=audio 40018 RTP/AVP 8 96 97 98 101\r\na=rtpmap:96 EVS/16000\r\na=rtpmap:97 AMR-WB/16000\r\na=rtpmap:98 AMR/8000\r\na=fmtp:98 mode-set=7\r\na=rtpmap:101 telephone-event/8000\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "ok|"
+    },
+    {
+      "name": "AMR answer ignores unadvertised DTMF payload",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97 112\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=7;octet-align=1\r\na=rtpmap:112 telephone-event/8000\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "AMR offer keeps dynamic DTMF payload",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97 112\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=7\r\na=rtpmap:112 telephone-event/8000/1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "unsupported PCMA/8000 answer=false",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 PCMA/8000\r\na=fmtp:97 mode-set=7;octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "unsupported PCMA/8000 answer=true",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 PCMA/8000\r\na=fmtp:97 mode-set=7;octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "unsupported PCMU/8000 answer=false",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 PCMU/8000\r\na=fmtp:97 mode-set=7;octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "unsupported PCMU/8000 answer=true",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 PCMU/8000\r\na=fmtp:97 mode-set=7;octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "unsupported AMR-WB/16000 answer=false",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR-WB/16000\r\na=fmtp:97 mode-set=7;octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "ok|"
+    },
+    {
+      "name": "unsupported AMR-WB/16000 answer=true",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR-WB/16000\r\na=fmtp:97 mode-set=7;octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "unsupported EVS/16000 answer=false",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 EVS/16000\r\na=fmtp:97 mode-set=7;octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "ok|"
+    },
+    {
+      "name": "unsupported EVS/16000 answer=true",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 EVS/16000\r\na=fmtp:97 mode-set=7;octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "unsupported AMR/8000/1 answer=false",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000/1\r\na=fmtp:97 mode-set=7;octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "unsupported AMR/8000/1 answer=true",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000/1\r\na=fmtp:97 mode-set=7;octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "answer rejects unoffered contract mode-set=7",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=7\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "answer rejects unoffered contract mode-set=7;octet-align=0",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=7;octet-align=0\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "answer rejects unoffered contract mode-set=7;octet-align=2",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=7;octet-align=2\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "answer rejects unoffered contract octet-align=1",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "answer rejects unoffered contract mode-set=;octet-align=1",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=;octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "answer rejects unoffered contract mode-set=0,7;octet-align=1",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=0,7;octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "answer rejects unoffered contract mode-set=7,;octet-align=1",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=7,;octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "answer rejects unoffered contract mode-set=7.0;octet-align=1",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=7.0;octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "answer rejects unoffered contract mode-set=7;mode-set=0;octet-align=1",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=7;mode-set=0;octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "answer rejects unoffered contract mode-set=7;octet-align=1;octet-align=0",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 97\r\na=rtpmap:97 AMR/8000\r\na=fmtp:97 mode-set=7;octet-align=1;octet-align=0\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "AMR rejects non-dynamic payload 0",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 0\r\na=rtpmap:0 AMR/8000\r\na=fmtp:0 mode-set=7\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "AMR rejects non-dynamic payload 8",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 8\r\na=rtpmap:8 AMR/8000\r\na=fmtp:8 mode-set=7\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "AMR rejects non-dynamic payload 95",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 95\r\na=rtpmap:95 AMR/8000\r\na=fmtp:95 mode-set=7\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "AMR rejects non-dynamic payload 128",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 128\r\na=rtpmap:128 AMR/8000\r\na=fmtp:128 mode-set=7\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "AMR rejects non-dynamic payload -1",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP -1\r\na=rtpmap:-1 AMR/8000\r\na=fmtp:-1 mode-set=7\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "AMR answer rejects unadvertised payload 98",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 98\r\na=rtpmap:98 AMR/8000\r\na=fmtp:98 mode-set=7;octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "error|"
+    },
+    {
+      "name": "EVS/16000false",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 96\r\na=rtpmap:96 EVS/16000\r\na=fmtp:96 br=13.2;bw=wb\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "ok|"
+    },
+    {
+      "name": "EVS/16000true",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 96\r\na=rtpmap:96 EVS/16000\r\na=fmtp:96 br=13.2;bw=wb\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "ok|"
+    },
+    {
+      "name": "AMR-WB/16000false",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 98\r\na=rtpmap:98 AMR-WB/16000\r\na=fmtp:98 mode-set=0,1,2;octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "ok|"
+    },
+    {
+      "name": "AMR-WB/16000true",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 98\r\na=rtpmap:98 AMR-WB/16000\r\na=fmtp:98 mode-set=0,1,2;octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "ok|"
+    },
+    {
+      "name": "AMR-WB default mode eight",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 98\r\na=rtpmap:98 AMR-WB/16000\r\na=fmtp:98 octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "ok|"
+    },
+    {
+      "name": "AMR-WB restricted highest mode seven",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 98\r\na=rtpmap:98 AMR-WB/16000\r\na=fmtp:98 mode-set=0,7,3;octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "ok|"
+    },
+    {
+      "name": "AMR-WB alternate mode spelling",
+      "args": [
+        "answer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 98\r\na=rtpmap:98 AMR-WB/16000\r\na=fmtp:98 mode-set=+7,07;octet-align=1\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "ok|"
+    },
+    {
+      "name": "AMR-WB bandwidth-efficient offer",
+      "args": [
+        "offer",
+        "v=0\r\nc=IN IP4 192.0.2.20\r\nm=audio 40000 RTP/AVP 98\r\na=rtpmap:98 AMR-WB/16000\r\na=fmtp:98 mode-set=1,4,2;octet-align=0\r\n",
+        "--fixture-wideband-capabilities"
+      ],
+      "expected_prefix": "ok|"
+    }
+  ],
+  "schema": 1
+}

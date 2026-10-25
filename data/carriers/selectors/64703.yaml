@@ -1,0 +1,10 @@
+version: 2
+plmn: "64703"
+profiles:
+    - id: apple_free_re
+      path: profiles/free_re.yaml
+      generic: true
+      selectors:
+        - raw: "64703"
+          carrier_name: Free
+          iso: RE

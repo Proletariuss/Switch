@@ -1,0 +1,111 @@
+version: 3
+kind: carrier_bundle
+id: apple_vodafone_cz
+bundle: Vodafone_cz.bundle
+supported_plmns:
+    - "23003"
+plmn_overrides:
+    "23003":
+        apns:
+            - apn: iphone.vodafone.cz
+              type_mask: 1081393
+              allowed_ip_stack: ipv4v6
+            - apn: mms
+              username: mms
+              password: mms
+              type_mask: 4
+              tech_type_mask: 4
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              support_switch_over: true
+              no_cellular_reconnect_cause_codes:
+                - cause_codes:
+                    - 33
+                  recovers_on_airplane_mode: true
+                  num_tries_allowed: 100
+                  type: 3GPP
+                  timeout: 86400
+            - apn: iphone.vodafone.cz
+              type_mask: 1048624
+            - apn: sos
+              type_mask: 262144
+              tech_type_mask: 262144
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 13312
+        e911:
+            over_itech_supported: false
+            wifi_calling_without_entitlement: true
+        entitlement:
+            entitlement_url: https://es-cz.multiopco.entitlement.vodafone.com:4452/ium-OEMInterface/servlet/IUMServlet
+        ims:
+            apn: ims
+            epdg:
+                address: epdg.epc.mnc003.mcc230.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 20
+                      name: AssignedPCSCFIPv4
+                      type: v4
+            ike:
+                proposals:
+                    - encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      prf:
+                        - sha256
+                      dh_groups:
+                        - 5
+                      lifetime_seconds: 80000
+                      authentication_method: None
+                      eap_method: EAP-AKA
+                dpd:
+                    enabled: false
+                    interval_seconds: 600
+                    max_retries: 4
+                    retry_interval_seconds: 10
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes256
+                          integrity:
+                            - sha256
+                          rekey_pfs_group: 5
+                          esn: auto
+                          install_policies: true
+                          lifetime_seconds: 80000
+                    replay_window_size: 12
+                local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+            register:
+                use_ipsec: true
+                include_cellular_network_info: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - "503"
+                        - "504"
+                require_preconditions_when_mandatory: false
+                contact:
+                    always_add_sip_instance: true
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE[-wifi]
+                          params:
+                            - +g.3gpp.accesstype="cellular2"
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                        - selector: REGISTER[wifi]
+                          params:
+                            - +g.3gpp.accesstype="wlan1"
+            media:
+                rtp_inactivity_seconds: 20
+            volte:
+                enable_volte_by_default: true
+        roaming:
+            wifi_calling_allowed: true

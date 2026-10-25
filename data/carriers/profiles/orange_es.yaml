@@ -1,0 +1,123 @@
+version: 3
+kind: carrier_bundle
+id: apple_orange_es
+bundle: Orange_es.bundle
+supported_plmns:
+    - "21403"
+plmn_overrides:
+    "21403":
+        apns:
+            - apn: orangeworld
+              username: orange
+              password: orange
+              type_mask: 32769
+              allowed_ip_stack: ipv4
+            - apn: orangemms
+              username: orange
+              password: orange
+              type_mask: 4
+              allowed_ip_stack: ipv4
+            - apn: internet
+              username: orange
+              password: orange
+              type_mask: 48
+              allowed_ip_stack: ipv4
+              support_5g_sa_handover: true
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv4
+              support_switch_over: true
+              support_5g_sa_handover: true
+              use_network_mtu: true
+              allow_no_dns: 1
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 4203729
+        e911:
+            over_itech_supported: true
+            wifi_calling_without_entitlement: false
+        entitlement:
+            entitlement_url: https://aes.orange.es/core/v2
+        ims:
+            apn: ims
+            ip_stack: ipv4
+            epdg:
+                address: epdg.epc.mnc003.mcc214.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 20
+                      name: AssignedPCSCFIPv4
+                      type: v4
+                    - identifier: 21
+                      name: AssignedPCSCFIPv6
+                      type: v6
+            ike:
+                proposals:
+                    - encryption:
+                        - aes128
+                      integrity:
+                        - sha256
+                      prf:
+                        - sha256
+                      dh_groups:
+                        - 5
+                      lifetime_seconds: 80000
+                      authentication_method: None
+                      eap_method: EAP-AKA
+                nat_keepalive_enabled: true
+                nat_keepalive_seconds: 20
+                dpd:
+                    enabled: false
+                    interval_seconds: 600
+                    max_retries: 4
+                    retry_interval_seconds: 10
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes128
+                          integrity:
+                            - sha256
+                          esn: auto
+                          install_policies: true
+                          lifetime_seconds: 80000
+                    replay_window_size: 12
+                local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+                remote_identifier_type: KeyID
+                validate_remote_certificate: false
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - "403"
+                        - "408"
+                        - 5XX
+                require_preconditions_when_mandatory: false
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                additional_headers:
+                    - selector: INVITE
+                      headers:
+                        - 'Accept: application/sdp,application/3gpp-ims+xml'
+                    - selector: INVITE,INVITE:*
+                      headers:
+                        - 'Feature-Caps: *;+g.3gpp.srvcc-alerting'
+                sip_timers:
+                    InviteResponseTimeout: 3000
+            media:
+                rtp_inactivity_seconds: 20
+                rtcp_interval_seconds: 5
+            volte:
+                enable_volte_by_default: true
+        roaming:
+            wifi_calling_allowed: false

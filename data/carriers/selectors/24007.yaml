@@ -1,0 +1,114 @@
+version: 2
+plmn: "24007"
+profiles:
+    - id: apple_affinityclick
+      path: profiles/affinityclick.yaml
+      selectors:
+        - raw: 24007_GID1-616C6F73696D31
+          carrier_name: aloSIM
+          iso: SE
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 616C6F73696D31
+    - id: apple_comviq_se
+      path: profiles/comviq_se.yaml
+      selectors:
+        - raw: 24007_GID1-4951
+          carrier_name: Comviq
+          iso: SE
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "4951"
+    - id: apple_gigsky_us
+      path: profiles/gigsky_us.yaml
+      selectors:
+        - raw: 24007_GID1-6F
+          carrier_name: GigSky
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 6F
+    - id: apple_knowroaming
+      path: profiles/knowroaming.yaml
+      selectors:
+        - raw: 24007_GID1-636f6e6e65637431
+          carrier_name: Connect
+          iso: SE
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 636F6E6E65637431
+    - id: apple_mysim
+      path: profiles/mysim.yaml
+      selectors:
+        - raw: 24007_GID1-434F423236303036
+          carrier_name: UPeSIM
+          iso: SE
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 434F423236303036
+    - id: apple_o2_sky_uk
+      path: profiles/o2_sky_uk.yaml
+      selectors:
+        - raw: 24007_ID-894442
+          carrier_name: Sky
+          iso: GB
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "894442"
+    - id: apple_sky_ie
+      path: profiles/sky_ie.yaml
+      selectors:
+        - raw: 24007_GID1-0d
+          carrier_name: Sky IE
+          iso: IE
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 0D
+    - id: apple_tele2_sberbank_ru
+      path: profiles/tele2_sberbank_ru.yaml
+      selectors:
+        - raw: 24007_ID-8970150
+          carrier_name: Sberbank
+          iso: RU
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "8970150"
+    - id: apple_tele2_se
+      path: profiles/tele2_se.yaml
+      generic: true
+      selectors:
+        - raw: "24007"
+          carrier_name: Tele2
+          iso: SE
+        - raw: 24007_GID1-4900
+          carrier_name: Tele2
+          iso: SE
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "4900"
+        - raw: 24007_ID-894620
+          carrier_name: Tele2
+          iso: SE
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "894620"
+    - id: apple_webbing
+      path: profiles/webbing.yaml
+      selectors:
+        - raw: 24007_ID-8985235
+          carrier_name: Webbing
+          iso: SE
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "8985235"

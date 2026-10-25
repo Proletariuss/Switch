@@ -1,0 +1,95 @@
+version: 3
+kind: carrier_bundle
+id: apple_nextel_cl
+bundle: Nextel_cl.bundle
+supported_plmns:
+    - "73009"
+    - "730090"
+common:
+    apns:
+        - apn: internet
+          type_mask: 49
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4
+          domestic_roaming_ip_stack: ipv4v6
+        - apn: ims
+          type_mask: 131072
+          tech_type_mask: 131072
+          allowed_ip_stack: ipv4
+          support_switch_over: true
+    e911:
+        over_itech_supported: false
+        wifi_calling_without_entitlement: true
+    ims:
+        apn: ims
+        epdg:
+            address: epdg.epc.mnc009.mcc730.pub.3gppnetwork.org
+            configuration_attributes:
+                - identifier: 16384
+                  name: AssignedPCSCFIPv4
+                  type: v4
+                - identifier: 16386
+                  name: AssignedPCSCFIPv6
+                  type: v6
+        ike:
+            child_sa:
+                proposals:
+                    - source_branch: FirstChild
+                      encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      protocol: esp
+                      rekey_pfs_group: 14
+                      esn: auto
+                      install_policies: true
+                      lifetime_seconds: 86400
+            local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+            nat_keepalive_enabled: true
+            proposals:
+                - encryption:
+                    - aes256
+                  integrity:
+                    - sha256
+                  prf:
+                    - sha256
+                  dh_groups:
+                    - 14
+                  lifetime_seconds: 86400
+                  authentication_method: None
+                  eap_method: EAP-AKA
+        ip_stack: ipv4
+        media:
+            rtcp_inactivity_seconds: 10
+            rtcp_interval_seconds: 5
+            rtp_inactivity_seconds: 10
+        register:
+            include_cellular_network_info: true
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                always_add_sip_instance: true
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - 3XX
+                    - 4XX
+                    - 5XX
+                    - 6XX
+            early_media_needs_header: true
+            preconditions: supported
+            sip_timers:
+                InviteResponseTimeout: 10000
+            support_p_early_media: true
+        ussi:
+            enabled: true
+        volte:
+            enable_volte_by_default: true
+    roaming:
+        wifi_calling_allowed: true

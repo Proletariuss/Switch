@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_rogers_cityfone_ca
+bundle: Rogers_Cityfone_ca.bundle
+supported_plmns:
+    - "302720"
+plmn_overrides:
+    "302720":
+        apns:
+            - apn: ltemobile.apn
+              type_mask: 5
+            - apn: ltedata.apn
+              type_mask: 48
+            - apn: ltemobile.apn
+              type_mask: 4

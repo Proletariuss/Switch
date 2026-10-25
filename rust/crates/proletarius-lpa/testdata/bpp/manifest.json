@@ -1,0 +1,56 @@
+{
+  "provenance": "Unmodified euicc-go v1.1.3-0.20260628013808-8d873a2dfc98 fixture inputs and literal expected segmentation outputs. No expected bytes regenerated.",
+  "source_test": "backend/third_party/euicc-go/v2/bpp_test.go",
+  "source_test_sha256": "022a10f21cdf48e61cdecf99b029e4e9f84f2f943a9fc9763399453cf9489db2",
+  "source_implementation_sha256": "84db4f31adf78c439019d71d99629ccfeb16b1e7c051a9b7b4e66ba069099381",
+  "files": [
+    {
+      "source": "backend/third_party/euicc-go/v2/fixtures/bpp@1.txt",
+      "destination": "rust/crates/proletarius-lpa/testdata/bpp/bpp@1.txt",
+      "bytes": 3758,
+      "sha256": "e2f42b610719abb80383fc4a35d49a78cd5845e91bc2d29376690ce52e3fcb74"
+    },
+    {
+      "source": "backend/third_party/euicc-go/v2/fixtures/bpp@2.txt",
+      "destination": "rust/crates/proletarius-lpa/testdata/bpp/bpp@2.txt",
+      "bytes": 2427,
+      "sha256": "fcc753fd2ff660ed34b7193590fe5050ac511f7fbef7cd8f53bfd86aa32332d4"
+    },
+    {
+      "source": "backend/third_party/euicc-go/v2/fixtures/bpp@3.txt",
+      "destination": "rust/crates/proletarius-lpa/testdata/bpp/bpp@3.txt",
+      "bytes": 10951,
+      "sha256": "743ff0ad2d1f94f01c3dbcce3099fac509e8a48f899c0c29db01cf1e885317c0"
+    },
+    {
+      "source": "backend/third_party/euicc-go/v2/fixtures/bpp@4.txt",
+      "destination": "rust/crates/proletarius-lpa/testdata/bpp/bpp@4.txt",
+      "bytes": 8802,
+      "sha256": "558756a3a0f8cc1c0b7dbbdad8a81d6272bda416d975c4369d02eee777df2e3c"
+    },
+    {
+      "source": "backend/third_party/euicc-go/v2/fixtures/sbpp@1.txt",
+      "destination": "rust/crates/proletarius-lpa/testdata/bpp/sbpp@1.txt",
+      "bytes": 5896,
+      "sha256": "134242ab0f0f06ee28487fd6f8f12159dd3fe4f4e3069b915cb6df31e75823f6"
+    },
+    {
+      "source": "backend/third_party/euicc-go/v2/fixtures/sbpp@2.txt",
+      "destination": "rust/crates/proletarius-lpa/testdata/bpp/sbpp@2.txt",
+      "bytes": 3919,
+      "sha256": "d3edc43b0fca1cdd2358004afaaea3ad0def7afe771b42f27cc94af50b2b040e"
+    },
+    {
+      "source": "backend/third_party/euicc-go/v2/fixtures/sbpp@3.txt",
+      "destination": "rust/crates/proletarius-lpa/testdata/bpp/sbpp@3.txt",
+      "bytes": 16630,
+      "sha256": "705e37e50a9a78e82dc36024307351f41ccd10fdeeccd22be71e7d75abae055c"
+    },
+    {
+      "source": "backend/third_party/euicc-go/v2/fixtures/sbpp@4.txt",
+      "destination": "rust/crates/proletarius-lpa/testdata/bpp/sbpp@4.txt",
+      "bytes": 13368,
+      "sha256": "b0186b0e9eaa71e57e1750b6c9663c8e340f22ca6996b4c8e4fc0c15ca411601"
+    }
+  ]
+}

@@ -1,0 +1,430 @@
+version: 2
+plmn: "310240"
+profiles:
+    - id: apple_dentwireless
+      path: profiles/dentwireless.yaml
+      selectors:
+        - raw: 310240_GID1-3597bfd533
+          carrier_name: DENT
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 3597BFD533
+    - id: apple_dish_mvno_us
+      path: profiles/dish_mvno_us.yaml
+      selectors:
+        - raw: 310240_GID1-6432
+          carrier_name: Boost
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6432"
+        - raw: 310240_GID1-6434
+          carrier_name: Boost
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6434"
+    - id: apple_dish_ting_us
+      path: profiles/dish_ting_us.yaml
+      selectors:
+        - raw: 310240_GID1-6430
+          carrier_name: Ting
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6430"
+    - id: apple_familymobile_us
+      path: profiles/familymobile_us.yaml
+      selectors:
+        - raw: 310240_GID1-4D4B
+          carrier_name: TFW
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 4D4B
+    - id: apple_tmobile_boost_us
+      path: profiles/tmobile_boost_us.yaml
+      selectors:
+        - raw: 310240_GID1-6230
+          carrier_name: Boost Mobile
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6230"
+    - id: apple_tmobile_cc_us
+      path: profiles/tmobile_cc_us.yaml
+      selectors:
+        - raw: 310240_GID1-2AC9
+          carrier_name: CC
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 2AC9
+    - id: apple_tmobile_charter_us
+      path: profiles/tmobile_charter_us.yaml
+      selectors:
+        - raw: 310240_GID1-BA02
+          carrier_name: Spectrum
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: BA02
+    - id: apple_tmobile_comcast_us
+      path: profiles/tmobile_comcast_us.yaml
+      selectors:
+        - raw: 310240_GID1-CC01
+          carrier_name: Comcast Business
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: CC01
+    - id: apple_tmobile_metropcs_us
+      path: profiles/tmobile_metropcs_us.yaml
+      selectors:
+        - raw: 310240_GID1-6D
+          carrier_name: Metro
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 6D
+    - id: apple_tmobile_mvno_us
+      path: profiles/tmobile_mvno_us.yaml
+      selectors:
+        - raw: 310240_GID1-4201
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "4201"
+        - raw: 310240_GID1-4276
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "4276"
+        - raw: 310240_GID1-43
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "43"
+        - raw: 310240_GID1-4753
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "4753"
+        - raw: 310240_GID1-4B
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 4B
+        - raw: 310240_GID1-4C
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 4C
+        - raw: 310240_GID1-4E
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 4E
+        - raw: 310240_GID1-514C
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 514C
+        - raw: 310240_GID1-57
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "57"
+        - raw: 310240_GID1-6133
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6133"
+        - raw: 310240_GID1-6134
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6134"
+        - raw: 310240_GID1-6136
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6136"
+        - raw: 310240_GID1-6137
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6137"
+        - raw: 310240_GID1-6138
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6138"
+        - raw: 310240_GID1-69
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "69"
+        - raw: 310240_GID1-6C
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 6C
+        - raw: 310240_GID1-70
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "70"
+        - raw: 310240_GID1-72
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "72"
+        - raw: 310240_GID1-73
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "73"
+        - raw: 310240_GID1-74
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "74"
+        - raw: 310240_GID1-82
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "82"
+        - raw: 310240_GID1-AB
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: AB
+        - raw: 310240_GID1-DD
+          carrier_name: TMobile MVNO US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: DD
+    - id: apple_tmobile_tfw_simple_us
+      path: profiles/tmobile_tfw_simple_us.yaml
+      selectors:
+        - raw: 310240_GID1-534D
+          carrier_name: TFW
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 534D
+        - raw: 310240_GID1-DE
+          carrier_name: TFW
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: DE
+    - id: apple_tmobile_ultramint_us
+      path: profiles/tmobile_ultramint_us.yaml
+      selectors:
+        - raw: 310240_GID1-354d
+          carrier_name: Ultra/Mint Mobile
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 354D
+        - raw: 310240_GID1-364d
+          carrier_name: Ultra/Mint Mobile
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 364D
+        - raw: 310240_GID1-4153
+          carrier_name: Ultra/Mint Mobile
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "4153"
+        - raw: 310240_GID1-4154
+          carrier_name: Ultra/Mint Mobile
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "4154"
+        - raw: 310240_GID1-6132
+          carrier_name: Ultra/Mint Mobile
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6132"
+        - raw: 310240_GID1-756d
+          carrier_name: Ultra/Mint Mobile
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 756D
+    - id: apple_tmobile_us
+      path: profiles/tmobile_us.yaml
+      selectors:
+        - raw: 310240_GID1-54
+          carrier_name: T-Mobile
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "54"
+    - id: apple_tmobile_wholesale_us
+      path: profiles/tmobile_wholesale_us.yaml
+      selectors:
+        - raw: 310240_GID1-1A53
+          carrier_name: TMobile Wholesale US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 1A53
+        - raw: 310240_GID1-6911
+          carrier_name: TMobile Wholesale US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6911"
+        - raw: 310240_GID1-6913
+          carrier_name: TMobile Wholesale US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6913"
+        - raw: 310240_GID1-6917
+          carrier_name: TMobile Wholesale US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6917"
+        - raw: 310240_GID1-6918
+          carrier_name: TMobile Wholesale US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6918"
+        - raw: 310240_GID1-6919
+          carrier_name: TMobile Wholesale US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6919"
+        - raw: 310240_GID1-6923
+          carrier_name: TMobile Wholesale US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6923"
+        - raw: 310240_GID1-6924
+          carrier_name: TMobile Wholesale US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6924"
+        - raw: 310240_GID1-6927
+          carrier_name: TMobile Wholesale US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6927"
+        - raw: 310240_GID1-6928
+          carrier_name: TMobile Wholesale US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6928"
+        - raw: 310240_GID1-6957
+          carrier_name: TMobile Wholesale US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "6957"
+        - raw: 310240_GID1-80
+          carrier_name: TMobile Wholesale US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "80"
+        - raw: 310240_GID1-8135
+          carrier_name: TMobile Wholesale US
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "8135"

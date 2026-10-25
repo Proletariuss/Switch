@@ -1,0 +1,139 @@
+version: 3
+kind: carrier_bundle
+id: apple_appalachian_lte_us
+bundle: Appalachian_LTE_US.bundle
+supported_plmns:
+    - "311480"
+plmn_overrides:
+    "311480":
+        apns:
+            - apn: vzwinternet
+              type_mask: 4194359
+              allowed_ip_stack: ipv4v6
+              no_cellular_reconnect_cause_codes:
+                - cause_codes:
+                    - 13
+                  type: 3GPP2
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv6
+              roaming_ip_stack: ipv6
+              support_switch_over: true
+              no_cellular_reconnect_cause_codes:
+                - cause_codes:
+                    - 13
+                  type: 3GPP2
+                - cause_codes:
+                    - 8
+                  num_tries_allowed: 2
+                  type: 3GPP
+                - cause_codes:
+                    - 27
+                  num_tries_allowed: 2
+                  type: 3GPP
+                - cause_codes:
+                    - 29
+                  num_tries_allowed: 2
+                  type: 3GPP
+                - cause_codes:
+                    - 32
+                  num_tries_allowed: 2
+                  type: 3GPP
+                - cause_codes:
+                    - 33
+                  num_tries_allowed: 2
+                  type: 3GPP
+            - apn: vzwapp
+              type_mask: 49152
+              tech_type_mask: 49152
+              allowed_ip_stack: ipv4v6
+            - apn: vzwadmin
+              type_mask: 512
+              allowed_ip_stack: ipv4v6
+            - apn: vzwemergency
+              type_mask: 262144
+              tech_type_mask: 262144
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 208
+        e911:
+            over_itech_supported: false
+            wifi_calling_without_entitlement: false
+            emergency_urns:
+                "922": 922@vzims.com
+        entitlement:
+            entitlement_url: https://spc.myvzw.com/ium-RoadrunnerInterface/servlet/IUMServlet
+        ims:
+            apn: ims
+            ip_stack: ipv6
+            epdg:
+                address: wo.vzwwo.com
+                timeout_seconds: 30
+                configuration_attributes:
+                    - identifier: 16390
+                      name: AssignedPCSCFIPv6
+                      type: v6
+            ike:
+                proposals:
+                    - encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      prf:
+                        - sha256
+                      dh_groups:
+                        - 14
+                      lifetime_seconds: 80000
+                      authentication_method: None
+                      eap_method: EAP-AKA
+                disable_switch_to_natt_port: true
+                dpd:
+                    enabled: false
+                    interval_seconds: 600
+                    max_retries: 4
+                    retry_interval_seconds: 10
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes256
+                          integrity:
+                            - sha256
+                          protocol: esp
+                          rekey_pfs_group: 14
+                          esn: auto
+                          install_policies: true
+                          secure_rekey: false
+                          lifetime_seconds: 86400
+                local_identifier: 0$impi_user@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+            signaling:
+                preconditions: unsupported
+                support_p_early_media: false
+                early_media_needs_header: false
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - "503"
+                require_preconditions_when_mandatory: false
+                additional_headers:
+                    - selector: INVITE[911,wifi]
+                      headers:
+                        - 'P-com.ServiceType: Static-Emergency'
+                sip_timers:
+                    D: 128000
+                    F: 30000
+                    InviteResponseTimeout: 10000
+                    T1: 3000
+                    T2: 16000
+                    T4: 17000
+            media:
+                rtp_inactivity_seconds: 20
+                rtcp_inactivity_seconds: 20
+                rtcp_interval_seconds: 5
+            volte:
+                enable_volte_by_default: true
+        roaming:
+            wifi_calling_allowed: true

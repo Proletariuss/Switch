@@ -1,0 +1,10 @@
+version: 2
+plmn: "63089"
+profiles:
+    - id: apple_tigo_cd
+      path: profiles/tigo_cd.yaml
+      generic: true
+      selectors:
+        - raw: "63089"
+          carrier_name: Tigo
+          iso: CD

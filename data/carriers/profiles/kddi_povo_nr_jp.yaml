@@ -1,0 +1,59 @@
+version: 3
+kind: carrier_bundle
+id: apple_kddi_povo_nr_jp
+bundle: KDDI_Povo_NR_jp.bundle
+supported_plmns:
+    - "44054"
+plmn_overrides:
+    "44054":
+        apns:
+            - apn: povo.jp
+              type_mask: 33331
+            - apn: povo.jp
+              type_mask: 33331
+              allowed_ip_stack: ipv4v6
+            - apn: IMS
+              type_mask: 131072
+              allowed_ip_stack: ipv6
+              roaming_ip_stack: ipv6
+            - apn: xcap
+              type_mask: 1048576
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+            - apn: ""
+              type_mask: 262144
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 8193
+        e911:
+            emergency_urns:
+                "110": urn:service:sos.police
+                "118": urn:service:sos.marine
+                "119": urn:service:sos.fire
+        entitlement:
+            entitlement_url: https://station01.ezweb.ne.jp/ENT/servlet/EntServlet3
+        ims:
+            apn: ims
+            ip_stack: ipv6
+            register:
+                use_ipsec: true
+            signaling:
+                support_p_early_media: true
+                early_media_needs_header: true
+                require_qos_before_ringing: true
+                require_preconditions_when_mandatory: false
+                sip_timers:
+                    B: 10000
+                    F: 30000
+                    H: 30000
+                    InviteResponseTimeout: 0
+                    J: 30000
+                    T1: 3000
+                    T2: 16000
+            media:
+                rtp_inactivity_seconds: 20
+                remote_rtcp_deactivation: true
+            volte:
+                enable_volte_by_default: true

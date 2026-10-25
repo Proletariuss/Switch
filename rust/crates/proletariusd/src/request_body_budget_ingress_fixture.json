@@ -1,0 +1,1097 @@
+{
+  "provenance": "Iteration 694 static audit of live network collectors, reviewed during 695. Prefix families use one actual routed representative. Local reconstructed Full adapters and unreachable store branches are excluded. This regression fixture does not discover future routes or prove physical behavior. Update it together with production collector limits and route review.",
+  "routes": [
+    {
+      "method": "POST",
+      "path": "/api/calls/clear",
+      "collector_maximum": 16384,
+      "source": "call_archive.rs",
+      "function": "collect_limited"
+    },
+    {
+      "method": "POST",
+      "path": "/api/calls/delete",
+      "collector_maximum": 16384,
+      "source": "call_archive.rs",
+      "function": "collect_limited"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/call-archive/ingest",
+      "collector_maximum": 16384,
+      "source": "call_archive.rs",
+      "function": "collect_limited"
+    },
+    {
+      "method": "POST",
+      "path": "/api/call/audio/start",
+      "collector_maximum": 4096,
+      "source": "call_audio.rs",
+      "function": "handle_public_with"
+    },
+    {
+      "method": "POST",
+      "path": "/api/call/audio/stop",
+      "collector_maximum": 4096,
+      "source": "call_audio.rs",
+      "function": "handle_public_with"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/call/invite-policy",
+      "collector_maximum": 4096,
+      "source": "call_codec.rs",
+      "function": "handle_invite_policy"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/call/dtmf",
+      "collector_maximum": 1024,
+      "source": "call_codec.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/call/negotiate-sdp",
+      "collector_maximum": 394240,
+      "source": "call_codec.rs",
+      "function": "handle_audio_sdp"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/call/build-local-sdp",
+      "collector_maximum": 4096,
+      "source": "call_codec.rs",
+      "function": "handle_local_audio_sdp"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/call-archive/observe",
+      "collector_maximum": 16384,
+      "source": "call_facts.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/call-archive/history-error",
+      "collector_maximum": 16384,
+      "source": "call_facts.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/call-mode/adb/probe",
+      "collector_maximum": 4096,
+      "source": "call_mode_adb.rs",
+      "function": "handle_internal"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/call-mode/adb/deploy-runtime",
+      "collector_maximum": 4096,
+      "source": "call_mode_adb.rs",
+      "function": "handle_internal"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/call-mode/adb/voice-route/start",
+      "collector_maximum": 4096,
+      "source": "call_mode_adb.rs",
+      "function": "handle_internal"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/call-mode/adb/voice-route/stop",
+      "collector_maximum": 4096,
+      "source": "call_mode_adb.rs",
+      "function": "handle_internal"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/call-mode/adb/voice-route/status",
+      "collector_maximum": 4096,
+      "source": "call_mode_adb.rs",
+      "function": "handle_internal"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/call-mode/adb/voice-runtime/status",
+      "collector_maximum": 4096,
+      "source": "call_mode_adb.rs",
+      "function": "handle_internal"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/call-mode/adb/voice-runtime/generation",
+      "collector_maximum": 4096,
+      "source": "call_mode_adb.rs",
+      "function": "handle_internal"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/call-mode/backups/create",
+      "collector_maximum": 65536,
+      "source": "call_mode_backups.rs",
+      "function": "handle_internal_with_proof"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/call-mode/backups/restore-data",
+      "collector_maximum": 1024,
+      "source": "call_mode_backups.rs",
+      "function": "handle_internal_with_proof"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/call-mode/backups/validate-restore",
+      "collector_maximum": 1024,
+      "source": "call_mode_backups.rs",
+      "function": "handle_internal_with_proof"
+    },
+    {
+      "method": "POST",
+      "path": "/api/call-mode/backups/delete",
+      "collector_maximum": 1048576,
+      "source": "call_mode_backups.rs",
+      "function": "handle_delete_public_with_proof"
+    },
+    {
+      "method": "POST",
+      "path": "/api/call-mode/backups/import",
+      "collector_maximum": 65536,
+      "source": "call_mode_backups.rs",
+      "function": "handle_public_with_proof"
+    },
+    {
+      "method": "POST",
+      "path": "/api/call-mode/enable",
+      "collector_maximum": 4096,
+      "source": "call_mode_enable.rs",
+      "function": "handle_public_with"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/call-mode/lifecycle/readiness",
+      "collector_maximum": 1024,
+      "source": "call_mode_lifecycle.rs",
+      "function": "handle_internal"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/call-mode/lifecycle/invalidate",
+      "collector_maximum": 1024,
+      "source": "call_mode_lifecycle.rs",
+      "function": "handle_internal"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/call-mode/lifecycle/shutdown",
+      "collector_maximum": 1024,
+      "source": "call_mode_lifecycle.rs",
+      "function": "handle_internal"
+    },
+    {
+      "method": "POST",
+      "path": "/api/call-mode/restore",
+      "collector_maximum": 4096,
+      "source": "call_mode_restore.rs",
+      "function": "handle_public_with"
+    },
+    {
+      "method": "POST",
+      "path": "/api/call-mode/retry",
+      "collector_maximum": 1048576,
+      "source": "call_mode_retry.rs",
+      "function": "handle_public_with"
+    },
+    {
+      "method": "POST",
+      "path": "/api/call-mode/download",
+      "collector_maximum": 1048576,
+      "source": "call_mode_runtime_download.rs",
+      "function": "handle_public"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/call-mode/status/project",
+      "collector_maximum": 8192,
+      "source": "call_mode_status.rs",
+      "function": "handle_internal"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/carrier/resolve",
+      "collector_maximum": 4096,
+      "source": "carrier.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/device-send/prepare",
+      "collector_maximum": 131072,
+      "source": "device_send_store.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/device-send/claim",
+      "collector_maximum": 131072,
+      "source": "device_send_store.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/device-send/finish",
+      "collector_maximum": 131072,
+      "source": "device_send_store.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/device-send/get",
+      "collector_maximum": 131072,
+      "source": "device_send_store.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/device-send/list",
+      "collector_maximum": 131072,
+      "source": "device_send_store.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sms/send",
+      "collector_maximum": 1048576,
+      "source": "device_sms_send.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sms/send-intents",
+      "collector_maximum": 1048576,
+      "source": "device_sms_send.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/vowifi/eap-identity",
+      "collector_maximum": 32768,
+      "source": "eap_identity.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/vowifi/eap-exchange/release",
+      "collector_maximum": 4096,
+      "source": "eap_identity.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/sms/forwarding/handoff",
+      "collector_maximum": 8388608,
+      "source": "forwarding_handoff_store.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/ims/validate-register-response",
+      "collector_maximum": 131072,
+      "source": "ims_codec.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/ims/sms-transactions",
+      "collector_maximum": 131072,
+      "source": "ims_sms_transactions.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/sms/archive/ingest",
+      "collector_maximum": 8388608,
+      "source": "message_archive.rs",
+      "function": "collect_request_limited"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/sms/archive/delete-ids",
+      "collector_maximum": 131072,
+      "source": "message_archive.rs",
+      "function": "collect_request_limited"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/sms/archive/delete",
+      "collector_maximum": 16384,
+      "source": "message_archive.rs",
+      "function": "collect_request_limited"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/sms/archive/delete-sender",
+      "collector_maximum": 16384,
+      "source": "message_archive.rs",
+      "function": "collect_request_limited"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/sms-archive/clear",
+      "collector_maximum": 16384,
+      "source": "message_archive.rs",
+      "function": "collect_request_limited"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/sms-archive/delete",
+      "collector_maximum": 16384,
+      "source": "message_archive.rs",
+      "function": "collect_request_limited"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/sms-archive/delete-sender",
+      "collector_maximum": 16384,
+      "source": "message_archive.rs",
+      "function": "collect_request_limited"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/modem/submit-sms",
+      "collector_maximum": 409600,
+      "source": "modem_actor.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/modem/project-call-state",
+      "collector_maximum": 69632,
+      "source": "modem_actor.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/modem/call-command",
+      "collector_maximum": 1024,
+      "source": "modem_actor.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/modem/close",
+      "collector_maximum": 12288,
+      "source": "modem_actor.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/modem/write",
+      "collector_maximum": 12288,
+      "source": "modem_actor.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/esim/switch",
+      "collector_maximum": 1048576,
+      "source": "module_esim.rs",
+      "function": "decode_switch_body"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/esim/profile",
+      "collector_maximum": 1048576,
+      "source": "module_esim.rs",
+      "function": "decode_rename_body"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/esim/profile",
+      "collector_maximum": 1048576,
+      "source": "module_esim.rs",
+      "function": "decode_delete_body"
+    },
+    {
+      "method": "POST",
+      "path": "/api/at",
+      "collector_maximum": 1048576,
+      "source": "module_radio.rs",
+      "function": "body"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/esim/module-notes",
+      "collector_maximum": 65536,
+      "source": "module_radio.rs",
+      "function": "body"
+    },
+    {
+      "method": "POST",
+      "path": "/api/network/usbnet",
+      "collector_maximum": 1048576,
+      "source": "module_radio.rs",
+      "function": "body"
+    },
+    {
+      "method": "POST",
+      "path": "/api/module/flight-mode",
+      "collector_maximum": 4096,
+      "source": "module_radio.rs",
+      "function": "body"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/module-radio/action",
+      "collector_maximum": 32768,
+      "source": "module_radio.rs",
+      "function": "body"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/multistandby/inventory",
+      "collector_maximum": 2048,
+      "source": "multistandby_native_inventory.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/multistandby/start",
+      "collector_maximum": 1048576,
+      "source": "multistandby_operations.rs",
+      "function": "parse_json"
+    },
+    {
+      "method": "POST",
+      "path": "/api/multistandby/stop",
+      "collector_maximum": 1048576,
+      "source": "multistandby_operations.rs",
+      "function": "parse_json"
+    },
+    {
+      "method": "POST",
+      "path": "/api/multistandby/retry",
+      "collector_maximum": 1048576,
+      "source": "multistandby_operations.rs",
+      "function": "parse_json"
+    },
+    {
+      "method": "POST",
+      "path": "/api/multistandby/control-intents",
+      "collector_maximum": 1048576,
+      "source": "multistandby_operations.rs",
+      "function": "parse_json"
+    },
+    {
+      "method": "POST",
+      "path": "/api/multistandby/control-intents/ack",
+      "collector_maximum": 1048576,
+      "source": "multistandby_operations.rs",
+      "function": "parse_json"
+    },
+    {
+      "method": "POST",
+      "path": "/api/multistandby/messages/send",
+      "collector_maximum": 1048576,
+      "source": "multistandby_send.rs",
+      "function": "handle_public"
+    },
+    {
+      "method": "POST",
+      "path": "/api/multistandby/send-intents",
+      "collector_maximum": 1048576,
+      "source": "multistandby_store.rs",
+      "function": "handle_inner"
+    },
+    {
+      "method": "POST",
+      "path": "/api/multistandby/send-intents/submit",
+      "collector_maximum": 1048576,
+      "source": "multistandby_store.rs",
+      "function": "handle_inner"
+    },
+    {
+      "method": "POST",
+      "path": "/api/vowifi/reconcile",
+      "collector_maximum": 4096,
+      "source": "native_vowifi_session/module.rs",
+      "function": "reconcile_unobserved"
+    },
+    {
+      "method": "POST",
+      "path": "/api/vowifi",
+      "collector_maximum": 4096,
+      "source": "native_vowifi_session/module.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reader/vowifi/reconcile",
+      "collector_maximum": 4096,
+      "source": "native_vowifi_session/service.rs",
+      "function": "reconcile_unobserved"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reader/vowifi",
+      "collector_maximum": 4096,
+      "source": "native_vowifi_session/service.rs",
+      "function": "handle_public"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/vowifi/native-session-plan",
+      "collector_maximum": 4096,
+      "source": "native_vowifi_session.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/network/recovery",
+      "collector_maximum": 4096,
+      "source": "network_recovery.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/network/reboot-module",
+      "collector_maximum": 4096,
+      "source": "network_recovery.rs",
+      "function": "handle"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/network/services-order",
+      "collector_maximum": 1048576,
+      "source": "network_services.rs",
+      "function": "decode_order_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/ordinary-vowifi/admission",
+      "collector_maximum": 4096,
+      "source": "ordinary_vowifi_admission.rs",
+      "function": "handle"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/esim/notes",
+      "collector_maximum": 1048576,
+      "source": "profile_notes.rs",
+      "function": "decode_json"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/profile-notes/remember-phone",
+      "collector_maximum": 1048576,
+      "source": "profile_notes.rs",
+      "function": "decode_json"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/profile-notes/phone",
+      "collector_maximum": 1048576,
+      "source": "profile_notes.rs",
+      "function": "decode_json"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/vowifi/proxy-policy",
+      "collector_maximum": 16384,
+      "source": "proxy_policy.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/vowifi/proxy-probe",
+      "collector_maximum": 4096,
+      "source": "proxy_probe.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/qmi/set-ims",
+      "collector_maximum": 16384,
+      "source": "qmi_enhancement.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/qmi/close",
+      "collector_maximum": 16384,
+      "source": "qmi_enhancement.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reader/auth",
+      "collector_maximum": 8192,
+      "source": "reader_auth.rs",
+      "function": "read_public_challenge"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/reader/authenticate",
+      "collector_maximum": 8192,
+      "source": "reader_auth.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reader/ble/scan",
+      "collector_maximum": 4096,
+      "source": "reader_ble_control.rs",
+      "function": "handle_public"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reader/ble/connect",
+      "collector_maximum": 4096,
+      "source": "reader_ble_control.rs",
+      "function": "handle_public"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reader/ble/disconnect",
+      "collector_maximum": 4096,
+      "source": "reader_ble_control.rs",
+      "function": "handle_public"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reader/connect",
+      "collector_maximum": 16384,
+      "source": "reader_control.rs",
+      "function": "body"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reader/disconnect",
+      "collector_maximum": 16384,
+      "source": "reader_control.rs",
+      "function": "body"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/reader-device-identity/resolve",
+      "collector_maximum": 8192,
+      "source": "reader_device_identity.rs",
+      "function": "handle_internal"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/reader/imei",
+      "collector_maximum": 8192,
+      "source": "reader_device_identity.rs",
+      "function": "decode_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/reader/eap-aka",
+      "collector_maximum": 32768,
+      "source": "reader_eap_aka.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/esim/download",
+      "collector_maximum": 1048576,
+      "source": "reader_esim_download.rs",
+      "function": "decode_module_download_body"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reader/esim/notifications/retry",
+      "collector_maximum": 8192,
+      "source": "reader_esim_download.rs",
+      "function": "retry_notification_or_forward"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reader/esim/download",
+      "collector_maximum": 8192,
+      "source": "reader_esim_download.rs",
+      "function": "decode_body"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/reader/esim/profile",
+      "collector_maximum": 8192,
+      "source": "reader_esim_download.rs",
+      "function": "decode_body"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/reader/esim/profile",
+      "collector_maximum": 8192,
+      "source": "reader_esim_download.rs",
+      "function": "decode_body"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reader/esim/switch",
+      "collector_maximum": 8192,
+      "source": "reader_esim_download.rs",
+      "function": "decode_body"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reader/esim/download/confirm",
+      "collector_maximum": 8192,
+      "source": "reader_esim_download.rs",
+      "function": "decode_body"
+    },
+    {
+      "method": "POST",
+      "path": "/api/esim/download/confirm",
+      "collector_maximum": 8192,
+      "source": "reader_esim_download.rs",
+      "function": "decode_body"
+    },
+    {
+      "method": "POST",
+      "path": "/api/esim/operation/acknowledge",
+      "collector_maximum": 8192,
+      "source": "reader_esim_download.rs",
+      "function": "decode_body"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/reader/identity",
+      "collector_maximum": 4096,
+      "source": "reader_identity.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reader/vowifi/proxy-check",
+      "collector_maximum": 4096,
+      "source": "reader_proxy_check.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/reader-business",
+      "collector_maximum": 4096,
+      "source": "reader_reservation/business.rs",
+      "function": "handle_status"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/reader-lifecycle",
+      "collector_maximum": 32768,
+      "source": "reader_reservation/lifecycle.rs",
+      "function": "handle_lifecycle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/reader-native-owner",
+      "collector_maximum": 4096,
+      "source": "reader_reservation/native.rs",
+      "function": "handle_native_owner"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/diagnostics/events/append",
+      "collector_maximum": 4096,
+      "source": "safe_events.rs",
+      "function": "handle_internal"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sms/adopt",
+      "collector_maximum": 1048576,
+      "source": "sms_adopt.rs",
+      "function": "decode_request"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sms/clear",
+      "collector_maximum": 16384,
+      "source": "sms_clear.rs",
+      "function": "handle_public"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/sms/prepare-tpdu",
+      "collector_maximum": 262144,
+      "source": "sms_codec.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/sms/decode-stored-snapshot",
+      "collector_maximum": 524288,
+      "source": "sms_codec.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/sms/encode-rpdu",
+      "collector_maximum": 4096,
+      "source": "sms_codec.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/sms/decode-rpdu",
+      "collector_maximum": 4096,
+      "source": "sms_codec.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/sms/decode-incoming-tpdu",
+      "collector_maximum": 4096,
+      "source": "sms_codec.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sms/delete",
+      "collector_maximum": 1048576,
+      "source": "sms_delete.rs",
+      "function": "handle_public"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sms/delete-sender",
+      "collector_maximum": 16384,
+      "source": "sms_delete_sender.rs",
+      "function": "handle_public"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/sms/devices/select",
+      "collector_maximum": 32768,
+      "source": "sms_device_service.rs",
+      "function": "handle_internal_for_state"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/sms-export",
+      "collector_maximum": 4096,
+      "source": "sms_export.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sms/forwarding/queue-action",
+      "collector_maximum": 16384,
+      "source": "sms_forwarding.rs",
+      "function": "queue_action"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sms/forwarding/configure",
+      "collector_maximum": 8388608,
+      "source": "sms_forwarding.rs",
+      "function": "read_json"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sms/forwarding/enqueue",
+      "collector_maximum": 8388608,
+      "source": "sms_forwarding.rs",
+      "function": "read_json"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sms/forwarding/device-snapshot",
+      "collector_maximum": 8388608,
+      "source": "sms_forwarding.rs",
+      "function": "read_json"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sms/forwarding/test",
+      "collector_maximum": 8388608,
+      "source": "sms_forwarding.rs",
+      "function": "read_json"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/vowifi/select-transport",
+      "collector_maximum": 8192,
+      "source": "transport_selection.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/call/dial",
+      "collector_maximum": 4096,
+      "source": "unified_call_control.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/call/answer",
+      "collector_maximum": 4096,
+      "source": "unified_call_control.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/call/hangup",
+      "collector_maximum": 4096,
+      "source": "unified_call_control.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/call/dtmf",
+      "collector_maximum": 4096,
+      "source": "unified_call_control.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/vowifi/calls/dial",
+      "collector_maximum": 4096,
+      "source": "unified_call_control.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/vowifi/calls/answer",
+      "collector_maximum": 4096,
+      "source": "unified_call_control.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/vowifi/calls/reject",
+      "collector_maximum": 4096,
+      "source": "unified_call_control.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/vowifi/calls/hangup",
+      "collector_maximum": 4096,
+      "source": "unified_call_control.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/vowifi/calls/dtmf",
+      "collector_maximum": 4096,
+      "source": "unified_call_control.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reader/vowifi/calls/dial",
+      "collector_maximum": 4096,
+      "source": "unified_call_control.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reader/vowifi/calls/answer",
+      "collector_maximum": 4096,
+      "source": "unified_call_control.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reader/vowifi/calls/reject",
+      "collector_maximum": 4096,
+      "source": "unified_call_control.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reader/vowifi/calls/hangup",
+      "collector_maximum": 4096,
+      "source": "unified_call_control.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reader/vowifi/calls/dtmf",
+      "collector_maximum": 4096,
+      "source": "unified_call_control.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reader/vowifi/ussd",
+      "collector_maximum": 4096,
+      "source": "unified_call_control.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/usb-at/sim-identity",
+      "collector_maximum": 1048576,
+      "source": "usb_at.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/usb-at/sim-profile-check",
+      "collector_maximum": 1048576,
+      "source": "usb_at.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/usb-at/sim-aka",
+      "collector_maximum": 1048576,
+      "source": "usb_at.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/usb-at/close",
+      "collector_maximum": 1048576,
+      "source": "usb_at.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/usb-at/release",
+      "collector_maximum": 1048576,
+      "source": "usb_at.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/usb-at/device-status",
+      "collector_maximum": 1048576,
+      "source": "usb_at.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/usb-sms/prune",
+      "collector_maximum": 40960,
+      "source": "usb_sms_receive.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/usb-sms/storage-operation",
+      "collector_maximum": 131072,
+      "source": "usb_sms_storage_service.rs",
+      "function": "handle"
+    },
+    {
+      "method": "POST",
+      "path": "/api/voice/enable",
+      "collector_maximum": 1048576,
+      "source": "voice_enabled.rs",
+      "function": "handle_public"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/vowifi/session-policy",
+      "collector_maximum": 4096,
+      "source": "vowifi_session_policy.rs",
+      "function": "handle"
+    }
+  ]
+}

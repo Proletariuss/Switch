@@ -1,0 +1,69 @@
+version: 3
+kind: carrier_bundle
+id: apple_fastweb_it
+bundle: Fastweb_it.bundle
+supported_plmns:
+    - "22208"
+    - "22801"
+common:
+    apns:
+        - apn: apn.fastweb.it
+          type_mask: 49
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4
+        - apn: apn.fastweb.it
+          type_mask: 4
+        - apn: hos
+          type_mask: 1048576
+          tech_type_mask: 1048576
+          allowed_ip_stack: ipv4v6
+    e911:
+        wifi_calling_without_entitlement: true
+    ims:
+        domain: ims.mnc008.mcc222.3gppnetwork.org
+        epdg:
+            address: epdg.fastweb.it
+        ike:
+            child_sa:
+                proposals:
+                    - source_branch: FirstChild
+                      encryption:
+                        - aes256
+                      integrity:
+                        - sha512
+                      esn: auto
+                      lifetime_seconds: 86400
+            nat_keepalive_enabled: true
+        impi_format: imsi@carrierDomain
+        impu_format: imsi@carrierDomain
+        media:
+            rtp_inactivity_seconds: 20
+        register:
+            include_cellular_network_info: true
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*[primary]
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                        - text
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - 3XX
+                    - 4XX
+                    - 5XX
+                    - 6XX
+            early_media_needs_header: true
+            support_p_early_media: true
+        volte:
+            enable_volte_by_default: true
+    roaming:
+        wifi_calling_allowed: false
+selector_overrides:
+    22801_GID1-D8FFFFFFFFFFFFFF:
+        ims:
+            domain: ims.mnc001.mcc228.3gppnetwork.org

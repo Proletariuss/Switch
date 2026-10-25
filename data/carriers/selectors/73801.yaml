@@ -1,0 +1,10 @@
+version: 2
+plmn: "73801"
+profiles:
+    - id: apple_digicel_gy
+      path: profiles/digicel_gy.yaml
+      generic: true
+      selectors:
+        - raw: "73801"
+          carrier_name: Digicel
+          iso: GY

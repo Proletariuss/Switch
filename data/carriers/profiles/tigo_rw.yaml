@@ -1,0 +1,13 @@
+version: 3
+kind: carrier_bundle
+id: apple_tigo_rw
+bundle: Tigo_rw.bundle
+supported_plmns:
+    - "63513"
+plmn_overrides:
+    "63513":
+        apns:
+            - apn: web.tigo.rw
+              type_mask: 49
+            - apn: web.tigo.rw
+              type_mask: 48

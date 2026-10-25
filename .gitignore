@@ -1,0 +1,17 @@
+build/
+dist/
+.build/
+*.dmg
+.DS_Store
+._*
+**/._*
+*.log
+rust/target/
+*.profraw
+.env
+.env.*
+*.p12
+*.key
+*.pcap
+fixtures/private/
+.impeccable/

@@ -1,0 +1,13 @@
+version: 3
+kind: carrier_bundle
+id: apple_digicel_gy
+bundle: Digicel_gy.bundle
+supported_plmns:
+    - "73801"
+plmn_overrides:
+    "73801":
+        apns:
+            - apn: web
+              type_mask: 49
+            - apn: web
+              type_mask: 48

@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_telemach_si
+bundle: Telemach_si.bundle
+supported_plmns:
+    - "29370"
+plmn_overrides:
+    "29370":
+        apns:
+            - apn: internet
+              type_mask: 53
+              allowed_ip_stack: ipv4
+        ims:
+            volte:
+                enable_volte_by_default: true

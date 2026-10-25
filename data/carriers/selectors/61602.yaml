@@ -1,0 +1,10 @@
+version: 2
+plmn: "61602"
+profiles:
+    - id: apple_etisalat_bj
+      path: profiles/etisalat_bj.yaml
+      generic: true
+      selectors:
+        - raw: "61602"
+          carrier_name: Etisalat
+          iso: BJ

@@ -1,0 +1,35 @@
+version: 3
+kind: carrier_bundle
+id: apple_dstcom_bn
+bundle: DSTCom_bn.bundle
+supported_plmns:
+    - "52803"
+    - "52811"
+common:
+    apns:
+        - apn: dst.internet
+          type_mask: 49
+        - apn: ims
+          type_mask: 131072
+          allowed_ip_stack: ipv4
+        - apn: hos
+          type_mask: 1048576
+          allowed_ip_stack: ipv4
+    ims:
+        apn: ims
+        ip_stack: ipv4
+        signaling:
+            early_media_needs_header: true
+            support_p_early_media: true
+selector_overrides:
+    "52803":
+        apns:
+            - apn: unn.internet
+              type_mask: 49
+            - apn: ims
+              type_mask: 131072
+            - apn: hos
+              type_mask: 1048576
+              allowed_ip_stack: ipv4v6
+        ims:
+            ip_stack: null

@@ -1,0 +1,174 @@
+version: 2
+plmn: "310599"
+profiles:
+    - id: apple_verizon_charter_lte_us
+      path: profiles/verizon_charter_lte_us.yaml
+      selectors:
+        - raw: 310599_GID2-A7
+          carrier_name: Spectrum
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: A7
+    - id: apple_verizon_comcast_lte_us
+      path: profiles/verizon_comcast_lte_us.yaml
+      selectors:
+        - raw: 310599_GID2-A3
+          carrier_name: Xfinity Mobile
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: A3
+    - id: apple_verizon_core_visible_lte_us
+      path: profiles/verizon_core_visible_lte_us.yaml
+      selectors:
+        - raw: 310599_GID2-1C
+          carrier_name: Visible
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: 1C
+    - id: apple_verizon_cox_lte_us
+      path: profiles/verizon_cox_lte_us.yaml
+      selectors:
+        - raw: 310599_GID2-B100000000000000
+          carrier_name: Cox Mobile
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: B100000000000000
+    - id: apple_verizon_lte_us
+      path: profiles/verizon_lte_us.yaml
+      selectors:
+        - raw: 310599_GID2-A8
+          carrier_name: Verizon
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: A8
+        - raw: 310599_GID2-FF
+          carrier_name: Verizon
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: FF
+    - id: apple_verizon_mvno_us
+      path: profiles/verizon_mvno_us.yaml
+      selectors:
+        - raw: 310599_GID2-A6
+          carrier_name: Verizon
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: A6
+        - raw: 310599_GID2-B3
+          carrier_name: Verizon
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: B3
+        - raw: 310599_GID2-B6
+          carrier_name: Verizon
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: B6
+        - raw: 310599_GID2-B7
+          carrier_name: Verizon
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: B7
+        - raw: 310599_GID2-B9
+          carrier_name: Verizon
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: B9
+        - raw: 310599_GID2-C2
+          carrier_name: Verizon
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: C2
+        - raw: 310599_GID2-C3
+          carrier_name: Verizon
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: C3
+        - raw: 310599_GID2-C4
+          carrier_name: Verizon
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: C4
+        - raw: 310599_GID2-C5
+          carrier_name: Verizon
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: C5
+        - raw: 310599_GID2-C6
+          carrier_name: Verizon
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: C6
+        - raw: 310599_GID2-C7
+          carrier_name: Verizon
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: C7
+        - raw: 310599_GID2-C8
+          carrier_name: Verizon
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: C8
+        - raw: 310599_GID2-D0
+          carrier_name: Verizon
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: D0
+    - id: apple_verizon_response_lte_us
+      path: profiles/verizon_response_lte_us.yaml
+      selectors:
+        - raw: 310599_GID2-1B
+          carrier_name: Verizon Response
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: 1B
+    - id: apple_verizon_tfw_lte_us
+      path: profiles/verizon_tfw_lte_us.yaml
+      selectors:
+        - raw: 310599_GID2-A1
+          carrier_name: Verizon
+          iso: US
+          conditions:
+            - field: gid2
+              match: prefix
+              value: A1

@@ -1,0 +1,52 @@
+version: 3
+kind: carrier_bundle
+id: apple_movistar_mx
+bundle: movistar_mx.bundle
+supported_plmns:
+    - "33403"
+plmn_overrides:
+    "33403":
+        apns:
+            - apn: internet.movistar.mx
+              username: movistar
+              password: movistar
+              type_mask: 1081393
+            - apn: ims
+              type_mask: 131072
+              support_switch_over: true
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 8193
+        entitlement:
+            entitlement_url: https://entitlements-prod.movistar.com.mx/tf-mexico/apple
+        ims:
+            apn: ims
+            domain: ims.mnc030.mcc334.3gppnetwork.org
+            impi_format: imsi@carrierDomain
+            impu_format: msisdn@carrierDomain
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                        - 4XX
+                        - 5XX
+                        - 6XX
+                require_preconditions_when_mandatory: false
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                sip_timers:
+                    InviteResponseTimeout: 16000
+            media:
+                rtp_inactivity_seconds: 30
+                rtcp_inactivity_seconds: 30
+            volte:
+                enable_volte_by_default: true

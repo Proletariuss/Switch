@@ -1,0 +1,10 @@
+[package]
+name = "proletarius-euicc"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "MIT"
+
+[dependencies]
+proletarius-ccid = { path = "../proletarius-ccid" }
+

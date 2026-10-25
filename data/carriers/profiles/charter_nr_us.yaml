@@ -1,0 +1,19 @@
+version: 3
+kind: carrier_bundle
+id: apple_charter_nr_us
+bundle: Charter_NR_US.bundle
+supported_plmns:
+    - "314020"
+plmn_overrides:
+    "314020":
+        apns:
+            - apn: spectrum
+              type_mask: 98353
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+              suppress_pdn_tear_down: true
+            - apn: ""
+              type_mask: 0
+        ims:
+            volte:
+                enable_volte_by_default: false

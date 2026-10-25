@@ -1,0 +1,3381 @@
+{
+  "source_sha256": "a65d889dc8ef61cf7314f07f4f64bef7085ec2a3b32ca994975ab0fa8aff80df",
+  "cases": [
+    {
+      "name": "missing-default",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "正在关闭蜂窝射频",
+        "detail": "飞行模式已启用；射频关闭确认前也不会查询信号、注册状态或扫描基站。"
+      },
+      "mode": 1,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "module-absent",
+      "input": {
+        "available": false,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": false,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": -1,
+        "owner": "none",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "模块未连接"
+      },
+      "mode": 1,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "default/mode-0/owned-false",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 0\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": 0,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "正在关闭蜂窝射频",
+        "detail": "飞行模式已启用；射频关闭确认前也不会查询信号、注册状态或扫描基站。"
+      },
+      "mode": 0,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "default/mode-0/owned-true",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 0\r\nOK",
+        "cfun_error": "",
+        "owned": true,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": 0,
+        "owner": "vowifi",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频由 Wi-Fi Calling 管理",
+        "detail": "当前由模块 VoWiFi 管理蜂窝射频；关闭 VoWiFi 后可独立切换。"
+      },
+      "mode": 0,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "default/mode-1/owned-false",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "正在关闭蜂窝射频",
+        "detail": "飞行模式已启用；射频关闭确认前也不会查询信号、注册状态或扫描基站。"
+      },
+      "mode": 1,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "default/mode-1/owned-true",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": true,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": 1,
+        "owner": "vowifi",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频由 Wi-Fi Calling 管理",
+        "detail": "当前由模块 VoWiFi 管理蜂窝射频；关闭 VoWiFi 后可独立切换。"
+      },
+      "mode": 1,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "default/mode-2/owned-false",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 2\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": 2,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "正在关闭蜂窝射频",
+        "detail": "飞行模式已启用；射频关闭确认前也不会查询信号、注册状态或扫描基站。"
+      },
+      "mode": 2,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "default/mode-2/owned-true",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 2\r\nOK",
+        "cfun_error": "",
+        "owned": true,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": 2,
+        "owner": "vowifi",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频由 Wi-Fi Calling 管理",
+        "detail": "当前由模块 VoWiFi 管理蜂窝射频；关闭 VoWiFi 后可独立切换。"
+      },
+      "mode": 2,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "default/mode-3/owned-false",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 3\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": 3,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "正在关闭蜂窝射频",
+        "detail": "飞行模式已启用；射频关闭确认前也不会查询信号、注册状态或扫描基站。"
+      },
+      "mode": 3,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "default/mode-3/owned-true",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 3\r\nOK",
+        "cfun_error": "",
+        "owned": true,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": 3,
+        "owner": "vowifi",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频由 Wi-Fi Calling 管理",
+        "detail": "当前由模块 VoWiFi 管理蜂窝射频；关闭 VoWiFi 后可独立切换。"
+      },
+      "mode": 3,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "default/mode-4/owned-false",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 4\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": true,
+        "verified": true,
+        "user_configured": false,
+        "cfun_mode": 4,
+        "owner": "external",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "飞行模式已开启 · 蜂窝射频关闭",
+        "detail": "模块已确认 CFUN=4，蜂窝射频收发已关闭；飞行模式期间不会扫描或注册蜂窝基站。"
+      },
+      "mode": 4,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "default/mode-4/owned-true",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 4\r\nOK",
+        "cfun_error": "",
+        "owned": true,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": true,
+        "verified": true,
+        "user_configured": false,
+        "cfun_mode": 4,
+        "owner": "vowifi",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频由 Wi-Fi Calling 管理",
+        "detail": "当前由模块 VoWiFi 管理蜂窝射频；关闭 VoWiFi 后可独立切换。"
+      },
+      "mode": 4,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "saved-default/mode-0/owned-false",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": true,
+          "restore_cfun": 1,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 0\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": 0,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "正在关闭蜂窝射频",
+        "detail": "飞行模式已启用；射频关闭确认前也不会查询信号、注册状态或扫描基站。"
+      },
+      "mode": 0,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "saved-default/mode-0/owned-true",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": true,
+          "restore_cfun": 1,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 0\r\nOK",
+        "cfun_error": "",
+        "owned": true,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": 0,
+        "owner": "vowifi",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频由 Wi-Fi Calling 管理",
+        "detail": "当前由模块 VoWiFi 管理蜂窝射频；关闭 VoWiFi 后可独立切换。"
+      },
+      "mode": 0,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "saved-default/mode-1/owned-false",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": true,
+          "restore_cfun": 1,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "正在关闭蜂窝射频",
+        "detail": "飞行模式已启用；射频关闭确认前也不会查询信号、注册状态或扫描基站。"
+      },
+      "mode": 1,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "saved-default/mode-1/owned-true",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": true,
+          "restore_cfun": 1,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": true,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": 1,
+        "owner": "vowifi",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频由 Wi-Fi Calling 管理",
+        "detail": "当前由模块 VoWiFi 管理蜂窝射频；关闭 VoWiFi 后可独立切换。"
+      },
+      "mode": 1,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "saved-default/mode-2/owned-false",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": true,
+          "restore_cfun": 1,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 2\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": 2,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "正在关闭蜂窝射频",
+        "detail": "飞行模式已启用；射频关闭确认前也不会查询信号、注册状态或扫描基站。"
+      },
+      "mode": 2,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "saved-default/mode-2/owned-true",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": true,
+          "restore_cfun": 1,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 2\r\nOK",
+        "cfun_error": "",
+        "owned": true,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": 2,
+        "owner": "vowifi",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频由 Wi-Fi Calling 管理",
+        "detail": "当前由模块 VoWiFi 管理蜂窝射频；关闭 VoWiFi 后可独立切换。"
+      },
+      "mode": 2,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "saved-default/mode-3/owned-false",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": true,
+          "restore_cfun": 1,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 3\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": 3,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "正在关闭蜂窝射频",
+        "detail": "飞行模式已启用；射频关闭确认前也不会查询信号、注册状态或扫描基站。"
+      },
+      "mode": 3,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "saved-default/mode-3/owned-true",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": true,
+          "restore_cfun": 1,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 3\r\nOK",
+        "cfun_error": "",
+        "owned": true,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": 3,
+        "owner": "vowifi",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频由 Wi-Fi Calling 管理",
+        "detail": "当前由模块 VoWiFi 管理蜂窝射频；关闭 VoWiFi 后可独立切换。"
+      },
+      "mode": 3,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "saved-default/mode-4/owned-false",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": true,
+          "restore_cfun": 1,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 4\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": true,
+        "verified": true,
+        "user_configured": false,
+        "cfun_mode": 4,
+        "owner": "default",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "飞行模式已开启 · 蜂窝射频关闭",
+        "detail": "模块已确认 CFUN=4，蜂窝射频收发已关闭；飞行模式期间不会扫描或注册蜂窝基站。"
+      },
+      "mode": 4,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "saved-default/mode-4/owned-true",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": true,
+          "restore_cfun": 1,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 4\r\nOK",
+        "cfun_error": "",
+        "owned": true,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": true,
+        "verified": true,
+        "user_configured": false,
+        "cfun_mode": 4,
+        "owner": "vowifi",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频由 Wi-Fi Calling 管理",
+        "detail": "当前由模块 VoWiFi 管理蜂窝射频；关闭 VoWiFi 后可独立切换。"
+      },
+      "mode": 4,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "explicit-cellular/mode-0/owned-false",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 1,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 0\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 0,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": true,
+        "cellular_registered": true,
+        "cereg_state": 1,
+        "creg_state": 5,
+        "signal_known": true,
+        "signal_detected": true,
+        "signal_level": 20,
+        "summary": "蜂窝射频已开启",
+        "detail": "蜂窝网络已注册。"
+      },
+      "mode": 0,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "explicit-cellular/mode-0/owned-true",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 1,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 0\r\nOK",
+        "cfun_error": "",
+        "owned": true,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 0,
+        "owner": "vowifi",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频由 Wi-Fi Calling 管理",
+        "detail": "当前由模块 VoWiFi 管理蜂窝射频；关闭 VoWiFi 后可独立切换。"
+      },
+      "mode": 0,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "explicit-cellular/mode-1/owned-false",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 1,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": true,
+        "cellular_registered": true,
+        "cereg_state": 1,
+        "creg_state": 5,
+        "signal_known": true,
+        "signal_detected": true,
+        "signal_level": 20,
+        "summary": "蜂窝射频已开启",
+        "detail": "蜂窝网络已注册。"
+      },
+      "mode": 1,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "explicit-cellular/mode-1/owned-true",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 1,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": true,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "vowifi",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频由 Wi-Fi Calling 管理",
+        "detail": "当前由模块 VoWiFi 管理蜂窝射频；关闭 VoWiFi 后可独立切换。"
+      },
+      "mode": 1,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "explicit-cellular/mode-2/owned-false",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 1,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 2\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 2,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": true,
+        "cellular_registered": true,
+        "cereg_state": 1,
+        "creg_state": 5,
+        "signal_known": true,
+        "signal_detected": true,
+        "signal_level": 20,
+        "summary": "蜂窝射频已开启",
+        "detail": "蜂窝网络已注册。"
+      },
+      "mode": 2,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "explicit-cellular/mode-2/owned-true",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 1,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 2\r\nOK",
+        "cfun_error": "",
+        "owned": true,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 2,
+        "owner": "vowifi",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频由 Wi-Fi Calling 管理",
+        "detail": "当前由模块 VoWiFi 管理蜂窝射频；关闭 VoWiFi 后可独立切换。"
+      },
+      "mode": 2,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "explicit-cellular/mode-3/owned-false",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 1,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 3\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 3,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": true,
+        "cellular_registered": true,
+        "cereg_state": 1,
+        "creg_state": 5,
+        "signal_known": true,
+        "signal_detected": true,
+        "signal_level": 20,
+        "summary": "蜂窝射频已开启",
+        "detail": "蜂窝网络已注册。"
+      },
+      "mode": 3,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "explicit-cellular/mode-3/owned-true",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 1,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 3\r\nOK",
+        "cfun_error": "",
+        "owned": true,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 3,
+        "owner": "vowifi",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频由 Wi-Fi Calling 管理",
+        "detail": "当前由模块 VoWiFi 管理蜂窝射频；关闭 VoWiFi 后可独立切换。"
+      },
+      "mode": 3,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "explicit-cellular/mode-4/owned-false",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 1,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 4\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": true,
+        "verified": true,
+        "user_configured": true,
+        "cfun_mode": 4,
+        "owner": "external",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "飞行模式已开启 · 蜂窝射频关闭",
+        "detail": "模块已确认 CFUN=4，蜂窝射频收发已关闭；飞行模式期间不会扫描或注册蜂窝基站。"
+      },
+      "mode": 4,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "explicit-cellular/mode-4/owned-true",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 1,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 4\r\nOK",
+        "cfun_error": "",
+        "owned": true,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": true,
+        "verified": true,
+        "user_configured": true,
+        "cfun_mode": 4,
+        "owner": "vowifi",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频由 Wi-Fi Calling 管理",
+        "detail": "当前由模块 VoWiFi 管理蜂窝射频；关闭 VoWiFi 后可独立切换。"
+      },
+      "mode": 4,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "explicit-rf-off/mode-0/owned-false",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": true,
+          "restore_cfun": 1,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 0\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 0,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "正在关闭蜂窝射频",
+        "detail": "飞行模式已启用；射频关闭确认前也不会查询信号、注册状态或扫描基站。"
+      },
+      "mode": 0,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "explicit-rf-off/mode-0/owned-true",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": true,
+          "restore_cfun": 1,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 0\r\nOK",
+        "cfun_error": "",
+        "owned": true,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 0,
+        "owner": "vowifi",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频由 Wi-Fi Calling 管理",
+        "detail": "当前由模块 VoWiFi 管理蜂窝射频；关闭 VoWiFi 后可独立切换。"
+      },
+      "mode": 0,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "explicit-rf-off/mode-1/owned-false",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": true,
+          "restore_cfun": 1,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "正在关闭蜂窝射频",
+        "detail": "飞行模式已启用；射频关闭确认前也不会查询信号、注册状态或扫描基站。"
+      },
+      "mode": 1,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "explicit-rf-off/mode-1/owned-true",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": true,
+          "restore_cfun": 1,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": true,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "vowifi",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频由 Wi-Fi Calling 管理",
+        "detail": "当前由模块 VoWiFi 管理蜂窝射频；关闭 VoWiFi 后可独立切换。"
+      },
+      "mode": 1,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "explicit-rf-off/mode-2/owned-false",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": true,
+          "restore_cfun": 1,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 2\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 2,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "正在关闭蜂窝射频",
+        "detail": "飞行模式已启用；射频关闭确认前也不会查询信号、注册状态或扫描基站。"
+      },
+      "mode": 2,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "explicit-rf-off/mode-2/owned-true",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": true,
+          "restore_cfun": 1,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 2\r\nOK",
+        "cfun_error": "",
+        "owned": true,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 2,
+        "owner": "vowifi",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频由 Wi-Fi Calling 管理",
+        "detail": "当前由模块 VoWiFi 管理蜂窝射频；关闭 VoWiFi 后可独立切换。"
+      },
+      "mode": 2,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "explicit-rf-off/mode-3/owned-false",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": true,
+          "restore_cfun": 1,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 3\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 3,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "正在关闭蜂窝射频",
+        "detail": "飞行模式已启用；射频关闭确认前也不会查询信号、注册状态或扫描基站。"
+      },
+      "mode": 3,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "explicit-rf-off/mode-3/owned-true",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": true,
+          "restore_cfun": 1,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 3\r\nOK",
+        "cfun_error": "",
+        "owned": true,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 3,
+        "owner": "vowifi",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频由 Wi-Fi Calling 管理",
+        "detail": "当前由模块 VoWiFi 管理蜂窝射频；关闭 VoWiFi 后可独立切换。"
+      },
+      "mode": 3,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "explicit-rf-off/mode-4/owned-false",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": true,
+          "restore_cfun": 1,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 4\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": true,
+        "verified": true,
+        "user_configured": true,
+        "cfun_mode": 4,
+        "owner": "manual",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "飞行模式已开启 · 蜂窝射频关闭",
+        "detail": "模块已确认 CFUN=4，蜂窝射频收发已关闭；飞行模式期间不会扫描或注册蜂窝基站。"
+      },
+      "mode": 4,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "explicit-rf-off/mode-4/owned-true",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": true,
+          "restore_cfun": 1,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 4\r\nOK",
+        "cfun_error": "",
+        "owned": true,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": true,
+        "verified": true,
+        "user_configured": true,
+        "cfun_mode": 4,
+        "owner": "vowifi",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频由 Wi-Fi Calling 管理",
+        "detail": "当前由模块 VoWiFi 管理蜂窝射频；关闭 VoWiFi 后可独立切换。"
+      },
+      "mode": 4,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "blocked/模块 Wi-Fi Calling 正在启停/1",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "模块 Wi-Fi Calling 正在启停",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "unavailable",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": true,
+        "signal_detected": true,
+        "signal_level": 20,
+        "summary": "蜂窝射频已开启",
+        "detail": "模块 Wi-Fi Calling 正在启停"
+      },
+      "mode": 1,
+      "cereg": null,
+      "creg": null,
+      "signal": 20
+    },
+    {
+      "name": "blocked/模块 Wi-Fi Calling 正在启停/4",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 4",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "模块 Wi-Fi Calling 正在启停",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "unavailable",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": true,
+        "verified": true,
+        "user_configured": true,
+        "cfun_mode": 4,
+        "owner": "external",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "飞行模式已开启 · 蜂窝射频关闭",
+        "detail": "模块已确认 CFUN=4，蜂窝射频收发已关闭；飞行模式期间不会扫描或注册蜂窝基站。"
+      },
+      "mode": 4,
+      "cereg": null,
+      "creg": null,
+      "signal": 20
+    },
+    {
+      "name": "blocked/模块 VoWiFi 正在管理射频/1",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "模块 VoWiFi 正在管理射频",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "unavailable",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": true,
+        "signal_detected": true,
+        "signal_level": 20,
+        "summary": "蜂窝射频已开启",
+        "detail": "模块 VoWiFi 正在管理射频"
+      },
+      "mode": 1,
+      "cereg": null,
+      "creg": null,
+      "signal": 20
+    },
+    {
+      "name": "blocked/模块 VoWiFi 正在管理射频/4",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 4",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "模块 VoWiFi 正在管理射频",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "unavailable",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": true,
+        "verified": true,
+        "user_configured": true,
+        "cfun_mode": 4,
+        "owner": "external",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "飞行模式已开启 · 蜂窝射频关闭",
+        "detail": "模块已确认 CFUN=4，蜂窝射频收发已关闭；飞行模式期间不会扫描或注册蜂窝基站。"
+      },
+      "mode": 4,
+      "cereg": null,
+      "creg": null,
+      "signal": 20
+    },
+    {
+      "name": "blocked/eSIM Profile 操作进行中/1",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "eSIM Profile 操作进行中",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "unavailable",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": true,
+        "signal_detected": true,
+        "signal_level": 20,
+        "summary": "蜂窝射频已开启",
+        "detail": "eSIM Profile 操作进行中"
+      },
+      "mode": 1,
+      "cereg": null,
+      "creg": null,
+      "signal": 20
+    },
+    {
+      "name": "blocked/eSIM Profile 操作进行中/4",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 4",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "eSIM Profile 操作进行中",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "unavailable",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": true,
+        "verified": true,
+        "user_configured": true,
+        "cfun_mode": 4,
+        "owner": "external",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "飞行模式已开启 · 蜂窝射频关闭",
+        "detail": "模块已确认 CFUN=4，蜂窝射频收发已关闭；飞行模式期间不会扫描或注册蜂窝基站。"
+      },
+      "mode": 4,
+      "cereg": null,
+      "creg": null,
+      "signal": 20
+    },
+    {
+      "name": "blocked/通话进行中/1",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "通话进行中",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "unavailable",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": true,
+        "signal_detected": true,
+        "signal_level": 20,
+        "summary": "蜂窝射频已开启",
+        "detail": "通话进行中"
+      },
+      "mode": 1,
+      "cereg": null,
+      "creg": null,
+      "signal": 20
+    },
+    {
+      "name": "blocked/通话进行中/4",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 4",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "通话进行中",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "unavailable",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": true,
+        "verified": true,
+        "user_configured": true,
+        "cfun_mode": 4,
+        "owner": "external",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "飞行模式已开启 · 蜂窝射频关闭",
+        "detail": "模块已确认 CFUN=4，蜂窝射频收发已关闭；飞行模式期间不会扫描或注册蜂窝基站。"
+      },
+      "mode": 4,
+      "cereg": null,
+      "creg": null,
+      "signal": 20
+    },
+    {
+      "name": "blocked/模块通话模式正在变更/1",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "模块通话模式正在变更",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "unavailable",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": true,
+        "signal_detected": true,
+        "signal_level": 20,
+        "summary": "蜂窝射频已开启",
+        "detail": "模块通话模式正在变更"
+      },
+      "mode": 1,
+      "cereg": null,
+      "creg": null,
+      "signal": 20
+    },
+    {
+      "name": "blocked/模块通话模式正在变更/4",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 4",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "模块通话模式正在变更",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "unavailable",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": true,
+        "verified": true,
+        "user_configured": true,
+        "cfun_mode": 4,
+        "owner": "external",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "飞行模式已开启 · 蜂窝射频关闭",
+        "detail": "模块已确认 CFUN=4，蜂窝射频收发已关闭；飞行模式期间不会扫描或注册蜂窝基站。"
+      },
+      "mode": 4,
+      "cereg": null,
+      "creg": null,
+      "signal": 20
+    },
+    {
+      "name": "preference-error/读取模块飞行模式偏好失败",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": false
+        },
+        "preference_error": "读取模块飞行模式偏好失败",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": -1,
+        "owner": "none",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "无法读取模块飞行模式偏好",
+        "detail": "读取模块飞行模式偏好失败"
+      },
+      "mode": 1,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "preference-error/parse flight-mode state: synthetic corrupt file",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": false
+        },
+        "preference_error": "parse flight-mode state: synthetic corrupt file",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": -1,
+        "owner": "none",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "无法读取模块飞行模式偏好",
+        "detail": "parse flight-mode state: synthetic corrupt file"
+      },
+      "mode": 1,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "preference-error/invalid saved CFUN restore mode",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": false
+        },
+        "preference_error": "invalid saved CFUN restore mode",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": -1,
+        "owner": "none",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "无法读取模块飞行模式偏好",
+        "detail": "invalid saved CFUN restore mode"
+      },
+      "mode": 1,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "cfun-error/模块射频状态未通过核验",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "模块射频状态未通过核验",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": -1,
+        "owner": "none",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "无法读取模块射频状态",
+        "detail": "模块射频状态未通过核验"
+      },
+      "mode": null,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "cfun-error/synthetic CFUN transport error",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "synthetic CFUN transport error",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": -1,
+        "owner": "none",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "无法读取模块射频状态",
+        "detail": "synthetic CFUN transport error"
+      },
+      "mode": null,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "cfun-invalid/",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": -1,
+        "owner": "none",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "无法读取模块射频状态",
+        "detail": "模块未返回可解析的 CFUN 状态"
+      },
+      "mode": null,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "cfun-invalid/+CFUN: nope",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: nope",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": -1,
+        "owner": "none",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "无法读取模块射频状态",
+        "detail": "模块未返回可解析的 CFUN 状态"
+      },
+      "mode": null,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "cfun-invalid/+CFUN: 5",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": false
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 5",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": false,
+        "cfun_mode": -1,
+        "owner": "none",
+        "can_toggle": false,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "无法读取模块射频状态",
+        "detail": "模块返回无效 CFUN 状态"
+      },
+      "mode": null,
+      "cereg": 1,
+      "creg": 5,
+      "signal": 20
+    },
+    {
+      "name": "optional/+CEREG: 0/+CSQ: 0,0",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 0",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "+CSQ: 0,0",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": true,
+        "cellular_registered": false,
+        "cereg_state": 0,
+        "creg_state": 0,
+        "signal_known": true,
+        "signal_detected": true,
+        "signal_level": 0,
+        "summary": "蜂窝射频已开启",
+        "detail": "当前未注册蜂窝网络。"
+      },
+      "mode": 1,
+      "cereg": 0,
+      "creg": 0,
+      "signal": 0
+    },
+    {
+      "name": "optional/+CEREG: 0/+CSQ: 31,99",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 0",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "+CSQ: 31,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": true,
+        "cellular_registered": false,
+        "cereg_state": 0,
+        "creg_state": 0,
+        "signal_known": true,
+        "signal_detected": true,
+        "signal_level": 31,
+        "summary": "蜂窝射频已开启",
+        "detail": "当前未注册蜂窝网络。"
+      },
+      "mode": 1,
+      "cereg": 0,
+      "creg": 0,
+      "signal": 31
+    },
+    {
+      "name": "optional/+CEREG: 0/+CSQ: 99,99",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 0",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "+CSQ: 99,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": true,
+        "cellular_registered": false,
+        "cereg_state": 0,
+        "creg_state": 0,
+        "signal_known": true,
+        "signal_detected": false,
+        "signal_level": 99,
+        "summary": "蜂窝射频已开启",
+        "detail": "当前未注册蜂窝网络。"
+      },
+      "mode": 1,
+      "cereg": 0,
+      "creg": 0,
+      "signal": 99
+    },
+    {
+      "name": "optional/+CEREG: 0/+CSQ: 32,99",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 0",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "+CSQ: 32,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": true,
+        "cellular_registered": false,
+        "cereg_state": 0,
+        "creg_state": 0,
+        "signal_known": false,
+        "summary": "蜂窝射频已开启",
+        "detail": "当前未注册蜂窝网络。"
+      },
+      "mode": 1,
+      "cereg": 0,
+      "creg": 0,
+      "signal": null
+    },
+    {
+      "name": "optional/+CEREG: 0/",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 0",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": true,
+        "cellular_registered": false,
+        "cereg_state": 0,
+        "creg_state": 0,
+        "signal_known": false,
+        "summary": "蜂窝射频已开启",
+        "detail": "当前未注册蜂窝网络。"
+      },
+      "mode": 1,
+      "cereg": 0,
+      "creg": 0,
+      "signal": null
+    },
+    {
+      "name": "optional/+CEREG: 2,5/+CSQ: 0,0",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,5",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "+CSQ: 0,0",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": true,
+        "cellular_registered": true,
+        "cereg_state": 5,
+        "creg_state": 0,
+        "signal_known": true,
+        "signal_detected": true,
+        "signal_level": 0,
+        "summary": "蜂窝射频已开启",
+        "detail": "蜂窝网络已注册。"
+      },
+      "mode": 1,
+      "cereg": 5,
+      "creg": 0,
+      "signal": 0
+    },
+    {
+      "name": "optional/+CEREG: 2,5/+CSQ: 31,99",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,5",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "+CSQ: 31,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": true,
+        "cellular_registered": true,
+        "cereg_state": 5,
+        "creg_state": 0,
+        "signal_known": true,
+        "signal_detected": true,
+        "signal_level": 31,
+        "summary": "蜂窝射频已开启",
+        "detail": "蜂窝网络已注册。"
+      },
+      "mode": 1,
+      "cereg": 5,
+      "creg": 0,
+      "signal": 31
+    },
+    {
+      "name": "optional/+CEREG: 2,5/+CSQ: 99,99",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,5",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "+CSQ: 99,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": true,
+        "cellular_registered": true,
+        "cereg_state": 5,
+        "creg_state": 0,
+        "signal_known": true,
+        "signal_detected": false,
+        "signal_level": 99,
+        "summary": "蜂窝射频已开启",
+        "detail": "蜂窝网络已注册。"
+      },
+      "mode": 1,
+      "cereg": 5,
+      "creg": 0,
+      "signal": 99
+    },
+    {
+      "name": "optional/+CEREG: 2,5/+CSQ: 32,99",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,5",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "+CSQ: 32,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": true,
+        "cellular_registered": true,
+        "cereg_state": 5,
+        "creg_state": 0,
+        "signal_known": false,
+        "summary": "蜂窝射频已开启",
+        "detail": "蜂窝网络已注册。"
+      },
+      "mode": 1,
+      "cereg": 5,
+      "creg": 0,
+      "signal": null
+    },
+    {
+      "name": "optional/+CEREG: 2,5/",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,5",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": true,
+        "cellular_registered": true,
+        "cereg_state": 5,
+        "creg_state": 0,
+        "signal_known": false,
+        "summary": "蜂窝射频已开启",
+        "detail": "蜂窝网络已注册。"
+      },
+      "mode": 1,
+      "cereg": 5,
+      "creg": 0,
+      "signal": null
+    },
+    {
+      "name": "optional/+CEREG: 11/+CSQ: 0,0",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 11",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "+CSQ: 0,0",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": true,
+        "signal_detected": true,
+        "signal_level": 0,
+        "summary": "蜂窝射频已开启"
+      },
+      "mode": 1,
+      "cereg": null,
+      "creg": null,
+      "signal": 0
+    },
+    {
+      "name": "optional/+CEREG: 11/+CSQ: 31,99",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 11",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "+CSQ: 31,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": true,
+        "signal_detected": true,
+        "signal_level": 31,
+        "summary": "蜂窝射频已开启"
+      },
+      "mode": 1,
+      "cereg": null,
+      "creg": null,
+      "signal": 31
+    },
+    {
+      "name": "optional/+CEREG: 11/+CSQ: 99,99",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 11",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "+CSQ: 99,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": true,
+        "signal_detected": false,
+        "signal_level": 99,
+        "summary": "蜂窝射频已开启"
+      },
+      "mode": 1,
+      "cereg": null,
+      "creg": null,
+      "signal": 99
+    },
+    {
+      "name": "optional/+CEREG: 11/+CSQ: 32,99",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 11",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "+CSQ: 32,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频已开启"
+      },
+      "mode": 1,
+      "cereg": null,
+      "creg": null,
+      "signal": null
+    },
+    {
+      "name": "optional/+CEREG: 11/",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 11",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频已开启"
+      },
+      "mode": 1,
+      "cereg": null,
+      "creg": null,
+      "signal": null
+    },
+    {
+      "name": "optional/+CEREG: nope/+CSQ: 0,0",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: nope",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "+CSQ: 0,0",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": true,
+        "signal_detected": true,
+        "signal_level": 0,
+        "summary": "蜂窝射频已开启"
+      },
+      "mode": 1,
+      "cereg": null,
+      "creg": null,
+      "signal": 0
+    },
+    {
+      "name": "optional/+CEREG: nope/+CSQ: 31,99",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: nope",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "+CSQ: 31,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": true,
+        "signal_detected": true,
+        "signal_level": 31,
+        "summary": "蜂窝射频已开启"
+      },
+      "mode": 1,
+      "cereg": null,
+      "creg": null,
+      "signal": 31
+    },
+    {
+      "name": "optional/+CEREG: nope/+CSQ: 99,99",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: nope",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "+CSQ: 99,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": true,
+        "signal_detected": false,
+        "signal_level": 99,
+        "summary": "蜂窝射频已开启"
+      },
+      "mode": 1,
+      "cereg": null,
+      "creg": null,
+      "signal": 99
+    },
+    {
+      "name": "optional/+CEREG: nope/+CSQ: 32,99",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: nope",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "+CSQ: 32,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频已开启"
+      },
+      "mode": 1,
+      "cereg": null,
+      "creg": null,
+      "signal": null
+    },
+    {
+      "name": "optional/+CEREG: nope/",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: nope",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": false,
+        "signal_known": false,
+        "summary": "蜂窝射频已开启"
+      },
+      "mode": 1,
+      "cereg": null,
+      "creg": null,
+      "signal": null
+    },
+    {
+      "name": "optional/+CEREG: 2,10/+CSQ: 0,0",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,10",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "+CSQ: 0,0",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": true,
+        "cellular_registered": false,
+        "cereg_state": 10,
+        "creg_state": 0,
+        "signal_known": true,
+        "signal_detected": true,
+        "signal_level": 0,
+        "summary": "蜂窝射频已开启",
+        "detail": "当前未注册蜂窝网络。"
+      },
+      "mode": 1,
+      "cereg": 10,
+      "creg": 0,
+      "signal": 0
+    },
+    {
+      "name": "optional/+CEREG: 2,10/+CSQ: 31,99",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,10",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "+CSQ: 31,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": true,
+        "cellular_registered": false,
+        "cereg_state": 10,
+        "creg_state": 0,
+        "signal_known": true,
+        "signal_detected": true,
+        "signal_level": 31,
+        "summary": "蜂窝射频已开启",
+        "detail": "当前未注册蜂窝网络。"
+      },
+      "mode": 1,
+      "cereg": 10,
+      "creg": 0,
+      "signal": 31
+    },
+    {
+      "name": "optional/+CEREG: 2,10/+CSQ: 99,99",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,10",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "+CSQ: 99,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": true,
+        "cellular_registered": false,
+        "cereg_state": 10,
+        "creg_state": 0,
+        "signal_known": true,
+        "signal_detected": false,
+        "signal_level": 99,
+        "summary": "蜂窝射频已开启",
+        "detail": "当前未注册蜂窝网络。"
+      },
+      "mode": 1,
+      "cereg": 10,
+      "creg": 0,
+      "signal": 99
+    },
+    {
+      "name": "optional/+CEREG: 2,10/+CSQ: 32,99",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,10",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "+CSQ: 32,99",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": true,
+        "cellular_registered": false,
+        "cereg_state": 10,
+        "creg_state": 0,
+        "signal_known": false,
+        "summary": "蜂窝射频已开启",
+        "detail": "当前未注册蜂窝网络。"
+      },
+      "mode": 1,
+      "cereg": 10,
+      "creg": 0,
+      "signal": null
+    },
+    {
+      "name": "optional/+CEREG: 2,10/",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,10",
+        "creg_response": "+CREG: 0",
+        "registration_error": "",
+        "signal_response": "",
+        "signal_error": ""
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": true,
+        "cellular_registered": false,
+        "cereg_state": 10,
+        "creg_state": 0,
+        "signal_known": false,
+        "summary": "蜂窝射频已开启",
+        "detail": "当前未注册蜂窝网络。"
+      },
+      "mode": 1,
+      "cereg": 10,
+      "creg": 0,
+      "signal": null
+    },
+    {
+      "name": "signal-error",
+      "input": {
+        "available": true,
+        "preferences": {
+          "enabled": false,
+          "restore_cfun": 0,
+          "user_configured": true
+        },
+        "preference_error": "",
+        "cfun_response": "+CFUN: 1\r\nOK",
+        "cfun_error": "",
+        "owned": false,
+        "block_reason": "",
+        "cereg_response": "+CEREG: 2,1",
+        "creg_response": "+CREG: 0,5",
+        "registration_error": "",
+        "signal_response": "+CSQ: 20,99",
+        "signal_error": "synthetic signal error"
+      },
+      "expected": {
+        "available": true,
+        "enabled": false,
+        "verified": false,
+        "user_configured": true,
+        "cfun_mode": 1,
+        "owner": "none",
+        "can_toggle": true,
+        "registration_known": true,
+        "cellular_registered": true,
+        "cereg_state": 1,
+        "creg_state": 5,
+        "signal_known": false,
+        "summary": "蜂窝射频已开启",
+        "detail": "蜂窝网络已注册。"
+      },
+      "mode": 1,
+      "cereg": 1,
+      "creg": 5,
+      "signal": null
+    }
+  ],
+  "error_codes": {
+    "flight_mode_cfun_unverified": 502,
+    "flight_mode_enable_failed": 502,
+    "flight_mode_read_failed": 502,
+    "flight_mode_restore_failed": 502,
+    "flight_mode_snapshot_unverified": 502,
+    "flight_mode_state_read_failed": 502,
+    "flight_mode_state_write_failed": 500,
+    "module_radio_busy": 409,
+    "module_unavailable": 503
+  }
+}

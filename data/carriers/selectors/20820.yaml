@@ -1,0 +1,17 @@
+version: 2
+plmn: "20820"
+profiles:
+    - id: apple_bouygues_fr
+      path: profiles/bouygues_fr.yaml
+      generic: true
+      selectors:
+        - raw: "20820"
+          carrier_name: Bouygues Telecom
+          iso: FR
+        - raw: 20820_GID1-4C504D
+          carrier_name: La Poste Mobile
+          iso: FR
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 4C504D

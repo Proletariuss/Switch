@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_digicel_sv
+bundle: Digicel_sv.bundle
+supported_plmns:
+    - "70602"
+plmn_overrides:
+    "70602":
+        apns:
+            - apn: web.digicelsv.com
+              type_mask: 49
+            - apn: Wap
+              type_mask: 4
+            - apn: web.digicelsv.com
+              type_mask: 48

@@ -1,0 +1,21 @@
+version: 3
+kind: carrier_bundle
+id: apple_gomobile_mt
+bundle: GoMobile_mt.bundle
+supported_plmns:
+    - "27821"
+plmn_overrides:
+    "27821":
+        apns:
+            - apn: gointernet
+              type_mask: 32817
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 8193
+        entitlement:
+            entitlement_url: https://ios.es.go.com.mt
+        ims:
+            volte:
+                enable_volte_by_default: true

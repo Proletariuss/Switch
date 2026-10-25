@@ -1,0 +1,27 @@
+{
+  "status": {
+    "connected": true,
+    "reader_name": "Fixture CCID Reader",
+    "has_card": true,
+    "card_type": "euicc",
+    "has_usim_info": true,
+    "has_esim": true
+  },
+  "usim_info": {
+    "iccid": "8900000000000000000",
+    "imsi": "001010000000000",
+    "phone_number": "+10000000000",
+    "operator_name": "Fixture Carrier",
+    "operator_source": "fixture",
+    "mcc": "001",
+    "mnc": "01",
+    "gid1": "AB",
+    "smsc": "+10000000001",
+    "private_identity": "001010000000000@ims.mnc001.mcc001.3gppnetwork.org",
+    "public_identity": "sip:+10000000000@ims.mnc001.mcc001.3gppnetwork.org",
+    "home_domain": "ims.mnc001.mcc001.3gppnetwork.org",
+    "loaded_at": "2026-01-01T00:00:00Z"
+  },
+  "epdg_fqdn": "epdg.epc.mnc001.mcc001.pub.3gppnetwork.org",
+  "future_info_extension": ["ignored"]
+}

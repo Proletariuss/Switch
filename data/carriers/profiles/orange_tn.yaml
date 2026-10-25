@@ -1,0 +1,21 @@
+version: 3
+kind: carrier_bundle
+id: apple_orange_tn
+bundle: Orange_tn.bundle
+supported_plmns:
+    - "60501"
+plmn_overrides:
+    "60501":
+        apns:
+            - apn: weborange
+              type_mask: 49
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+              xlat464_enabled: true
+            - apn: mms.otun
+              type_mask: 4
+            - apn: weborange
+              type_mask: 48
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+              xlat464_enabled: true

@@ -1,0 +1,17 @@
+version: 2
+plmn: "24002"
+profiles:
+    - id: apple_hutchison_se
+      path: profiles/hutchison_se.yaml
+      generic: true
+      selectors:
+        - raw: "24002"
+          carrier_name: 3 SE
+          iso: SE
+        - raw: 24002_GID1-00000002
+          carrier_name: Hallon
+          iso: SE
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "00000002"

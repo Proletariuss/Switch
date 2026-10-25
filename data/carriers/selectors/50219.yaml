@@ -1,0 +1,34 @@
+version: 2
+plmn: "50219"
+profiles:
+    - id: apple_celcom_my
+      path: profiles/celcom_my.yaml
+      generic: true
+      selectors:
+        - raw: "50219"
+          carrier_name: CelcomDigi
+          iso: MY
+    - id: apple_celcom_yoodo_my
+      path: profiles/celcom_yoodo_my.yaml
+      selectors:
+        - raw: 50219_ID-89601917089
+          carrier_name: yoodo
+          iso: MY
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "89601917089"
+        - raw: 50219_ID-8960191916
+          carrier_name: yoodo
+          iso: MY
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "8960191916"
+        - raw: 50219_ID-8960192016
+          carrier_name: yoodo
+          iso: MY
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "8960192016"

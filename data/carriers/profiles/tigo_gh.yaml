@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_tigo_gh
+bundle: Tigo_gh.bundle
+supported_plmns:
+    - "62003"
+plmn_overrides:
+    "62003":
+        apns:
+            - apn: web.tigo.com.gh
+              type_mask: 49
+            - apn: mms.tigo.com.gh
+              type_mask: 4
+            - apn: web.tigo.com.gh
+              type_mask: 48

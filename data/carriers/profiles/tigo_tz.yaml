@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_tigo_tz
+bundle: Tigo_tz.bundle
+supported_plmns:
+    - "64002"
+plmn_overrides:
+    "64002":
+        apns:
+            - apn: tigoweb
+              type_mask: 49
+            - apn: tigowap
+              type_mask: 4
+            - apn: tigoweb
+              type_mask: 48

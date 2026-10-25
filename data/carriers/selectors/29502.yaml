@@ -1,0 +1,10 @@
+version: 2
+plmn: "29502"
+profiles:
+    - id: apple_orange_li
+      path: profiles/orange_li.yaml
+      generic: true
+      selectors:
+        - raw: "29502"
+          carrier_name: Salt
+          iso: LI

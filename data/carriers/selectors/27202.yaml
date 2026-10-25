@@ -1,0 +1,10 @@
+version: 2
+plmn: "27202"
+profiles:
+    - id: apple_o2_ie
+      path: profiles/o2_ie.yaml
+      generic: true
+      selectors:
+        - raw: "27202"
+          carrier_name: 3 Ireland
+          iso: IE

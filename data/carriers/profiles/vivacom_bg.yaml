@@ -1,0 +1,44 @@
+version: 3
+kind: carrier_bundle
+id: apple_vivacom_bg
+bundle: Vivacom_bg.bundle
+supported_plmns:
+    - "28403"
+plmn_overrides:
+    "28403":
+        apns:
+            - apn: internet.vivacom.bg
+              username: VIVACOM
+              password: VIVACOM
+              type_mask: 32817
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+            - apn: mms.vivacom.bg
+              username: mms
+              password: mms
+              type_mask: 4
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+            - apn: hos
+              type_mask: 1048576
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 8193
+        entitlement:
+            entitlement_url: https://es.vivacom.bg
+        ims:
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                require_preconditions_when_mandatory: false
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+            volte:
+                enable_volte_by_default: true

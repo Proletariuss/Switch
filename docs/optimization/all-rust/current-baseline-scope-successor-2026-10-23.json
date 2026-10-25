@@ -1,0 +1,78 @@
+{
+  "schema": "switch.current-baseline-scope-successor.v1",
+  "successor_id": "current-baseline-software-evidence-2026-10-23",
+  "predecessor": {
+    "path": "docs/optimization/all-rust/current-baseline-scope-decision.json",
+    "sha256": "b8b1446f1a46f1cdb63258e48a72fc5bc1037bdd816041b0ea546a3fb8a9b13e"
+  },
+  "source_cut": {
+    "identity_sha256": "b50cd9f5641e1d1d9006b64dc3f9f107272b1ae750bab89a20c511f017073c33",
+    "full_manifest_entries": 3928,
+    "full_manifest_canonical_array_sha256": "c01e243f8185f2909b98dde825cb183173c64f1d0b55866d4bcb70dd43d60f0e",
+    "cold_audit": {
+      "path": "build/clean-build/iteration-677-no-device-b50cd9f5641e1d1d9006b64dc3f9f107272b1ae750bab89a20c511f017073c33/audit.json",
+      "sha256": "35d22c737a890f7bfe05325fad31950b4e029db9edc4fddfc0205c430969c93b"
+    },
+    "artifact_audit": {
+      "path": "build/clean-build/iteration-677-no-device-b50cd9f5641e1d1d9006b64dc3f9f107272b1ae750bab89a20c511f017073c33/artifact-audit.json",
+      "sha256": "d6b4ceb2d851a988b7ab908a2bf549a31edb0399afb1b7d4ebdb1fb81e245703"
+    }
+  },
+  "scope_mapping": [
+    {
+      "historical_leaf": "P0-1.working-baseline",
+      "current_evidence_track": "P0-1.current-source-baseline",
+      "software_evidence": "VERIFIED_CURRENT_SOURCE_RESTORE_ONLY",
+      "formal_leaf_status": "NOT_REVIEWED",
+      "functional_pass_awarded": false,
+      "receipt": {
+        "path": "build/reports/iteration-678-current-source-restore.json",
+        "sha256": "4a667d899cc6c6d580349e22fdb7068fd2b0f940a1973bb671741d47fc9351cf"
+      }
+    },
+    {
+      "historical_leaf": "P0-1.baseline-280",
+      "current_evidence_track": "P0-1.current-build-baseline",
+      "software_evidence": "VERIFIED_CURRENT_BUILD_SOFTWARE_ONLY",
+      "formal_leaf_status": "NOT_REVIEWED",
+      "functional_pass_awarded": false,
+      "receipt": {
+        "path": "build/reports/iteration-677-no-device-software-acceptance.json",
+        "sha256": "9f43181215ee3b60970597c118e722407a0a6540595aef31d2ac9c96fe0e5e1a"
+      }
+    }
+  ],
+  "current_build": {
+    "version": "3.48",
+    "build_number": "348",
+    "backend_version": "3.48.0",
+    "release_manifest": {
+      "path": "dist/release-manifest.json",
+      "sha256": "f6736d224ee07ddb021d13e498f7bed44fed237da7c22935b3f48d4b799871b6"
+    },
+    "dmg": {
+      "path": "dist/Switch-3.48-macOS27.dmg",
+      "sha256": "821843a9c793c930078c7a624d1577b87bacd81666d744d122f186dab969d750"
+    },
+    "scope": "NO_DEVICE_SOFTWARE_RELEASE"
+  },
+  "ledger_integration": {
+    "mode": "EVIDENCE_ONLY_NO_FORMAL_LEAF_REWRITE",
+    "formal_ledger": "docs/optimization/all-rust/acceptance-ledger-2026-10-19.json",
+    "formal_leaf_count": 115,
+    "historical_p0_passes_awarded": 0,
+    "current_p0_functional_passes_awarded": 0,
+    "overall_denominator_frozen": false,
+    "overall_denominator": null,
+    "overall_percentage": null,
+    "overall_product_complete": false
+  },
+  "limitations": {
+    "historical_2_80_source_or_switch_time_restored": false,
+    "legacy_equivalence_or_upgrade_proven": false,
+    "device_card_carrier_qmi_mbim_acceptance": "UNVERIFIED_EXCLUDED_OR_PENDING_REVIEW",
+    "rendered_gui_and_physical_audio_acceptance": "UNVERIFIED",
+    "external_delivery_and_legacy_rollback": "UNVERIFIED",
+    "other_113_formal_leaves_automatically_promoted": false
+  }
+}

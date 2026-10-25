@@ -1,0 +1,10 @@
+version: 2
+plmn: "722310"
+profiles:
+    - id: apple_claro_ar
+      path: profiles/claro_ar.yaml
+      generic: true
+      selectors:
+        - raw: "722310"
+          carrier_name: Claro AR
+          iso: AR

@@ -1,0 +1,10 @@
+version: 2
+plmn: "40211"
+profiles:
+    - id: apple_bhutantelecom_bt
+      path: profiles/bhutantelecom_bt.yaml
+      generic: true
+      selectors:
+        - raw: "40211"
+          carrier_name: B-Mobile
+          iso: BT

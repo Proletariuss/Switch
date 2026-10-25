@@ -1,0 +1,10 @@
+[package]
+name = "proletarius-sip-runtime"
+description = "Bounded caller-driven SIP transaction timer runtime"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+proletarius-sip = { path = "../proletarius-sip" }

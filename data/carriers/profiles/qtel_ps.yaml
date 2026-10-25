@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_qtel_ps
+bundle: Qtel_ps.bundle
+supported_plmns:
+    - "42506"
+plmn_overrides:
+    "42506":
+        apns:
+            - apn: internet
+              type_mask: 49
+            - apn: mms
+              type_mask: 4
+            - apn: internet
+              type_mask: 48

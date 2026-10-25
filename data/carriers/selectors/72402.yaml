@@ -1,0 +1,10 @@
+version: 2
+plmn: "72402"
+profiles:
+    - id: apple_tim_br
+      path: profiles/tim_br.yaml
+      generic: true
+      selectors:
+        - raw: "72402"
+          carrier_name: TIM
+          iso: BR

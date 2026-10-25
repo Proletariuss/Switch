@@ -1,0 +1,53 @@
+version: 3
+kind: carrier_bundle
+id: apple_tigo_gt
+bundle: Tigo_gt.bundle
+supported_plmns:
+    - "70402"
+plmn_overrides:
+    "70402":
+        apns:
+            - apn: broadband.tigo.gt
+              type_mask: 49
+              allowed_ip_stack: ipv4
+            - apn: mms.tigo.gt
+              type_mask: 4
+              allowed_ip_stack: ipv4
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv4v6
+            - apn: xcap
+              type_mask: 1048576
+              allowed_ip_stack: ipv4v6
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                        - 4XX
+                        - 5XX
+                        - 6XX
+                require_preconditions_when_mandatory: false
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                sip_timers:
+                    T1: 2000
+                    T2: 16000
+                    T4: 17000
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true

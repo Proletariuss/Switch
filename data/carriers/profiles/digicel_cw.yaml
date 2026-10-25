@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_digicel_cw
+bundle: Digicel_cw.bundle
+supported_plmns:
+    - "36269"
+plmn_overrides:
+    "36269":
+        apns:
+            - apn: web.digicelcuracao.com
+              type_mask: 49
+            - apn: wap.digicelcuracao.com
+              type_mask: 4
+            - apn: web.digicelcuracao.com
+              type_mask: 48

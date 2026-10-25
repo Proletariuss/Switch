@@ -1,0 +1,135 @@
+version: 3
+kind: carrier_bundle
+id: apple_att_puretalk_us
+bundle: ATT_Puretalk_US.bundle
+supported_plmns:
+    - "310030"
+    - "310170"
+    - "310280"
+    - "310410"
+    - "310560"
+    - "310950"
+    - "311180"
+common:
+    apns:
+        - apn: ereseller
+          type_mask: 1081351
+          tech_type_mask: 1081351
+          allowed_ip_stack: ipv4v6
+          use_network_mtu: true
+        - apn: ims
+          type_mask: 131072
+          tech_type_mask: 131072
+          allowed_ip_stack: ipv4v6
+          support_switch_over: true
+          use_network_mtu: true
+        - apn: resellermht
+          type_mask: 16
+          tech_type_mask: 16
+          use_network_mtu: true
+        - apn: sos
+          type_mask: 262144
+          tech_type_mask: 262144
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+          use_network_mtu: true
+    apple:
+        carrier_entitlements:
+            supported_entitlements: 4204169
+    e911:
+        over_itech_supported: false
+    entitlement:
+        entitlement_url: https://sentitlement2.mobile.att.net
+    ims:
+        apn: ims
+        epdg:
+            address: epdg.epc.att.net
+            configuration_attributes:
+                - identifier: 16384
+                  name: AssignedPCSCFIPv4
+                  type: v4
+                - identifier: 16386
+                  name: AssignedPCSCFIPv6
+                  type: v6
+        ike:
+            child_sa:
+                proposals:
+                    - source_branch: FirstChild
+                      encryption:
+                        - aes128
+                      integrity:
+                        - sha256
+                      esn: auto
+                      install_policies: true
+                      lifetime_seconds: 80000
+                replay_window_size: 12
+            dpd:
+                enabled: false
+                interval_seconds: 600
+                max_retries: 4
+                retry_interval_seconds: 10
+            ipsec_mtu: 1280
+            local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+            proposals:
+                - encryption:
+                    - aes128
+                  integrity:
+                    - sha256
+                  prf:
+                    - sha256
+                  dh_groups:
+                    - 14
+                  lifetime_seconds: 80000
+                  authentication_method: None
+                  eap_method: EAP-AKA
+            validate_remote_certificate: false
+        ip_stack: ipv4v6
+        media:
+            remote_rtcp_deactivation: true
+            rtcp_inactivity_seconds: 20
+            rtcp_interval_seconds: 5
+            rtp_inactivity_seconds: 20
+        register:
+            use_ipsec: true
+        signaling:
+            additional_headers:
+                - selector: INVITE[wifi,911]
+                  headers:
+                    - 'P-Emergency-Info: IEEE-802.11b;i-wlan-node-id=${DEVICE_REF_ID}'
+                    - 'Supported: geolocation'
+            contact:
+                additional_contact_params:
+                    - selector: INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+            early_media_needs_header: true
+            preconditions: supported
+            re_register_on:
+                - method: REGISTER
+                  statuses:
+                    - "480"
+                    - "500"
+                    - "503"
+                    - "504"
+                - method: INVITE
+                  statuses:
+                    - "403"
+                    - "504"
+            require_preconditions_when_mandatory: false
+            sip_timers:
+                AckReceiveTimeout: 32000
+                AckRetransmitTimer: 32000
+                B: 32000
+                D: 32000
+                F: 32000
+                H: 32000
+                InviteResponseTimeout: 0
+                J: 32000
+            support_p_early_media: true
+        ussi:
+            enabled: true
+        volte:
+            enable_volte_by_default: true
+    roaming:
+        wifi_calling_allowed: true

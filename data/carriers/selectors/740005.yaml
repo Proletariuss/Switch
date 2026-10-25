@@ -1,0 +1,10 @@
+version: 2
+plmn: "740005"
+profiles:
+    - id: apple_movistar_ec
+      path: profiles/movistar_ec.yaml
+      generic: true
+      selectors:
+        - raw: "740005"
+          carrier_name: Tigo
+          iso: EC

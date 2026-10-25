@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_telecomliechtenstein_li
+bundle: TelecomLiechtenstein_li.bundle
+supported_plmns:
+    - "29505"
+plmn_overrides:
+    "29505":
+        apns:
+            - apn: fl1
+              username: gprs@a1plus.at
+              password: fl1
+              type_mask: 49
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4

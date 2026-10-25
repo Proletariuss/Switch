@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_orange_cd
+bundle: Orange_cd.bundle
+supported_plmns:
+    - "63086"
+plmn_overrides:
+    "63086":
+        apns:
+            - apn: iew.orange.cd
+              type_mask: 49
+            - apn: mms.orange.cd
+              type_mask: 4
+            - apn: iew.orange.cd
+              type_mask: 48

@@ -1,0 +1,123 @@
+version: 3
+kind: carrier_bundle
+id: apple_tmobile_wholesale_us
+bundle: TMobile_Wholesale_US.bundle
+supported_plmns:
+    - "310240"
+    - "310260"
+common:
+    apns:
+        - apn: wholesale
+          type_mask: 1081351
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+          domestic_roaming_ip_stack: ipv4v6
+          xlat464_enabled: true
+        - apn: ims
+          type_mask: 131072
+          tech_type_mask: 131072
+          allowed_ip_stack: ipv6
+          roaming_ip_stack: ipv4v6
+          domestic_roaming_ip_stack: ipv4v6
+          always_on_pdu: true
+          support_switch_over: true
+          support_5g_sa_handover: true
+        - apn: service
+          tech_type_mask: 1048582
+          allowed_ip_stack: ipv6
+          roaming_ip_stack: ipv4v6
+          domestic_roaming_ip_stack: ipv4v6
+          xlat464_enabled: true
+        - apn: hotspot
+          type_mask: 16
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+          domestic_roaming_ip_stack: ipv4v6
+          xlat464_enabled: true
+        - apn: sos
+          type_mask: 262144
+          tech_type_mask: 262144
+          allowed_ip_stack: ipv6
+          roaming_ip_stack: ipv4v6
+          domestic_roaming_ip_stack: ipv4v6
+          always_on_pdu: true
+    apple:
+        carrier_entitlements:
+            supported_entitlements: 4727193
+    e911:
+        emergency_urns:
+            default: urn:service:sos
+        over_itech_supported: false
+    entitlement:
+        entitlement_url: https://eas3.msg.t-mobile.com
+    ims:
+        apn: ims
+        epdg:
+            address: ss.epdg.epc.mnc260.mcc310.pub.3gppnetwork.org
+            configuration_attributes:
+                - identifier: 16384
+                  name: AssignedPCSCFIPv4
+                  type: v4
+                - identifier: 16386
+                  name: AssignedPCSCFIPv6
+                  type: v6
+                - identifier: 16386
+                  name: AssignedPCSCFIPv6
+                  type: v6
+        ike:
+            child_sa:
+                proposals:
+                    - source_branch: FirstChild
+                      encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      esn: auto
+                      install_policies: true
+                      lifetime_seconds: 80000
+                replay_window_size: 12
+            disable_switch_to_natt_port: false
+            dpd:
+                enabled: false
+                interval_seconds: 600
+                max_retries: 4
+                retry_interval_seconds: 10
+            local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+            proposals:
+                - encryption:
+                    - aes256
+                  integrity:
+                    - sha256
+                  prf:
+                    - sha256
+                  dh_groups:
+                    - 14
+                  lifetime_seconds: 80000
+                  authentication_method: None
+                  eap_method: EAP-AKA
+            validate_remote_certificate: false
+        ip_stack: ipv4v6
+        media:
+            rtp_inactivity_seconds: 30
+        register:
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params: []
+                always_add_sip_instance: true
+            early_media_needs_header: true
+            max_udp_message_size: 1200
+            preconditions: required
+            require_preconditions_when_mandatory: false
+            sip_timers:
+                EmergencyInviteResponseTimeout: 5000
+                F: 30000
+                InviteResponseTimeout: 0
+            support_p_early_media: true
+        ussi:
+            enabled: true
+            response_timeout_milliseconds: 20000
+        volte:
+            enable_volte_by_default: true

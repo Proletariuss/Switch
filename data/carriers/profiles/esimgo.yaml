@@ -1,0 +1,18 @@
+version: 3
+kind: carrier_bundle
+id: apple_esimgo
+bundle: eSIMGO.bundle
+supported_plmns:
+    - "20601"
+    - "20628"
+    - "20809"
+    - "23210"
+    - "23457"
+    - "26050"
+    - "27225"
+common:
+    apns:
+        - apn: data.esim
+          type_mask: 65589
+    e911:
+        wifi_calling_without_entitlement: false

@@ -1,0 +1,10 @@
+version: 2
+plmn: "54101"
+profiles:
+    - id: apple_orange_vu
+      path: profiles/orange_vu.yaml
+      generic: true
+      selectors:
+        - raw: "54101"
+          carrier_name: SMILE
+          iso: VU

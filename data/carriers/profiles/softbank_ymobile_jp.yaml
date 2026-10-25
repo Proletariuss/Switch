@@ -1,0 +1,69 @@
+version: 3
+kind: carrier_bundle
+id: apple_softbank_ymobile_jp
+bundle: Softbank_YMobile_jp.bundle
+supported_plmns:
+    - "44020"
+plmn_overrides:
+    "44020":
+        apns:
+            - apn: kqtqjsdi
+              username: tsnkkktk
+              password: knkkrsk
+              auth_type: CHAP
+              type_mask: 1081399
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv6
+              roaming_ip_stack: ipv6
+            - apn: ""
+              type_mask: 262144
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 4759569
+        e911:
+            emergency_urns:
+                "110": urn:service:sos.police
+                "118": urn:service:sos.marine
+                "119": urn:service:sos.fire
+        entitlement:
+            entitlement_url: https://efr.softbank.jp/terminal/validate.do
+        ims:
+            apn: ims
+            ip_stack: ipv6
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                require_preconditions_when_mandatory: false
+                contact:
+                    always_add_sip_instance: true
+            media:
+                rtcp_inactivity_seconds: 20
+                rtcp_interval_seconds: 5
+            volte:
+                enable_volte_by_default: true
+selector_overrides:
+    44020_GID1-16FFFF:
+        apns:
+            - apn: plus.acs.jp.V6
+              username: ym
+              password: ym
+              auth_type: CHAP
+              type_mask: 1081399
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv6
+              roaming_ip_stack: ipv6
+            - apn: ""
+              type_mask: 262144
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6

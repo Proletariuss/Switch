@@ -1,0 +1,97 @@
+version: 3
+kind: carrier_bundle
+id: apple_megafon_ru
+bundle: MegaFon_ru.bundle
+supported_plmns:
+    - "25002"
+plmn_overrides:
+    "25002":
+        apns:
+            - apn: internet
+              type_mask: 51
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4
+            - apn: mms
+              username: mms
+              password: mms
+              type_mask: 4
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv4v6
+              support_switch_over: true
+              allow_no_dns: 1
+        e911:
+            over_itech_supported: false
+            wifi_calling_without_entitlement: true
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            epdg:
+                address: epdg.epc.mnc002.mcc250.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 20
+                      name: AssignedPCSCFIPv4
+                      type: v4
+                    - identifier: 21
+                      name: AssignedPCSCFIPv6
+                      type: v6
+            ike:
+                proposals:
+                    - encryption:
+                        - aes256
+                      integrity:
+                        - sha1
+                      prf:
+                        - sha1
+                      dh_groups:
+                        - 2
+                      lifetime_seconds: 80000
+                      authentication_method: None
+                      eap_method: EAP-AKA
+                dpd:
+                    enabled: false
+                    interval_seconds: 600
+                    max_retries: 4
+                    retry_interval_seconds: 10
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes256
+                          integrity:
+                            - sha1
+                          rekey_pfs_group: 2
+                          esn: auto
+                          install_policies: true
+                          lifetime_seconds: 80000
+                    replay_window_size: 12
+                local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+                validate_remote_certificate: false
+            register:
+                include_cellular_network_info: true
+            signaling:
+                max_udp_message_size: 1300
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                        - 4XX
+                        - 5XX
+                        - 6XX
+                require_preconditions_when_mandatory: false
+                contact:
+                    always_add_sip_instance: true
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            volte:
+                enable_volte_by_default: true
+        roaming:
+            wifi_calling_allowed: true

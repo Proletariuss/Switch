@@ -1,0 +1,10 @@
+version: 2
+plmn: "356110"
+profiles:
+    - id: apple_cw_wi
+      path: profiles/cw_wi.yaml
+      generic: true
+      selectors:
+        - raw: "356110"
+          carrier_name: FLOW
+          iso: KN

@@ -1,0 +1,54 @@
+{
+  "repository": "MengMengCode/VoCat",
+  "sha": "0dec0cbfa3445695e44a5108d88db399f639fccb",
+  "files": [
+    {
+      "path": "LICENSE",
+      "url": "https://raw.githubusercontent.com/MengMengCode/VoCat/0dec0cbfa3445695e44a5108d88db399f639fccb/LICENSE",
+      "sha256": "64227b4ac03cba637a2550edea084a512e20d1111aa9629d2880b6167d26fd33",
+      "bytes": 9508
+    },
+    {
+      "path": "NOTICE",
+      "url": "https://raw.githubusercontent.com/MengMengCode/VoCat/0dec0cbfa3445695e44a5108d88db399f639fccb/NOTICE",
+      "sha256": "8329c66c21e281249cefd1fd052a3704ad2f49705b13662198ff4abe9fdd8fe9",
+      "bytes": 429
+    },
+    {
+      "path": "internal/vowifi/carrier_profiles.json",
+      "url": "https://raw.githubusercontent.com/MengMengCode/VoCat/0dec0cbfa3445695e44a5108d88db399f639fccb/internal/vowifi/carrier_profiles.json",
+      "sha256": "d24d755605ae6faf5b6776ef2e57b713a09230dbf5515115f2483234405addf5",
+      "bytes": 212913
+    },
+    {
+      "path": "internal/vowifi/carrier_compat.go",
+      "url": "https://raw.githubusercontent.com/MengMengCode/VoCat/0dec0cbfa3445695e44a5108d88db399f639fccb/internal/vowifi/carrier_compat.go",
+      "sha256": "7f62045af9939ce0bc64b1d2df14ef689548fc7d1d48789c45b7b46dace8c9c6",
+      "bytes": 35597
+    },
+    {
+      "path": "internal/vowifi/carrier_compat_test.go",
+      "url": "https://raw.githubusercontent.com/MengMengCode/VoCat/0dec0cbfa3445695e44a5108d88db399f639fccb/internal/vowifi/carrier_compat_test.go",
+      "sha256": "22a79c00b794804edbd82ac1480c7d7d1c62a0a8f6f70db50f31712d60383823",
+      "bytes": 14253
+    },
+    {
+      "path": "internal/vowifi/carrier_ipcc.go",
+      "url": "https://raw.githubusercontent.com/MengMengCode/VoCat/0dec0cbfa3445695e44a5108d88db399f639fccb/internal/vowifi/carrier_ipcc.go",
+      "sha256": "abce64e876e3b15313abb5e06d10e2798460faa0772d52bb44228430c3ea82bd",
+      "bytes": 31114
+    },
+    {
+      "path": "cmd/sync_carrier_bundles/main.go",
+      "url": "https://raw.githubusercontent.com/MengMengCode/VoCat/0dec0cbfa3445695e44a5108d88db399f639fccb/cmd/sync_carrier_bundles/main.go",
+      "sha256": "6d99d83fc7522a909da69857eee9f9e3939822584034684635dd7b371d5a73a3",
+      "bytes": 4159
+    },
+    {
+      "path": "scripts/update-carriers.py",
+      "url": "https://raw.githubusercontent.com/MengMengCode/VoCat/0dec0cbfa3445695e44a5108d88db399f639fccb/scripts/update-carriers.py",
+      "sha256": "288c4a8b4f87e6d447f6418397ac4e6ecf1b4de144a447add7ce7f018be1b7ff",
+      "bytes": 7952
+    }
+  ]
+}

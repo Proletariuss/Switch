@@ -1,0 +1,61 @@
+version: 3
+kind: carrier_bundle
+id: apple_iusacell_wim_mx
+bundle: iusacell_WIM_mx.bundle
+supported_plmns:
+    - "334050"
+plmn_overrides:
+    "334050":
+        apns:
+            - apn: web.5g.wim.mx
+              type_mask: 32769
+              allowed_ip_stack: ipv4
+              use_network_mtu: true
+            - apn: modem.wim.mx
+              type_mask: 48
+              use_network_mtu: true
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv4v6
+              support_switch_over: true
+              no_cellular_reconnect_cause_codes:
+                - cause_codes:
+                    - 27
+                  recovers_on_airplane_mode: true
+                  num_tries_allowed: 1
+                  type: 3GPP
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 1
+        entitlement:
+            entitlement_url: https://aes.ims.attmex.mx/entitlement/
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: unsupported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                        - 4XX
+                        - 5XX
+                        - 6XX
+                require_preconditions_when_mandatory: false
+                contact:
+                    always_add_sip_instance: true
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            media:
+                rtp_inactivity_seconds: 20
+                rtcp_inactivity_seconds: 36000
+            volte:
+                enable_volte_by_default: true

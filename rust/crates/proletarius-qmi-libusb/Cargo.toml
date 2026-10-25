@@ -1,0 +1,13 @@
+[package]
+name = "proletarius-qmi-libusb"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "MIT"
+description = "macOS libusb QMI device discovery and transport for Switch"
+
+[dependencies]
+proletarius-qmi-core = { path = "../proletarius-qmi-core" }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+rusb = { workspace = true }

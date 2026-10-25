@@ -1,0 +1,809 @@
+{
+  "schema": "switch-acceptance-scope-protocol-v1",
+  "adopted_iteration": 596,
+  "decision_boundary": "Engineering rules are adopted now; actual support membership and execution remain separately pending. No new product requirement or scored instance is created.",
+  "review_sources": [
+    {
+      "path": "build/reports/iteration-596-p0-freeze-rules-reviewed.json",
+      "sha256": "655eee3344de24327d05f9dcdcfef5627481225a6ec53a52447a42c1cb8740d4"
+    },
+    {
+      "path": "build/reports/iteration-596-evs-policy-source-review.json",
+      "sha256": "b40bc6b032e38cf4c4dc20e44d6d28468cff40f3fa64c4ba18aa61c0d8671815"
+    }
+  ],
+  "unit_identity_fields": [
+    "leaf_id",
+    "scenario_class_id",
+    "semantic_instance_id"
+  ],
+  "evidence_is_not_unit_identity": true,
+  "unit_rules": [
+    "Only baseline-reachable or explicitly promised combinations apply; no class Cartesian product.",
+    "API, derived HEAD, Swift and RT are entry references to shared semantic units, not extra scoring units.",
+    "Boundary, error, cancel, write and close cases are conjunctive members, not per-syscall/test scoring.",
+    "Semantic identity excludes results, timestamp, PID, build and source/binary hashes; these bind evidence.",
+    "Known finite scope may be defined while unimplemented, failed or untested; unknown historical support stays explicit."
+  ],
+  "software_equivalence_protocols": {
+    "SW": {
+      "protocol_version": "sw-equivalence-v1",
+      "definition": "每个保留业务入口建立一个语义族；正常/非法输入/忙/取消前后/旧代迟到/超时/退出为族内必需成员。",
+      "members": [
+        "正常成功与每种语义不同错误",
+        "有效/无效权限与内部token",
+        "提交前取消与提交后unknown",
+        "同代/旧代迟到",
+        "关闭前后请求及真实退出"
+      ],
+      "equivalence": "同一producer/状态转换/外部结果/资源与数据后置条件相同；重复route或UI调用只作入口引用。"
+    },
+    "STORE": {
+      "protocol_version": "store-equivalence-v1",
+      "definition": "按实际schema+serializer/writer+提交协议和读者兼容断点建族；记录名或每次fsync不是新计分单位。",
+      "members": [
+        "不存在/有效旧格式/有效当前格式",
+        "损坏/截断/未知字段的既有精确处理",
+        "private temp→rename/硬链接/实际目录父identity",
+        "短写/WriteZero/完整写后syncErr/ACK丢失",
+        "原raw+inode保护、fresh再同步、已确认不得丢账"
+      ],
+      "equivalence": "相同可观察格式、提交点和恢复不变量才归并；595有限I/O注入不涵盖所有OS失败或断电。"
+    },
+    "UI": {
+      "protocol_version": "ui-equivalence-v1",
+      "definition": "每个保留页面/动作→后台入口→DTO→状态渲染/权限/退出契约；纯显示分支可无硬件定义。",
+      "members": [
+        "正常/空/加载/错误",
+        "missing/null/empty/日期/分页",
+        "当前/旧代结果",
+        "权限允许/拒绝/撤销",
+        "主题与实际可达布局条件",
+        "操作取消与窗口/App退出"
+      ],
+      "equivalence": "同一渲染/交互/桥调用与后置条件；131调用点是覆盖索引不是131个产品单元；真实权限/音频/Keychain单独证据。"
+    },
+    "HTTP": {
+      "existing_class": "SW",
+      "protocol_version": "http-equivalence-v1",
+      "definition": "HTTP是现有SW/STORE/UI协议视图，不能新增第22类或每个矩阵case另加分母。",
+      "members": [
+        "method/path/query/body/header/token的真实parser等价类",
+        "missing/null/empty/unknown/类型错误/边界长度",
+        "status+错误文案/编码+日期+分页+导出raw",
+        "busy/operation锁/body校验与authority错误顺序",
+        "HEAD派生与GET业务的关系"
+      ],
+      "comparison": "只对明确非语义字段作列明规范化；状态、null、日期year1、unknown与错误优先级不得隐藏。",
+      "existing_evidence_boundary": "原590固定94矩阵仍92通过+2year1 OS skip，aggregate false；294接口及54派生HEAD为独立接口覆盖，不能写产品全通过。"
+    }
+  },
+  "scenario_protocols": {
+    "SW": {
+      "id": "SW",
+      "original_scope": "公开UDS/API、后台任务和退出",
+      "finite_protocol_definition": "Public wire/error grammar, cancellation/late-generation state machine, monotonic deadline boundary members and real process lifecycle evidence",
+      "membership_fact_required": "Original supported features/protocol versions and old output baselines",
+      "support_membership": "UNKNOWN_NOT_REDUCED_TO_CURRENT_HARDWARE",
+      "relevant_policy_ids": [
+        "legacy_policy",
+        "recovery_policy"
+      ],
+      "rules_may_be_defined_before_execution": true,
+      "instance_rows_added": []
+    },
+    "STORE": {
+      "id": "STORE",
+      "original_scope": "短信/通话/N待/配置/SWF1/unknown及旧数据密钥",
+      "finite_protocol_definition": "Per actual writer/schema/key/commit protocol; absent/valid/corrupt/partial/unknown layouts, canonical raw versus semantic comparisons",
+      "membership_fact_required": "Supported old formats/versions, retained upgrade data and secret-key source facts",
+      "support_membership": "UNKNOWN_NOT_REDUCED_TO_CURRENT_HARDWARE",
+      "relevant_policy_ids": [
+        "upgrade_versions",
+        "recovery_policy"
+      ],
+      "rules_may_be_defined_before_execution": true,
+      "instance_rows_added": []
+    },
+    "UI": {
+      "id": "UI",
+      "original_scope": "最终SwiftUI、声明CoreBluetooth/CoreAudio/Keychain等薄桥",
+      "finite_protocol_definition": "Retained view/state/error branches, light/dark, permission allowed/denied/revoked, generation stale/current, Codable contract",
+      "membership_fact_required": "SupportedOS/platform bridge/device permissions and actual retained page scope",
+      "support_membership": "UNKNOWN_NOT_REDUCED_TO_CURRENT_HARDWARE",
+      "relevant_policy_ids": [
+        "clean_environment"
+      ],
+      "rules_may_be_defined_before_execution": true,
+      "instance_rows_added": []
+    },
+    "PCSC": {
+      "id": "PCSC",
+      "original_scope": "原版支持PCSC/CCID reader及卡片",
+      "finite_protocol_definition": "APDU grammar/length/status/timeout/lifecycle and MUTE/loss conditions against source protocol branches",
+      "membership_fact_required": "Actually retained reader model/firmware/CCID behavior, card ATR/profile/application and macOS support",
+      "support_membership": "UNKNOWN_NOT_REDUCED_TO_CURRENT_HARDWARE",
+      "relevant_policy_ids": [
+        "physical_support"
+      ],
+      "rules_may_be_defined_before_execution": true,
+      "instance_rows_added": []
+    },
+    "BLE": {
+      "id": "BLE",
+      "original_scope": "legacy/CCID/BeeSIM及适用B0/B1/BF71",
+      "finite_protocol_definition": "Actual legacy/CCID/B0/B1/BF71 frame/GATT/security/liveness branches, bounded transfer limits",
+      "membership_fact_required": "Original device/firmware/GATT/password/card combinations",
+      "support_membership": "UNKNOWN_NOT_REDUCED_TO_CURRENT_HARDWARE",
+      "relevant_policy_ids": [
+        "physical_support"
+      ],
+      "rules_may_be_defined_before_execution": true,
+      "instance_rows_added": []
+    },
+    "USB": {
+      "id": "USB",
+      "original_scope": "当前native USB AT支持集合",
+      "finite_protocol_definition": "Exact selector ambiguity/serial/IMEI/descriptor/readback/reboot successor and checked-close state branches",
+      "membership_fact_required": "Original model/firmware/compositions and valid no-serial/no-AT/non-disconnect/cross-VIDPID cases",
+      "support_membership": "UNKNOWN_NOT_REDUCED_TO_CURRENT_HARDWARE",
+      "relevant_policy_ids": [
+        "physical_support",
+        "recovery_policy"
+      ],
+      "rules_may_be_defined_before_execution": true,
+      "instance_rows_added": []
+    },
+    "SERIAL": {
+      "id": "SERIAL",
+      "original_scope": "原版支持实体串口模块",
+      "finite_protocol_definition": "Framing/prompt/URC/cancel/close/retire and actualFD identity branch classes",
+      "membership_fact_required": "Original module/firmware/serial-to-USB-ADB physical relationship",
+      "support_membership": "UNKNOWN_NOT_REDUCED_TO_CURRENT_HARDWARE",
+      "relevant_policy_ids": [
+        "physical_support",
+        "recovery_policy"
+      ],
+      "rules_may_be_defined_before_execution": true,
+      "instance_rows_added": []
+    },
+    "QMI": {
+      "id": "QMI",
+      "original_scope": "原macOS libusb QMI/UIM适用模块",
+      "finite_protocol_definition": "Actual CTL/service/UIM/IMSA/NAS message/transaction/lifecycle branch contract",
+      "membership_fact_required": "Original macOS reachable services, selector and applicable module/firmware",
+      "support_membership": "UNKNOWN_NOT_REDUCED_TO_CURRENT_HARDWARE",
+      "relevant_policy_ids": [
+        "qmi_mbim_scope"
+      ],
+      "rules_may_be_defined_before_execution": true,
+      "instance_rows_added": []
+    },
+    "MBIM": {
+      "id": "MBIM",
+      "original_scope": "原macOS实际可达MBIM",
+      "finite_protocol_definition": "If original reachable: exact operation/wire/error/lifecycle family from original implementation",
+      "membership_fact_required": "Whether and where oldmacOS MBIM was reachable, and supported module/firmware",
+      "support_membership": "UNKNOWN_NOT_REDUCED_TO_CURRENT_HARDWARE",
+      "relevant_policy_ids": [
+        "qmi_mbim_scope"
+      ],
+      "rules_may_be_defined_before_execution": true,
+      "instance_rows_added": []
+    },
+    "NINE_ESIM": {
+      "id": "NINE_ESIM",
+      "original_scope": "9eSIM已支持B0/B1密码、B0 BF71及正常认证下载",
+      "finite_protocol_definition": "Retain B0/B1 password and B0 BF71 authentication, BLE connection, EID/profile read/switch, and normal authorized download compatibility assessment including 6982 diagnosis. The later direct authentication request supersedes the earlier 6982 exclusion for this assessment; protected-download applicability and actual successful operation remain unresolved.",
+      "membership_fact_required": "Establish legitimate actual card/reader/firmware/password and authorized profile/server capability combinations. Diagnose authentication and 6982 within that authorized scope; do not bypass authentication or infer either successful protected download or non-applicability from the status code or synthetic authentication tests.",
+      "support_membership": "UNKNOWN_NOT_REDUCED_TO_CURRENT_HARDWARE",
+      "relevant_policy_ids": [],
+      "rules_may_be_defined_before_execution": true,
+      "instance_rows_added": [],
+      "current_user_scope_decision": {
+        "iteration": 652,
+        "status": "REOPENED_DISPUTED_SCOPE_NOT_NA_NOT_PASS",
+        "requested_authentication": [
+          "B0/B1 password",
+          "B0 BF71"
+        ],
+        "authorized_normal_download_assessment": "IN_SCOPE_UNRESOLVED",
+        "6982_diagnosis": "IN_SCOPE_UNRESOLVED",
+        "protected_download_applicability": "UNRESOLVED_REQUIRES_AUTHORIZED_CAPABILITY_EVIDENCE",
+        "earlier_exclusion_current": false,
+        "authentication_bypass_allowed": false,
+        "6982_fixed_claimed": false,
+        "functional_acceptance_awarded": false
+      }
+    },
+    "LPA_NET": {
+      "id": "LPA_NET",
+      "original_scope": "原支持卡片和SM-DP+正常下载安装",
+      "finite_protocol_definition": "ES9+/certificate/BPP/auth/APDU/install/notification branch grammar and bounded payload sizes",
+      "membership_fact_required": "Original supported eUICC/SM-DP+/profile and lawful authorized target facts",
+      "support_membership": "UNKNOWN_NOT_REDUCED_TO_CURRENT_HARDWARE",
+      "relevant_policy_ids": [
+        "carrier_scope"
+      ],
+      "rules_may_be_defined_before_execution": true,
+      "instance_rows_added": []
+    },
+    "IMS": {
+      "id": "IMS",
+      "original_scope": "reader/module作为SIM的主机VoWiFi与精确selector",
+      "finite_protocol_definition": "Distinct identity/security/SWu/IKE/CHILD/EAP/REGISTER/SMS/USSD generation and result semantics",
+      "membership_fact_required": "Supported carrier/card/Profile/business/VoCat selector paths and actual line provisioning",
+      "support_membership": "UNKNOWN_NOT_REDUCED_TO_CURRENT_HARDWARE",
+      "relevant_policy_ids": [
+        "carrier_scope",
+        "final_soak"
+      ],
+      "rules_may_be_defined_before_execution": true,
+      "instance_rows_added": []
+    },
+    "NWAIT": {
+      "id": "NWAIT",
+      "original_scope": "同卡多Profile、多reader/BLE N待短信",
+      "finite_protocol_definition": "SMS-only multi-profile scheduling, simultaneous-source/card isolation, admission and restart behavior",
+      "membership_fact_required": "Supported physical reader/card/Profile/carrier sets and original parallel limits",
+      "support_membership": "UNKNOWN_NOT_REDUCED_TO_CURRENT_HARDWARE",
+      "relevant_policy_ids": [
+        "carrier_scope",
+        "final_soak"
+      ],
+      "rules_may_be_defined_before_execution": true,
+      "instance_rows_added": []
+    },
+    "FORWARD": {
+      "id": "FORWARD",
+      "original_scope": "Telegram/Bark及HTTP代理/PAC",
+      "finite_protocol_definition": "Telegram/Bark conditional branches, chunks/status/encryption, proxy/PAC/DNS and durable per-channel unknown handling",
+      "membership_fact_required": "Original provider/server contract and approved real receiving destinations/proxy environment",
+      "support_membership": "UNKNOWN_NOT_REDUCED_TO_CURRENT_HARDWARE",
+      "relevant_policy_ids": [
+        "carrier_scope"
+      ],
+      "rules_may_be_defined_before_execution": true,
+      "instance_rows_added": []
+    },
+    "HOSTVOICE": {
+      "id": "HOSTVOICE",
+      "original_scope": "reader和module作为SIM的主机VoWiFi",
+      "finite_protocol_definition": "ExistingEVS->AMR-WB policy, noNB/PCMA, negotiation/RTP/DTMF/audio fences and IO capability guard",
+      "membership_fact_required": "Supported carrier/card/host route/codec capabilities and actual audio endpoints",
+      "support_membership": "UNKNOWN_NOT_REDUCED_TO_CURRENT_HARDWARE",
+      "relevant_policy_ids": [
+        "carrier_scope",
+        "evs_io",
+        "final_soak"
+      ],
+      "rules_may_be_defined_before_execution": true,
+      "instance_rows_added": []
+    },
+    "MODULEVOICE": {
+      "id": "MODULEVOICE",
+      "original_scope": "模块蜂窝call/VoLTE/DSP与AT-ADB runtime/helper",
+      "finite_protocol_definition": "Bound helper STATUS/STOP/DSP/PCM/RELEASE, actualclose and finite restore/recovery contracts",
+      "membership_fact_required": "Actual module/boot/helper/runtime/DSP/USB/ADB compatibility and carrier business",
+      "support_membership": "UNKNOWN_NOT_REDUCED_TO_CURRENT_HARDWARE",
+      "relevant_policy_ids": [
+        "carrier_scope",
+        "evs_io",
+        "recovery_policy"
+      ],
+      "rules_may_be_defined_before_execution": true,
+      "instance_rows_added": []
+    },
+    "UPGRADE": {
+      "id": "UPGRADE",
+      "original_scope": "完整App原位升级退出重启回退与旧格式密钥",
+      "finite_protocol_definition": "Source-format/key/protocol discontinuities, complete upgrade->exit->restart->rollback-copy procedure",
+      "membership_fact_required": "Retained old completeApp versions/builds/keychain/schema/unknown data and actual oldowner protocol participation",
+      "support_membership": "UNKNOWN_NOT_REDUCED_TO_CURRENT_HARDWARE",
+      "relevant_policy_ids": [
+        "clean_environment",
+        "upgrade_versions",
+        "legacy_policy",
+        "recovery_policy"
+      ],
+      "rules_may_be_defined_before_execution": true,
+      "instance_rows_added": []
+    },
+    "CLEAN": {
+      "id": "CLEAN",
+      "original_scope": "干净源码/工具链/依赖构建安装",
+      "finite_protocol_definition": "Finite allowedSDK/toolchain/offline/native dependency closure and contamination checks",
+      "membership_fact_required": "Available approved newmachine/newuser/VM/samehost environment and hardware accessibility",
+      "support_membership": "UNKNOWN_NOT_REDUCED_TO_CURRENT_HARDWARE",
+      "relevant_policy_ids": [
+        "performance_budget",
+        "clean_environment"
+      ],
+      "rules_may_be_defined_before_execution": true,
+      "instance_rows_added": []
+    },
+    "MEASURE": {
+      "id": "MEASURE",
+      "original_scope": "完整App进程组及受控数据网络设备条件",
+      "finite_protocol_definition": "Plan6.2 sample counts, cold/hot/ready definition, completeprocess membership, noise/statistics/clock protocol",
+      "membership_fact_required": "Restorable old baseline, fixed matching machine/OS/data/Profile/device/network conditions",
+      "support_membership": "UNKNOWN_NOT_REDUCED_TO_CURRENT_HARDWARE",
+      "relevant_policy_ids": [
+        "performance_budget"
+      ],
+      "rules_may_be_defined_before_execution": true,
+      "instance_rows_added": []
+    },
+    "LONGRUN": {
+      "id": "LONGRUN",
+      "original_scope": "真实正常网络自然期限及资源趋势",
+      "finite_protocol_definition": "Propose retain stage>=24h and adopt final>=72h plus>=3natural events; record IMS/EAP/IKE/CHILD separately",
+      "membership_fact_required": "Actual carrier leases/line/device/environment and available uninterrupted window",
+      "support_membership": "UNKNOWN_NOT_REDUCED_TO_CURRENT_HARDWARE",
+      "relevant_policy_ids": [
+        "final_soak",
+        "performance_budget"
+      ],
+      "rules_may_be_defined_before_execution": true,
+      "instance_rows_added": []
+    },
+    "DELIVERY": {
+      "id": "DELIVERY",
+      "original_scope": "无Go最终完整包/源码/native依赖/DMG",
+      "finite_protocol_definition": "Source/package/native-dependency/version/hash/signature/noGo closure and finalexisting-business conjunction",
+      "membership_fact_required": "Exact historical2.80 and pre-switch provenance plus finaltarget environment",
+      "support_membership": "UNKNOWN_NOT_REDUCED_TO_CURRENT_HARDWARE",
+      "relevant_policy_ids": [
+        "clean_environment",
+        "upgrade_versions",
+        "legacy_policy"
+      ],
+      "rules_may_be_defined_before_execution": true,
+      "instance_rows_added": []
+    }
+  },
+  "policy_decisions": {
+    "physical_support": {
+      "decision": "按实体身份和可观察协议差异分组，保留原支持集合；未知历史成员保留显式未知义务。",
+      "status": "RULE_ADOPTED_FACTS_PENDING",
+      "rules": [
+        "PCSC/BLE/USB/SERIAL分别建立有限协议族；型号或固件只有在实际帧、能力、身份和恢复不变量相同且有源码/基线依据时才能归并。当前设备库存仅作为执行可用性。",
+        "无serial、无AT、reboot不掉线、跨VID/PID分别为明确语义分支；可定义绑定不足时拒绝自动写和保持Pending，但该安全规则不等于这些历史正常能力已兼容。",
+        "USB VID/PID、ATR、路径、Profile数量不能单独充当完整设备兼容集合或实体身份。正常重连和startup恢复分别证明，不能互相替换。"
+      ],
+      "remaining_facts": [
+        {
+          "fact": "实际旧生产入口支持的reader/module型号、固件、协议能力和上述特殊恢复分支",
+          "recover_from": "2.80及真实切换前完整源/资源/发行说明/保留轨迹；现有源码仅补充",
+          "not_missing": "本轮没有这些实体不妨碍冻结协议规则，但会使物理执行待验。"
+        }
+      ],
+      "affected_existing_classes": [
+        "PCSC",
+        "BLE",
+        "USB",
+        "SERIAL"
+      ],
+      "acceptance_awarded": false
+    },
+    "qmi_mbim_scope": {
+      "decision": "macOS原生产可达操作决定范围，不从Linux API或目录名推导支持。",
+      "status": "RULE_ADOPTED_FACTS_PENDING",
+      "rules": [
+        "QMI有限族按真实CTL/service/UIM/IMSA/NAS请求、事务ID、应答/指示、超时和owner生命周期划分；同service不同结果语义必须保留成员。",
+        "MBIM若旧macOS生产可达则按真实操作和固件归类；若欲判定不适用，必须有完整旧入口/构建条件/调用图的不可达证明，当前缺设备或当前拒绝参数不足。"
+      ],
+      "remaining_facts": [
+        {
+          "fact": "原macOS QMI/MBIM入口、构建可达性及适用模块固件/操作清单",
+          "recover_from": "真实历史源+构建配置+协议轨迹；不要求用户重新定义整个产品。"
+        }
+      ],
+      "affected_existing_classes": [
+        "QMI",
+        "MBIM"
+      ],
+      "acceptance_awarded": false
+    },
+    "carrier_scope": {
+      "decision": "将线路身份、业务能力和环境契约分开；只纳入可达或明确承诺组合。",
+      "status": "RULE_ADOPTED_FACTS_PENDING",
+      "rules": [
+        "固定原支持、明确新增和VoCat路径的并集，注册、双向SMS、USSD、call、租期事件分别有适用关系；NWAIT保留SMS-only。",
+        "身份最少包含实际SIM/Profile选择路径、运营商/网络配置身份和业务能力依据；MCC/MNC或模板存在不能代替线路能力，SIMWorld 3HK454/03只是已知样本。",
+        "不展开无依据reader×card×carrier全积；缺失某个真实承诺组合保留未决，不以未提供号卡移出范围。"
+      ],
+      "remaining_facts": [
+        {
+          "fact": "历史支持及明确追加线路/Profile/VoCat和各业务适用关系、NWAIT实际并发能力边界",
+          "recover_from": "原配置与实际业务入口/记录/用户明确追加指令；真实测试接收号码仅执行前需要，不是定义协议的障碍。"
+        }
+      ],
+      "affected_existing_classes": [
+        "IMS",
+        "NWAIT",
+        "HOSTVOICE",
+        "MODULEVOICE",
+        "LPA_NET",
+        "FORWARD"
+      ],
+      "acceptance_awarded": false
+    },
+    "evs_io": {
+      "decision": "Capability report, actual SDP advertisement, admission and real codec paths must agree. Keep current EVS Primary first and independent AMR-WB fallback; no runtime policy change.",
+      "status": "RULE_ADOPTED_EXECUTION_PENDING",
+      "rules": [
+        "Host priority remains EVS Primary then independent AMR-WB, with no AMR-NB/PCMA fallback. Module DSP has separate acceptance.",
+        "Current fixed Primary SDP advertises evs-mode-switch=0 and cmr=-1. Independent AMR-WB implemented through EVS reference FFI is not negotiated EVS RTP IO mode switching. This records acceptance rules only.",
+        "若正式启用IO，必须新增对应有限协商/真实编码解码/切换及业务证据；不能将关闭分支测试等价为启用通过。未验证启用不删除该条件性能力义务。"
+      ],
+      "remaining_facts": [],
+      "affected_existing_classes": [
+        "HOSTVOICE",
+        "MODULEVOICE"
+      ],
+      "acceptance_awarded": false
+    },
+    "final_soak": {
+      "decision": "采纳阶段至少24小时、最终至少72小时且至少3次自然租期事件的有限门槛。",
+      "status": "RULE_ADOPTED_EXECUTION_PENDING",
+      "rules": [
+        "72小时与自然事件数是合取；故障注入、压缩时钟、人工断网均不计自然事件。",
+        "IMS期限、EAP/IKE reauth、IKE/CHILD rekey按各自实际策略分别记录；3次IMS不替代rekey。相关自然周期超出窗口则延长或保持该项未覆盖，不能自动N/A。",
+        "预热/峰值/稳态区分；RSS、任务、FD、队列无持续增长/旧代泄漏，记录每次业务中断和重连风暴。固定时长不等于承诺任意长时间无故障。"
+      ],
+      "remaining_facts": [],
+      "affected_existing_classes": [
+        "LONGRUN",
+        "IMS",
+        "NWAIT",
+        "HOSTVOICE"
+      ],
+      "acceptance_awarded": false
+    },
+    "performance_budget": {
+      "decision": "采纳原计划§6.2拟定预算为工程验收协议；缺样本记测量待验而非政策未定义。",
+      "status": "RULE_ADOPTED_EXECUTION_PENDING",
+      "rules": [
+        "比较完整旧App+Rust+Go与新App+Rust+必要桥的同条件进程组；固定机器/OS/Release、设备/Profile、网络代理、数据和脚本，网络耗时单列。",
+        "冷/热启动各10次，分别计后端响应与设备就绪；nearest-rank分位数rank=ceil(p*n)，冷定义为App/后端全退出后新进程启动且缓存状态预声明，不以未经证明的OS页缓存已冷命名。",
+        "启动p95增量≤max(基线10%,100ms)；本地API/短信0/100/1000数据规模p95增量≤max(基线10%,20ms)；显式断链撤销p95≤3s；恢复同条件增量不超过基线10%或预声明实测噪声。",
+        "前后台各3×10min；CPU预算max(基线10%,0.2百分点)，RSS max(基线10%,20MiB)。每种条件额外同版重复采样估计noise=max(同版重复统计值)-min(同版重复统计值)，仅当增量同时超过noise与预算判回归；噪声过大无法辨别时标INCONCLUSIVE并重采，不写通过。",
+        "冷/增量构建各3次记录实际时间/体积/依赖；无Go为硬约束，不预设Rust更小更快。原始样本不能选择性丢弃，异常排除需预声明客观规则且保留原行。"
+      ],
+      "remaining_facts": [],
+      "affected_existing_classes": [
+        "MEASURE",
+        "CLEAN",
+        "LONGRUN"
+      ],
+      "acceptance_awarded": false
+    },
+    "clean_environment": {
+      "decision": "按污染边界分级认证环境，不把同机隔离自动称作干净机器。",
+      "status": "RULE_ADOPTED_EXECUTION_PENDING",
+      "rules": [
+        "CLEAN-BUILD契约固定OS/arch/工具链SDK/离线依赖/native资源白名单、输入源hash、空派生输出和无未声明缓存或Go依赖；同机隔离可以证明这一软件闭包。",
+        "CLEAN-INSTALL契约另要求新用户或新VM/机器中无旧App容器、偏好、Keychain项、guardian/旧进程及数据；只能在已审等价边界内替代，不能用新目录证明真实Keychain或系统权限干净。",
+        "VM缺物理I/O只限制相应执行证据，不删除物理业务；新机器/用户/VM不是新增三个重复计分单元，实际OS/权限行为分歧才拆分。"
+      ],
+      "remaining_facts": [],
+      "affected_existing_classes": [
+        "CLEAN",
+        "UI",
+        "UPGRADE",
+        "DELIVERY"
+      ],
+      "acceptance_awarded": false
+    },
+    "upgrade_versions": {
+      "decision": "按实际格式、密钥和owner协议断点选有限代表版本，执行完整升级/退出/重启/回退副本。",
+      "status": "RULE_ADOPTED_FACTS_PENDING",
+      "rules": [
+        "版本号不同但所有writer/schema/key来源/迁移和生命周期契约相同的旧构建可等价；必须有源码/构建及真实旧样本证明，不能只因新parser接受而归并。",
+        "每个格式或密钥/guardian断点保留代表；v2/v3 raw语义、旧0644合法数据、unknown队列和真实Keychain迁移分别列条件。原始数据副本只读保留，回退用可校验副本。",
+        "缺旧App/数据时可先固定协议和所需断点类型，代表成员明确UNKNOWN，不能填当前版本代替历史版本。"
+      ],
+      "remaining_facts": [
+        {
+          "fact": "完整旧App构建、真实旧格式/Keychain来源、unknown样本及回退副本的准确版本和hash",
+          "recover_from": "保留发行包/源快照/旧迁移代码和脱敏数据，禁止访问未经授权的用户数据。"
+        }
+      ],
+      "affected_existing_classes": [
+        "UPGRADE",
+        "STORE",
+        "DELIVERY"
+      ],
+      "acceptance_awarded": false
+    },
+    "legacy_policy": {
+      "decision": "同实体共享owner必须可证明排空与交接；不参与协议旧版以closed boundary保护但不冒称兼容成功。",
+      "status": "RULE_ADOPTED_FACTS_PENDING",
+      "rules": [
+        "参与新协议或受控guardian的旧构建：证明旧工作停止、资源关闭、实际进程/子进程退休及新lease接续，不以超时/强杀伪造clean。",
+        "无可证明协议的旧版不得与新owner并持或自动接管；明确阻断并保留未知，不自动迁移原未知操作。closed-boundary安全证据与旧版正常升级兼容证据分开。",
+        "旧3.42 exit1等原始失败照旧保留；后续修正/新通过用独立cut和证据，不覆盖旧结果。"
+      ],
+      "remaining_facts": [
+        {
+          "fact": "哪些历史构建参与共享生命周期或可由guardian真实约束、各协议版本的真实交接行为",
+          "recover_from": "旧完整App/source和实际退出/锁/子进程证据；代码规则可先冻结。"
+        }
+      ],
+      "affected_existing_classes": [
+        "UPGRADE",
+        "SW",
+        "DELIVERY"
+      ],
+      "acceptance_awarded": false
+    },
+    "recovery_policy": {
+      "decision": "采纳有限、显式当前授权的重新补偿协议；旧Unknown不可自动重放，缺绑定保持Pending。",
+      "status": "RULE_ADOPTED_EXECUTION_PENDING",
+      "rules": [
+        "普通normal恢复与startup reconciliation分开。后者由真实sealed同root/双锁owner持有genuine Intent/backup，真实fresh selector保留Device，strict身份后只按当前差异向已知backup target新Prepare。",
+        "原helper用真实STATUS→STOP/Exited→DSP/双PCM→RELEASE和checked close/pin release收敛；必要新reboot后受控successor strictIMEI/USB/voice与fresh helper/DSP观察，所有句柄与锁确认关闭后才独立receipt及Gate激活。",
+        "每个write新durable Prepare/Outcome/readback；NotSubmitted、SubmittedUnknown、Ack及关闭债分开。完整strict记录但sync曾Err只能经新fresh pinnedFD原raw/fullstamp/placement和真实file/parents/root同步ACK后恢复coverage；短/坏记录不能按同规则当已提交。",
+        "无充分原绑定/不支持身份或目标voice未知不得重建anchor或接受调用者bool；operator后续选择必须是新可审的具体目标/意图和实体核实，不能抹去旧Unknown。",
+        "定义允许安全恢复的有限policy不证明全部历史no-AT/no-serial/不断线正常能力已覆盖；物理兼容成员仍按physical_support追踪。"
+      ],
+      "remaining_facts": [],
+      "affected_existing_classes": [
+        "SW",
+        "STORE",
+        "USB",
+        "SERIAL",
+        "MODULEVOICE",
+        "UPGRADE"
+      ],
+      "acceptance_awarded": false
+    }
+  },
+  "P0_normal_rules": {
+    "P0-2.retained-inventory": {
+      "existing_leaf_id": "P0-2.retained-inventory",
+      "title": "完整保留功能清单",
+      "normal_required_condition_unchanged": "每个有效UI、API、非HTTP及后台能力映射稳定需求ID；删除项有授权依据。",
+      "proposed_decidable_normal_rule": "原UI/API/非HTTP/后台所有入口映射既有需求ID和当前owner/结果；fax唯一授权删除，任何其他删改有原始授权或有意修正依据。",
+      "definition_or_fact_classification": "工程规则可定义；旧完整范围仍需历史依据",
+      "boundary": "294接口/54HEAD、131Swift调用、56runtime、20primary-resolution是覆盖索引，不能单独证明旧版完整功能集合。",
+      "axes_unchanged": {
+        "normal": "REQUIRED",
+        "cancel": "NOT_APPLICABLE",
+        "partial": "NOT_APPLICABLE",
+        "durable": "NOT_APPLICABLE",
+        "release": "NOT_APPLICABLE"
+      },
+      "acceptance_status_unchanged": "NOT_REVIEWED",
+      "no_new_leaf_or_scored_subtest": true
+    },
+    "P0-2.owner-map": {
+      "existing_leaf_id": "P0-2.owner-map",
+      "title": "生产者writer退出责任",
+      "normal_required_condition_unchanged": "调用者、timer、producer、writer和退出钩子有唯一实际owner和数据格式映射，无孤立入口。",
+      "proposed_decidable_normal_rule": "有限映射入口/触发→concrete producer→实体owner或存储writer→reader→stop/exit路径；每条有源码位置/hash和事实边界，不留孤儿或双owner。",
+      "definition_or_fact_classification": "工程规则可定义",
+      "boundary": "Close ACK+丢owner与真实JoinHandle join分开标注；该P0书面leaf不新增生产writer故障轴。",
+      "axes_unchanged": {
+        "normal": "REQUIRED",
+        "cancel": "NOT_APPLICABLE",
+        "partial": "NOT_APPLICABLE",
+        "durable": "NOT_APPLICABLE",
+        "release": "NOT_APPLICABLE"
+      },
+      "acceptance_status_unchanged": "NOT_REVIEWED",
+      "no_new_leaf_or_scored_subtest": true
+    },
+    "P0-3.goldens": {
+      "existing_leaf_id": "P0-3.goldens",
+      "title": "行为与数据黄金轨迹",
+      "normal_required_condition_unchanged": "正常/错误、日期/null/分页/取消及HTTP/APDU/协议/磁盘格式有脱敏可核基线。",
+      "proposed_decidable_normal_rule": "每个有限族保留脱敏原始输入输出/raw格式、来源版本hash、期望比较器及允许规范化清单，正常/错误/null/日期/分页/取消按实际适用语义覆盖。",
+      "definition_or_fact_classification": "工程规则可定义；旧轨迹可得性逐族核实",
+      "boundary": "黄金轨迹来源真实旧实现或权威协议；新实现自生成只能作新fixture不能自行证明旧行为；year1 skip仍未覆盖。",
+      "axes_unchanged": {
+        "normal": "REQUIRED",
+        "cancel": "NOT_APPLICABLE",
+        "partial": "NOT_APPLICABLE",
+        "durable": "NOT_APPLICABLE",
+        "release": "NOT_APPLICABLE"
+      },
+      "acceptance_status_unchanged": "NOT_REVIEWED",
+      "no_new_leaf_or_scored_subtest": true
+    },
+    "P0-3.intentional-fixes": {
+      "existing_leaf_id": "P0-3.intentional-fixes",
+      "title": "有意修正旧缺陷",
+      "normal_required_condition_unchanged": "改变旧行为逐项记录触发条件、前后结果、兼容影响与依据，不机械复制旧错误。",
+      "proposed_decidable_normal_rule": "每个有意行为改变一行：旧触发/旧结果/新结果/原因/兼容影响/迁移回退/对应源码和证据；真实产品改变与test/driver schema修正分栏。",
+      "definition_or_fact_classification": "工程规则可定义",
+      "boundary": "不要求复制旧缺陷；完整记录syncErr后fresh真实resync与短记录Pending不同；无效ABI probe不作OS因果证据。",
+      "axes_unchanged": {
+        "normal": "REQUIRED",
+        "cancel": "NOT_APPLICABLE",
+        "partial": "NOT_APPLICABLE",
+        "durable": "NOT_APPLICABLE",
+        "release": "NOT_APPLICABLE"
+      },
+      "acceptance_status_unchanged": "NOT_REVIEWED",
+      "no_new_leaf_or_scored_subtest": true
+    },
+    "P0-4.measurement-baseline": {
+      "existing_leaf_id": "P0-4.measurement-baseline",
+      "title": "受控测量基线",
+      "normal_required_condition_unchanged": "固定机器/OS/Release、完整进程组、设备/Profile、代理网络、数据量及脚本原始样本。",
+      "proposed_decidable_normal_rule": "固定performance_budget协议的全部环境与进程组、重复样本、noise、分位数及脚本/源binary hashes；旧新条件匹配，raw样本可重算。",
+      "definition_or_fact_classification": "协议可定义；历史完整App与原始样本待得",
+      "boundary": "daemon tests/build时长不能替代完整App基线；不为P0新增取消/耐久/释放要求。",
+      "axes_unchanged": {
+        "normal": "REQUIRED",
+        "cancel": "NOT_APPLICABLE",
+        "partial": "NOT_APPLICABLE",
+        "durable": "NOT_APPLICABLE",
+        "release": "NOT_APPLICABLE"
+      },
+      "acceptance_status_unchanged": "NOT_REVIEWED",
+      "no_new_leaf_or_scored_subtest": true
+    },
+    "P0-1.current-source-baseline": {
+      "existing_leaf_id": "P0-1.current-source-baseline",
+      "title": "当前源码恢复基线",
+      "normal_required_condition_unchanged": "固定当前完整源码清单及来源身份，在隔离位置恢复全部文件并逐项核对原始字节、mode、数量和完整源码身份；每个待验版本须有与该版本匹配的恢复收据。",
+      "adopted_decidable_normal_rule": "固定当前完整源码清单及来源身份，在隔离位置恢复全部文件并逐项核对原始字节、mode、数量和完整源码身份；每个待验版本须有与该版本匹配的恢复收据。",
+      "definition_or_fact_classification": "Current verifiable baseline scope adopted; target-version receipt and formal functional adjudication pending.",
+      "boundary": "当前源码恢复不能追认真实切换前 dirty/untracked 工作区、2.80 源码或旧版等价性。",
+      "axes_unchanged": {
+        "normal": "REQUIRED",
+        "cancel": "NOT_APPLICABLE",
+        "partial": "NOT_APPLICABLE",
+        "durable": "NOT_APPLICABLE",
+        "release": "NOT_APPLICABLE"
+      },
+      "acceptance_status_unchanged": "NOT_REVIEWED",
+      "no_new_leaf_or_scored_subtest": true,
+      "activation_decision_ref": {
+        "path": "docs/optimization/all-rust/p0-1-current-baseline-activation-2026-10-23.json",
+        "sha256": "93275630888c7c827b1672cf5678ad1e0c5257adfda2d8fd20cbd89778df4ee4"
+      }
+    },
+    "P0-1.current-build-baseline": {
+      "existing_leaf_id": "P0-1.current-build-baseline",
+      "title": "当前同源构建与交付基线",
+      "normal_required_condition_unchanged": "从固定当前源码身份完成可复验的隔离冷构建及软件门禁，审定依赖闭包、App与后端版本、发布清单和产物身份均同源；交付目标版本另核相应收据。洁净安装及设备业务须另行验收。",
+      "adopted_decidable_normal_rule": "从固定当前源码身份完成可复验的隔离冷构建及软件门禁，审定依赖闭包、App与后端版本、发布清单和产物身份均同源；交付目标版本另核相应收据。洁净安装及设备业务须另行验收。",
+      "definition_or_fact_classification": "Current verifiable baseline scope adopted; target-version receipt and formal functional adjudication pending.",
+      "boundary": "同机隔离冷构建不证明洁净安装、2.80 升级、实体设备、运营商或旧版回滚。",
+      "axes_unchanged": {
+        "normal": "REQUIRED",
+        "cancel": "NOT_APPLICABLE",
+        "partial": "NOT_APPLICABLE",
+        "durable": "NOT_APPLICABLE",
+        "release": "NOT_APPLICABLE"
+      },
+      "acceptance_status_unchanged": "NOT_REVIEWED",
+      "no_new_leaf_or_scored_subtest": true,
+      "activation_decision_ref": {
+        "path": "docs/optimization/all-rust/p0-1-current-baseline-activation-2026-10-23.json",
+        "sha256": "93275630888c7c827b1672cf5678ad1e0c5257adfda2d8fd20cbd89778df4ee4"
+      }
+    }
+  },
+  "new_scored_instances": 0,
+  "new_acceptance_passes": 0,
+  "overall_product_complete": false,
+  "user_scope_update_history": [
+    {
+      "iteration": 614,
+      "source": "Latest direct user instruction: 9eSIM 6982 cannot be handled and does not need further processing.",
+      "scenario_class_id": "NINE_ESIM",
+      "excluded_member": "Partner-only encrypted eSIM profile download path returning status 6982.",
+      "retained_members": [
+        "B0/B1 Bluetooth card authentication including password/BF71",
+        "BLE connection",
+        "EID/profile reading",
+        "profile switching",
+        "supported normal authenticated downloads not using the excluded 6982 path"
+      ],
+      "security_boundary": "Do not bypass authentication, claim 6982 is fixed, or infer success from the returned error.",
+      "accounting_effect": "One explicitly excluded path only; no requirement leaf, general LPA flow, or other 9eSIM members are removed. Overall denominator remains unfrozen.",
+      "status": "HISTORICAL_SUPERSEDED",
+      "superseded_by_iteration": 652
+    },
+    {
+      "iteration": 615,
+      "status": "HISTORICAL_SUPERSEDED",
+      "superseded_by_iteration": 652,
+      "scenario_class_id": "NINE_ESIM",
+      "source": "Iteration 615 encoded the then-current i614 exclusion in a retained-member regression. That exclusion is historical after the later direct authentication/authorized-download compatibility request.",
+      "historical_record_ref": "iteration-615-scope-and-shutdown-review.md",
+      "original_reports_rewritten": false
+    },
+    {
+      "iteration": 652,
+      "status": "CURRENT_UNRESOLVED",
+      "scenario_class_id": "NINE_ESIM",
+      "source": "Later direct user instruction in this conversation, after the earlier no-further-6982 instruction. User cause attribution remains an unverified hypothesis, not a technical result.",
+      "direct_user_quote": "9eSIM `6982`本质问题就是因为没有加密认证，你给我再次检查一遍，确保B0 B1蓝牙卡密码认证已加入，B0加密认证已加入。生成dmg文件",
+      "supersedes_iterations": [
+        614,
+        615
+      ],
+      "current_user_scope_decision": {
+        "iteration": 652,
+        "status": "REOPENED_DISPUTED_SCOPE_NOT_NA_NOT_PASS",
+        "requested_authentication": [
+          "B0/B1 password",
+          "B0 BF71"
+        ],
+        "authorized_normal_download_assessment": "IN_SCOPE_UNRESOLVED",
+        "6982_diagnosis": "IN_SCOPE_UNRESOLVED",
+        "protected_download_applicability": "UNRESOLVED_REQUIRES_AUTHORIZED_CAPABILITY_EVIDENCE",
+        "earlier_exclusion_current": false,
+        "authentication_bypass_allowed": false,
+        "6982_fixed_claimed": false,
+        "functional_acceptance_awarded": false
+      },
+      "security_boundary": "Authentication and normal authorized download compatibility, including 6982 diagnosis, remain unresolved and in scope. No authentication bypass, no protected-download support or success claim.",
+      "accounting_effect": "Existing requirements retained; no new leaf, scored instance, functional PASS or frozen denominator.",
+      "original_reports_rewritten": false
+    }
+  ],
+  "historical_P0_normal_rules": {
+    "historical_i677_ledger_sha256": "e72a76fb9f8deca8916fccd25ed7d4aab4bcb9572175dd9be1bcbaf4115e673b",
+    "archived_rules": {
+      "P0-1.working-baseline": {
+        "existing_leaf_id": "P0-1.working-baseline",
+        "title": "实际工作区切换基线",
+        "normal_required_condition_unchanged": "可校验恢复真实切换前工作区及未提交内容，不以Git HEAD替代。",
+        "proposed_decidable_normal_rule": "完整实际切换前工作区payload+逐文件raw/hash/mode/未提交和untracked清单+来源链+隔离恢复说明，恢复树与manifest逐项相等。",
+        "definition_or_fact_classification": "历史事实缺失",
+        "boundary": "Git HEAD/计数/当前595源不能替代旧dirty工作区。",
+        "axes_unchanged": {
+          "normal": "REQUIRED",
+          "cancel": "NOT_APPLICABLE",
+          "partial": "NOT_APPLICABLE",
+          "durable": "NOT_APPLICABLE",
+          "release": "NOT_APPLICABLE"
+        },
+        "acceptance_status_unchanged": "NOT_REVIEWED",
+        "no_new_leaf_or_scored_subtest": true
+      },
+      "P0-1.baseline-280": {
+        "existing_leaf_id": "P0-1.baseline-280",
+        "title": "2.80及交付前快照",
+        "normal_required_condition_unchanged": "2.80和实际切换前快照有来源、完整性校验和恢复说明；缺失保持未验。",
+        "proposed_decidable_normal_rule": "2.80完整payload+manifest；或2.79真实完整payload与所有有序exact-byte/mode/untracked差分可确定重建2.80，交付前快照另核来源与恢复。",
+        "definition_or_fact_classification": "历史事实缺失",
+        "boundary": "2.63种子与2.79前硬化及2.80最终各有角色；不得重命名当前版本填空。",
+        "axes_unchanged": {
+          "normal": "REQUIRED",
+          "cancel": "NOT_APPLICABLE",
+          "partial": "NOT_APPLICABLE",
+          "durable": "NOT_APPLICABLE",
+          "release": "NOT_APPLICABLE"
+        },
+        "acceptance_status_unchanged": "NOT_REVIEWED",
+        "no_new_leaf_or_scored_subtest": true
+      }
+    },
+    "status": "HISTORICAL_UNVERIFIABLE_NOT_ACTIVE_NO_PASS"
+  },
+  "P0_scope_activation": {
+    "status": "ACTIVE_CURRENT_VERIFIABLE_BASELINE_NO_FUNCTIONAL_ACCEPTANCE",
+    "decision_ref": {
+      "path": "docs/optimization/all-rust/p0-1-current-baseline-activation-2026-10-23.json",
+      "sha256": "93275630888c7c827b1672cf5678ad1e0c5257adfda2d8fd20cbd89778df4ee4"
+    },
+    "old_leaf_ids": [
+      "P0-1.working-baseline",
+      "P0-1.baseline-280"
+    ],
+    "new_leaf_ids": [
+      "P0-1.current-source-baseline",
+      "P0-1.current-build-baseline"
+    ],
+    "catalog_leaves": 115,
+    "overall_denominator_frozen": false
+  }
+}

@@ -1,0 +1,10 @@
+version: 2
+plmn: "310110"
+profiles:
+    - id: apple_ite_gu
+      path: profiles/ite_gu.yaml
+      generic: true
+      selectors:
+        - raw: "310110"
+          carrier_name: IT&E
+          iso: GU

@@ -1,0 +1,32 @@
+{
+  "source": "backend/pkg/smscodec/wbxml_omacp_test.go",
+  "source_sha256": "f90ead1b6d6ab6978a341fc1a82f1ed05cc509cf94cf274fdbde685561d4214c",
+  "provenance": "Synthetic Go test literal vectors transcribed before Go retirement; no Rust-generated expected outputs.",
+  "files": [
+    {
+      "name": "provisioning.wbxml",
+      "bytes": 94,
+      "sha256": "6c9c1da79fad58879d007ee2cf4c30ebef5bf317c645947588a8ecb4f3ef77c0"
+    },
+    {
+      "name": "short-wsp.bin",
+      "bytes": 96,
+      "sha256": "eb7f816cae033baa146444f02a6aeddb71bf40a1d74a16412c540dd5f9c70c16"
+    },
+    {
+      "name": "long-wsp.bin",
+      "bytes": 118,
+      "sha256": "817d94a4d63be07f8369c5d64b06938c9973ae994694b2bc1e5df7e4b15465b5"
+    },
+    {
+      "name": "encrypted.bin",
+      "bytes": 74,
+      "sha256": "bf0c9af0773bc53fb6ebe22387627fb3d07cceb50a29018d4f443535695acdde"
+    },
+    {
+      "name": "attribute-value-orphan.wbxml",
+      "bytes": 26,
+      "sha256": "c7111c4b2a9cf35675a2a3d451d6be247c3c3de6dfa81c73cb0a242678c64f12"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+version: 3
+kind: carrier_bundle
+id: apple_vodafone_travel
+bundle: Vodafone_Travel.bundle
+supported_plmns:
+    - "20404"
+plmn_overrides:
+    "20404":
+        apns:
+            - apn: live.vodafone.com
+              username: vodafone
+              password: vodafone
+              type_mask: 53

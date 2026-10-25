@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_unitel_ao
+bundle: Unitel_ao.bundle
+supported_plmns:
+    - "63102"
+plmn_overrides:
+    "63102":
+        apns:
+            - apn: internet.unitel.co.ao
+              type_mask: 49
+            - apn: mms.unitel.co.ao
+              type_mask: 4
+            - apn: internet.unitel.co.ao
+              type_mask: 48

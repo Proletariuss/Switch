@@ -1,0 +1,28 @@
+version: 3
+kind: carrier_bundle
+id: apple_kyivstar_ua
+bundle: Kyivstar_ua.bundle
+supported_plmns:
+    - "25503"
+plmn_overrides:
+    "25503":
+        apns:
+            - apn: internet
+              type_mask: 49
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4
+            - apn: ims
+              type_mask: 131072
+        ims:
+            apn: ims
+            register:
+                use_ipsec: true
+                include_cellular_network_info: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: false
+                early_media_needs_header: false
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true

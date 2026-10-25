@@ -1,0 +1,13 @@
+version: 3
+kind: carrier_bundle
+id: apple_bhartiairtel_td
+bundle: BhartiAirtel_td.bundle
+supported_plmns:
+    - "62201"
+plmn_overrides:
+    "62201":
+        apns:
+            - apn: internet.td.airtel.com
+              type_mask: 49
+            - apn: internet.td.airtel.com
+              type_mask: 48

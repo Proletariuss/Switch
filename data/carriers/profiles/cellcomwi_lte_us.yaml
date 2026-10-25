@@ -1,0 +1,125 @@
+version: 3
+kind: carrier_bundle
+id: apple_cellcomwi_lte_us
+bundle: CellcomWI_LTE_US.bundle
+supported_plmns:
+    - "311840"
+plmn_overrides:
+    "311840":
+        apns:
+            - apn: ccinternet
+              type_mask: 1
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+            - apn: ccadmin
+              type_mask: 33280
+              tech_type_mask: 33280
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+              support_switch_over: true
+            - apn: ccapps
+              type_mask: 6
+              tech_type_mask: 6
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+            - apn: cchotspot
+              type_mask: 16
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+            - apn: xcap
+              type_mask: 1048576
+              tech_type_mask: 1048576
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+            - apn: sos
+              type_mask: 262144
+              tech_type_mask: 262144
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 4205785
+        e911:
+            over_itech_supported: false
+            emergency_urns:
+                default: urn:service:sos
+        entitlement:
+            entitlement_url: https://deg.ims.cellcom.com/ium-OEMInterface/servlet/IUMServlet
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            domain: ims.cellcom.com
+            impi_format: imsi@carrierDomain
+            impu_format: mdn@carrierDomain
+            epdg:
+                address: epdg.epc.mnc840.mcc311.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 16384
+                      name: AssignedPCSCFIPv4
+                      type: v4
+                    - identifier: 16386
+                      name: AssignedPCSCFIPv6
+                      type: v6
+            ike:
+                proposals:
+                    - encryption:
+                        - aes256
+                      integrity:
+                        - sha512
+                      prf:
+                        - sha512
+                      dh_groups:
+                        - 15
+                      lifetime_seconds: 86400
+                      authentication_method: None
+                      eap_method: EAP-AKA
+                dpd:
+                    enabled: false
+                    interval_seconds: 600
+                    max_retries: 4
+                    retry_interval_seconds: 10
+                local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+                local_identifier_type: IDUserFQDN
+                remote_identifier_type: IDFQDN
+                validate_remote_certificate: false
+            register:
+                include_cellular_network_info: true
+            signaling:
+                max_udp_message_size: 1200
+                preconditions: unsupported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                        - 4XX
+                        - 5XX
+                        - 6XX
+                require_preconditions_when_mandatory: false
+                contact:
+                    always_add_sip_instance: true
+                additional_headers:
+                    - selector: INVITE[911,wifi]
+                      headers:
+                        - 'Supported: geolocation'
+                sip_timers:
+                    D: 128000
+                    F: 30000
+                    InviteResponseTimeout: 10000
+                    T1: 2000
+                    T2: 16000
+                    T4: 17000
+            media:
+                rtp_inactivity_seconds: 20
+                rtcp_inactivity_seconds: 20
+                rtcp_interval_seconds: 5
+            volte:
+                enable_volte_by_default: true
+        roaming:
+            wifi_calling_allowed: true

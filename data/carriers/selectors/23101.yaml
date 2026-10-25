@@ -1,0 +1,10 @@
+version: 2
+plmn: "23101"
+profiles:
+    - id: apple_orange_sk
+      path: profiles/orange_sk.yaml
+      generic: true
+      selectors:
+        - raw: "23101"
+          carrier_name: Orange Slovensko
+          iso: SK

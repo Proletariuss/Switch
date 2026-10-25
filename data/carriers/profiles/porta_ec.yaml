@@ -1,0 +1,101 @@
+version: 3
+kind: carrier_bundle
+id: apple_porta_ec
+bundle: Porta_ec.bundle
+supported_plmns:
+    - "74001"
+plmn_overrides:
+    "74001":
+        apns:
+            - apn: internet.claro.com.ec
+              type_mask: 1081393
+            - apn: vvm.porta.com.ec
+              type_mask: 2
+            - apn: mms.claro.com.ec
+              username: portamms
+              password: portamms2003
+              type_mask: 4
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv4v6
+              support_switch_over: true
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 1041
+        e911:
+            over_itech_supported: false
+            wifi_calling_without_entitlement: true
+        entitlement:
+            entitlement_url: https://aes.mnc001.mcc740.pub.3gppnetwork.org:44307/entitlement/
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            epdg:
+                address: epdg.epc.mnc001.mcc740.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 16389
+                      name: AssignedPCSCFIPv4
+                      type: v4
+                    - identifier: 16390
+                      name: AssignedPCSCFIPv6
+                      type: v6
+            ike:
+                proposals:
+                    - encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      prf:
+                        - sha256
+                      dh_groups:
+                        - 14
+                      lifetime_seconds: 86400
+                      authentication_method: None
+                      eap_method: EAP-AKA
+                dpd:
+                    enabled: false
+                    interval_seconds: 600
+                    max_retries: 4
+                    retry_interval_seconds: 10
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes256
+                          integrity:
+                            - sha256
+                          rekey_pfs_group: 14
+                          esn: auto
+                          install_policies: true
+                          lifetime_seconds: 86400
+                    replay_window_size: 12
+                local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                        - 4XX
+                        - 5XX
+                        - 6XX
+                require_preconditions_when_mandatory: false
+                contact:
+                    always_add_sip_instance: true
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true
+        roaming:
+            wifi_calling_allowed: true

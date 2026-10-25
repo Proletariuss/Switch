@@ -1,0 +1,16 @@
+# Iteration 462：carrier profile registry refresh
+
+Switch's embedded carrier registry is refreshed from the latest checked `iniwex5/ios-carrier-profiles` main revision, `cdba73e551810681f16b4cce0693c70e9e216c37`. The Rust snapshot and Go compatibility embed now share **685 profiles / 855 selectors**. A SHA-256 manifest locks all 1,544 source files; each hash and the local profile/selector copies were verified.
+
+Clarivate_IOS was inspected read-only. Its carrier embed still declares revision `d46fc4ef5a3e4680443adf14748abd2a28361cd2` and has 683 profiles / 853 selectors. Its current local changes do not contain this upstream registry delta. The latest upstream adds Lebara UK (234/87) and DITO Philippines (515/66), Apple APN data, and selector `iso` metadata. Selector matching criteria/targets were unchanged for all 853 old selector files; only metadata changed. The `ims` trees of all 683 existing profiles are structurally unchanged, so CTExcel, Vodafone UK, giffgaff, Loop, CMLink and Three UK VoWiFi parameters did not change in this refresh.
+
+Go and Rust have explicit offline selection/ePDG regression coverage for the two new profiles. Rust's full synthetic carrier replay covers 2,726 identities and the cross-language parity test now derives expected case count from the current embedded selectors rather than freezing an obsolete literal. The boundary fixture reflects DITO's newly published 515/66 match while retaining a negative case for an incorrectly widened 515/066 MNC.
+
+Validation: `scripts/test-migration-gates.sh` passed. Rust workspace: 1,466 passed, 0 failed, 3 ignored; Go full test/vet, Swift BLE manager 38 event-sequence groups, 2,726 carrier replay, USB/radio/HTTP and IMS/USSD/call/SMS parity passed. Migration contract diff passed with 354 method/path contracts (293 Rust, 61 Go), 127 Swift call sites, and 379 review scopes. `git diff --check` passed. Logs: [migration gates](../../build/reports/iteration-462-migration-gates.log), SHA-256 `11d03e6a91803ce9c7b2f974b827d845a6a6faf41f3884b06ff5a5bf9691817d`; [Go exit audit](../../build/reports/iteration-462-go-exit-audit.log), SHA-256 `697347b90d90f0261b3f1ab777e2296c557ff8b0c10a985e869a2442d48819a3`.
+
+This is profile data synchronization and selector coverage; it does not prove live operator service. Current Rust IKE still fails closed for proposal requirements it does not implement, including MODP group 2 on DITO and remote-certificate validation on published certificate-authenticated profiles. The imported Apple APN provisioning fields are retained but are not consumed by the macOS VoWiFi runtime. No real card, ePDG, IMS registration, SMS, call, or roaming test was run.
+
+No new protocol owner moved to Rust, so the weighted project progress remains **18.045/47.5 = 37.99%**; the structural exit audit remains blocked by six Go build/runtime/source categories and 266 production Go files. A DMG was subsequently generated at the user’s explicit request; release details are recorded below.
+
+
+Release artifact: [Switch-3.15-macOS27-iteration462.dmg](../dist/Switch-3.15-macOS27-iteration462.dmg), arm64, 53,255,675 bytes. `hdiutil verify` and strict app signature verification passed. SHA-256: `1627771e1cac79340e7b340d5210d3a03d7b99b484bc9a1759114285aa7fcde5`. The local archive is byte-identical. This build is ad-hoc signed and not notarized.

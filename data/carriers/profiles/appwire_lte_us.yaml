@@ -1,0 +1,143 @@
+version: 3
+kind: carrier_bundle
+id: apple_appwire_lte_us
+bundle: AppWire_LTE_US.bundle
+supported_plmns:
+    - "312130"
+plmn_overrides:
+    "312130":
+        apns:
+            - apn: 4g.myawi.com
+              type_mask: 33335
+              allowed_ip_stack: ipv4
+              roaming_ip_stack: ipv4
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131078
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+              support_switch_over: true
+            - apn: hos.myawi.com
+              type_mask: 1048576
+              tech_type_mask: 1048576
+              allowed_ip_stack: ipv4
+              roaming_ip_stack: ipv4
+            - apn: sos
+              type_mask: 262144
+              tech_type_mask: 262144
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 4195513
+        e911:
+            over_itech_supported: false
+            emergency_urns:
+                default: urn:service:sos
+        entitlement:
+            entitlement_url: https://aes.ekn.com
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            domain: ims.mnc130.mcc312.3gppnetwork.org
+            impi_format: imsi@carrierDomain
+            impu_format: imsi@carrierDomain
+            epdg:
+                address: epdg.myawi.com
+                configuration_attributes:
+                    - identifier: 16384
+                      name: AssignedPCSCFIPv4
+                      type: v4
+            ike:
+                proposals:
+                    - encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      prf:
+                        - sha256
+                      dh_groups:
+                        - 14
+                      lifetime_seconds: 80000
+                      authentication_method: None
+                      eap_method: EAP-AKA
+                ipsec_mtu: 1150
+                dpd:
+                    enabled: false
+                    interval_seconds: 600
+                    max_retries: 4
+                    retry_interval_seconds: 10
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes256
+                          integrity:
+                            - sha256
+                          rekey_pfs_group: 14
+                          esn: auto
+                          install_policies: true
+                          lifetime_seconds: 86400
+                    replay_window_size: 12
+                local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+                local_identifier_type: IDUserFQDN
+                remote_identifier_type: IDFQDN
+                validate_remote_certificate: false
+            register:
+                use_ipsec: true
+                include_cellular_network_info: true
+            signaling:
+                max_udp_message_size: 1200
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                        - "400"
+                        - "401"
+                        - "402"
+                        - "405"
+                        - "406"
+                        - "407"
+                        - "408"
+                        - "412"
+                        - "413"
+                        - "414"
+                        - "415"
+                        - "416"
+                        - "417"
+                        - "420"
+                        - "421"
+                        - "423"
+                        - "424"
+                        - "428"
+                        - "429"
+                        - "481"
+                        - "482"
+                        - "483"
+                        - "485"
+                        - "487"
+                        - "488"
+                        - "489"
+                        - "491"
+                        - "493"
+                        - 5XX
+                        - 6XX
+                require_preconditions_when_mandatory: false
+                additional_headers:
+                    - selector: INVITE[wifi,911]
+                      headers:
+                        - 'P-Emergency-Info: IEEE-802.11b;i-wlan-node-id=${DEVICE_REF_ID}'
+                        - 'Supported: geolocation'
+                sip_timers:
+                    InviteResponseTimeout: 6000
+            media:
+                rtp_inactivity_seconds: 20
+                rtcp_inactivity_seconds: 20
+                rtcp_interval_seconds: 5
+            volte:
+                enable_volte_by_default: true
+        roaming:
+            wifi_calling_allowed: true

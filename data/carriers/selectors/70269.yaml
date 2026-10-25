@@ -1,0 +1,10 @@
+version: 2
+plmn: "70269"
+profiles:
+    - id: apple_smart_bz
+      path: profiles/smart_bz.yaml
+      generic: true
+      selectors:
+        - raw: "70269"
+          carrier_name: Smart
+          iso: BZ

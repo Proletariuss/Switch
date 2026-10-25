@@ -1,0 +1,42 @@
+version: 3
+kind: carrier_bundle
+id: apple_telenor_pk
+bundle: Telenor_pk.bundle
+supported_plmns:
+    - "41006"
+plmn_overrides:
+    "41006":
+        apns:
+            - apn: internet
+              username: Telenor
+              password: Telenor
+              type_mask: 49
+            - apn: mms
+              username: telenor
+              password: telenor
+              type_mask: 4
+            - apn: ims
+              type_mask: 131072
+        ims:
+            apn: ims
+            signaling:
+                preconditions: supported
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - "403"
+                        - "500"
+                        - "503"
+                        - "504"
+                require_preconditions_when_mandatory: false
+                contact:
+                    always_add_sip_instance: true
+                    additional_contact_params:
+                        - selector: INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                            - +g.3gpp.mid-call
+            volte:
+                enable_volte_by_default: true

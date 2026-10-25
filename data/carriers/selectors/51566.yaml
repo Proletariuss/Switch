@@ -1,0 +1,10 @@
+version: 2
+plmn: "51566"
+profiles:
+    - id: apple_dito_ph
+      path: profiles/dito_ph.yaml
+      generic: true
+      selectors:
+        - raw: "51566"
+          carrier_name: DITO
+          iso: PH

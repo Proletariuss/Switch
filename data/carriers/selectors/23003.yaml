@@ -1,0 +1,10 @@
+version: 2
+plmn: "23003"
+profiles:
+    - id: apple_vodafone_cz
+      path: profiles/vodafone_cz.yaml
+      generic: true
+      selectors:
+        - raw: "23003"
+          carrier_name: VF CZ
+          iso: CZ

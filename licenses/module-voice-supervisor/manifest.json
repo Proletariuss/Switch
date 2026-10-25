@@ -1,0 +1,104 @@
+{
+  "schema": 1,
+  "component": "switch-voice-supervisor.armv7",
+  "packages": [
+    {
+      "package": "libc-0.2.190",
+      "source": "Cargo.lock-pinned crates.io archive in offline cargo cache",
+      "license_files": {
+        "LICENSE-APACHE": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+        "LICENSE-MIT": "123a331b5dbf04c30097fa43b8f858bc85df671fe776de498d01f3d6b7c1f69e"
+      },
+      "role": "ARM runtime closure"
+    },
+    {
+      "package": "cfg-if-1.0.5",
+      "source": "Cargo.lock-pinned crates.io archive in offline cargo cache",
+      "license_files": {
+        "LICENSE-APACHE": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+        "LICENSE-MIT": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397"
+      },
+      "role": "ARM runtime closure"
+    },
+    {
+      "package": "typenum-1.20.1",
+      "source": "Cargo.lock-pinned crates.io archive in offline cargo cache",
+      "license_files": {
+        "LICENSE-APACHE": "516b24e051bf5630880ebbd55c40a25ce9552ebaf8970a53e8976eb70e522406",
+        "LICENSE": "db11fec9946737df39ca3898d9cd8c10ec6f6c3a884a6802b0ad0b81b4e8f23a",
+        "LICENSE-MIT": "a825bd853ab71619a4923d7b4311221427848070ff44d990da39b0b274c1683f"
+      },
+      "role": "ARM runtime closure"
+    },
+    {
+      "package": "generic-array-0.14.7",
+      "source": "Cargo.lock-pinned crates.io archive in offline cargo cache",
+      "license_files": {
+        "LICENSE": "c09aae9d3c77b531f56351a9947bc7446511d6b025b3255312d3e3442a9a7583"
+      },
+      "role": "ARM runtime closure"
+    },
+    {
+      "package": "crypto-common-0.1.7",
+      "source": "Cargo.lock-pinned crates.io archive in offline cargo cache",
+      "license_files": {
+        "LICENSE-APACHE": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+        "LICENSE-MIT": "3521672491a3479422d5fe1aca6645dd2984090f85da6e5205abfb18fb7a6897"
+      },
+      "role": "ARM runtime closure"
+    },
+    {
+      "package": "block-buffer-0.10.4",
+      "source": "Cargo.lock-pinned crates.io archive in offline cargo cache",
+      "license_files": {
+        "LICENSE-APACHE": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+        "LICENSE-MIT": "d5c22aa3118d240e877ad41c5d9fa232f9c77d757d4aac0c2f943afc0a95e0ef"
+      },
+      "role": "ARM runtime closure"
+    },
+    {
+      "package": "digest-0.10.7",
+      "source": "Cargo.lock-pinned crates.io archive in offline cargo cache",
+      "license_files": {
+        "LICENSE-APACHE": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+        "LICENSE-MIT": "9e0dfd2dd4173a530e238cb6adb37aa78c34c6bc7444e0e10c1ab5d8881f63ba"
+      },
+      "role": "ARM runtime closure"
+    },
+    {
+      "package": "subtle-2.6.1",
+      "source": "Cargo.lock-pinned crates.io archive in offline cargo cache",
+      "license_files": {
+        "LICENSE": "d1fc1bc0d155df60b2e7705b6b2ae02a05c96f948e1cec6e2fb86360b09f346b"
+      },
+      "role": "ARM runtime closure"
+    },
+    {
+      "package": "hmac-0.12.1",
+      "source": "Cargo.lock-pinned crates.io archive in offline cargo cache",
+      "license_files": {
+        "LICENSE-APACHE": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+        "LICENSE-MIT": "9e0dfd2dd4173a530e238cb6adb37aa78c34c6bc7444e0e10c1ab5d8881f63ba"
+      },
+      "role": "ARM runtime closure"
+    },
+    {
+      "package": "sha2-0.10.9",
+      "source": "Cargo.lock-pinned crates.io archive in offline cargo cache",
+      "license_files": {
+        "LICENSE-APACHE": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+        "LICENSE-MIT": "b4eb00df6e2a4d22518fcaa6a2b4646f249b3a3c9814509b22bd2091f1392ff1"
+      },
+      "role": "ARM runtime closure"
+    },
+    {
+      "package": "version_check-0.9.5",
+      "source": "Cargo.lock-pinned crates.io archive in offline cargo cache",
+      "license_files": {
+        "LICENSE-APACHE": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+        "LICENSE-MIT": "b7e650f3fce5c53249d1cdc608b54df156a97edd636cf9d23498d0cfe7aec63e"
+      },
+      "role": "build-only"
+    }
+  ]
+}

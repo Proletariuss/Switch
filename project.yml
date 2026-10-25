@@ -1,0 +1,64 @@
+name: Switch
+options:
+  bundleIdPrefix: com.proletarius
+  createIntermediateGroups: true
+  deploymentTarget:
+    macOS: "27.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "27.0"
+    CLANG_ENABLE_MODULES: YES
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "-"
+    ENABLE_APP_SANDBOX: NO
+    ENABLE_HARDENED_RUNTIME: NO
+    MARKETING_VERSION: "3.51"
+    CURRENT_PROJECT_VERSION: "351"
+    DISPLAY_NAME: "Switch"
+    OTHER_LDFLAGS: "$(inherited) -force_load \"$(PROJECT_DIR)/../build/rust-target/release/libproletarius_audio_core.a\" -framework SystemConfiguration"
+
+targets:
+  Switch:
+    type: application
+    platform: macOS
+    productName: Switch
+    preBuildScripts:
+      - name: 构建 Rust 实时音频核心
+        basedOnDependencyAnalysis: false
+        outputFiles:
+          - "$(PROJECT_DIR)/../build/rust-target/release/libproletarius_audio_core.a"
+        script: |
+          "${PROJECT_DIR}/scripts/build-audio-core.sh"
+    sources:
+      - path: app/Sources
+      - path: app/Resources/Assets.xcassets
+      - path: app/Resources/Brand
+        type: folder
+      - path: app/Resources/Ringtones
+        type: folder
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.proletarius.switch
+        PRODUCT_NAME: Switch
+        INFOPLIST_FILE: app/Resources/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        SWIFT_OPTIMIZATION_LEVEL: "-O"
+        SWIFT_COMPILATION_MODE: wholemodule
+        COMBINE_HIDPI_IMAGES: YES
+    scheme:
+      testTargets: []
+      gatherCoverageData: false
+    postBuildScripts:
+      - name: 嵌入透明车环应用图标
+        basedOnDependencyAnalysis: false
+        script: |
+          mkdir -p "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}"
+          /usr/bin/install -m 644 "${PROJECT_DIR}/app/Resources/AppIcon.icns" \
+            "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/AppIcon.icns"
+      - name: 构建并嵌入 Rust 后端
+        basedOnDependencyAnalysis: false
+        script: |
+          "${PROJECT_DIR}/scripts/build-backends.sh"

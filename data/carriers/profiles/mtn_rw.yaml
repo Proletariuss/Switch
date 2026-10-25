@@ -1,0 +1,13 @@
+version: 3
+kind: carrier_bundle
+id: apple_mtn_rw
+bundle: MTN_rw.bundle
+supported_plmns:
+    - "63510"
+plmn_overrides:
+    "63510":
+        apns:
+            - apn: internet.mtn
+              type_mask: 49
+            - apn: internet.mtn
+              type_mask: 48

@@ -1,0 +1,18 @@
+version: 3
+kind: carrier_bundle
+id: apple_saunalahti_fi
+bundle: Saunalahti_fi.bundle
+supported_plmns:
+    - "24421"
+plmn_overrides:
+    "24421":
+        apns:
+            - apn: internet.saunalahti
+              type_mask: 49
+              allowed_ip_stack: ipv4v6
+            - apn: mms.saunalahti.fi
+              type_mask: 4
+              allowed_ip_stack: ipv4
+            - apn: internet.saunalahti
+              type_mask: 48
+              allowed_ip_stack: ipv4v6

@@ -1,0 +1,10 @@
+version: 2
+plmn: "29403"
+profiles:
+    - id: apple_mobilkom_mk
+      path: profiles/mobilkom_mk.yaml
+      generic: true
+      selectors:
+        - raw: "29403"
+          carrier_name: A1 MK
+          iso: MK

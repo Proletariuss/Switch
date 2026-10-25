@@ -1,0 +1,10 @@
+version: 2
+plmn: "21920"
+profiles:
+    - id: apple_tmobile_hr
+      path: profiles/tmobile_hr.yaml
+      generic: true
+      selectors:
+        - raw: "21920"
+          carrier_name: HT HR
+          iso: HR

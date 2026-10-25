@@ -1,0 +1,39 @@
+version: 3
+kind: carrier_bundle
+id: apple_grameenphone_bd
+bundle: Grameenphone_bd.bundle
+supported_plmns:
+    - "47001"
+plmn_overrides:
+    "47001":
+        apns:
+            - apn: gpinternet
+              type_mask: 49
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv4v6
+              use_network_mtu: true
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - "380"
+                require_preconditions_when_mandatory: false
+                contact:
+                    always_add_sip_instance: true
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            media:
+                rtp_inactivity_seconds: 30

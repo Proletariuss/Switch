@@ -1,0 +1,23 @@
+[
+  {
+    "id": "go-reader-888",
+    "device": "reader",
+    "direction": "out",
+    "number": "888",
+    "answered": true,
+    "started_at": "2026-09-01T12:06:46Z",
+    "ended_at": "2026-09-01T12:07:04Z",
+    "duration": 18
+  },
+  {
+    "id": "go-module-incoming",
+    "device": "module",
+    "direction": "in",
+    "number": "+447700900123",
+    "answered": false,
+    "started_at": "2026-08-31T10:00:00Z",
+    "ended_at": "2026-08-31T10:00:05Z",
+    "duration": 5,
+    "future_field": "preserve"
+  }
+]

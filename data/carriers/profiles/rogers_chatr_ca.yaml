@@ -1,0 +1,84 @@
+version: 3
+kind: carrier_bundle
+id: apple_rogers_chatr_ca
+bundle: Rogers_chatr_ca.bundle
+supported_plmns:
+    - "302320"
+    - "302720"
+common:
+    apns:
+        - apn: chatrweb.apn
+          type_mask: 32773
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4
+          xlat464_enabled: true
+        - apn: ims
+          type_mask: 131072
+          allowed_ip_stack: ipv6
+          roaming_ip_stack: ipv6
+          support_switch_over: true
+          no_cellular_reconnect_cause_codes:
+            - cause_codes:
+                - 29
+              recovers_on_airplane_mode: true
+              num_tries_allowed: 1
+              type: 3GPP
+        - apn: chatrisp.apn
+          type_mask: 48
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4
+        - apn: netsvcs
+          type_mask: 1048576
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+        - apn: sos
+          type_mask: 262144
+          allowed_ip_stack: ipv6
+          roaming_ip_stack: ipv6
+    apple:
+        carrier_entitlements:
+            supported_entitlements: 4194305
+    entitlement:
+        entitlement_url: https://dmsa.egslb.net.rogers.com:8181/ium-OEMInterface/servlet/IUMServlet
+    ims:
+        apn: ims
+        ip_stack: ipv6
+        media:
+            rtcp_interval_seconds: 5
+            rtp_inactivity_seconds: 30
+        register:
+            include_cellular_network_info: true
+            use_ipsec: true
+        signaling:
+            additional_headers:
+                - selector: INVITE[wifi,911]
+                  headers:
+                    - 'Priority: emergency'
+            contact:
+                additional_contact_params:
+                    - selector: INVITE[911]
+                      params:
+                        - sos
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                always_add_sip_instance: true
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - "380"
+                    - "414"
+                    - "499"
+                    - "606"
+            early_media_needs_header: true
+            max_udp_message_size: 1200
+            preconditions: supported
+            require_preconditions_when_mandatory: false
+            require_qos_before_ringing: true
+            sip_timers:
+                InviteResponseTimeout: 5000
+            support_p_early_media: true
+        volte:
+            enable_volte_by_default: true

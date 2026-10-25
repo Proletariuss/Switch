@@ -1,0 +1,13 @@
+version: 2
+plmn: "22876"
+profiles:
+    - id: apple_truphone_us
+      path: profiles/truphone_us.yaml
+      selectors:
+        - raw: 22876_GID1-547275554B3030656E
+          carrier_name: 1GLOBAL
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 547275554B3030656E

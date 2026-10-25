@@ -1,0 +1,28 @@
+version: 3
+kind: carrier_bundle
+id: apple_bakcell_az
+bundle: Bakcell_az.bundle
+supported_plmns:
+    - "40002"
+plmn_overrides:
+    "40002":
+        apns:
+            - apn: internet.bakcell.com
+              type_mask: 49
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+        ims:
+            register:
+                use_ipsec: true
+            signaling:
+                support_p_early_media: true
+                early_media_needs_header: true
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*[primary]
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            volte:
+                enable_volte_by_default: true

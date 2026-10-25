@@ -1,0 +1,93 @@
+version: 3
+kind: carrier_bundle
+id: apple_cellcom_lte_us
+bundle: Cellcom_LTE_US.bundle
+supported_plmns:
+    - "311480"
+plmn_overrides:
+    "311480":
+        apns:
+            - apn: vzwinternet
+              type_mask: 4194359
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+            - apn: vzwapp
+              type_mask: 49152
+              allowed_ip_stack: ipv4v6
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv6
+              roaming_ip_stack: ipv6
+            - apn: vzwinternet
+              type_mask: 4194359
+              allowed_ip_stack: ipv4v6
+              no_cellular_reconnect_cause_codes:
+                - cause_codes:
+                    - 13
+                  type: 3GPP2
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv6
+              roaming_ip_stack: ipv6
+              no_cellular_reconnect_cause_codes:
+                - cause_codes:
+                    - 13
+                  type: 3GPP2
+                - cause_codes:
+                    - 8
+                  num_tries_allowed: 2
+                  type: 3GPP
+                - cause_codes:
+                    - 27
+                  num_tries_allowed: 2
+                  type: 3GPP
+                - cause_codes:
+                    - 29
+                  num_tries_allowed: 2
+                  type: 3GPP
+                - cause_codes:
+                    - 32
+                  num_tries_allowed: 2
+                  type: 3GPP
+                - cause_codes:
+                    - 33
+                  num_tries_allowed: 2
+                  type: 3GPP
+            - apn: vzwadmin
+              type_mask: 512
+              allowed_ip_stack: ipv4v6
+            - apn: vzwemergency
+              type_mask: 262144
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 1104
+        e911:
+            emergency_urns:
+                "922": 922@vzims.com
+        entitlement:
+            entitlement_url: https://spc.myvzw.com/ium-RoadrunnerInterface/servlet/IUMServlet
+        ims:
+            apn: ims
+            ip_stack: ipv6
+            signaling:
+                preconditions: unsupported
+                support_p_early_media: false
+                early_media_needs_header: false
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - "503"
+                require_preconditions_when_mandatory: false
+                sip_timers:
+                    D: 128000
+                    F: 30000
+                    InviteResponseTimeout: 10000
+                    T1: 3000
+                    T2: 16000
+                    T4: 17000
+            media:
+                rtcp_interval_seconds: 5
+            volte:
+                enable_volte_by_default: true

@@ -1,0 +1,23 @@
+[package]
+name = "proletarius-handoff-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["rlib", "staticlib"]
+
+[features]
+fault-injection = []
+
+[dependencies]
+proletarius-api-contract = { path = "../proletarius-api-contract" }
+proletarius-platform-fs = { path = "../proletarius-platform-fs" }
+proletarius-forwarding = { path = "../proletarius-forwarding" }
+nix.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+getrandom.workspace = true
+zeroize.workspace = true
+sha2.workspace = true

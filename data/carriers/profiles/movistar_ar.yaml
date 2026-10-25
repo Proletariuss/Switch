@@ -1,0 +1,93 @@
+version: 3
+kind: carrier_bundle
+id: apple_movistar_ar
+bundle: movistar_ar.bundle
+supported_plmns:
+    - "21407"
+    - "72207"
+    - "722070"
+common:
+    apns:
+        - apn: wap.gprs.unifon.com.ar
+          username: wap
+          password: wap
+          type_mask: 49
+          allowed_ip_stack: ipv4
+        - apn: ims
+          type_mask: 131072
+          allowed_ip_stack: ipv6
+          support_switch_over: true
+    e911:
+        over_itech_supported: false
+        wifi_calling_without_entitlement: true
+    ims:
+        apn: ims
+        epdg:
+            configuration_attributes:
+                - identifier: 16384
+                  name: AssignedPCSCFIPv4
+                  type: v4
+                - identifier: 16386
+                  name: AssignedPCSCFIPv6
+                  type: v6
+        ike:
+            child_sa:
+                proposals:
+                    - source_branch: FirstChild
+                      encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      rekey_pfs_group: 14
+                      esn: auto
+                      install_policies: true
+                      lifetime_seconds: 86400
+                replay_window_size: 12
+            dpd:
+                enabled: false
+                interval_seconds: 600
+                max_retries: 4
+                retry_interval_seconds: 10
+            local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+            nat_keepalive_enabled: true
+        ip_stack: ipv6
+        media:
+            rtcp_inactivity_seconds: 25
+            rtcp_interval_seconds: 5
+            rtp_inactivity_seconds: 10
+        register:
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.srvcc-alerting
+                always_add_sip_instance: true
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - 3XX
+            early_media_needs_header: false
+            preconditions: supported
+            require_preconditions_when_mandatory: false
+            support_p_early_media: true
+        ussi:
+            enabled: false
+        volte:
+            enable_volte_by_default: true
+    roaming:
+        wifi_calling_allowed: true
+plmn_overrides:
+    "21407":
+        ims:
+            epdg:
+                address: epdg.epc.mnc007.mcc214.pub.3gppnetwork.org
+    "72207":
+        ims:
+            epdg:
+                address: epdg.epc.mnc007.mcc722.pub.3gppnetwork.org
+    "722070":
+        ims:
+            epdg:
+                address: epdg.epc.mnc070.mcc722.pub.3gppnetwork.org

@@ -1,0 +1,105 @@
+version: 3
+kind: carrier_bundle
+id: apple_1and1_de
+bundle: 1and1_de.bundle
+supported_plmns:
+    - "20801"
+    - "26223"
+common:
+    apns:
+        - apn: internet
+          type_mask: 32819
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+        - apn: ims
+          type_mask: 131072
+          tech_type_mask: 131072
+          allowed_ip_stack: ipv6
+          roaming_ip_stack: ipv4v6
+          support_switch_over: true
+        - apn: mms
+          type_mask: 4
+          allowed_ip_stack: ipv6
+          roaming_ip_stack: ipv4v6
+        - apn: hos
+          type_mask: 1048576
+          allowed_ip_stack: ipv6
+          roaming_ip_stack: ipv4v6
+    apple:
+        carrier_entitlements:
+            supported_entitlements: 4203537
+    e911:
+        over_itech_supported: false
+        wifi_calling_without_entitlement: true
+    entitlement:
+        entitlement_url: https://es.1und1-mobilfunk.de
+    ims:
+        apn: ims
+        epdg:
+            address: epdg.epc.mnc023.mcc262.pub.3gppnetwork.org
+            configuration_attributes:
+                - identifier: 16386
+                  name: AssignedPCSCFIPv6
+                  type: v6
+        ike:
+            child_sa:
+                proposals:
+                    - source_branch: FirstChild
+                      encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      rekey_pfs_group: 14
+                      esn: auto
+                      lifetime_seconds: 86400
+                replay_window_size: 12
+            dpd:
+                enabled: false
+                interval_seconds: 600
+                max_retries: 4
+                retry_interval_seconds: 10
+            local_identifier: 0$impi_user@nai.epc.mnc023.mcc262.3gppnetwork.org
+            nat_keepalive_enabled: true
+            proposals:
+                - encryption:
+                    - aes256
+                  integrity:
+                    - sha256
+                  prf:
+                    - sha256
+                  dh_groups:
+                    - 14
+                  lifetime_seconds: 80000
+                  authentication_method: None
+                  eap_method: EAP-AKA
+        ip_stack: ipv4v6
+        media:
+            rtcp_interval_seconds: 5
+            rtp_inactivity_seconds: 10
+        register:
+            include_cellular_network_info: true
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                always_add_sip_instance: true
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - 5XX
+                    - "380"
+            early_media_needs_header: true
+            preconditions: supported
+            require_preconditions_when_mandatory: false
+            support_p_early_media: true
+        ussi:
+            enabled: true
+        volte:
+            enable_volte_by_default: true
+    roaming:
+        wifi_calling_allowed: true

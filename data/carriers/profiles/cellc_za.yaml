@@ -1,0 +1,83 @@
+version: 3
+kind: carrier_bundle
+id: apple_cellc_za
+bundle: CellC_za.bundle
+supported_plmns:
+    - "65507"
+plmn_overrides:
+    "65507":
+        apns:
+            - apn: internet
+              type_mask: 49
+            - apn: mms
+              type_mask: 4
+            - apn: ims
+              tech_type_mask: 131072
+              support_switch_over: true
+        e911:
+            over_itech_supported: true
+            wifi_calling_without_entitlement: true
+        ims:
+            apn: ims
+            epdg:
+                address: epdg.epc.mnc007.mcc655.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 16384
+                      name: AssignedPCSCFIPv4
+                      type: v4
+                    - identifier: 16386
+                      name: AssignedPCSCFIPv6
+                      type: v6
+            ike:
+                proposals:
+                    - encryption:
+                        - aes128
+                      integrity:
+                        - sha1
+                      prf:
+                        - sha1
+                      dh_groups:
+                        - 2
+                      lifetime_seconds: 80000
+                      authentication_method: None
+                      eap_method: EAP-AKA
+                dpd:
+                    enabled: false
+                    interval_seconds: 600
+                    max_retries: 4
+                    retry_interval_seconds: 10
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes128
+                          integrity:
+                            - sha1
+                          rekey_pfs_group: 2
+                          esn: auto
+                          install_policies: true
+                          lifetime_seconds: 80000
+                    replay_window_size: 12
+                local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+                local_identifier_type: IDUserFQDN
+            register:
+                use_ipsec: true
+                include_cellular_network_info: true
+            signaling:
+                max_udp_message_size: 1200
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                        - 4XX
+                        - 5XX
+                        - 6XX
+                sip_timers:
+                    InviteResponseTimeout: 0
+            ussi:
+                enabled: true
+        roaming:
+            wifi_calling_allowed: true

@@ -1,0 +1,800 @@
+{
+  "schema": "switch.p0.qmi-static-trace.v2",
+  "iteration": 686,
+  "scope": "Private QMI open/close/probe/set-ims/operator plus automatic startup/retry, one selected macOS libusb session, typed read/mutation result and close/join chain; static source review only.",
+  "review_status": "FINITE_STATIC_OWNER_FORMAT_EXIT_TRACE_REVIEWED_NOT_COMPLETE_P0_GRAPH",
+  "historical_runtime_map": {
+    "path": "docs/optimization/all-rust/runtime-owner-format-exit-map-iteration-645.json",
+    "sha256": "5cfaca8c52d556494e338e3cdb1f53e866ec3f80af6e1deb9d0c69791761e4e6",
+    "family_id": "device::optional_QMI_start_and_session_finalizer"
+  },
+  "current_source_snapshot": {
+    "path": "docs/optimization/all-rust/iteration-686-source-snapshot.json",
+    "sha256": "d3ce0dfb42979b5289375c6600698e0d2c819689894d4abd5f388d26378c9cf9",
+    "file_count": 549
+  },
+  "ledger_leaf_ids": [
+    "P0-2.owner-map",
+    "P2B-4.qmi-control"
+  ],
+  "api_entry_ids": [
+    "POST /api/internal/qmi/close",
+    "POST /api/internal/qmi/open",
+    "POST /api/internal/qmi/operator",
+    "POST /api/internal/qmi/probe",
+    "POST /api/internal/qmi/set-ims"
+  ],
+  "source_files": {
+    "app/Sources/BackendProcess.swift": "33afe80884e4e4c5d01e679af94836a1d947e1c1c0df30ec7ce9f62d6252617c",
+    "rust/crates/proletarius-qmi-core/src/lib.rs": "cec04a9bdddfceb2aedd6792bec357097bd3b7a25a97e0b159f4ead160dd4a34",
+    "rust/crates/proletarius-qmi-libusb/src/macos.rs": "6f854b75198d47f2e6942639dacce953d565d2e5b6dd8c2c4cb188f2a2fb1cdc",
+    "rust/crates/proletarius-qmi-libusb/src/selection.rs": "8e8a4c0d1ce792c2ecf9523e7a16f1075adeb51bcf3ba58a71a13b6618c6f81c",
+    "rust/crates/proletarius-qmi-services/src/client.rs": "1de2dff07e4629d94160045b7194f9adaed5b1ac5c48377524d4dcc290524b85",
+    "rust/crates/proletarius-qmi-services/src/uim.rs": "67bdf08208ab425fb6aee9f72d6797053094ca4a07a94f250162d0f3d818caf2",
+    "rust/crates/proletariusd/src/main.rs": "688f7d1c887f11750632bb4064e6ac84b8cc096b9d479d1e86df8de91142a4a6",
+    "rust/crates/proletariusd/src/qmi_enhancement.rs": "121f685e2bb86799ddb53c5ea4a78dfe76a5bc3dff2a90228ded02822f4df514",
+    "rust/crates/proletariusd/src/qmi_native_startup.rs": "61bb7ddf11095dd968fcc4a6fdd5b9322f3203ef2c104524430cc243cc5451bd"
+  },
+  "anchors": [
+    {
+      "id": "configured_open_writer",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 656,
+      "end_line": 686,
+      "exact_fragment": "    ) -> Result<(), String> {\n        if let Some(error) = &self.cleanup_failure {\n            return Err(format!(\"QMI prior cleanup remains unconfirmed: {error}\"));\n        }\n        if let Some(remaining) = self.open_backoff.remaining(now) {\n            return Err(format!(\n                \"QMI recovery backoff active for {} ms\",\n                remaining.as_millis()\n            ));\n        }\n        self.cleanup_failure =\n            Some(\"QMI startup did not reach a confirmed ownership result\".to_owned());\n        match factory.open(path) {\n            Ok(session) => {\n                self.session = Some(session);\n                self.cleanup_failure = None;\n                self.last_open_error = None;\n                self.timeouts = TimeoutWindows::default();\n                self.open_backoff.succeeded();\n                Ok(())\n            }\n            Err(error) => {\n                self.cleanup_failure = error.cleanup_failure;\n                let message = error.message;\n                let delay = self.open_backoff.failed(now);\n                self.last_open_error = Some(bounded_diagnostic(&message, 240));\n                Err(format!(\n                    \"QMI session open failed: {message}; next attempt after {} ms\",\n                    delay.as_millis()\n                ))\n            }\n",
+      "claim": "session publication follows factory open and unknown cleanup fences another attempt"
+    },
+    {
+      "id": "core_close_join",
+      "file": "rust/crates/proletarius-qmi-core/src/lib.rs",
+      "line": 682,
+      "end_line": 723,
+      "exact_fragment": "    pub fn close(&self) -> Result<(), ClientError> {\n        let mut final_close = lock(&self.inner.final_close);\n        if let Some(result) = &*final_close {\n            return result.clone().map_err(CloseFailure::into_client_error);\n        }\n        *final_close = Some(Err(CloseFailure {\n            kind: io::ErrorKind::Other,\n            message: \"QMI final close did not reach a confirmed result\".to_owned(),\n            raw_os_error: None,\n        }));\n        self.inner.closed.store(true, Ordering::Release);\n        // Admission closure alone is not a completion receipt. This also\n        // recovers a shutdown error retained by a fatal reader exit.\n        let shutdown_result = shutdown_transport(&self.inner);\n        fail_transactions(&self.inner);\n        lock(&self.inner.events_tx).take();\n        // Drop an unclaimed receiver as part of shutdown.  Otherwise packets\n        // already buffered in the bounded channel remain live for as long as\n        // a cloned `Client` is retained, which is common during recovery.\n        lock(&self.inner.events_rx).take();\n        lock(&self.inner.coalesced).clear();\n        lock(&self.inner.client_ids).clear();\n        let reader = lock(&self.inner.reader).take();\n        let join_failed = reader.is_some_and(|reader| reader.join().is_err());\n        let result = match (shutdown_result, join_failed) {\n            (Ok(()), false) => Ok(()),\n            (Err(error), false) => Err(error),\n            (Ok(()), true) => Err(CloseFailure {\n                kind: io::ErrorKind::Other,\n                message: \"QMI reader thread panicked\".to_owned(),\n                raw_os_error: None,\n            }),\n            (Err(mut error), true) => {\n                error.message.push_str(\"; QMI reader thread panicked\");\n                // A composite error needs both diagnostics, while retaining\n                // the transport classification for existing callers.\n                error.raw_os_error = None;\n                Err(error)\n            }\n        };\n        *final_close = Some(result.clone());\n        result.map_err(CloseFailure::into_client_error)\n",
+      "claim": "client close records transport shutdown and joins the reader thread"
+    },
+    {
+      "id": "http_open_close_format",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 901,
+      "end_line": 949,
+      "exact_fragment": "pub(crate) async fn handle(\n    request: Request<Incoming>,\n    qmi: QmiEnhancement,\n) -> Response<Full<Bytes>> {\n    if request.method() != Method::POST {\n        return error_response(\n            StatusCode::METHOD_NOT_ALLOWED,\n            \"method_not_allowed\",\n            \"QMI owner endpoints require POST\",\n        );\n    }\n    let action = request\n        .uri()\n        .path()\n        .strip_prefix(PREFIX)\n        .unwrap_or(\"\")\n        .to_owned();\n    let body = match Limited::new(request.into_body(), MAX_BODY_BYTES)\n        .collect()\n        .await\n    {\n        Ok(body) => body.to_bytes(),\n        Err(_) => {\n            return error_response(\n                StatusCode::PAYLOAD_TOO_LARGE,\n                \"request_too_large\",\n                \"QMI owner request exceeds its byte limit\",\n            );\n        }\n    };\n    let input: Value = match serde_json::from_slice(&body) {\n        Ok(value) => value,\n        Err(_) => {\n            return error_response(\n                StatusCode::BAD_REQUEST,\n                \"invalid_json\",\n                \"invalid JSON request\",\n            );\n        }\n    };\n    let result = tokio::task::spawn_blocking(move || match action.as_str() {\n        \"open\" => match serde_json::from_value::<OpenRequest>(input) {\n            Ok(input) => qmi.open(input.control_path),\n            Err(_) => Err(invalid_request(\"invalid QMI open request\")),\n        },\n        \"close\" => match empty_object(input) {\n            Ok(()) => qmi.close(),\n            Err(error) => Err(error),\n        },\n",
+      "claim": "POST body is bounded, JSON decoded, and open/close actions are typed"
+    },
+    {
+      "id": "ims_read_writer",
+      "file": "rust/crates/proletarius-qmi-services/src/client.rs",
+      "line": 72,
+      "end_line": 85,
+      "exact_fragment": "    pub fn get_services(&self) -> Result<ImsSettings, ImsClientError> {\n        let response = self.ims.request(IMS_GET_SERVICES, &[])?;\n        validate_response(&response, SERVICE_IMS, IMS_GET_SERVICES)?;\n        Ok(ImsSettings {\n            voice_over_lte: bool_field(&response, 0x11),\n            video_telephony: bool_field(&response, 0x12),\n            voice_wifi: bool_field(&response, 0x15),\n            ims: bool_field(&response, 0x18),\n            ut: bool_field(&response, 0x19),\n            sms: bool_field(&response, 0x1a),\n            ussd: bool_field(&response, 0x1c),\n            ..ImsSettings::default()\n        })\n    }\n"
+    },
+    {
+      "id": "ims_set_writer",
+      "file": "rust/crates/proletarius-qmi-services/src/client.rs",
+      "line": 87,
+      "end_line": 95,
+      "exact_fragment": "    pub fn set_services(&self, update: ImsSettingsUpdate) -> Result<(), ImsClientError> {\n        let fields = settings_tlvs(update)?;\n        let tlvs = fields\n            .iter()\n            .map(|(kind, value)| Tlv::new(*kind, std::slice::from_ref(value)))\n            .collect::<Vec<_>>();\n        let response = self.ims.request(IMS_SET_SERVICES, &tlvs)?;\n        validate_response(&response, SERVICE_IMS, IMS_SET_SERVICES)?;\n        Ok(())\n"
+    },
+    {
+      "id": "ims_tlv_writer",
+      "file": "rust/crates/proletarius-qmi-services/src/client.rs",
+      "line": 213,
+      "end_line": 233,
+      "exact_fragment": "fn settings_tlvs(update: ImsSettingsUpdate) -> Result<Vec<(u8, u8)>, CodecError> {\n    let mut fields = Vec::with_capacity(13);\n    push_bool(&mut fields, 0x10, update.voice_over_lte);\n    push_bool(&mut fields, 0x11, update.video_telephony);\n    push_bool(&mut fields, 0x14, update.voice_wifi);\n    if let Some(value) = update.call_mode {\n        fields.push((0x15, value));\n    }\n    push_bool(&mut fields, 0x18, update.ims);\n    push_bool(&mut fields, 0x19, update.ut);\n    push_bool(&mut fields, 0x1a, update.sms);\n    push_bool(&mut fields, 0x1c, update.ussd);\n    push_bool(&mut fields, 0x1e, update.presence);\n    push_bool(&mut fields, 0x1f, update.autoconfig);\n    push_bool(&mut fields, 0x20, update.xdm_client);\n    push_bool(&mut fields, 0x21, update.rcs);\n    push_bool(&mut fields, 0x25, update.carrier_config);\n    if fields.is_empty() {\n        return Err(CodecError::EmptyUpdate);\n    }\n    Ok(fields)\n"
+    },
+    {
+      "id": "imsa_read_writer",
+      "file": "rust/crates/proletarius-qmi-services/src/client.rs",
+      "line": 98,
+      "end_line": 102,
+      "exact_fragment": "    pub fn get_registration_status(&self) -> Result<ImsaRegistrationStatus, ImsClientError> {\n        let response = self.imsa.request(IMSA_GET_REGISTRATION, &[])?;\n        validate_response(&response, SERVICE_IMSA, IMSA_GET_REGISTRATION)?;\n        parse_registration(&response)\n    }\n"
+    },
+    {
+      "id": "late_handoff",
+      "file": "rust/crates/proletariusd/src/qmi_native_startup.rs",
+      "line": 120,
+      "end_line": 152,
+      "exact_fragment": "                let opened = session\n                    .0\n                    .as_ref()\n                    .expect(\"owned QMI session\")\n                    .open_auto(control_path, epoch)\n                    .and_then(|_| {\n                        // A bounded open accepted before revocation still owns\n                        // its acquired resources. Revalidate the startup handoff;\n                        // rejection takes the same explicit cleanup path below.\n                        session\n                            .0\n                            .as_ref()\n                            .expect(\"owned QMI session\")\n                            .confirm_startup_admission(epoch)\n                    });\n                match opened {\n                    Ok(_) => match sender.send(Ok(session)) {\n                        Ok(()) => Ok(()),\n                        // No waiter accepted ownership. Close explicitly so a\n                        // late cleanup error is returned by the retained join.\n                        Err(mpsc::SendError(Ok(mut session))) => session.close(),\n                        Err(mpsc::SendError(Err(_))) => unreachable!(\"sent successful session\"),\n                    },\n                    Err(error) => {\n                        // Match the former failed-start cleanup, which also\n                        // clears the selected path and its retry backoff.\n                        let cleanup = session.close();\n                        let message = match &cleanup {\n                            Ok(()) => error.error,\n                            Err(cleanup) => format!(\"{}; cleanup failed: {cleanup}\", error.error),\n                        };\n                        let _ = sender.send(Err(message));\n                        cleanup\n",
+      "claim": "late startup handoff owns cleanup and preserves failed close"
+    },
+    {
+      "id": "macos_factory",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 753,
+      "end_line": 803,
+      "exact_fragment": "    fn open(&self, control_path: &str) -> Result<Box<dyn QmiSessionOps>, QmiOpenFailure> {\n        #[cfg(target_os = \"macos\")]\n        {\n            let usb = proletarius_qmi_libusb::open_qmi_client(\n                control_path,\n                proletarius_qmi_core::ClientOptions::default(),\n            )\n            .map_err(|error| {\n                let cleanup_failure = error\n                    .get_ref()\n                    .and_then(|source| {\n                        source.downcast_ref::<proletarius_qmi_libusb::ProbeCleanupFailure>()\n                    })\n                    .map(|failure| failure.cleanup_failure.clone());\n                QmiOpenFailure {\n                    message: format!(\"QMI USB open failed: {error}\"),\n                    cleanup_failure,\n                }\n            })?;\n            let ims = match ImsClient::open(&usb.client) {\n                Ok(client) => client,\n                Err(error) => {\n                    return Err(QmiOpenFailure::after_cleanup(\n                        format!(\"QMI IMS service open failed: {error}\"),\n                        usb.client.close().map_err(|error| error.to_string()),\n                    ));\n                }\n            };\n            let nas = match NasClient::open(&usb.client) {\n                Ok(client) => client,\n                Err(error) => {\n                    let failure = QmiOpenFailure::after_cleanup(\n                        format!(\"QMI NAS service open failed: {error}\"),\n                        usb.client.close().map_err(|error| error.to_string()),\n                    );\n                    drop(ims);\n                    return Err(failure);\n                }\n            };\n            let uim = match UimClient::open(&usb.client) {\n                Ok(client) => client,\n                Err(error) => {\n                    let failure = QmiOpenFailure::after_cleanup(\n                        format!(\"QMI UIM service open failed: {error}\"),\n                        usb.client.close().map_err(|error| error.to_string()),\n                    );\n                    drop((ims, nas));\n                    return Err(failure);\n                }\n            };\n            return Ok(Box::new(PlatformQmiSession { usb, ims, nas, uim }));\n",
+      "claim": "macOS factory opens libusb client and IMS NAS UIM services with partial cleanup"
+    },
+    {
+      "id": "main_public_private_reject",
+      "file": "rust/crates/proletariusd/src/main.rs",
+      "line": 2003,
+      "end_line": 2010,
+      "exact_fragment": "    // The public socket and its .rs sibling share this handler. Private RPCs\n    // are admitted only by the distinct .in listener, regardless of token.\n    if path == \"/api/internal\" || path.starts_with(\"/api/internal/\") {\n        return Ok(json_response(\n            StatusCode::NOT_FOUND,\n            &json!({\"code\":\"route_not_found\",\"error\":\"route not found\"}),\n        ));\n    }\n",
+      "claim": "Public and .rs listeners reject bare /api/internal and every /api/internal/ descendant before token admission; QMI RPC remains private .in only"
+    },
+    {
+      "id": "main_qmi_shutdown",
+      "file": "rust/crates/proletariusd/src/main.rs",
+      "line": 1375,
+      "end_line": 1386,
+      "exact_fragment": "        if let Some(error) = qmi_startup_failure {\n            return shutdown::once(\"QMI startup worker\", Err(error)).await;\n        }\n        let result = tokio::task::spawn_blocking(move || {\n            qmi_lifecycle\n                .as_mut()\n                .map_or(Ok(()), |lifecycle| lifecycle.shutdown())\n        })\n        .await\n        .map_err(|error| format!(\"shutdown worker: {error}\"))\n        .and_then(|result| result);\n        shutdown::once(\"QMI\", result).await\n",
+      "claim": "daemon exit awaits retained startup and blocking QMI shutdown result"
+    },
+    {
+      "id": "main_retry_producer",
+      "file": "rust/crates/proletariusd/src/main.rs",
+      "line": 1059,
+      "end_line": 1065,
+      "exact_fragment": "    let qmi_owner = state.qmi_enhancement.clone();\n    let mut qmi_startup = if module_recovery.is_quarantined() {\n        None\n    } else {\n        Some(tokio::task::spawn_blocking(move || {\n            qmi_enhancement::NativeQmiRetryLifecycle::start(qmi_config, qmi_owner)\n        }))\n",
+      "claim": "QMI startup is spawned as a retained retry lifecycle"
+    },
+    {
+      "id": "main_socket_auth",
+      "file": "rust/crates/proletariusd/src/main.rs",
+      "line": 1785,
+      "end_line": 1790,
+      "exact_fragment": "    if !multistandby_store::internal_authenticated(&request, &state.internal_token) {\n        return json_response(\n            StatusCode::UNAUTHORIZED,\n            &serde_json::json!({\"code\":\"internal_authentication_required\",\"error\":\"需要后端内部凭证\"}),\n        );\n    }\n",
+      "claim": "private Unix socket QMI route requires the daemon internal token"
+    },
+    {
+      "id": "main_socket_dispatch",
+      "file": "rust/crates/proletariusd/src/main.rs",
+      "line": 1909,
+      "end_line": 1910,
+      "exact_fragment": "    } else if is_qmi {\n        qmi_enhancement::handle(request, state.qmi_enhancement.clone()).await\n",
+      "claim": "private Unix socket QMI branch dispatches to the shared Rust QMI handler"
+    },
+    {
+      "id": "main_socket_match",
+      "file": "rust/crates/proletariusd/src/main.rs",
+      "line": 1751,
+      "end_line": 1751,
+      "exact_fragment": "    let is_qmi = path.starts_with(qmi_enhancement::PREFIX);\n",
+      "claim": "private Unix socket recognizes QMI prefix before token admission and dispatch"
+    },
+    {
+      "id": "nas_name_writer",
+      "file": "rust/crates/proletarius-qmi-services/src/client.rs",
+      "line": 121,
+      "end_line": 135,
+      "exact_fragment": "    pub fn get_operator_name(&self) -> Result<NasOperatorName, NasClientError> {\n        let response = self.nas.request(NAS_GET_OPERATOR_NAME, &[])?;\n        validate_response(&response, SERVICE_NAS, NAS_GET_OPERATOR_NAME)?;\n        Ok(NasOperatorName {\n            service_provider_name: response\n                .find_tlv(0x10)\n                .filter(|value| !value.is_empty())\n                .map(|value| String::from_utf8_lossy(&value[1..]).into_owned())\n                .unwrap_or_default(),\n            operator_string_name: response\n                .find_tlv(0x13)\n                .map(|value| String::from_utf8_lossy(value).into_owned())\n                .unwrap_or_default(),\n        })\n    }\n"
+    },
+    {
+      "id": "operation_gate",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 321,
+      "end_line": 328,
+      "exact_fragment": "    fn admit_operation(&self) -> Result<crate::module_recovery::OperationGuard, RpcError> {\n        self.module_recovery\n            .admit_operation(\"rust-native-qmi\")\n            .map_err(|()| RpcError {\n                code: crate::module_recovery::CODE,\n                error: crate::module_recovery::MESSAGE.to_owned(),\n            })\n    }\n"
+    },
+    {
+      "id": "owner_mutex_state",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 52,
+      "end_line": 68,
+      "exact_fragment": "struct QmiState {\n    enabled: bool,\n    /// Only a private close disables automatic USB attach/reconnect. This is\n    /// separate from `enabled`, which selects the QMI backend for status.\n    explicitly_closed: bool,\n    /// Fences an automatic attempt that straddles a private close/open.\n    manual_epoch: u64,\n    /// A private open may select an exact VID:PID; retry must not silently\n    /// switch that choice back to the automatic priority list after loss.\n    retry_control_path: String,\n    control_path: Option<String>,\n    session: Option<Box<dyn QmiSessionOps>>,\n    last_open_error: Option<String>,\n    timeouts: TimeoutWindows,\n    open_backoff: OpenBackoff,\n    cleanup_failure: Option<String>,\n}\n",
+      "claim": "one mutex-protected owner stores selection, session, epoch and cleanup state"
+    },
+    {
+      "id": "owner_operator",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 525,
+      "end_line": 527,
+      "exact_fragment": "    fn operator(&self) -> Result<Value, RpcError> {\n        self.run_read(&[\"uim-home-network\"], |session| session.operator())\n    }\n"
+    },
+    {
+      "id": "owner_probe",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 487,
+      "end_line": 491,
+      "exact_fragment": "    fn probe(&self) -> Result<Value, RpcError> {\n        self.run_read(&[\"ims-services\", \"imsa-registration\"], |session| {\n            session.probe()\n        })\n    }\n"
+    },
+    {
+      "id": "owner_read_recovery",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 535,
+      "end_line": 587,
+      "exact_fragment": "    fn run_read(\n        &self,\n        successful_scopes: &[&'static str],\n        mut query: impl FnMut(&mut dyn QmiSessionOps) -> Result<Value, QmiReadFailure>,\n    ) -> Result<Value, RpcError> {\n        let mut state = self.lock_state()?;\n        let _operation = self.admit_operation()?;\n        state.ensure_open(self.factory.as_ref())?;\n        match query(\n            state\n                .session\n                .as_mut()\n                .expect(\"ensure_open installs a QMI session\")\n                .as_mut(),\n        ) {\n            Ok(value) => {\n                state.timeouts.clear(successful_scopes);\n                Ok(value)\n            }\n            Err(failure) => {\n                state.timeouts.clear(&failure.completed_scopes);\n                let recovery = state.timeouts.recovery_due(\n                    failure.scope,\n                    classify_qmi_failure(&failure.source),\n                    Instant::now(),\n                );\n                if !recovery {\n                    return Err(unavailable(failure.to_string()));\n                }\n                let original = failure.to_string();\n                if let Err(error) = state.reopen(self.factory.as_ref(), &self.module_recovery) {\n                    return Err(unavailable(format!(\n                        \"{original}; QMI owner recovery failed: {error}\"\n                    )));\n                }\n                match query(\n                    state\n                        .session\n                        .as_mut()\n                        .expect(\"reopen installs a QMI session\")\n                        .as_mut(),\n                ) {\n                    Ok(value) => {\n                        state.timeouts.clear(successful_scopes);\n                        Ok(value)\n                    }\n                    Err(retry_failure) => Err(unavailable(format!(\n                        \"{original}; one QMI recovery attempt also failed: {retry_failure}\"\n                    ))),\n                }\n            }\n        }\n    }\n"
+    },
+    {
+      "id": "owner_set_ims",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 493,
+      "end_line": 523,
+      "exact_fragment": "    fn set_ims(&self, update: ImsSettingsUpdate) -> Result<Value, RpcError> {\n        let mut state = self.lock_state()?;\n        let _operation = self.admit_operation()?;\n        state.ensure_open(self.factory.as_ref())?;\n        match state\n            .session\n            .as_mut()\n            .expect(\"ensure_open installs a QMI session\")\n            .set_ims(update)\n        {\n            Ok(()) => {\n                state.timeouts.clear(&[\"ims-set-services\"]);\n                Ok(json!({ \"updated\": true }))\n            }\n            Err(error) => {\n                let original = format!(\"QMI IMS update failed: {error}\");\n                let class = classify_qmi_failure(&error);\n                if state\n                    .timeouts\n                    .recovery_due(\"ims-set-services\", class, Instant::now())\n                    && let Err(recovery_error) =\n                        state.reopen(self.factory.as_ref(), &self.module_recovery)\n                {\n                    return Err(unavailable(format!(\n                        \"{original}; QMI owner recovery failed: {recovery_error}\"\n                    )));\n                }\n                Err(unavailable(original))\n            }\n        }\n    }\n"
+    },
+    {
+      "id": "platform_abort_result",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 893,
+      "end_line": 898,
+      "exact_fragment": "    fn abort(&mut self) -> Result<(), String> {\n        // A failed typed request may mean the service clients are already\n        // unreachable. Releasing their IDs over that transport is not a\n        // prerequisite for recovery, but the claimed USB reader is.\n        self.usb.client.close().map_err(|error| error.to_string())\n    }\n",
+      "claim": "Physical USB client close result is returned by the production abort implementation rather than discarded."
+    },
+    {
+      "id": "platform_operator",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 858,
+      "end_line": 872,
+      "exact_fragment": "    fn operator(&mut self) -> Result<Value, QmiReadFailure> {\n        let home = self.uim.get_native_mcc_mnc().map_err(|error| {\n            QmiReadFailure::new(\n                \"uim-home-network\",\n                \"QMI UIM home network query failed\",\n                error,\n            )\n        })?;\n        let name = self\n            .nas\n            .get_operator_name()\n            .map(|name| name.preferred_name().to_owned())\n            .unwrap_or_default();\n        Ok(json!({ \"mcc\": home.mcc(), \"mnc\": home.mnc(), \"name\": name }))\n    }\n"
+    },
+    {
+      "id": "platform_probe",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 820,
+      "end_line": 853,
+      "exact_fragment": "    fn probe(&mut self) -> Result<Value, QmiReadFailure> {\n        let settings = self\n            .ims\n            .get_services()\n            .map_err(|error| QmiReadFailure::new(\"ims-services\", \"QMI IMS query failed\", error))?;\n        let registration = self.ims.get_registration_status().map_err(|error| {\n            QmiReadFailure::new(\"imsa-registration\", \"QMI IMSA query failed\", error)\n                .after_completed(&[\"ims-services\"])\n        })?;\n        Ok(json!({\n            \"settings\": {\n                \"voice_over_lte_enabled\": settings.voice_over_lte,\n                \"video_telephony_enabled\": settings.video_telephony,\n                \"voice_wifi_enabled\": settings.voice_wifi,\n                \"call_mode_preference\": settings.call_mode,\n                \"ims_service_enabled\": settings.ims,\n                \"ut_service_enabled\": settings.ut,\n                \"sms_service_enabled\": settings.sms,\n                \"ussd_service_enabled\": settings.ussd,\n                \"presence_enabled\": settings.presence,\n                \"autoconfig_enabled\": settings.autoconfig,\n                \"xdm_client_enabled\": settings.xdm_client,\n                \"rcs_enabled\": settings.rcs,\n                \"carrier_config_enabled\": settings.carrier_config\n            },\n            \"registration\": {\n                \"status\": registration.state,\n                \"error_code\": registration.error_code,\n                \"error_message\": registration.error_message,\n                \"technology\": registration.technology\n            }\n        }))\n    }\n\n"
+    },
+    {
+      "id": "platform_session_close",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 874,
+      "end_line": 890,
+      "exact_fragment": "    fn close(&mut self) -> Result<(), String> {\n        let results = [\n            self.uim.close(),\n            self.nas.close(),\n            self.ims.close(),\n            self.usb.client.close(),\n        ];\n        let failures = results\n            .into_iter()\n            .filter_map(Result::err)\n            .map(|error| error.to_string())\n            .collect::<Vec<_>>();\n        if failures.is_empty() {\n            Ok(())\n        } else {\n            Err(failures.join(\"; \"))\n        }\n",
+      "claim": "session close aggregates service clients and USB client close results"
+    },
+    {
+      "id": "platform_set_ims",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 854,
+      "end_line": 856,
+      "exact_fragment": "    fn set_ims(&mut self, update: ImsSettingsUpdate) -> Result<(), QmiServiceClientError> {\n        self.ims.set_services(update)\n    }\n"
+    },
+    {
+      "id": "private_close_fence",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 473,
+      "end_line": 486,
+      "exact_fragment": "    fn close(&self) -> Result<Value, RpcError> {\n        let mut state = self.lock_state()?;\n        state.explicitly_closed = true;\n        state.manual_epoch = state.manual_epoch.wrapping_add(1);\n        state.retry_control_path.clear();\n        let result = state.close();\n        state.last_open_error = Some(match &result {\n            Ok(()) => \"QMI enhancement closed by private request\".to_owned(),\n            Err(error) => bounded_diagnostic(&format!(\"QMI close failed: {error}\"), 240),\n        });\n        result.map_err(|error| unavailable(format!(\"QMI close failed: {error}\")))?;\n        Ok(json!({ \"closed\": true }))\n    }\n\n",
+      "claim": "private close fences automatic retry before physical cleanup and retains failure"
+    },
+    {
+      "id": "private_open_selector",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 447,
+      "end_line": 470,
+      "exact_fragment": "    fn open(&self, control_path: String) -> Result<Value, RpcError> {\n        if control_path.len() > 256 || control_path.contains('\\0') {\n            return Err(invalid_request(\"QMI control path is invalid\"));\n        }\n        let mut state = self.lock_state()?;\n        let _operation = self.admit_operation()?;\n        let result = state.open(&control_path, self.factory.as_ref());\n        // A valid private open reauthorizes retry even if the selected device\n        // is temporarily absent. Rejected path conflicts and unconfirmed\n        // cleanup cannot clear an explicit-close fence.\n        if result.is_ok()\n            || (result\n                .as_ref()\n                .err()\n                .is_some_and(|error| error.code == \"qmi_unavailable\")\n                && state.control_path.as_deref() == Some(control_path.as_str())\n                && state.cleanup_failure.is_none())\n        {\n            state.explicitly_closed = false;\n            state.manual_epoch = state.manual_epoch.wrapping_add(1);\n            state.retry_control_path = control_path;\n        }\n        result?;\n        Ok(json!({ \"opened\": true }))\n",
+      "claim": "private open validates selector and authorizes exact-path retry only after admissible result"
+    },
+    {
+      "id": "private_shutdown_gate",
+      "file": "rust/crates/proletariusd/src/main.rs",
+      "line": 1796,
+      "end_line": 1822,
+      "exact_fragment": "    let cleanup_allowed = is_ordinary_vowifi_admission\n        || is_call_mode_lifecycle\n        || is_usb_at\n        || is_reader_native_owner\n        || is_reader_lifecycle\n        || is_reader_business\n        || is_module_radio\n        || path == \"/api/internal/device-send/finish\"\n        || path == \"/api/internal/call-archive/ingest\"\n        || path == \"/api/internal/call-archive/observe\"\n        || path == call_facts::HISTORY_ERROR_PATH\n        || path == \"/api/internal/modem/close\"\n        || path == \"/api/internal/qmi/close\"\n        || is_ims_sms_transaction\n        || is_safe_events;\n    let cleanup_allowed = cleanup_allowed\n        || path == call_mode_adb::INTERNAL_ROUTE_STOP_PATH\n        || path == call_mode_adb::INTERNAL_ROUTE_STATUS_PATH;\n    if stopping && !cleanup_allowed {\n        return json_response(\n            StatusCode::SERVICE_UNAVAILABLE,\n            &ErrorResponse {\n                error: \"Switch 正在退出，未提交新操作\",\n                code: \"backend_stopping\",\n                retryable: false,\n            },\n        );\n"
+    },
+    {
+      "id": "qmi_wire_writer",
+      "file": "rust/crates/proletarius-qmi-core/src/lib.rs",
+      "line": 522,
+      "end_line": 538,
+      "exact_fragment": "        let meta = PacketMeta::request(service, client_id, transaction_id, message_id);\n        let size = match encoded_len(meta, tlvs) {\n            Ok(size) => size,\n            Err(error) => {\n                lock(&self.inner.transactions).remove(&key);\n                return Err(ClientError::Encode(error));\n            }\n        };\n        let mut request = vec![0u8; size];\n        if let Err(error) = encode_packet(meta, tlvs, &mut request) {\n            lock(&self.inner.transactions).remove(&key);\n            return Err(ClientError::Encode(error));\n        }\n\n        let write_result = {\n            let _write = lock(&self.inner.writes);\n            self.inner.transport.write_all_timeout(&request, timeout)\n",
+      "claim": "typed QMI packet is encoded and transport writes are serialized"
+    },
+    {
+      "id": "reopen_cleanup_fence",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 627,
+      "end_line": 649,
+      "exact_fragment": "    fn reopen(\n        &mut self,\n        factory: &dyn QmiSessionFactory,\n        gate: &crate::module_recovery::Gate,\n    ) -> Result<(), String> {\n        // The previous typed request has failed. Opening another session is a\n        // new bounded recovery attempt; an old session cannot authorize it.\n        let _operation = gate\n            .admit_operation(\"rust-native-qmi\")\n            .map_err(|()| crate::module_recovery::MESSAGE.to_owned())?;\n        let path = self\n            .control_path\n            .clone()\n            .ok_or_else(|| \"QMI owner has no configured control path\".to_owned())?;\n        if let Some(mut session) = self.session.take() {\n            self.cleanup_failure =\n                Some(\"QMI recovery abort did not reach a confirmed result\".to_owned());\n            let result = session.abort();\n            self.cleanup_failure = result.as_ref().err().cloned();\n            result.map_err(|error| format!(\"QMI prior cleanup remains unconfirmed: {error}\"))?;\n        }\n        self.open_configured(&path, factory, Instant::now())\n    }\n",
+      "claim": "QmiState records cleanup debt before abort; an unconfirmed result returns before any replacement factory open."
+    },
+    {
+      "id": "retry_entry",
+      "file": "rust/crates/proletariusd/src/qmi_native_startup.rs",
+      "line": 487,
+      "end_line": 520,
+      "exact_fragment": "    loop {\n        let (stopped, attempt_epoch, mut wake_epoch) = control.snapshot();\n        if stopped {\n            return Ok(());\n        }\n        if !owner.auto_reconnect_desired()? {\n            #[cfg(test)]\n            control.note_paused_for_tests();\n            if control.wait_or_stop(reader_check_interval, &mut wake_epoch) {\n                return Ok(());\n            }\n            continue;\n        }\n        let mut lifecycle = NativeQmiLifecycle::start_with_timeout(\n            NativeQmiConfig::Qmi,\n            owner.clone(),\n            startup_timeout,\n        );\n        let (stopped, current_epoch, _) = control.snapshot();\n        if stopped || current_epoch != attempt_epoch {\n            return lifecycle.shutdown();\n        }\n        let auto_epoch = lifecycle\n            .auto_epoch\n            .ok_or(\"QMI automatic epoch was not captured\")?;\n        if !owner.auto_epoch_current(auto_epoch)? {\n            lifecycle.shutdown()?;\n            continue;\n        }\n        if let Some(error) = lifecycle.startup_error() {\n            crate::diagnostics::write_line(format_args!(\n                \"switchd-rs: optional QMI enhancement unavailable: {error}\"\n            ));\n            lifecycle.shutdown()?; // a failed/unconfirmed close fences all future opens\n",
+      "claim": "retry loop observes stop/private-close epoch and requires confirmed failed-start cleanup"
+    },
+    {
+      "id": "retry_reconnect",
+      "file": "rust/crates/proletariusd/src/qmi_native_startup.rs",
+      "line": 537,
+      "end_line": 560,
+      "exact_fragment": "        loop {\n            if control.wait_or_stop(reader_check_interval, &mut wake_epoch) {\n                return lifecycle.shutdown();\n            }\n            if !owner.auto_epoch_current(auto_epoch)? {\n                break;\n            }\n            let reader_lost = owner.observed_transport_closed();\n            let initialized = owner\n                .transport_status()\n                .is_some_and(|status| status.session_initialized);\n            if reader_lost || !initialized {\n                crate::diagnostics::write_line(format_args!(\n                    \"switchd-rs: QMI transport ended; awaiting confirmed close before reconnect\"\n                ));\n                break;\n            }\n        }\n        lifecycle.shutdown()?;\n        if !owner.auto_reconnect_desired()? {\n            continue;\n        }\n        if control.wait_or_stop(retry_initial, &mut wake_epoch) {\n            return Ok(());\n",
+      "claim": "reader loss or stale epoch leads to confirmed close before next reconnect"
+    },
+    {
+      "id": "retry_shutdown_join",
+      "file": "rust/crates/proletariusd/src/qmi_native_startup.rs",
+      "line": 452,
+      "end_line": 464,
+      "exact_fragment": "    pub(crate) fn shutdown(&mut self) -> Result<(), String> {\n        if let Some(result) = &self.shutdown_result {\n            return result.clone();\n        }\n        self.shutdown_result = Some(Err(\"QMI retry shutdown unconfirmed\".to_owned()));\n        self.control.stop();\n        let result = self.worker.take().map_or(Ok(()), |worker| {\n            worker\n                .join()\n                .map_err(|_| \"QMI retry worker panicked\".to_owned())?\n        });\n        self.shutdown_result = Some(result.clone());\n        result\n",
+      "claim": "shutdown stops and joins retry worker with cached unconfirmed result"
+    },
+    {
+      "id": "retry_worker",
+      "file": "rust/crates/proletariusd/src/qmi_native_startup.rs",
+      "line": 398,
+      "end_line": 425,
+      "exact_fragment": "        let control = Arc::new(RetryControl::default());\n        let worker = if config == NativeQmiConfig::At {\n            None\n        } else {\n            let retained = control.clone();\n            let reporting_owner = owner.clone();\n            Some(\n                thread::Builder::new()\n                    .name(\"switch-qmi-retry\".to_owned())\n                    .spawn(move || {\n                        let result = run_retry_loop(\n                            owner,\n                            retained,\n                            startup_timeout,\n                            retry_initial,\n                            retry_max,\n                            reader_check_interval,\n                        );\n                        let result =\n                            combine_cleanup_results(result, reporting_owner.close_for_shutdown());\n                        if let Err(error) = &result {\n                            reporting_owner.record_retry_failure(error);\n                            crate::diagnostics::write_line(format_args!(\n                                \"switchd-rs: QMI retry stopped: {error}\"\n                            ));\n                        }\n                        result\n                    })\n",
+      "claim": "retained retry worker owns loop plus final physical close result"
+    },
+    {
+      "id": "selector_auto_exact",
+      "file": "rust/crates/proletarius-qmi-libusb/src/selection.rs",
+      "line": 39,
+      "end_line": 70,
+      "exact_fragment": "    /// libusb QMI owner.\n    pub fn parse(path: &str) -> Result<Self, SelectorError> {\n        let normalized = path.trim();\n        if normalized.is_empty() || normalized.eq_ignore_ascii_case(\"auto\") {\n            return Ok(Self::PriorityList(DEFAULT_DEVICE_IDS.to_vec()));\n        }\n        let (vendor, product) = normalized.split_once(':').ok_or_else(|| {\n            SelectorError(format!(\n                \"invalid QMI libusb path {path:?} (want VID:PID, e.g. 2ca3:4006)\"\n            ))\n        })?;\n        if product.contains(':') {\n            return Err(SelectorError(format!(\n                \"invalid QMI libusb path {path:?} (want VID:PID, e.g. 2ca3:4006)\"\n            )));\n        }\n        let vendor_id = parse_hex_u16(vendor)\n            .map_err(|error| SelectorError(format!(\"invalid VID in path {path:?}: {error}\")))?;\n        let product_id = parse_hex_u16(product)\n            .map_err(|error| SelectorError(format!(\"invalid PID in path {path:?}: {error}\")))?;\n        Ok(Self::Exact(UsbDeviceId {\n            vendor_id,\n            product_id,\n        }))\n    }\n\n    pub fn device_ids(&self) -> &[UsbDeviceId] {\n        match self {\n            Self::PriorityList(ids) => ids,\n            Self::Exact(id) => std::slice::from_ref(id),\n        }\n    }\n",
+      "claim": "empty/auto and exact VID:PID selectors remain distinct"
+    },
+    {
+      "id": "service_response_validation",
+      "file": "rust/crates/proletarius-qmi-services/src/client.rs",
+      "line": 142,
+      "end_line": 165,
+      "exact_fragment": "pub(crate) fn validate_response(\n    response: &OwnedPacket,\n    service: u16,\n    message: u16,\n) -> Result<(), QmiServiceClientError> {\n    if response.meta.service != service {\n        return Err(CodecError::UnexpectedService {\n            expected: service,\n            actual: response.meta.service,\n        }\n        .into());\n    }\n    if response.meta.message_id != message {\n        return Err(CodecError::UnexpectedMessage {\n            expected: message,\n            actual: response.meta.message_id,\n        }\n        .into());\n    }\n    if response.meta.message_control_flags & 0x02 == 0 || response.is_indication() {\n        return Err(CodecError::MalformedField(\"QMI response control flag\").into());\n    }\n    response.check_result()?;\n    Ok(())\n"
+    },
+    {
+      "id": "strict_empty_object",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 990,
+      "end_line": 996,
+      "exact_fragment": "fn empty_object(value: Value) -> Result<(), RpcError> {\n    if value.as_object().is_some_and(serde_json::Map::is_empty) {\n        Ok(())\n    } else {\n        Err(invalid_request(\"expected an empty JSON object\"))\n    }\n}\n"
+    },
+    {
+      "id": "swift_default_at_launch",
+      "file": "app/Sources/BackendProcess.swift",
+      "line": 251,
+      "end_line": 261,
+      "exact_fragment": "        let proc = Process()\n        proc.executableURL = binary\n        // Start the proven serial/AT owner by default. DJI first-generation\n        // modules expose a private USB composition that accepts AT on macOS\n        // but does not answer the standard QMI CTL handshake. Explicit\n        // `-backend=qmi` remains available for standard QMI compositions.\n        proc.arguments = [\"-listen\", \"unix:\\(socketPath)\", \"-backend=at\"]\n        var environment = ProcessInfo.processInfo.environment\n        environment[\"PROLETARIUS_APP_TOKEN\"] = LocalBackendAuthentication.appToken\n        environment[\"PROLETARIUS_BLE_SOCKET\"] = bleSocketPath\n        environment[\"SWITCH_DATA_DIR\"] = dataDirectory.path\n"
+    },
+    {
+      "id": "typed_conversion",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 294,
+      "end_line": 311,
+      "exact_fragment": "impl From<SetImsRequest> for ImsSettingsUpdate {\n    fn from(value: SetImsRequest) -> Self {\n        Self {\n            voice_over_lte: value.voice_over_lte,\n            video_telephony: value.video_telephony,\n            voice_wifi: value.voice_wifi,\n            call_mode: value.call_mode,\n            ims: value.ims,\n            ut: value.ut,\n            sms: value.sms,\n            ussd: value.ussd,\n            presence: value.presence,\n            autoconfig: value.autoconfig,\n            xdm_client: value.xdm_client,\n            rcs: value.rcs,\n            carrier_config: value.carrier_config,\n        }\n    }\n"
+    },
+    {
+      "id": "typed_dispatch",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 950,
+      "end_line": 964,
+      "exact_fragment": "        \"probe\" => match empty_object(input) {\n            Ok(()) => qmi.probe(),\n            Err(error) => Err(error),\n        },\n        \"set-ims\" => match serde_json::from_value::<SetImsRequest>(input) {\n            Ok(input) if input.is_empty() => {\n                Err(invalid_request(\"IMS settings update must include a field\"))\n            }\n            Ok(input) => qmi.set_ims(input.into()),\n            Err(_) => Err(invalid_request(\"invalid IMS settings request\")),\n        },\n        \"operator\" => match empty_object(input) {\n            Ok(()) => qmi.operator(),\n            Err(error) => Err(error),\n        },\n"
+    },
+    {
+      "id": "typed_request",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 245,
+      "end_line": 274,
+      "exact_fragment": "#[derive(Debug, Deserialize)]\n#[serde(deny_unknown_fields)]\nstruct SetImsRequest {\n    #[serde(default)]\n    voice_over_lte: Option<bool>,\n    #[serde(default)]\n    video_telephony: Option<bool>,\n    #[serde(default)]\n    voice_wifi: Option<bool>,\n    #[serde(default)]\n    call_mode: Option<u8>,\n    #[serde(default)]\n    ims: Option<bool>,\n    #[serde(default)]\n    ut: Option<bool>,\n    #[serde(default)]\n    sms: Option<bool>,\n    #[serde(default)]\n    ussd: Option<bool>,\n    #[serde(default)]\n    presence: Option<bool>,\n    #[serde(default)]\n    autoconfig: Option<bool>,\n    #[serde(default)]\n    xdm_client: Option<bool>,\n    #[serde(default)]\n    rcs: Option<bool>,\n    #[serde(default)]\n    carrier_config: Option<bool>,\n}\n"
+    },
+    {
+      "id": "typed_response",
+      "file": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "line": 971,
+      "end_line": 986,
+      "exact_fragment": "    match result {\n        Ok(Ok(value)) => json_response(StatusCode::OK, &value),\n        Ok(Err(error)) => {\n            let status = match error.code {\n                \"invalid_request\" => StatusCode::BAD_REQUEST,\n                \"qmi_owner_conflict\" => StatusCode::CONFLICT,\n                \"route_not_found\" => StatusCode::NOT_FOUND,\n                _ => StatusCode::SERVICE_UNAVAILABLE,\n            };\n            json_response(status, &error)\n        }\n        Err(_) => error_response(\n            StatusCode::SERVICE_UNAVAILABLE,\n            \"qmi_owner_stopped\",\n            \"QMI owner task failed\",\n        ),\n"
+    },
+    {
+      "id": "uim_ad_read_fallback",
+      "file": "rust/crates/proletarius-qmi-services/src/uim.rs",
+      "line": 107,
+      "end_line": 110,
+      "exact_fragment": "    fn read_native_plmn_from_imsi(&self) -> Result<NativeMccMnc, UimClientError> {\n        let imsi = self.read_imsi()?;\n        let ad = self.read_transparent_fallback(EF_AD).unwrap_or_default();\n        native_mcc_mnc_from_imsi(&imsi, &ad)\n"
+    },
+    {
+      "id": "uim_file_attributes",
+      "file": "rust/crates/proletarius-qmi-services/src/uim.rs",
+      "line": 149,
+      "end_line": 158,
+      "exact_fragment": "    fn file_attributes(&self, file_id: u16, path: &[u8]) -> Result<FileAttributes, UimClientError> {\n        let session = session_value(SESSION_PRIMARY_GW_PROVISIONING);\n        let file = file_value(file_id, path)?;\n        let response = self.uim.request(\n            UIM_GET_FILE_ATTRIBUTES,\n            &[Tlv::new(0x01, &session), Tlv::new(0x02, &file)],\n        )?;\n        validate_response(&response, SERVICE_UIM, UIM_GET_FILE_ATTRIBUTES)?;\n        parse_file_attributes(&response)\n    }\n"
+    },
+    {
+      "id": "uim_mnc_length_default",
+      "file": "rust/crates/proletarius-qmi-services/src/uim.rs",
+      "line": 357,
+      "end_line": 362,
+      "exact_fragment": "fn native_mcc_mnc_from_imsi(imsi: &str, ef_ad: &[u8]) -> Result<NativeMccMnc, UimClientError> {\n    let mnc_len = if ef_ad.len() >= 4 && matches!(ef_ad[3], 2 | 3) {\n        usize::from(ef_ad[3])\n    } else {\n        2\n    };\n"
+    },
+    {
+      "id": "uim_plmn_writer",
+      "file": "rust/crates/proletarius-qmi-services/src/uim.rs",
+      "line": 64,
+      "end_line": 69,
+      "exact_fragment": "    pub fn get_native_mcc_mnc(&self) -> Result<NativeMccMnc, UimClientError> {\n        if let Ok(Some(plmn)) = self.read_native_plmn_from_opl() {\n            return Ok(plmn);\n        }\n        self.read_native_plmn_from_imsi()\n    }\n"
+    },
+    {
+      "id": "uim_read_record",
+      "file": "rust/crates/proletarius-qmi-services/src/uim.rs",
+      "line": 160,
+      "end_line": 182,
+      "exact_fragment": "    fn read_record(\n        &self,\n        file_id: u16,\n        path: &[u8],\n        record_number: u16,\n        record_length: u16,\n    ) -> Result<Vec<u8>, UimClientError> {\n        let session = session_value(SESSION_PRIMARY_GW_PROVISIONING);\n        let file = file_value(file_id, path)?;\n        let mut info = [0_u8; 4];\n        info[..2].copy_from_slice(&record_number.to_le_bytes());\n        info[2..].copy_from_slice(&record_length.to_le_bytes());\n        let response = self.uim.request(\n            UIM_READ_RECORD,\n            &[\n                Tlv::new(0x01, &session),\n                Tlv::new(0x02, &file),\n                Tlv::new(0x03, &info),\n            ],\n        )?;\n        validate_response(&response, SERVICE_UIM, UIM_READ_RECORD)?;\n        Ok(read_result(&response, 0x11)?.unwrap_or_default())\n    }\n"
+    },
+    {
+      "id": "uim_read_transparent",
+      "file": "rust/crates/proletarius-qmi-services/src/uim.rs",
+      "line": 195,
+      "end_line": 213,
+      "exact_fragment": "    fn read_transparent(&self, file_id: u16, path: &[u8]) -> Result<Vec<u8>, UimClientError> {\n        let session = session_value(SESSION_PRIMARY_GW_PROVISIONING);\n        let file = file_value(file_id, path)?;\n        let read_info = [0_u8; 4];\n        let response = self.uim.request(\n            UIM_READ_TRANSPARENT,\n            &[\n                Tlv::new(0x01, &session),\n                Tlv::new(0x02, &file),\n                Tlv::new(0x03, &read_info),\n            ],\n        )?;\n        validate_response(&response, SERVICE_UIM, UIM_READ_TRANSPARENT)?;\n        if let Some(data) = read_result(&response, 0x11)? {\n            return Ok(data);\n        }\n        // Keep the Go QMI parser's compatibility fallback for older modem\n        // firmware that places transparent data directly in TLV 0x10.\n        Ok(response.find_tlv(0x10).unwrap_or_default().to_vec())\n"
+    },
+    {
+      "id": "usb_alternate_failure",
+      "file": "rust/crates/proletarius-qmi-libusb/src/macos.rs",
+      "line": 142,
+      "end_line": 157,
+      "exact_fragment": "                if candidate.alternate_setting != 0\n                    && let Err(error) = handle.set_alternate_setting(\n                        candidate.interface_number,\n                        candidate.alternate_setting,\n                    )\n                {\n                    let probe_failure = format!(\n                        \"select alternate setting {} on interface {}: {error}\",\n                        candidate.alternate_setting, candidate.interface_number\n                    );\n                    confirm_failed_interface_setup(handle, probe_failure.clone(), |handle| {\n                        handle.release_interface(candidate.interface_number)\n                    })?;\n                    push_probe_error(&mut probe_errors, probe_failure);\n                    continue;\n                }\n",
+      "claim": "An alternate-setting failure requires a confirmed interface setup cleanup before the candidate scan continues."
+    },
+    {
+      "id": "usb_bulk_writer",
+      "file": "rust/crates/proletarius-qmi-libusb/src/macos.rs",
+      "line": 374,
+      "end_line": 403,
+      "exact_fragment": "            let transfer_timeout = remaining.max(Duration::from_millis(1));\n            let state = self\n                .state\n                .read()\n                .map_err(|_| io::Error::other(\"QMI USB transport state poisoned\"))?;\n            let device = state.as_ref().ok_or_else(|| {\n                io::Error::new(io::ErrorKind::Interrupted, \"QMI transport closed\")\n            })?;\n            let written =\n                match device\n                    .handle\n                    .write_bulk(self.endpoint_out, &data[offset..], transfer_timeout)\n                {\n                    Ok(written) => written,\n                    Err(rusb::Error::Timeout) => {\n                        return Err(io::Error::new(\n                            io::ErrorKind::TimedOut,\n                            \"QMI USB write timed out\",\n                        ));\n                    }\n                    Err(error) => return Err(libusb_error(error)),\n                };\n            if written == 0 {\n                return Err(io::Error::new(\n                    io::ErrorKind::WriteZero,\n                    \"QMI USB write made no progress\",\n                ));\n            }\n            offset += written;\n        }\n",
+      "claim": "libusb bulk writes use the selected endpoint and bounded timeout"
+    },
+    {
+      "id": "usb_claim",
+      "file": "rust/crates/proletarius-qmi-libusb/src/macos.rs",
+      "line": 129,
+      "end_line": 141,
+      "exact_fragment": "                if let Err(error) = handle.claim_interface(candidate.interface_number) {\n                    push_probe_error(\n                        &mut probe_errors,\n                        format!(\n                            \"claim interface {} ({:02x}/{:02x}/{:02x}): {error}\",\n                            candidate.interface_number,\n                            candidate.class,\n                            candidate.subclass,\n                            candidate.protocol\n                        ),\n                    );\n                    continue;\n                }\n",
+      "claim": "macOS transport claims one QMI interface candidate"
+    },
+    {
+      "id": "usb_ctl_sync",
+      "file": "rust/crates/proletarius-qmi-libusb/src/macos.rs",
+      "line": 191,
+      "end_line": 203,
+      "exact_fragment": "                let sync = client\n                    .send_request_with_timeout(0, 0, CTL_SYNC, &[], QMI_SYNC_TIMEOUT)\n                    .and_then(|response| response.check_result());\n                match sync {\n                    Ok(()) => return Ok(QmiUsbClient { client, info }),\n                    Err(error) => {\n                        crate::confirm_failed_probe_cleanup(\n                            format!(\n                                \"QMI CTL_SYNC failed on interface {}: {error}\",\n                                candidate.interface_number\n                            ),\n                            client.close(),\n                        )?;\n",
+      "claim": "CTL_SYNC must succeed before client is exposed; failed probe requires cleanup"
+    },
+    {
+      "id": "usb_failed_setup_cleanup",
+      "file": "rust/crates/proletarius-qmi-libusb/src/macos.rs",
+      "line": 445,
+      "end_line": 457,
+      "exact_fragment": "fn confirm_failed_interface_setup<H>(\n    handle: H,\n    probe_failure: String,\n    release: impl FnOnce(&H) -> Result<(), rusb::Error>,\n) -> io::Result<()> {\n    let released = release(&handle);\n    drop(handle);\n    crate::confirm_failed_probe_cleanup(\n        probe_failure,\n        release_after_handle_drop(released).map_err(proletarius_qmi_core::ClientError::Io),\n    )\n}\n\n",
+      "claim": "The failed setup drops the same claimed handle before classifying cleanup; unknown release aborts probing."
+    },
+    {
+      "id": "usb_reader_construction_cleanup",
+      "file": "rust/crates/proletarius-qmi-libusb/src/macos.rs",
+      "line": 286,
+      "end_line": 304,
+      "exact_fragment": "fn start_client_with_cleanup<T: Transport + Clone + 'static>(\n    transport: T,\n    options: ClientOptions,\n    start: impl FnOnce(\n        Box<dyn Transport>,\n        ClientOptions,\n    ) -> Result<Client, proletarius_qmi_core::ClientError>,\n) -> io::Result<Result<Client, proletarius_qmi_core::ClientError>> {\n    let result = start(Box::new(transport.clone()), options);\n    if let Err(error) = &result {\n        crate::confirm_failed_probe_cleanup(\n            format!(\"start QMI transport reader: {error}\"),\n            transport\n                .shutdown()\n                .map_err(proletarius_qmi_core::ClientError::Io),\n        )?;\n    }\n    Ok(result)\n}\n",
+      "claim": "Reader construction retains the shared same transport; startup error must receive confirmed shutdown before candidate probing continues."
+    },
+    {
+      "id": "usb_release",
+      "file": "rust/crates/proletarius-qmi-libusb/src/macos.rs",
+      "line": 407,
+      "end_line": 438,
+      "exact_fragment": "    fn shutdown(&self) -> io::Result<()> {\n        if self.closed.swap(true, Ordering::AcqRel) {\n            return Ok(());\n        }\n        let mut state = self\n            .state\n            .write()\n            .map_err(|_| io::Error::other(\"QMI USB transport state poisoned\"))?;\n        release_device(&mut state)\n    }\n}\n\nfn release_device(state: &mut Option<ClaimedDevice>) -> io::Result<()> {\n    let Some(device) = state.take() else {\n        return Ok(());\n    };\n    // The handle also releases the interface during Drop if libusb reports a\n    // release error here. Keeping the single-owner lease alive until after\n    // that attempt prevents another in-process opener from racing teardown.\n    let release_result = device.handle.release_interface(device.interface_number);\n    drop(device);\n    release_after_handle_drop(release_result)\n}\n\n/// A disconnected USB device cannot acknowledge RELEASE_INTERFACE. Once the\n/// handle has actually been dropped, NoDevice confirms this old connection is\n/// gone and cannot contend with a newly enumerated device. Other errors keep\n/// physical cleanup unconfirmed and fence automatic reopen.\nfn release_after_handle_drop(result: Result<(), rusb::Error>) -> io::Result<()> {\n    match result {\n        Ok(()) | Err(rusb::Error::NoDevice) => Ok(()),\n        Err(error) => Err(libusb_error(error)),\n",
+      "claim": "transport shutdown releases claimed interface and classifies unknown cleanup"
+    }
+  ],
+  "producer_writer_exit": {
+    "producer": "Swift defaults to -backend=at and has no direct QMI RPC call in the reviewed Swift source. Explicit QMI mode exposes five typed QMI actions only through the authenticated private .in Unix socket; public and .rs listeners reject bare /api/internal and every /api/internal/ descendant before token admission. Main retains the optional retry worker only in QMI mode. Default AT launch does not prove QMI reachability; other internal consumers remain unresolved.",
+    "format": "POST JSON is limited to 16 KiB. Open has a typed control_path; close, probe and operator require an empty object; set-ims denies unknown fields and an empty update. QMI core encodes service/client/transaction/message/TLV packets before a serialized transport write.",
+    "writer": "QmiState mutex serializes session selection/publication; macOS libusb claims one candidate and writes QMI frames to selected bulk endpoint after CTL_SYNC.",
+    "exit": "Typed actions hold the QMI operation gate and state mutex through their result; private close fences retry. Session close aggregates IMS/NAS/UIM and USB client result; client stops transport and joins reader; retry lifecycle stops/joins worker; main retains report. Unknown physical cleanup blocks reopen."
+  },
+  "candidate_semantic_instances": [
+    {
+      "id": "at_mode_no_retry",
+      "trigger": "-backend=at",
+      "static_expected_path": "No QMI retry worker or physical QMI session is started.",
+      "anchor_ids": [
+        "retry_worker"
+      ],
+      "registration": "CANDIDATE_SOFTWARE_BRANCH_NOT_FROZEN_PRODUCT_INSTANCE",
+      "hardware_verified": false,
+      "acceptance_pass_awarded": false
+    },
+    {
+      "id": "auto_absent_retry",
+      "trigger": "QMI mode, automatic selection, no matching device",
+      "static_expected_path": "Owner records unavailable/backoff; a retained worker retries without publishing a session.",
+      "anchor_ids": [
+        "configured_open_writer",
+        "main_retry_producer",
+        "retry_entry",
+        "selector_auto_exact"
+      ],
+      "registration": "CANDIDATE_SOFTWARE_BRANCH_NOT_FROZEN_PRODUCT_INSTANCE",
+      "hardware_verified": false,
+      "acceptance_pass_awarded": false
+    },
+    {
+      "id": "auto_claim_ctl",
+      "trigger": "QMI mode, matching interface and successful CTL_SYNC",
+      "static_expected_path": "One claimed transport/client plus IMS/NAS/UIM session is published.",
+      "anchor_ids": [
+        "configured_open_writer",
+        "macos_factory",
+        "usb_claim",
+        "usb_ctl_sync"
+      ],
+      "registration": "CANDIDATE_SOFTWARE_BRANCH_NOT_FROZEN_PRODUCT_INSTANCE",
+      "hardware_verified": false,
+      "acceptance_pass_awarded": false
+    },
+    {
+      "id": "exact_selector_reconnect",
+      "trigger": "Private open with exact VID:PID; link later disappears",
+      "static_expected_path": "Retained selector/epoch constrain reconnect after confirmed old-session close.",
+      "anchor_ids": [
+        "http_open_close_format",
+        "main_public_private_reject",
+        "main_socket_auth",
+        "main_socket_dispatch",
+        "main_socket_match",
+        "private_open_selector",
+        "retry_reconnect",
+        "selector_auto_exact"
+      ],
+      "registration": "CANDIDATE_SOFTWARE_BRANCH_NOT_FROZEN_PRODUCT_INSTANCE",
+      "hardware_verified": false,
+      "acceptance_pass_awarded": false
+    },
+    {
+      "id": "private_close_fence",
+      "trigger": "Authenticated private close during idle or retry",
+      "static_expected_path": "Explicit-close epoch prevents automatic reopen; close error remains observable.",
+      "anchor_ids": [
+        "main_public_private_reject",
+        "main_socket_auth",
+        "main_socket_dispatch",
+        "main_socket_match",
+        "platform_session_close",
+        "private_close_fence",
+        "retry_entry"
+      ],
+      "registration": "CANDIDATE_SOFTWARE_BRANCH_NOT_FROZEN_PRODUCT_INSTANCE",
+      "hardware_verified": false,
+      "acceptance_pass_awarded": false
+    },
+    {
+      "id": "late_open_cancellation",
+      "trigger": "Startup timeout, private close, or daemon stop during open",
+      "static_expected_path": "Late handoff cannot orphan an owned session; worker and cleanup result are joined.",
+      "anchor_ids": [
+        "late_handoff",
+        "main_qmi_shutdown",
+        "retry_shutdown_join"
+      ],
+      "registration": "CANDIDATE_SOFTWARE_BRANCH_NOT_FROZEN_PRODUCT_INSTANCE",
+      "hardware_verified": false,
+      "acceptance_pass_awarded": false
+    },
+    {
+      "id": "detach_cleanup_unknown",
+      "trigger": "Reader loss or physical release error",
+      "static_expected_path": "Old client/USB release is attempted; unconfirmed result fences subsequent auto open.",
+      "anchor_ids": [
+        "configured_open_writer",
+        "core_close_join",
+        "platform_abort_result",
+        "reopen_cleanup_fence",
+        "retry_reconnect",
+        "usb_release"
+      ],
+      "registration": "CANDIDATE_SOFTWARE_BRANCH_NOT_FROZEN_PRODUCT_INSTANCE",
+      "hardware_verified": false,
+      "acceptance_pass_awarded": false
+    },
+    {
+      "id": "shutdown_join",
+      "trigger": "Daemon shutdown with QMI startup/retry still running",
+      "static_expected_path": "Stop and join result is returned to main shutdown report, including unknown close.",
+      "anchor_ids": [
+        "core_close_join",
+        "main_qmi_shutdown",
+        "retry_shutdown_join"
+      ],
+      "registration": "CANDIDATE_SOFTWARE_BRANCH_NOT_FROZEN_PRODUCT_INSTANCE",
+      "hardware_verified": false,
+      "acceptance_pass_awarded": false
+    }
+  ],
+  "unresolved": [
+    "Historical macOS QMI/MBIM supported models, firmware and operations are not recoverable from this current-code trace alone.",
+    "This static successor audit establishes no QMI CTL_SYNC/service/USB cleanup or hotplug execution. The i667 DJI/CTExcel AT-based IMS registration subset does not validate the QMI transport or other hardware/carrier combinations.",
+    "Swift now defaults to -backend=at and projects /api/status, with no direct call to the reviewed private QMI routes. Explicit QMI consumers, default-launch QMI reachability and historical support membership remain UNRESOLVED_NOT_PASS.",
+    "Set-ims can have an UNKNOWN modem outcome after a submitted request loses its response; this static trace does not authorize replay or award a successful setting.",
+    "Operator EF-AD read failure can be hidden by empty AD and a default MNC length of 2; NAS name read failure can be hidden by an empty name, so 200 does not prove those reads or carrier identity.",
+    "Other P0 producer/writer/exit families, UIM business scope and the formal device/card/carrier instance registry remain outside this finite slice."
+  ],
+  "overall_denominator_frozen": false,
+  "functional_acceptance_awarded": false,
+  "overall_product_complete": false,
+  "route_auth_pairs": {
+    "private_unix_socket": [
+      "main_socket_match",
+      "main_socket_auth",
+      "main_socket_dispatch"
+    ],
+    "public_and_rs_denied": [
+      "main_public_private_reject"
+    ]
+  },
+  "excluded_leaf_ids": [
+    "P2B-4.qmi-uim"
+  ],
+  "historical_review": {
+    "path": "docs/optimization/all-rust/iteration-685-p0-qmi-owner-trace.json",
+    "sha256": "7fd06507d292c8190a9b5bda5dcb2e6fa62830809f116aebecb6088e7188bf22"
+  },
+  "source_refresh": {
+    "iteration": 686,
+    "review": "Successor to immutable i685 nine-file finite QMI trace. No QMI source file or exact anchor changed in i686: the Swift eSIM HTTP receipt policy and its request-policy test, plus their manually reviewed contract fingerprints, changed without altering the authenticated .in QMI RPC boundary or public/.rs internal-route rejection. Full cold prepare/execute/verify, device, carrier and historical compatibility acceptance remain separate and pending. Six software exclusions, product false and denominator unfrozen remain unchanged.",
+    "source_files_changed": [],
+    "unchanged_source_files": [
+      "app/Sources/BackendProcess.swift",
+      "rust/crates/proletarius-qmi-core/src/lib.rs",
+      "rust/crates/proletarius-qmi-libusb/src/macos.rs",
+      "rust/crates/proletarius-qmi-libusb/src/selection.rs",
+      "rust/crates/proletarius-qmi-services/src/client.rs",
+      "rust/crates/proletarius-qmi-services/src/uim.rs",
+      "rust/crates/proletariusd/src/main.rs",
+      "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "rust/crates/proletariusd/src/qmi_native_startup.rs"
+    ],
+    "newly_reviewed_source_files": [],
+    "added_anchors": [],
+    "retired_historical_anchors": [],
+    "functional_acceptance_awarded": false
+  },
+  "swift_boundary": {
+    "launch_anchor_id": "swift_default_at_launch",
+    "direct_qmi_rpc_calls": [],
+    "status": "DEFAULT_AT_NO_DIRECT_SWIFT_QMI_RPC_INTERNAL_CONSUMERS_UNRESOLVED",
+    "acceptance_pass_awarded": false
+  },
+  "typed_operations": [
+    {
+      "id": "probe",
+      "route": "POST /api/internal/qmi/probe",
+      "request": "Strict empty JSON object, POST only, at most 16 KiB; invalid input performs no typed QMI call.",
+      "writer": "Under one state mutex and operation gate, IMS_GET_SERVICES then IMSA_GET_REGISTRATION use the shared QMI client and serialized USB bulk writer.",
+      "response": "200 returns settings and registration JSON only after both reads; invalid input is 400, owner/read failure is 503.",
+      "failure": "A classified read failure may abort/close the old session, reopen once and re-query; failed or unconfirmed cleanup fences replacement.",
+      "exit": "Private close, retry shutdown and daemon shutdown share the retained session close/client join/USB release chain.",
+      "typed_unknown": "No physical IMS/IMSA response, registration or DJI transport receipt is proven by this static trace.",
+      "anchor_ids": [
+        "core_close_join",
+        "ims_read_writer",
+        "imsa_read_writer",
+        "main_public_private_reject",
+        "main_qmi_shutdown",
+        "main_socket_auth",
+        "main_socket_dispatch",
+        "main_socket_match",
+        "operation_gate",
+        "owner_probe",
+        "owner_read_recovery",
+        "platform_probe",
+        "platform_session_close",
+        "private_shutdown_gate",
+        "qmi_wire_writer",
+        "retry_shutdown_join",
+        "service_response_validation",
+        "strict_empty_object",
+        "typed_dispatch",
+        "typed_response",
+        "usb_bulk_writer",
+        "usb_release"
+      ],
+      "registration": "STATIC_SOFTWARE_TRACE_NOT_FROZEN_INSTANCE",
+      "hardware_verified": false,
+      "acceptance_pass_awarded": false
+    },
+    {
+      "id": "set-ims",
+      "route": "POST /api/internal/qmi/set-ims",
+      "request": "Typed JSON optional IMS fields with deny_unknown_fields and at least one field, POST only, at most 16 KiB.",
+      "writer": "Under one state mutex and operation gate, ImsSettingsUpdate becomes IMS_SET_SERVICES TLVs and uses the shared QMI client and serialized USB bulk writer.",
+      "response": "200 updated=true only after a validated IMS response; invalid input is 400 and owner/service failure is 503.",
+      "failure": "A failure can trigger close/reopen but the IMS mutation is not replayed; a transport error after submission does not prove whether the modem applied it.",
+      "exit": "Private close, retry shutdown and daemon shutdown share the retained session close/client join/USB release chain; uncertain cleanup fences reopen.",
+      "typed_unknown": "SUBMITTED_MUTATION_OUTCOME_UNKNOWN_ON_LOST_RESPONSE; no physical IMS setting/readback receipt is proven.",
+      "anchor_ids": [
+        "core_close_join",
+        "ims_set_writer",
+        "ims_tlv_writer",
+        "main_public_private_reject",
+        "main_qmi_shutdown",
+        "main_socket_auth",
+        "main_socket_dispatch",
+        "main_socket_match",
+        "operation_gate",
+        "owner_set_ims",
+        "platform_session_close",
+        "platform_set_ims",
+        "private_shutdown_gate",
+        "qmi_wire_writer",
+        "retry_shutdown_join",
+        "service_response_validation",
+        "typed_conversion",
+        "typed_dispatch",
+        "typed_request",
+        "typed_response",
+        "usb_bulk_writer",
+        "usb_release"
+      ],
+      "registration": "STATIC_SOFTWARE_TRACE_NOT_FROZEN_INSTANCE",
+      "hardware_verified": false,
+      "acceptance_pass_awarded": false
+    },
+    {
+      "id": "operator",
+      "route": "POST /api/internal/qmi/operator",
+      "request": "Strict empty JSON object, POST only, at most 16 KiB; invalid input performs no typed QMI call.",
+      "writer": "Under one state mutex and operation gate, UIM file-attribute, record and transparent reads validate their service responses; OPL falls back to IMSI/EF-AD for MCC/MNC. NAS operator-name read is optional through the shared QMI client and serialized USB bulk writer.",
+      "response": "200 returns mcc/mnc/name after UIM success; EF-AD read failure becomes empty AD and can default MNC length to 2, while failed NAS name read becomes an empty name. Invalid input is 400 and UIM/owner failure is 503.",
+      "failure": "A classified UIM read failure may abort/close the old session, reopen once and re-query; failed or unconfirmed cleanup fences replacement.",
+      "exit": "Private close, retry shutdown and daemon shutdown share the retained session close/client join/USB release chain.",
+      "typed_unknown": "EF-AD read failure can be hidden by empty AD and default MNC length 2; NAS name failure can be hidden by an empty name. No physical UIM/NAS result or carrier identity is proven.",
+      "anchor_ids": [
+        "core_close_join",
+        "main_public_private_reject",
+        "main_qmi_shutdown",
+        "main_socket_auth",
+        "main_socket_dispatch",
+        "main_socket_match",
+        "nas_name_writer",
+        "operation_gate",
+        "owner_operator",
+        "owner_read_recovery",
+        "platform_operator",
+        "platform_session_close",
+        "private_shutdown_gate",
+        "qmi_wire_writer",
+        "retry_shutdown_join",
+        "service_response_validation",
+        "strict_empty_object",
+        "typed_dispatch",
+        "typed_response",
+        "uim_ad_read_fallback",
+        "uim_file_attributes",
+        "uim_mnc_length_default",
+        "uim_plmn_writer",
+        "uim_read_record",
+        "uim_read_transparent",
+        "usb_bulk_writer",
+        "usb_release"
+      ],
+      "registration": "STATIC_SOFTWARE_TRACE_NOT_FROZEN_INSTANCE",
+      "hardware_verified": false,
+      "acceptance_pass_awarded": false
+    }
+  ],
+  "source_pin_coverage": {
+    "snapshot_source_files": [
+      "app/Sources/BackendProcess.swift",
+      "rust/crates/proletarius-qmi-core/src/lib.rs",
+      "rust/crates/proletarius-qmi-libusb/src/macos.rs",
+      "rust/crates/proletarius-qmi-libusb/src/selection.rs",
+      "rust/crates/proletariusd/src/main.rs",
+      "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "rust/crates/proletariusd/src/qmi_native_startup.rs"
+    ],
+    "independent_sha256_source_files": [
+      "rust/crates/proletarius-qmi-services/src/client.rs",
+      "rust/crates/proletarius-qmi-services/src/uim.rs"
+    ]
+  },
+  "software_acceptance_scope": {
+    "iteration": 666,
+    "authority": "DIRECT_USER_INSTRUCTION_FOR_THIS_ROUND",
+    "status": "SOFTWARE_ONLY_NO_DEVICE_OR_CARRIER_ACCEPTANCE",
+    "connect_dji_module": false,
+    "connect_reader": false,
+    "physical_or_carrier_acceptance": "UNVERIFIED_EXCLUDED_BY_USER",
+    "excluded_acceptance_groups": [
+      "DJI_USB_QMI_AT_hardware",
+      "PCSC_BLE_eSIM_hardware",
+      "carrier_VoWiFi_SMS_call_interoperability",
+      "physical_audio_permissions_quality_and_long_run",
+      "external_Telegram_Bark_delivery",
+      "legacy_3_42_downgrade_support"
+    ],
+    "physical_or_carrier_leaves_promoted": false,
+    "new_functional_passes": 0,
+    "overall_denominator_frozen": false,
+    "overall_percentage": null
+  }
+}

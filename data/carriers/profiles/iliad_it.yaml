@@ -1,0 +1,24 @@
+version: 3
+kind: carrier_bundle
+id: apple_iliad_it
+bundle: Iliad_it.bundle
+supported_plmns:
+    - "20815"
+    - "22250"
+common:
+    apns:
+        - apn: iliad
+          type_mask: 55
+    ims:
+        register:
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.srvcc-alerting
+            early_media_needs_header: false
+            support_p_early_media: false
+        volte:
+            enable_volte_by_default: true

@@ -1,0 +1,24 @@
+version: 3
+kind: carrier_bundle
+id: apple_robi_bd
+bundle: Robi_bd.bundle
+supported_plmns:
+    - "47002"
+plmn_overrides:
+    "47002":
+        apns:
+            - apn: INTERNET
+              type_mask: 49
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+            - apn: ims
+              type_mask: 131072
+        ims:
+            apn: ims
+            signaling:
+                preconditions: unsupported
+                support_p_early_media: true
+                early_media_needs_header: true
+                require_preconditions_when_mandatory: false
+                contact:
+                    always_add_sip_instance: true

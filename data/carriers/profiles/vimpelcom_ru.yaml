@@ -1,0 +1,86 @@
+version: 3
+kind: carrier_bundle
+id: apple_vimpelcom_ru
+bundle: VimpelCom_ru.bundle
+supported_plmns:
+    - "25099"
+plmn_overrides:
+    "25099":
+        apns:
+            - apn: internet.beeline.ru
+              username: beeline
+              password: beeline
+              type_mask: 49
+            - apn: mms.beeline.ru
+              username: beeline
+              password: beeline
+              type_mask: 4
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              support_switch_over: true
+              use_network_mtu: true
+              allow_no_dns: 1
+            - apn: xcap.beeline.ru
+              type_mask: 1048576
+              tech_type_mask: 1048576
+        e911:
+            over_itech_supported: false
+            wifi_calling_without_entitlement: true
+        ims:
+            apn: ims
+            epdg:
+                address: epdg.epc.mnc099.mcc250.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 20
+                      name: AssignedPCSCFIPv4
+                      type: v4
+                    - identifier: 21
+                      name: AssignedPCSCFIPv6
+                      type: v6
+            ike:
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes128
+                          integrity:
+                            - sha1
+                          rekey_pfs_group: 2
+                          esn: auto
+                          lifetime_seconds: 86400
+            register:
+                use_ipsec: true
+                expires: 7200
+                include_cellular_network_info: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                        - 5XX
+                        - 6XX
+                require_preconditions_when_mandatory: false
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                additional_headers:
+                    - selector: INVITE,INVITE:*
+                      headers:
+                        - 'Feature-Caps: *;+g.3gpp.srvcc-alerting'
+                sip_timers:
+                    InviteResponseTimeout: 6500
+            media:
+                rtp_inactivity_seconds: 20
+                rtcp_interval_seconds: 5
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true

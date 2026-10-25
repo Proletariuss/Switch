@@ -1,0 +1,10 @@
+version: 2
+plmn: "63301"
+profiles:
+    - id: apple_cw_sc
+      path: profiles/cw_sc.yaml
+      generic: true
+      selectors:
+        - raw: "63301"
+          carrier_name: CW Seychelles
+          iso: SC

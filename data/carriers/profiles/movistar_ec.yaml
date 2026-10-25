@@ -1,0 +1,44 @@
+version: 3
+kind: carrier_bundle
+id: apple_movistar_ec
+bundle: movistar_ec.bundle
+supported_plmns:
+    - "74000"
+    - "740005"
+common:
+    apns:
+        - apn: internet.tigo.ec
+          username: tigo
+          password: tigo
+          type_mask: 49
+        - apn: ims
+          type_mask: 131072
+          support_switch_over: true
+    ims:
+        apn: ims
+        media:
+            rtcp_inactivity_seconds: 36000
+        register:
+            expires: 3600
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - "380"
+                    - "500"
+            early_media_needs_header: true
+            preconditions: supported
+            require_preconditions_when_mandatory: false
+            support_p_early_media: true
+        ussi:
+            enabled: true
+        volte:
+            enable_volte_by_default: true

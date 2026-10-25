@@ -1,0 +1,17 @@
+version: 2
+plmn: "44010"
+profiles:
+    - id: apple_docomo_jp
+      path: profiles/docomo_jp.yaml
+      generic: true
+      selectors:
+        - raw: "44010"
+          carrier_name: ドコモ
+          iso: JP
+        - raw: 44010_GID1-01FFFF
+          carrier_name: ドコモ
+          iso: JP
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 01FFFF

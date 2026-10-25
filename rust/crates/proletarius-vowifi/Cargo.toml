@@ -1,0 +1,27 @@
+[package]
+name = "proletarius-vowifi"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+http.workspace = true
+proletarius-ike = { path = "../proletarius-ike" }
+proletarius-ims = { path = "../proletarius-ims" }
+proletarius-sip = { path = "../proletarius-sip" }
+proletarius-sms = { path = "../proletarius-sms" }
+zeroize.workspace = true
+subtle.workspace = true
+getrandom.workspace = true
+smoltcp = { version = "=0.14.0", default-features = false, features = ["std", "medium-ip", "proto-ipv4", "proto-ipv6", "socket-tcp", "socket-udp"] }
+
+[dev-dependencies]
+aes.workspace = true
+cbc.workspace = true
+hmac.workspace = true
+sha2.workspace = true

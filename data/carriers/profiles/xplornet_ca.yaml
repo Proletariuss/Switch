@@ -1,0 +1,59 @@
+version: 3
+kind: carrier_bundle
+id: apple_xplornet_ca
+bundle: Xplornet_ca.bundle
+supported_plmns:
+    - "20404"
+    - "302130"
+common:
+    apns:
+        - apn: internet.xploremobile.com
+          type_mask: 55
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4
+        - apn: ims
+          type_mask: 131072
+          allowed_ip_stack: ipv6
+          roaming_ip_stack: ipv6
+          support_switch_over: true
+        - apn: xcap.xploremobile.com
+          type_mask: 1048576
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+        - apn: sos
+          type_mask: 262144
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+    ims:
+        apn: ims
+        ip_stack: ipv6
+        media:
+            rtcp_interval_seconds: 5
+            rtp_inactivity_seconds: 30
+        register:
+            include_cellular_network_info: true
+            use_ipsec: true
+        signaling:
+            contact:
+                always_add_sip_instance: true
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - "403"
+                    - "408"
+                    - "480"
+                    - "488"
+                    - "500"
+                    - "504"
+                    - "600"
+                    - "606"
+                    - "503"
+            early_media_needs_header: true
+            max_udp_message_size: 1300
+            preconditions: supported
+            require_preconditions_when_mandatory: false
+            sip_timers:
+                InviteResponseTimeout: 5000
+            support_p_early_media: true
+        volte:
+            enable_volte_by_default: true

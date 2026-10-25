@@ -1,0 +1,212 @@
+version: 3
+kind: carrier_bundle
+id: apple_reliancejio_in
+bundle: RelianceJio_in.bundle
+supported_plmns:
+    - "22201"
+    - "405840"
+    - "405854"
+    - "405855"
+    - "405856"
+    - "405857"
+    - "405858"
+    - "405859"
+    - "405860"
+    - "405861"
+    - "405862"
+    - "405863"
+    - "405864"
+    - "405865"
+    - "405866"
+    - "405867"
+    - "405868"
+    - "405869"
+    - "405870"
+    - "405871"
+    - "405872"
+    - "405873"
+    - "405874"
+common:
+    apns:
+        - apn: jionet
+          type_mask: 1081393
+          tech_type_mask: 1048576
+          allowed_ip_stack: ipv4v6
+          xlat464_enabled: true
+        - apn: ims
+          type_mask: 131072
+          tech_type_mask: 131072
+          allowed_ip_stack: ipv6
+          roaming_ip_stack: ipv4v6
+          support_switch_over: true
+          support_5g_sa_handover: true
+          dont_suspend: true
+        - apn: sos
+          type_mask: 262144
+          allowed_ip_stack: ipv6
+          roaming_ip_stack: ipv4v6
+    apple:
+        carrier_entitlements:
+            supported_entitlements: 11265
+    e911:
+        over_itech_supported: true
+        wifi_calling_without_entitlement: true
+    entitlement:
+        entitlement_url: https://hpdegprod.jio.com:8181/ium-OEMInterface/servlet/IUMServlet
+    ims:
+        apn: ims
+        epdg:
+            configuration_attributes:
+                - identifier: 16384
+                  name: AssignedPCSCFIPv4
+                  type: v4
+                - identifier: 16390
+                  name: AssignedPCSCFIPv6
+                  type: v6
+        ike:
+            child_sa:
+                proposals:
+                    - source_branch: FirstChild
+                      encryption:
+                        - aes128
+                      integrity:
+                        - sha1
+                      protocol: esp
+                      esn: auto
+                      install_policies: true
+                      secure_rekey: false
+                      lifetime_seconds: 86400
+            disable_switch_to_natt_port: true
+            dpd:
+                enabled: true
+                interval_seconds: 300
+                max_retries: 4
+                retry_interval_seconds: 10
+            local_identifier: 0$impi_user@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+            proposals:
+                - encryption:
+                    - aes256
+                  integrity:
+                    - sha1
+                  prf:
+                    - sha256
+                  dh_groups:
+                    - 2
+                  lifetime_seconds: 80000
+                  authentication_method: None
+                  eap_method: EAP-AKA
+        ip_stack: ipv4v6
+        media:
+            rtp_inactivity_seconds: 20
+        register:
+            expires: 7200
+            include_cellular_network_info: true
+            use_ipsec: true
+        signaling:
+            early_media_needs_header: true
+            preconditions: unsupported
+            re_register_on:
+                - method: INVITE
+                  statuses:
+                    - "403"
+            require_preconditions_when_mandatory: false
+            support_p_early_media: true
+        ussi:
+            enabled: true
+        volte:
+            enable_volte_by_default: true
+    roaming:
+        wifi_calling_allowed: true
+plmn_overrides:
+    "22201":
+        ims:
+            epdg:
+                address: epdg.epc.mnc001.mcc222.pub.3gppnetwork.org
+    "405840":
+        ims:
+            epdg:
+                address: epdg.epc.mnc840.mcc405.pub.3gppnetwork.org
+    "405854":
+        ims:
+            epdg:
+                address: epdg.epc.mnc854.mcc405.pub.3gppnetwork.org
+    "405855":
+        ims:
+            epdg:
+                address: epdg.epc.mnc855.mcc405.pub.3gppnetwork.org
+    "405856":
+        ims:
+            epdg:
+                address: epdg.epc.mnc856.mcc405.pub.3gppnetwork.org
+    "405857":
+        ims:
+            epdg:
+                address: epdg.epc.mnc857.mcc405.pub.3gppnetwork.org
+    "405858":
+        ims:
+            epdg:
+                address: epdg.epc.mnc858.mcc405.pub.3gppnetwork.org
+    "405859":
+        ims:
+            epdg:
+                address: epdg.epc.mnc859.mcc405.pub.3gppnetwork.org
+    "405860":
+        ims:
+            epdg:
+                address: epdg.epc.mnc860.mcc405.pub.3gppnetwork.org
+    "405861":
+        ims:
+            epdg:
+                address: epdg.epc.mnc861.mcc405.pub.3gppnetwork.org
+    "405862":
+        ims:
+            epdg:
+                address: epdg.epc.mnc862.mcc405.pub.3gppnetwork.org
+    "405863":
+        ims:
+            epdg:
+                address: epdg.epc.mnc863.mcc405.pub.3gppnetwork.org
+    "405864":
+        ims:
+            epdg:
+                address: epdg.epc.mnc864.mcc405.pub.3gppnetwork.org
+    "405865":
+        ims:
+            epdg:
+                address: epdg.epc.mnc865.mcc405.pub.3gppnetwork.org
+    "405866":
+        ims:
+            epdg:
+                address: epdg.epc.mnc866.mcc405.pub.3gppnetwork.org
+    "405867":
+        ims:
+            epdg:
+                address: epdg.epc.mnc867.mcc405.pub.3gppnetwork.org
+    "405868":
+        ims:
+            epdg:
+                address: epdg.epc.mnc868.mcc405.pub.3gppnetwork.org
+    "405869":
+        ims:
+            epdg:
+                address: epdg.epc.mnc869.mcc405.pub.3gppnetwork.org
+    "405870":
+        ims:
+            epdg:
+                address: epdg.epc.mnc870.mcc405.pub.3gppnetwork.org
+    "405871":
+        ims:
+            epdg:
+                address: epdg.epc.mnc871.mcc405.pub.3gppnetwork.org
+    "405872":
+        ims:
+            epdg:
+                address: epdg.epc.mnc872.mcc405.pub.3gppnetwork.org
+    "405873":
+        ims:
+            epdg:
+                address: epdg.epc.mnc873.mcc405.pub.3gppnetwork.org
+    "405874":
+        ims:
+            epdg:
+                address: epdg.epc.mnc874.mcc405.pub.3gppnetwork.org

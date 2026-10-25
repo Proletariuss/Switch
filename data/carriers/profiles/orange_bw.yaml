@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_orange_bw
+bundle: Orange_bw.bundle
+supported_plmns:
+    - "65202"
+plmn_overrides:
+    "65202":
+        apns:
+            - apn: internet.orange.co.bw
+              type_mask: 49
+            - apn: internet.orange.co.bw
+              type_mask: 48
+            - apn: mms.orange.co.bw
+              type_mask: 4

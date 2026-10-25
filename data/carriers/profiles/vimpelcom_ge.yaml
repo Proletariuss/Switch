@@ -1,0 +1,11 @@
+version: 3
+kind: carrier_bundle
+id: apple_vimpelcom_ge
+bundle: VimpelCom_ge.bundle
+supported_plmns:
+    - "28204"
+plmn_overrides:
+    "28204":
+        apns:
+            - apn: internet
+              type_mask: 49

@@ -1,0 +1,112 @@
+{
+  "crate": "proletarius-ims",
+  "example": "call_target_fixture",
+  "kind": "go-computed",
+  "rows": [
+    {
+      "name": "e164",
+      "args": [
+        "Kzg2IDE4OS0wNzMxLTMwNjA=",
+        "",
+        "aW1zLmhvbWUudGVzdA==",
+        ""
+      ],
+      "expected_stdout": "ok dGVsOis4NjE4OTA3MzEzMDYw"
+    },
+    {
+      "name": "international-access-prefix",
+      "args": [
+        "MDAgNDQgKDIwKSA3OTQ2LTAwMDA=",
+        "",
+        "aW1zLmhvbWUudGVzdA==",
+        ""
+      ],
+      "expected_stdout": "ok dGVsOis0NDIwNzk0NjAwMDA="
+    },
+    {
+      "name": "local-service-code",
+      "args": [
+        "MTAzMw==",
+        "",
+        "aW1zLmhvbWUudGVzdA==",
+        ""
+      ],
+      "expected_stdout": "ok dGVsOjEwMzM7cGhvbmUtY29udGV4dD1pbXMuaG9tZS50ZXN0"
+    },
+    {
+      "name": "carrier-context-override",
+      "args": [
+        "ODg4",
+        "c2lwOmltcy5jYXJyaWVyLnRlc3Q=",
+        "aW1zLmhvbWUudGVzdA==",
+        "aW1zLnJlYWxtLnRlc3Q="
+      ],
+      "expected_stdout": "ok dGVsOjg4ODtwaG9uZS1jb250ZXh0PWltcy5jYXJyaWVyLnRlc3Q="
+    },
+    {
+      "name": "sip-target-preserved",
+      "args": [
+        "IFNJUDphbGljZUBpbXMuZXhhbXBsZSA=",
+        "",
+        "aW1zLmhvbWUudGVzdA==",
+        ""
+      ],
+      "expected_stdout": "ok U0lQOmFsaWNlQGltcy5leGFtcGxl"
+    },
+    {
+      "name": "explicit-tel-preserved",
+      "args": [
+        "IHRlbDo4ODgg",
+        "",
+        "aW1zLmhvbWUudGVzdA==",
+        ""
+      ],
+      "expected_stdout": "ok dGVsOjg4OA=="
+    },
+    {
+      "name": "empty target",
+      "args": [
+        "ICAg",
+        "",
+        "aW1zLmV4YW1wbGUudGVzdA==",
+        ""
+      ],
+      "expected_stdout": "target_required",
+      "legacy_error": "imscore: call target is required"
+    },
+    {
+      "name": "local target missing context",
+      "args": [
+        "IDg4OCA=",
+        "",
+        "",
+        ""
+      ],
+      "expected_stdout": "phone_context_required",
+      "legacy_error": "imscore: local call target \"888\" requires phone-context"
+    },
+    {
+      "name": "emergency voice dial",
+      "args": [
+        "OTEx",
+        "",
+        "aW1zLmV4YW1wbGUudGVzdA==",
+        ""
+      ],
+      "expected_stdout": "emergency_calling_disabled",
+      "legacy_error": "imscore: emergency calling is disabled until E911 entitlement and location are available"
+    },
+    {
+      "name": "USSD voice dial",
+      "args": [
+        "KjEwMCM=",
+        "",
+        "aW1zLmV4YW1wbGUudGVzdA==",
+        ""
+      ],
+      "expected_stdout": "ussd_unavailable",
+      "legacy_error": "当前读卡器未提供可用的 USSD 查询通道，不能将此短码作为语音电话拨出"
+    }
+  ],
+  "schema": 1
+}

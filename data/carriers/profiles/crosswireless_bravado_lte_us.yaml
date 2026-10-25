@@ -1,0 +1,62 @@
+version: 3
+kind: carrier_bundle
+id: apple_crosswireless_bravado_lte_us
+bundle: CrossWireless_Bravado_LTE_US.bundle
+supported_plmns:
+    - "313010"
+plmn_overrides:
+    "313010":
+        apns:
+            - apn: tuligw
+              type_mask: 567
+              allowed_ip_stack: ipv4v6
+              use_network_mtu: true
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+              use_network_mtu: true
+            - apn: hos
+              type_mask: 1048576
+              allowed_ip_stack: ipv4
+              use_network_mtu: true
+            - apn: sos
+              type_mask: 262144
+              allowed_ip_stack: ipv4
+              roaming_ip_stack: ipv4v6
+              use_network_mtu: true
+        e911:
+            wifi_calling_without_entitlement: true
+            emergency_urns:
+                "922": 922@vzims.com
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                require_preconditions_when_mandatory: false
+                contact:
+                    always_add_sip_instance: true
+                sip_timers:
+                    D: 128000
+                    F: 30000
+                    InviteResponseTimeout: 10000
+                    T1: 3000
+                    T2: 16000
+                    T4: 17000
+            media:
+                rtp_inactivity_seconds: 10
+                rtcp_inactivity_seconds: 20
+                rtcp_interval_seconds: 5
+            ussi:
+                enabled: false
+            volte:
+                enable_volte_by_default: true

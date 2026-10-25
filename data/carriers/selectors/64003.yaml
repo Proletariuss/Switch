@@ -1,0 +1,10 @@
+version: 2
+plmn: "64003"
+profiles:
+    - id: apple_etisalat_tz
+      path: profiles/etisalat_tz.yaml
+      generic: true
+      selectors:
+        - raw: "64003"
+          carrier_name: ZANTEL
+          iso: TZ

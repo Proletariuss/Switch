@@ -1,0 +1,21 @@
+version: 3
+kind: carrier_bundle
+id: apple_orange_ml
+bundle: Orange_ml.bundle
+supported_plmns:
+    - "61002"
+plmn_overrides:
+    "61002":
+        apns:
+            - apn: internet
+              username: internet
+              password: internet
+              type_mask: 49
+            - apn: mms
+              username: mms
+              password: mms
+              type_mask: 4
+            - apn: internet
+              username: internet
+              password: internet
+              type_mask: 48

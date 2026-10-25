@@ -1,0 +1,18 @@
+version: 3
+kind: carrier_bundle
+id: apple_movistar_ni
+bundle: movistar_ni.bundle
+supported_plmns:
+    - "21407"
+    - "71030"
+    - "710300"
+common:
+    apns:
+        - apn: internet.tigo.ni
+          type_mask: 49
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4
+        - apn: internet.tigo.ni
+          type_mask: 48
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4

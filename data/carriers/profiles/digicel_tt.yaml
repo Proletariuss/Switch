@@ -1,0 +1,17 @@
+version: 3
+kind: carrier_bundle
+id: apple_digicel_tt
+bundle: Digicel_tt.bundle
+supported_plmns:
+    - "37413"
+    - "374130"
+common:
+    apns:
+        - apn: web
+          type_mask: 49
+        - apn: Wap
+          username: wap
+          password: wap
+          type_mask: 4
+        - apn: web
+          type_mask: 48

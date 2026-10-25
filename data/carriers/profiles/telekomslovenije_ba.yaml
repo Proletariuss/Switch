@@ -1,0 +1,41 @@
+version: 3
+kind: carrier_bundle
+id: apple_telekomslovenije_ba
+bundle: TelekomSlovenije_ba.bundle
+supported_plmns:
+    - "21890"
+plmn_overrides:
+    "21890":
+        apns:
+            - apn: active.bhmobile.ba
+              type_mask: 49
+              allowed_ip_stack: ipv4v6
+            - apn: mms.bhmobile.ba
+              type_mask: 4
+              allowed_ip_stack: ipv4
+            - apn: xcap
+              type_mask: 1048576
+              allowed_ip_stack: ipv4
+              no_cellular_reconnect_cause_codes:
+                - cause_codes:
+                    - 27
+                    - 29
+                    - 30
+                    - 31
+                    - 32
+                    - 33
+                    - 38
+                    - 91
+        ims:
+            signaling:
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            media:
+                rtp_inactivity_seconds: 20
+            volte:
+                enable_volte_by_default: true

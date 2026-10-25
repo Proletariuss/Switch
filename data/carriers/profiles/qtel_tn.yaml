@@ -1,0 +1,21 @@
+version: 3
+kind: carrier_bundle
+id: apple_qtel_tn
+bundle: Qtel_tn.bundle
+supported_plmns:
+    - "60503"
+plmn_overrides:
+    "60503":
+        apns:
+            - apn: internet.ooredoo.tn
+              type_mask: 49
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4
+            - apn: mms.ooredoo.tn
+              username: mms
+              password: mms
+              type_mask: 4
+            - apn: internet.ooredoo.tn
+              type_mask: 48
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4

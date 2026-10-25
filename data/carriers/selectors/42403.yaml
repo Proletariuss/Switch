@@ -1,0 +1,20 @@
+version: 2
+plmn: "42403"
+profiles:
+    - id: apple_du_ae
+      path: profiles/du_ae.yaml
+      generic: true
+      selectors:
+        - raw: "42403"
+          carrier_name: du
+          iso: AE
+    - id: apple_du_virgin_ae
+      path: profiles/du_virgin_ae.yaml
+      selectors:
+        - raw: 42403_ID-89971031010
+          carrier_name: Virgin
+          iso: AE
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "89971031010"

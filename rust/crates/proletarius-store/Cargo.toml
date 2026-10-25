@@ -1,0 +1,16 @@
+[package]
+name = "proletarius-store"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[features]
+raw-fault-tests = []
+# Compile-only device-SMS fence kernel; no production caller or dispatch.
+device-sms-generation-seal = []
+
+[dependencies]
+sha2.workspace = true
+serde.workspace = true
+serde_json.workspace = true

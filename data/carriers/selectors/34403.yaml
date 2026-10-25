@@ -1,0 +1,10 @@
+version: 2
+plmn: "34403"
+profiles:
+    - id: apple_apua_ag
+      path: profiles/apua_ag.yaml
+      generic: true
+      selectors:
+        - raw: "34403"
+          carrier_name: APUA inet
+          iso: AG

@@ -1,0 +1,13 @@
+version: 3
+kind: carrier_bundle
+id: apple_mascom_bw
+bundle: Mascom_bw.bundle
+supported_plmns:
+    - "65201"
+plmn_overrides:
+    "65201":
+        apns:
+            - apn: internet.mascom
+              type_mask: 49
+            - apn: internet.mascom
+              type_mask: 48

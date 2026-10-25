@@ -1,0 +1,10 @@
+version: 2
+plmn: "310130"
+profiles:
+    - id: apple_carolinawest_lte_us
+      path: profiles/carolinawest_lte_us.yaml
+      generic: true
+      selectors:
+        - raw: "310130"
+          carrier_name: Carolina West Wireless
+          iso: US

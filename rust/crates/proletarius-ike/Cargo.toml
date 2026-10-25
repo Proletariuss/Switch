@@ -1,0 +1,18 @@
+[package]
+name = "proletarius-ike"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+aes.workspace = true
+aes-gcm.workspace = true
+cbc.workspace = true
+crypto-bigint.workspace = true
+getrandom.workspace = true
+hmac.workspace = true
+sha1 = { workspace = true, features = ["compress"] }
+sha2.workspace = true
+subtle.workspace = true
+zeroize.workspace = true

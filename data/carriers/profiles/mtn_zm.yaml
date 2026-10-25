@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_mtn_zm
+bundle: MTN_zm.bundle
+supported_plmns:
+    - "64502"
+plmn_overrides:
+    "64502":
+        apns:
+            - apn: internet
+              type_mask: 49
+            - apn: mms
+              type_mask: 4
+            - apn: internet
+              type_mask: 48

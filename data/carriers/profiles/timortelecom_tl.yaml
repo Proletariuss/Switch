@@ -1,0 +1,11 @@
+version: 3
+kind: carrier_bundle
+id: apple_timortelecom_tl
+bundle: TimorTelecom_tl.bundle
+supported_plmns:
+    - "51402"
+plmn_overrides:
+    "51402":
+        apns:
+            - apn: internet4g
+              type_mask: 49

@@ -1,0 +1,10 @@
+version: 2
+plmn: "62001"
+profiles:
+    - id: apple_mtn_gh
+      path: profiles/mtn_gh.yaml
+      generic: true
+      selectors:
+        - raw: "62001"
+          carrier_name: MTN
+          iso: GH

@@ -1,0 +1,9 @@
+{
+  "origin": "legacy Go smsforward slow-delivery regression expectations",
+  "provider_requests": 1,
+  "outbound_admission_queued": 0,
+  "first_flush_attempted": 1,
+  "first_flush_delivered": 1,
+  "second_flush_attempted": 0,
+  "final_pending": 0
+}

@@ -1,0 +1,28 @@
+version: 3
+kind: carrier_bundle
+id: apple_telkomsel_id
+bundle: Telkomsel_id.bundle
+supported_plmns:
+    - "51010"
+plmn_overrides:
+    "51010":
+        apns:
+            - apn: internet
+              type_mask: 49
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+            - apn: mms
+              username: wap
+              password: wap123
+              type_mask: 4
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+            - apn: internet
+              type_mask: 48
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+        ims:
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true

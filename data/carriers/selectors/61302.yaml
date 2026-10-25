@@ -1,0 +1,10 @@
+version: 2
+plmn: "61302"
+profiles:
+    - id: apple_bhartiairtel_bf
+      path: profiles/bhartiairtel_bf.yaml
+      generic: true
+      selectors:
+        - raw: "61302"
+          carrier_name: Orange BF
+          iso: BF

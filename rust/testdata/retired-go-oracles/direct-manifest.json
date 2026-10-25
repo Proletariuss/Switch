@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "capture_iteration": 511,
+  "source_revision": "ed1bf2a55c0aa1aa80b2f84bd0854bd62e656425",
+  "source_tree_note": "Source revision is supplemented by producer source hashes because the checkout has uncommitted migration changes. Producer sources are retained in the iteration-511 baseline; normal tests never execute them.",
+  "go_version": "go1.26.7",
+  "fixtures": [
+    {
+      "file": "effective-proposals.json",
+      "sha256": "29cae417793ccabb9082be0a9adf70d373d351cf6d9a2e29f8ebaa8fda43cd35",
+      "bytes": 2472256,
+      "case_count": 2730,
+      "provenance": "go-computed",
+      "source_test": "TestReaderNativeEffectiveProposalOracle",
+      "source_package": "cmd/proletarius-macos",
+      "source_files_sha256": {
+        "backend/cmd/proletarius-macos/reader_native_proposal_oracle_test.go": "1498ffa1d61068d801a958c01c9d60967eb21b4390f2dcb0181b5d560c320427",
+        "backend/cmd/proletarius-macos/reader_vowifi_effective_oracle_support_test.go": "9912f557ddc03dd59bb5a702e7136ceafeb8ed8d2e38253a3c3e96f4578f5f27",
+        "rust/carrier-cases.json": "39302939c544b3732859b234df5b8fb4b164c43c186e28cda424e86510fe153b"
+      },
+      "generation_command": "SWITCH_PROPOSAL_ORACLE=\"$SWITCH_BUILD_DIR/reports/iteration-511-oracles/effective-proposals.json\" go test ./cmd/proletarius-macos -run '^TestReaderNativeEffectiveProposalOracle$' -count=1",
+      "historical_comparison": {
+        "file": "iteration-498-go-proposal-oracle.json",
+        "byte_identical": true
+      },
+      "scope": "Executable DH14-only IKE projection, renumbered; complete ESP offers with SPI 00000001."
+    },
+    {
+      "file": "usb-status.json",
+      "sha256": "a5b37dc3b2d0994f098483443fc0e0fd2979a6f693c208f7e6cb96e9636b1d59",
+      "bytes": 133123,
+      "case_count": 85,
+      "provenance": "frozen-go-projection",
+      "source_test": "TestUSBDeviceStatusExportLegacyParity",
+      "source_package": "cmd/proletarius-macos",
+      "source_files_sha256": {
+        "backend/cmd/proletarius-macos/usb_at_device_status_parity_test.go": "6c04110074452456b5c29a68970dfa67ded701e490baeacee2d06d3830e7824f"
+      },
+      "generation_command": "SWITCH_USB_AT_STATUS_PARITY_FIXTURE=\"$SWITCH_BUILD_DIR/reports/iteration-511-oracles/usb-status.json\" go test ./cmd/proletarius-macos -run '^TestUSBDeviceStatusExportLegacyParity$' -count=1"
+    },
+    {
+      "file": "radio.json",
+      "sha256": "dac7d3885ff82dadca2db9e4fd93a5def5b13d0a80012507181ad796fd9a5989",
+      "bytes": 95648,
+      "case_count": 86,
+      "provenance": "frozen-go-projection",
+      "source_test": "TestExportLegacyRadioProjection",
+      "source_package": "cmd/proletarius-macos",
+      "source_files_sha256": {
+        "backend/cmd/proletarius-macos/module_radio_projection_parity_test.go": "19a65d8580a295be608d34cf24867268f06b324f8db98bda435ef3b830b504ad"
+      },
+      "generation_command": "SWITCH_RADIO_PARITY_FIXTURE=\"$SWITCH_BUILD_DIR/reports/iteration-511-oracles/radio.json\" go test ./cmd/proletarius-macos -run '^TestExportLegacyRadioProjection$' -count=1"
+    },
+    {
+      "file": "http-methods.json",
+      "sha256": "c9518bbc8a9cc16778e3d4b095b332e12297a7c87486c09abb6e7afa238a4a14",
+      "bytes": 322083,
+      "case_count": 839,
+      "provenance": "go-computed",
+      "source_test": "TestExportPublicHTTPMethodParity",
+      "source_package": "cmd/proletarius-macos",
+      "source_files_sha256": {
+        "backend/cmd/proletarius-macos/public_http_method_parity_test.go": "29389f2f1d0737107ba669e8490e6dc71736136ff46894a31807e4b942412faa"
+      },
+      "generation_command": "SWITCH_HTTP_METHOD_PARITY_FIXTURE=\"$SWITCH_BUILD_DIR/reports/iteration-511-oracles/http-methods.json\" go test ./cmd/proletarius-macos -run '^TestExportPublicHTTPMethodParity$' -count=1",
+      "fixture_schema_version": 1,
+      "historical_comparison": {
+        "file": "iteration-500-http-method-oracle.json",
+        "semantic_equal_excluding": [
+          "go_version"
+        ],
+        "previous_go_version": "go1.26.3"
+      },
+      "pattern_count": 102
+    },
+    {
+      "file": "carrier-parameters.json",
+      "sha256": "e8fa45a5113ccf8ee22db46008b30dc5e512372041ec4bf55ae8aa2ac4479ee5",
+      "bytes": 4305692,
+      "case_count": 2726,
+      "provenance": "go-computed",
+      "source_test": "TestExportFrozenCarrierParameters",
+      "source_package": "internal/vowifi/carrier",
+      "source_files_sha256": {
+        "backend/internal/vowifi/carrier/frozen_parameters_export_test.go": "14ae2140eae06e74a24f0fab3370c0176c7683ba461f5e0005176cf02b87d4cc",
+        "backend/internal/vowifi/carrier/export_cases.go": "cb3fc8d87306d6c2710e5e375d94f7bb375d6ed9980d68dafdd55b22d6210593",
+        "backend/internal/vowifi/carrier/embedded_registry.go": "bdaa3f9c828ca6d83e6418b8889670366b183e75eca7107a5846c1442d0da652",
+        "backend/internal/vowifi/carrier/profile.go": "8f367ed05209574e671cb89800be2c7cae7ed3fc1f05ed6bcb57753166641c28",
+        "backend/internal/vowifi/carrier/native_profile.go": "e3eff094279923f8214a359a11baeccd783ca07b6278891b24a6f8197550e7a7",
+        "backend/internal/vowifi/carrier/user_template.go": "14015a7e549be3829fee957c8bf860d7ee96d16d9b3d347d9b4cff6ea5366b3f"
+      },
+      "generation_command": "SWITCH_ORACLE_OUTPUT_DIR=\"$SWITCH_BUILD_DIR/reports/iteration-511-oracles/\" go test ./internal/vowifi/carrier -run '^TestExportFrozenCarrierParameters$' -count=1",
+      "fixture_schema_version": 1,
+      "rejected_count": 3,
+      "selection_input_sha256": "39302939c544b3732859b234df5b8fb4b164c43c186e28cda424e86510fe153b"
+    }
+  ]
+}

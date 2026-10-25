@@ -1,0 +1,10 @@
+version: 2
+plmn: "25099"
+profiles:
+    - id: apple_vimpelcom_ru
+      path: profiles/vimpelcom_ru.yaml
+      generic: true
+      selectors:
+        - raw: "25099"
+          carrier_name: Beeline
+          iso: RU

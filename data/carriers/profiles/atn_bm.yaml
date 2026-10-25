@@ -1,0 +1,32 @@
+version: 3
+kind: carrier_bundle
+id: apple_atn_bm
+bundle: ATN_bm.bundle
+supported_plmns:
+    - "204043"
+    - "350000"
+common:
+    apns:
+        - apn: web.c1.bm
+          type_mask: 1
+          allowed_ip_stack: ipv4
+          roaming_ip_stack: ipv4
+        - apn: web.c1.bm
+          type_mask: 49
+          allowed_ip_stack: ipv4
+          roaming_ip_stack: ipv4
+        - apn: hos
+          type_mask: 1048576
+          allowed_ip_stack: ipv4
+          roaming_ip_stack: ipv4
+    ims:
+        media:
+            rtcp_interval_seconds: 5
+            rtp_inactivity_seconds: 30
+        register:
+            use_ipsec: true
+        signaling:
+            early_media_needs_header: false
+            support_p_early_media: false
+        volte:
+            enable_volte_by_default: true

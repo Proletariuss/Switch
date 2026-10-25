@@ -1,0 +1,20 @@
+version: 2
+plmn: "23801"
+profiles:
+    - id: apple_gigsky_us
+      path: profiles/gigsky_us.yaml
+      selectors:
+        - raw: 23801_GID1-6F
+          carrier_name: GigSky
+          iso: US
+          conditions:
+            - field: gid1
+              match: prefix
+              value: 6F
+    - id: apple_tdc_dk
+      path: profiles/tdc_dk.yaml
+      generic: true
+      selectors:
+        - raw: "23801"
+          carrier_name: TDC
+          iso: DK

@@ -1,0 +1,51 @@
+version: 3
+kind: carrier_bundle
+id: apple_tele2_ee
+bundle: Tele2_ee.bundle
+supported_plmns:
+    - "24803"
+plmn_overrides:
+    "24803":
+        apns:
+            - apn: internet.tele2.ee
+              username: wap
+              password: wap
+              type_mask: 32821
+              allowed_ip_stack: ipv4v6
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv6
+              support_switch_over: true
+            - apn: mms.tele2.ee
+              type_mask: 4
+            - apn: hos
+              type_mask: 1048576
+              tech_type_mask: 1048576
+              allowed_ip_stack: ipv6
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 5121
+        entitlement:
+            entitlement_url: https://entitlementee.t2lb.tele2.com/entitlement/
+        ims:
+            apn: ims
+            ip_stack: ipv6
+            register:
+                use_ipsec: true
+            signaling:
+                support_p_early_media: false
+                early_media_needs_header: false
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            media:
+                rtp_inactivity_seconds: 20
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true

@@ -1,0 +1,48 @@
+version: 3
+kind: carrier_bundle
+id: apple_wom_co
+bundle: WOM_co.bundle
+supported_plmns:
+    - "302220"
+    - "732360"
+common:
+    apns:
+        - apn: ims
+          type_mask: 131072
+          tech_type_mask: 0
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+          support_switch_over: true
+          use_network_mtu: true
+        - apn: internet.wom.co
+          type_mask: 49
+          allowed_ip_stack: ipv4v6
+    ims:
+        apn: ims
+        ip_stack: ipv4v6
+        media:
+            rtp_inactivity_seconds: 10
+        register:
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                always_add_sip_instance: true
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - 4XX
+                    - 5XX
+                    - 6XX
+            early_media_needs_header: true
+            preconditions: supported
+            support_p_early_media: true
+        ussi:
+            enabled: true
+        volte:
+            enable_volte_by_default: true

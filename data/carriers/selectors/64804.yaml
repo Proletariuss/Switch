@@ -1,0 +1,10 @@
+version: 2
+plmn: "64804"
+profiles:
+    - id: apple_econet_zw
+      path: profiles/econet_zw.yaml
+      generic: true
+      selectors:
+        - raw: "64804"
+          carrier_name: ECONET
+          iso: ZW

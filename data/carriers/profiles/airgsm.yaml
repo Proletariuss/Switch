@@ -1,0 +1,53 @@
+version: 3
+kind: carrier_bundle
+id: apple_airgsm
+bundle: AirGSM.bundle
+supported_plmns:
+    - "20408"
+    - "20435"
+    - "20601"
+    - "20628"
+    - "20801"
+    - "20809"
+    - "23410"
+    - "29505"
+    - "310840"
+    - "52501"
+    - "52505"
+    - "732123"
+common:
+    apns:
+        - apn: globalapn
+          type_mask: 49
+    ims:
+        volte:
+            enable_volte_by_default: false
+selector_overrides:
+    20801_GID1-41:
+        apns:
+            - apn: globalapnfr.com
+              type_mask: 49
+    23410_GID1-616972616c6f31:
+        apns:
+            - apn: globaldata
+              type_mask: 49
+    29505_GID1-616972616c6f31:
+        apns:
+            - apn: globaldata
+              type_mask: 49
+    52501_GID1-616972616c6f31:
+        apns:
+            - apn: globaldata
+              type_mask: 49
+    52505_GID1-616972616c6f31:
+        apns:
+            - apn: globaldata
+              type_mask: 49
+    310840_GID1-616972616c6f31:
+        apns:
+            - apn: globaldata
+              type_mask: 49
+    732123_GID1-616972616c6f31:
+        apns:
+            - apn: globaldata
+              type_mask: 49

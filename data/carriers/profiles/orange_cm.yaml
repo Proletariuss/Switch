@@ -1,0 +1,17 @@
+version: 3
+kind: carrier_bundle
+id: apple_orange_cm
+bundle: Orange_cm.bundle
+supported_plmns:
+    - "62402"
+plmn_overrides:
+    "62402":
+        apns:
+            - apn: orange
+              type_mask: 49
+            - apn: orangecmgprs
+              username: orange
+              password: orange
+              type_mask: 4
+            - apn: orange
+              type_mask: 48

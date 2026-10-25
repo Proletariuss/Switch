@@ -1,0 +1,105 @@
+version: 3
+kind: carrier_bundle
+id: apple_smartone_hk
+bundle: SmarTone_hk.bundle
+supported_plmns:
+    - "45406"
+    - "45415"
+    - "45417"
+common:
+    apns:
+        - apn: smartone
+          type_mask: 32775
+        - apn: ims
+          type_mask: 131072
+          tech_type_mask: 131072
+          support_switch_over: true
+          support_5g_sa_handover: true
+        - apn: internet
+          type_mask: 48
+        - apn: smt
+          type_mask: 1048576
+          tech_type_mask: 1048576
+        - apn: sos
+          type_mask: 262144
+          tech_type_mask: 262144
+          allowed_ip_stack: ipv4
+          support_switch_over: true
+          allow_no_dns: 1
+    apple:
+        carrier_entitlements:
+            supported_entitlements: 11649
+    e911:
+        over_itech_supported: true
+        wifi_calling_without_entitlement: false
+    entitlement:
+        entitlement_url: https://tremblant.ses.smcn3a.net/entitlement/
+    ims:
+        apn: ims
+        epdg:
+            address: epdg.epc.mnc006.mcc454.pub.3gppnetwork.org
+            configuration_attributes:
+                - identifier: 16384
+                  name: AssignedPCSCFIPv4
+                  type: v4
+                - identifier: 16386
+                  name: AssignedPCSCFIPv6
+                  type: v6
+        ike:
+            child_sa:
+                proposals:
+                    - source_branch: FirstChild
+                      encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      rekey_pfs_group: 14
+                      esn: auto
+                      install_policies: true
+                      lifetime_seconds: 80000
+                replay_window_size: 12
+            dpd:
+                enabled: false
+                interval_seconds: 600
+                max_retries: 4
+                retry_interval_seconds: 10
+            local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+            proposals:
+                - encryption:
+                    - aes256
+                  integrity:
+                    - sha256
+                  prf:
+                    - sha256
+                  dh_groups:
+                    - 14
+                  lifetime_seconds: 80000
+                  authentication_method: None
+                  eap_method: EAP-AKA
+            validate_remote_certificate: false
+        media:
+            rtcp_interval_seconds: 5
+        register:
+            include_cellular_network_info: true
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            early_media_needs_header: true
+            max_udp_message_size: 1200
+            preconditions: unsupported
+            re_register_on:
+                - method: INVITE
+                  statuses:
+                    - "403"
+                    - "408"
+                    - "494"
+            require_preconditions_when_mandatory: false
+            support_p_early_media: true
+        volte:
+            enable_volte_by_default: true

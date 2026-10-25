@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_mtn_bj
+bundle: MTN_bj.bundle
+supported_plmns:
+    - "61603"
+plmn_overrides:
+    "61603":
+        apns:
+            - apn: internet.mtn.bj
+              username: Mtn Benin
+              type_mask: 49
+            - apn: internet.mtn.bj
+              username: Mtn Benin
+              type_mask: 48

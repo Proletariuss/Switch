@@ -1,0 +1,10 @@
+version: 2
+plmn: "310140"
+profiles:
+    - id: apple_gta_gu
+      path: profiles/gta_gu.yaml
+      generic: true
+      selectors:
+        - raw: "310140"
+          carrier_name: GTA
+          iso: GU

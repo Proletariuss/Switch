@@ -1,0 +1,44 @@
+version: 3
+kind: carrier_bundle
+id: apple_bite_lv
+bundle: Bite_lv.bundle
+supported_plmns:
+    - "24705"
+plmn_overrides:
+    "24705":
+        apns:
+            - apn: internet
+              type_mask: 32819
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+            - apn: mms
+              username: mms@mms
+              password: mms
+              type_mask: 4
+            - apn: hos
+              type_mask: 1048576
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 5121
+        entitlement:
+            entitlement_url: https://aes.mnc005.mcc247.pub.3gppnetwork.org/applelv
+        ims:
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            media:
+                rtcp_interval_seconds: 5
+            volte:
+                enable_volte_by_default: true

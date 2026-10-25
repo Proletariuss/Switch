@@ -1,0 +1,26 @@
+version: 3
+kind: carrier_bundle
+id: apple_nrj_fr
+bundle: NRJ_fr.bundle
+supported_plmns:
+    - "20601"
+    - "20801"
+    - "20826"
+common:
+    apns:
+        - apn: net26
+          type_mask: 51
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4
+        - apn: mms26
+          type_mask: 4
+        - apn: net26
+          type_mask: 50
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4
+    ims:
+        signaling:
+            early_media_needs_header: false
+            support_p_early_media: false
+        volte:
+            enable_volte_by_default: true

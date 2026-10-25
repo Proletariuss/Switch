@@ -1,0 +1,38 @@
+version: 3
+kind: carrier_bundle
+id: apple_yes_my
+bundle: Yes_my.bundle
+supported_plmns:
+    - "502152"
+    - "52505"
+common:
+    apns:
+        - apn: yesnet
+          type_mask: 49
+          allowed_ip_stack: ipv4v6
+        - apn: ims
+          type_mask: 131072
+          allowed_ip_stack: ipv6
+          support_switch_over: true
+        - apn: sos
+          type_mask: 262144
+          tech_type_mask: 262144
+          allowed_ip_stack: ipv6
+    e911:
+        over_itech_supported: false
+    ims:
+        apn: ims
+        domain: ims.mnc152.mcc502.3gppnetwork.org
+        impi_format: imsi@carrierDomain
+        impu_format: imsi@carrierDomain
+        ip_stack: ipv6
+        register:
+            use_ipsec: true
+        signaling:
+            contact:
+                always_add_sip_instance: true
+            early_media_needs_header: true
+            preconditions: supported
+            support_p_early_media: true
+        volte:
+            enable_volte_by_default: true

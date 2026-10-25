@@ -1,0 +1,11 @@
+version: 3
+kind: carrier_bundle
+id: apple_mobilink_pk
+bundle: Mobilink_pk.bundle
+supported_plmns:
+    - "41001"
+plmn_overrides:
+    "41001":
+        apns:
+            - apn: Jazz
+              type_mask: 49

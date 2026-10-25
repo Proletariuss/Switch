@@ -1,0 +1,668 @@
+{
+  "crate": "proletarius-sms",
+  "example": "submit_fixture",
+  "kind": "go-computed; only concat reference normalized to42",
+  "rows": [
+    {
+      "args": [
+        "888",
+        "BAL"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "2100038188f8000003c22013"
+      ],
+      "name": "reader-888-0",
+      "status_report": true
+    },
+    {
+      "args": [
+        "888",
+        "BAL",
+        "modem",
+        "false"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "0101038188f8000003c22013"
+      ],
+      "name": "modem-888-0",
+      "status_report": false
+    },
+    {
+      "args": [
+        "888",
+        "PAC"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "2100038188f8000003d0e010"
+      ],
+      "name": "reader-888-1",
+      "status_report": true
+    },
+    {
+      "args": [
+        "888",
+        "PAC",
+        "modem",
+        "false"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "0101038188f8000003d0e010"
+      ],
+      "name": "modem-888-1",
+      "status_report": false
+    },
+    {
+      "args": [
+        "888",
+        "£€{}[]\\~|^"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "2100038188f8000013814d7983daa436bc8d6ff3daf436c00d05"
+      ],
+      "name": "reader-888-2",
+      "status_report": true
+    },
+    {
+      "args": [
+        "888",
+        "£€{}[]\\~|^",
+        "modem",
+        "false"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "0101038188f800081400a320ac007b007d005b005d005c007e007c005e"
+      ],
+      "name": "modem-888-2",
+      "status_report": false
+    },
+    {
+      "args": [
+        "888",
+        "中文"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "2100038188f80008044e2d6587"
+      ],
+      "name": "reader-888-3",
+      "status_report": true
+    },
+    {
+      "args": [
+        "888",
+        "中文",
+        "modem",
+        "false"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "0101038188f80008044e2d6587"
+      ],
+      "name": "modem-888-3",
+      "status_report": false
+    },
+    {
+      "args": [
+        "888",
+        "😀"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "2100038188f8000804d83dde00"
+      ],
+      "name": "reader-888-4",
+      "status_report": true
+    },
+    {
+      "args": [
+        "888",
+        "😀",
+        "modem",
+        "false"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "0101038188f8000804d83dde00"
+      ],
+      "name": "modem-888-4",
+      "status_report": false
+    },
+    {
+      "args": [
+        "888",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "2100038188f80000a0c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683"
+      ],
+      "name": "reader-888-5",
+      "status_report": true
+    },
+    {
+      "args": [
+        "888",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "modem",
+        "false"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "0101038188f80000a0c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683"
+      ],
+      "name": "modem-888-5",
+      "status_report": false
+    },
+    {
+      "args": [
+        "888",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "6100038188f80000a00500032a020182c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683",
+        "6100038188f800000f0500032a020282c16030180c0601"
+      ],
+      "name": "reader-888-6",
+      "status_report": true
+    },
+    {
+      "args": [
+        "888",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "modem",
+        "false"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "4101038188f80000a00500032a020182c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683",
+        "4102038188f800000f0500032a020282c16030180c0601"
+      ],
+      "name": "modem-888-6",
+      "status_report": false
+    },
+    {
+      "args": [
+        "888",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA^BBBBBBBB"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "6100038188f800009f0500032a020182c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0601",
+        "6100038188f80000110500032a02023614a15028140a8542"
+      ],
+      "name": "reader-888-7",
+      "status_report": true
+    },
+    {
+      "args": [
+        "888",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA^BBBBBBBB",
+        "modem",
+        "false"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "4101038188f800009f0500032a020182c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0601",
+        "4102038188f80000110500032a02023614a15028140a8542"
+      ],
+      "name": "modem-888-7",
+      "status_report": false
+    },
+    {
+      "args": [
+        "888",
+        "中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "6100038188f800088c0500032a02014e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d",
+        "6100038188f800080e0500032a02024e2d4e2d4e2d4e2d"
+      ],
+      "name": "reader-888-8",
+      "status_report": true
+    },
+    {
+      "args": [
+        "888",
+        "中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中",
+        "modem",
+        "false"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "4101038188f800088c0500032a02014e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d",
+        "4102038188f800080e0500032a02024e2d4e2d4e2d4e2d"
+      ],
+      "name": "modem-888-8",
+      "status_report": false
+    },
+    {
+      "args": [
+        "888",
+        "中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中😀文文文文"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "6100038188f800088a0500032a02014e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d",
+        "6100038188f80008120500032a0202d83dde006587658765876587"
+      ],
+      "name": "reader-888-9",
+      "status_report": true
+    },
+    {
+      "args": [
+        "888",
+        "中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中😀文文文文",
+        "modem",
+        "false"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "4101038188f800088a0500032a02014e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d",
+        "4102038188f80008120500032a0202d83dde006587658765876587"
+      ],
+      "name": "modem-888-9",
+      "status_report": false
+    },
+    {
+      "args": [
+        "65075",
+        "BAL"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "210005815670f5000003c22013"
+      ],
+      "name": "reader-65075-0",
+      "status_report": true
+    },
+    {
+      "args": [
+        "65075",
+        "BAL",
+        "modem",
+        "false"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "010105815670f5000003c22013"
+      ],
+      "name": "modem-65075-0",
+      "status_report": false
+    },
+    {
+      "args": [
+        "65075",
+        "PAC"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "210005815670f5000003d0e010"
+      ],
+      "name": "reader-65075-1",
+      "status_report": true
+    },
+    {
+      "args": [
+        "65075",
+        "PAC",
+        "modem",
+        "false"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "010105815670f5000003d0e010"
+      ],
+      "name": "modem-65075-1",
+      "status_report": false
+    },
+    {
+      "args": [
+        "65075",
+        "£€{}[]\\~|^"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "210005815670f5000013814d7983daa436bc8d6ff3daf436c00d05"
+      ],
+      "name": "reader-65075-2",
+      "status_report": true
+    },
+    {
+      "args": [
+        "65075",
+        "£€{}[]\\~|^",
+        "modem",
+        "false"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "010105815670f500081400a320ac007b007d005b005d005c007e007c005e"
+      ],
+      "name": "modem-65075-2",
+      "status_report": false
+    },
+    {
+      "args": [
+        "65075",
+        "中文"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "210005815670f50008044e2d6587"
+      ],
+      "name": "reader-65075-3",
+      "status_report": true
+    },
+    {
+      "args": [
+        "65075",
+        "中文",
+        "modem",
+        "false"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "010105815670f50008044e2d6587"
+      ],
+      "name": "modem-65075-3",
+      "status_report": false
+    },
+    {
+      "args": [
+        "65075",
+        "😀"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "210005815670f5000804d83dde00"
+      ],
+      "name": "reader-65075-4",
+      "status_report": true
+    },
+    {
+      "args": [
+        "65075",
+        "😀",
+        "modem",
+        "false"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "010105815670f5000804d83dde00"
+      ],
+      "name": "modem-65075-4",
+      "status_report": false
+    },
+    {
+      "args": [
+        "65075",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "210005815670f50000a0c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683"
+      ],
+      "name": "reader-65075-5",
+      "status_report": true
+    },
+    {
+      "args": [
+        "65075",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "modem",
+        "false"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "010105815670f50000a0c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683"
+      ],
+      "name": "modem-65075-5",
+      "status_report": false
+    },
+    {
+      "args": [
+        "65075",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "610005815670f50000a00500032a020182c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683",
+        "610005815670f500000f0500032a020282c16030180c0601"
+      ],
+      "name": "reader-65075-6",
+      "status_report": true
+    },
+    {
+      "args": [
+        "65075",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "modem",
+        "false"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "410105815670f50000a00500032a020182c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683",
+        "410205815670f500000f0500032a020282c16030180c0601"
+      ],
+      "name": "modem-65075-6",
+      "status_report": false
+    },
+    {
+      "args": [
+        "65075",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA^BBBBBBBB"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "610005815670f500009f0500032a020182c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0601",
+        "610005815670f50000110500032a02023614a15028140a8542"
+      ],
+      "name": "reader-65075-7",
+      "status_report": true
+    },
+    {
+      "args": [
+        "65075",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA^BBBBBBBB",
+        "modem",
+        "false"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "410105815670f500009f0500032a020182c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0601",
+        "410205815670f50000110500032a02023614a15028140a8542"
+      ],
+      "name": "modem-65075-7",
+      "status_report": false
+    },
+    {
+      "args": [
+        "65075",
+        "中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "610005815670f500088c0500032a02014e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d",
+        "610005815670f500080e0500032a02024e2d4e2d4e2d4e2d"
+      ],
+      "name": "reader-65075-8",
+      "status_report": true
+    },
+    {
+      "args": [
+        "65075",
+        "中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中",
+        "modem",
+        "false"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "410105815670f500088c0500032a02014e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d",
+        "410205815670f500080e0500032a02024e2d4e2d4e2d4e2d"
+      ],
+      "name": "modem-65075-8",
+      "status_report": false
+    },
+    {
+      "args": [
+        "65075",
+        "中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中😀文文文文"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "610005815670f500088a0500032a02014e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d",
+        "610005815670f50008120500032a0202d83dde006587658765876587"
+      ],
+      "name": "reader-65075-9",
+      "status_report": true
+    },
+    {
+      "args": [
+        "65075",
+        "中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中😀文文文文",
+        "modem",
+        "false"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "410105815670f500088a0500032a02014e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d",
+        "410205815670f50008120500032a0202d83dde006587658765876587"
+      ],
+      "name": "modem-65075-9",
+      "status_report": false
+    },
+    {
+      "args": [
+        "+44 (7700) 900123",
+        "BAL"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "21000c91447700091032000003c22013"
+      ],
+      "name": "reader-+44 (7700) 900123-0",
+      "status_report": true
+    },
+    {
+      "args": [
+        "+44 (7700) 900123",
+        "PAC"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "21000c91447700091032000003d0e010"
+      ],
+      "name": "reader-+44 (7700) 900123-1",
+      "status_report": true
+    },
+    {
+      "args": [
+        "+44 (7700) 900123",
+        "£€{}[]\\~|^"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "21000c91447700091032000013814d7983daa436bc8d6ff3daf436c00d05"
+      ],
+      "name": "reader-+44 (7700) 900123-2",
+      "status_report": true
+    },
+    {
+      "args": [
+        "+44 (7700) 900123",
+        "中文"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "21000c914477000910320008044e2d6587"
+      ],
+      "name": "reader-+44 (7700) 900123-3",
+      "status_report": true
+    },
+    {
+      "args": [
+        "+44 (7700) 900123",
+        "😀"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "21000c91447700091032000804d83dde00"
+      ],
+      "name": "reader-+44 (7700) 900123-4",
+      "status_report": true
+    },
+    {
+      "args": [
+        "+44 (7700) 900123",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "21000c914477000910320000a0c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683"
+      ],
+      "name": "reader-+44 (7700) 900123-5",
+      "status_report": true
+    },
+    {
+      "args": [
+        "+44 (7700) 900123",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "61000c914477000910320000a00500032a020182c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683",
+        "61000c9144770009103200000f0500032a020282c16030180c0601"
+      ],
+      "name": "reader-+44 (7700) 900123-6",
+      "status_report": true
+    },
+    {
+      "args": [
+        "+44 (7700) 900123",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA^BBBBBBBB"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "61000c9144770009103200009f0500032a020182c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0683c16030180c0601",
+        "61000c914477000910320000110500032a02023614a15028140a8542"
+      ],
+      "name": "reader-+44 (7700) 900123-7",
+      "status_report": true
+    },
+    {
+      "args": [
+        "+44 (7700) 900123",
+        "中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "61000c9144770009103200088c0500032a02014e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d",
+        "61000c9144770009103200080e0500032a02024e2d4e2d4e2d4e2d"
+      ],
+      "name": "reader-+44 (7700) 900123-8",
+      "status_report": true
+    },
+    {
+      "args": [
+        "+44 (7700) 900123",
+        "中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中😀文文文文"
+      ],
+      "concat_reference": 42,
+      "expected_lines": [
+        "61000c9144770009103200088a0500032a02014e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d4e2d",
+        "61000c914477000910320008120500032a0202d83dde006587658765876587"
+      ],
+      "name": "reader-+44 (7700) 900123-9",
+      "status_report": true
+    }
+  ],
+  "schema": 1
+}

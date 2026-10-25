@@ -1,0 +1,46 @@
+version: 3
+kind: carrier_bundle
+id: apple_vibo_tw
+bundle: Vibo_tw.bundle
+supported_plmns:
+    - "46689"
+    - "466891"
+    - "46690"
+common:
+    apns:
+        - apn: internet
+          type_mask: 53
+          allowed_ip_stack: ipv4v6
+        - apn: ims
+          type_mask: 131072
+          allowed_ip_stack: ipv4
+        - apn: internet
+          type_mask: 52
+          allowed_ip_stack: ipv4v6
+        - apn: xcap
+          type_mask: 1048576
+        - apn: sos
+          type_mask: 262144
+          tech_type_mask: 262144
+          allowed_ip_stack: ipv4
+    e911:
+        emergency_urns:
+            "110": urn:service:sos.police
+            "112": urn:service:sos.ambulance
+            "119": urn:service:sos.fire
+        over_itech_supported: false
+    ims:
+        apn: ims
+        domain: ims.mnc089.mcc466.3gppnetwork.org
+        impi_format: imsi@carrierDomain
+        impu_format: msisdn@carrierDomain
+        ip_stack: ipv4
+        register:
+            use_ipsec: true
+        signaling:
+            early_media_needs_header: true
+            preconditions: supported
+            require_preconditions_when_mandatory: false
+            support_p_early_media: true
+        volte:
+            enable_volte_by_default: true

@@ -1,0 +1,20 @@
+version: 3
+kind: carrier_bundle
+id: apple_mtn_gh
+bundle: MTN_gh.bundle
+supported_plmns:
+    - "62001"
+plmn_overrides:
+    "62001":
+        apns:
+            - apn: internet
+              type_mask: 49
+            - apn: mms
+              type_mask: 4
+            - apn: internet
+              type_mask: 48
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 1
+        entitlement:
+            entitlement_url: https://des.mtn.com.gh/entitlement

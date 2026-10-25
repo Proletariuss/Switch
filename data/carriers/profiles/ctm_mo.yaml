@@ -1,0 +1,46 @@
+version: 3
+kind: carrier_bundle
+id: apple_ctm_mo
+bundle: CTM_mo.bundle
+supported_plmns:
+    - "45501"
+    - "45504"
+common:
+    apns:
+        - apn: ctm-mobile
+          type_mask: 32817
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+        - apn: IMS
+          type_mask: 131072
+          allowed_ip_stack: ipv4
+        - apn: ctmmms
+          type_mask: 4
+        - apn: xcap
+          type_mask: 1048576
+          allowed_ip_stack: ipv4v6
+    apple:
+        carrier_entitlements:
+            supported_entitlements: 31745
+    entitlement:
+        entitlement_url: https://entitlement.ctm.net
+    ims:
+        apn: ims
+        ip_stack: ipv4
+        register:
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+            early_media_needs_header: true
+            preconditions: unsupported
+            require_preconditions_when_mandatory: false
+            support_p_early_media: true
+        ussi:
+            enabled: true
+        volte:
+            enable_volte_by_default: true

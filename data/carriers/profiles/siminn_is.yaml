@@ -1,0 +1,42 @@
+version: 3
+kind: carrier_bundle
+id: apple_siminn_is
+bundle: Siminn_is.bundle
+supported_plmns:
+    - "27401"
+plmn_overrides:
+    "27401":
+        apns:
+            - apn: internet
+              type_mask: 32817
+            - apn: mms.simi.is
+              type_mask: 4
+              tech_type_mask: 4
+            - apn: hos
+              type_mask: 1048576
+              tech_type_mask: 1048576
+            - apn: sos
+              type_mask: 262144
+              tech_type_mask: 262144
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 13313
+        e911:
+            over_itech_supported: false
+        entitlement:
+            entitlement_url: https://aes.siminn.is
+        ims:
+            register:
+                use_ipsec: true
+            signaling:
+                support_p_early_media: true
+                early_media_needs_header: false
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            volte:
+                enable_volte_by_default: true

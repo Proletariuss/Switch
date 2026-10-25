@@ -1,0 +1,16 @@
+version: 3
+kind: carrier_bundle
+id: apple_nextel_mx
+bundle: Nextel_mx.bundle
+supported_plmns:
+    - "33409"
+    - "334090"
+    - "33490"
+common:
+    apns:
+        - apn: wap.attmex.mx
+          type_mask: 1
+        - apn: mms.attmex.mx
+          type_mask: 4
+        - apn: modem.attmex.mx
+          type_mask: 48

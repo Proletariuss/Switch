@@ -1,0 +1,10 @@
+version: 2
+plmn: "45703"
+profiles:
+    - id: apple_unitel_la
+      path: profiles/unitel_la.yaml
+      generic: true
+      selectors:
+        - raw: "45703"
+          carrier_name: Unitel
+          iso: LA

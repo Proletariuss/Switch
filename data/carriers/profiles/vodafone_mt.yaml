@@ -1,0 +1,16 @@
+version: 3
+kind: carrier_bundle
+id: apple_vodafone_mt
+bundle: Vodafone_mt.bundle
+supported_plmns:
+    - "27801"
+plmn_overrides:
+    "27801":
+        apns:
+            - apn: connect
+              type_mask: 49
+            - apn: mms.telco.mt
+              type_mask: 4
+        ims:
+            volte:
+                enable_volte_by_default: true

@@ -1,0 +1,34 @@
+version: 3
+kind: carrier_bundle
+id: apple_zain_iq
+bundle: Zain_iq.bundle
+supported_plmns:
+    - "41820"
+    - "41830"
+common:
+    apns:
+        - apn: internet
+          type_mask: 49
+        - apn: mms
+          username: mms
+          password: app
+          type_mask: 4
+        - apn: internet
+          type_mask: 48
+    ims:
+        register:
+            use_ipsec: true
+        signaling:
+            additional_headers:
+                - selector: INVITE,INVITE:*
+                  headers:
+                    - 'Feature-Caps: *;+g.3gpp.srvcc-alerting'
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+        volte:
+            enable_volte_by_default: true

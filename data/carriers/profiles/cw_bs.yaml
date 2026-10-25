@@ -1,0 +1,14 @@
+version: 3
+kind: carrier_bundle
+id: apple_cw_bs
+bundle: CW_bs.bundle
+supported_plmns:
+    - "364039"
+    - "36439"
+    - "364390"
+common:
+    apns:
+        - apn: internet.btcbahamas.com
+          type_mask: 49
+        - apn: internet.btcbahamas.com
+          type_mask: 48

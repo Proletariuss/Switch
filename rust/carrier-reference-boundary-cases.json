@@ -1,0 +1,266 @@
+{
+  "schema_version": 1,
+  "purpose": "Synthetic existing behavior boundaries; no new countries or hardware verification. Independently authored from Switch effective runtime; public reference findings only.",
+  "registry_revision": "cdba73e551810681f16b4cce0693c70e9e216c37",
+  "cases": [
+    {
+      "name": "Netherlands KPN existing alias",
+      "sim": {
+        "mcc": "204",
+        "mnc": "69"
+      },
+      "matched": true,
+      "id": "apple_kpn_nl",
+      "epdg": "epdg.epc.mnc008.mcc204.pub.3gppnetwork.org"
+    },
+    {
+      "name": "France Orange existing alias",
+      "sim": {
+        "mcc": "208",
+        "mnc": "02"
+      },
+      "matched": true,
+      "id": "apple_orange_france",
+      "epdg": "epdg.epc.mnc001.mcc208.pub.3gppnetwork.org"
+    },
+    {
+      "name": "Croatia HT existing alias",
+      "sim": {
+        "mcc": "219",
+        "mnc": "20"
+      },
+      "matched": true,
+      "id": "apple_tmobile_hr",
+      "epdg": "epdg.epc.mnc001.mcc219.pub.3gppnetwork.org"
+    },
+    {
+      "name": "Turkey Avea existing alias",
+      "sim": {
+        "mcc": "286",
+        "mnc": "04"
+      },
+      "matched": true,
+      "id": "apple_avea_tr",
+      "epdg": "epdg.epc.mnc003.mcc286.pub.3gppnetwork.org"
+    },
+    {
+      "name": "Puerto Rico Claro two digit MNC",
+      "sim": {
+        "mcc": "330",
+        "mnc": "11"
+      },
+      "matched": true,
+      "id": "apple_claro_pr",
+      "epdg": "epdg.epc.mnc110.mcc330.pub.3gppnetwork.org"
+    },
+    {
+      "name": "Thailand AIS alias",
+      "sim": {
+        "mcc": "520",
+        "mnc": "01"
+      },
+      "matched": true,
+      "id": "apple_ais_th",
+      "epdg": "epdg.epc.mnc003.mcc520.pub.3gppnetwork.org"
+    },
+    {
+      "name": "Thailand DTAC alias",
+      "sim": {
+        "mcc": "520",
+        "mnc": "18"
+      },
+      "matched": true,
+      "id": "apple_dtac_th",
+      "epdg": "epdg.epc.mnc005.mcc520.pub.3gppnetwork.org"
+    },
+    {
+      "name": "Argentina Personal alias",
+      "sim": {
+        "mcc": "722",
+        "mnc": "341"
+      },
+      "matched": true,
+      "id": "apple_personal_ar",
+      "epdg": "epdg.epc.mnc034.mcc722.pub.3gppnetwork.org"
+    },
+    {
+      "name": "Chile Nextel three digit MNC",
+      "sim": {
+        "mcc": "730",
+        "mnc": "090"
+      },
+      "matched": true,
+      "id": "apple_nextel_cl",
+      "epdg": "epdg.epc.mnc009.mcc730.pub.3gppnetwork.org"
+    },
+    {
+      "name": "Italy Very exact GID1",
+      "sim": {
+        "mcc": "222",
+        "mnc": "99",
+        "gid1": "0000000099"
+      },
+      "matched": true,
+      "id": "apple_wind_very_it",
+      "epdg": "epdg.epc.mnc088.mcc222.pub.3gppnetwork.org"
+    },
+    {
+      "name": "Italy generic stays distinct",
+      "sim": {
+        "mcc": "222",
+        "mnc": "99"
+      },
+      "matched": true,
+      "id": "apple_hutchison_it",
+      "epdg": "epdg.epc.mnc099.mcc222.pub.3gppnetwork.org"
+    },
+    {
+      "name": "Canada Telus generic stays distinct",
+      "sim": {
+        "mcc": "302",
+        "mnc": "220"
+      },
+      "matched": true,
+      "id": "apple_telus_ca",
+      "epdg": "epdg.epc.mnc220.mcc302.pub.3gppnetwork.org"
+    },
+    {
+      "name": "Canada Dish exact GID1",
+      "sim": {
+        "mcc": "302",
+        "mnc": "220",
+        "gid1": "6332"
+      },
+      "matched": true,
+      "id": "apple_dish_us",
+      "epdg": "epdg.epc.mnc340.mcc313.pub.3gppnetwork.org"
+    },
+    {
+      "name": "Czech TMobile protected baseline",
+      "sim": {
+        "mcc": "230",
+        "mnc": "01"
+      },
+      "matched": true,
+      "id": "apple_tmobile_cz",
+      "epdg": "epdg.epc.mnc001.mcc230.pub.3gppnetwork.org"
+    },
+    {
+      "name": "UK Vodafone protected baseline",
+      "sim": {
+        "mcc": "234",
+        "mnc": "15"
+      },
+      "matched": true,
+      "id": "apple_vodafone_uk",
+      "epdg": "epdg.epc.mnc015.mcc234.pub.3gppnetwork.org"
+    },
+    {
+      "name": "UK Vodafone VOXI scoped SPN unchanged",
+      "sim": {
+        "mcc": "234",
+        "mnc": "15",
+        "spn": "VOXI"
+      },
+      "matched": true,
+      "id": "apple_vodafone_uk",
+      "epdg": "epdg.epc.mnc015.mcc234.pub.3gppnetwork.org"
+    },
+    {
+      "name": "UK O2 generic stays distinct",
+      "sim": {
+        "mcc": "234",
+        "mnc": "10"
+      },
+      "matched": true,
+      "id": "apple_o2_uk",
+      "epdg": "epdg.epc.mnc010.mcc234.pub.3gppnetwork.org"
+    },
+    {
+      "name": "UK giffgaff exact GID1",
+      "sim": {
+        "mcc": "234",
+        "mnc": "10",
+        "gid1": "508FFFFF"
+      },
+      "matched": true,
+      "id": "apple_o2_giffgaff_uk",
+      "epdg": "epdg.epc.mnc010.mcc234.pub.3gppnetwork.org"
+    },
+    {
+      "name": "UK CTExcel host baseline",
+      "sim": {
+        "mcc": "234",
+        "mnc": "33"
+      },
+      "matched": true,
+      "id": "apple_orange_uk",
+      "epdg": "epdg.epc.mnc033.mcc234.pub.3gppnetwork.org"
+    },
+    {
+      "name": "Unproven global 1GLOBAL home PLMN",
+      "sim": {
+        "mcc": "901",
+        "mnc": "28"
+      },
+      "matched": false,
+      "id": "auto-901-28",
+      "epdg": "epdg.epc.mnc028.mcc901.pub.3gppnetwork.org"
+    },
+    {
+      "name": "Canada Bell network PLMN not SIM selector",
+      "sim": {
+        "mcc": "302",
+        "mnc": "880"
+      },
+      "matched": false,
+      "id": "auto-302-880",
+      "epdg": "epdg.epc.mnc880.mcc302.pub.3gppnetwork.org"
+    },
+    {
+      "name": "Denmark Telenor network PLMN not SIM selector",
+      "sim": {
+        "mcc": "238",
+        "mnc": "66",
+        "iccid": "894502"
+      },
+      "matched": false,
+      "id": "auto-238-66",
+      "epdg": "epdg.epc.mnc066.mcc238.pub.3gppnetwork.org"
+    },
+    {
+      "name": "New Zealand Vodafone network PLMN",
+      "sim": {
+        "mcc": "530",
+        "mnc": "13"
+      },
+      "matched": false,
+      "id": "auto-530-13",
+      "epdg": "epdg.epc.mnc013.mcc530.pub.3gppnetwork.org"
+    },
+    {
+      "name": "DITO published two digit MNC profile",
+      "sim": {
+        "mcc": "515",
+        "mnc": "66",
+        "iccid": "896366",
+        "spn": "DITO"
+      },
+      "matched": true,
+      "id": "apple_dito_ph",
+      "epdg": "epdg.epc.mnc066.mcc515.pub.3gppnetwork.org"
+    },
+    {
+      "name": "DITO three digit MNC no normalization",
+      "sim": {
+        "mcc": "515",
+        "mnc": "066",
+        "iccid": "896366",
+        "spn": "DITO"
+      },
+      "matched": false,
+      "id": "auto-515-066",
+      "epdg": "epdg.epc.mnc066.mcc515.pub.3gppnetwork.org"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+version: 3
+kind: carrier_bundle
+id: apple_holafly
+bundle: Holafly.bundle
+supported_plmns:
+    - "20601"
+    - "20801"
+    - "23210"
+    - "302220"
+    - "45412"
+common:
+    apns:
+        - apn: Global
+          type_mask: 49
+selector_overrides:
+    20801_GID1-0407_ID-893301:
+        apns:
+            - apn: orange
+              type_mask: 49

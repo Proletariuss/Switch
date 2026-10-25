@@ -1,0 +1,12 @@
+version: 3
+kind: carrier_bundle
+id: apple_atn_gy
+bundle: ATN_gy.bundle
+supported_plmns:
+    - "738002"
+plmn_overrides:
+    "738002":
+        apns:
+            - apn: Onecomm
+              type_mask: 49
+              allowed_ip_stack: ipv4v6

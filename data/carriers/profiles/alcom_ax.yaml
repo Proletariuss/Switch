@@ -1,0 +1,25 @@
+version: 3
+kind: carrier_bundle
+id: apple_alcom_ax
+bundle: Alcom_ax.bundle
+supported_plmns:
+    - "24414"
+plmn_overrides:
+    "24414":
+        apns:
+            - apn: internet
+              type_mask: 49
+              allowed_ip_stack: ipv4v6
+            - apn: mms
+              type_mask: 4
+        ims:
+            register:
+                use_ipsec: true
+            signaling:
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting

@@ -1,0 +1,38 @@
+version: 3
+kind: carrier_bundle
+id: apple_ufone_pk
+bundle: Ufone_pk.bundle
+supported_plmns:
+    - "41003"
+plmn_overrides:
+    "41003":
+        apns:
+            - apn: ufone.internet
+              type_mask: 49
+              allowed_ip_stack: ipv4v6
+            - apn: ufone.mms
+              type_mask: 4
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4v6
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: unsupported
+                support_p_early_media: true
+                early_media_needs_header: true
+                contact:
+                    additional_contact_params:
+                        - selector: INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                            - +g.3gpp.mid-call
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true

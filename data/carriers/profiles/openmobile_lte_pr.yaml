@@ -1,0 +1,21 @@
+version: 3
+kind: carrier_bundle
+id: apple_openmobile_lte_pr
+bundle: OpenMobile_LTE_pr.bundle
+supported_plmns:
+    - "33012"
+    - "330120"
+common:
+    apns:
+        - apn: apple.openmobilepr.com
+          type_mask: 7
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+        - apn: iota.openmobilepr.com
+          type_mask: 512
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+        - apn: tethering.openmobilepr.com
+          type_mask: 48
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6

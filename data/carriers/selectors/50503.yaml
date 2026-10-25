@@ -1,0 +1,20 @@
+version: 2
+plmn: "50503"
+profiles:
+    - id: apple_vodafone_au
+      path: profiles/vodafone_au.yaml
+      generic: true
+      selectors:
+        - raw: "50503"
+          carrier_name: voda AU
+          iso: AU
+    - id: apple_vodafone_lebara_au
+      path: profiles/vodafone_lebara_au.yaml
+      selectors:
+        - raw: 50503_GID1-01
+          carrier_name: Lebara
+          iso: AU
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "01"

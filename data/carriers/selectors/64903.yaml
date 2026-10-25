@@ -1,0 +1,10 @@
+version: 2
+plmn: "64903"
+profiles:
+    - id: apple_telecomnamibia_na
+      path: profiles/telecomnamibia_na.yaml
+      generic: true
+      selectors:
+        - raw: "64903"
+          carrier_name: tnmobile
+          iso: NA

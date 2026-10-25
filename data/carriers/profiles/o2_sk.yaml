@@ -1,0 +1,87 @@
+version: 3
+kind: carrier_bundle
+id: apple_o2_sk
+bundle: O2_sk.bundle
+supported_plmns:
+    - "23106"
+plmn_overrides:
+    "23106":
+        apns:
+            - apn: o2internet
+              type_mask: 32817
+              use_network_mtu: true
+            - apn: o2mms
+              type_mask: 4
+              tech_type_mask: 4
+              allow_no_dns: 1
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv6
+              support_switch_over: true
+            - apn: xcap
+              type_mask: 1048576
+              tech_type_mask: 1048576
+              allowed_ip_stack: ipv6
+            - apn: sos
+              type_mask: 262144
+              tech_type_mask: 262144
+              allowed_ip_stack: ipv6
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 5121
+        e911:
+            over_itech_supported: false
+            wifi_calling_without_entitlement: true
+        entitlement:
+            entitlement_url: https://esim-es-open-prod-o2sk.esimcloud.net/o2sk/prod/executeAppleActions/
+        ims:
+            apn: ims
+            ip_stack: ipv6
+            epdg:
+                address: epdg.epc.mnc006.mcc231.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 16386
+                      name: AssignedPCSCFIPv6
+                      type: v6
+            ike:
+                nat_keepalive_enabled: true
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes256
+                          integrity:
+                            - sha384
+                          rekey_pfs_group: 14
+                          esn: auto
+                          lifetime_seconds: 86400
+            register:
+                use_ipsec: true
+                include_cellular_network_info: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                        - 4XX
+                        - 5XX
+                        - 6XX
+                require_preconditions_when_mandatory: false
+                contact:
+                    always_add_sip_instance: true
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            media:
+                rtp_inactivity_seconds: 20
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true

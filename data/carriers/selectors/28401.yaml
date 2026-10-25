@@ -1,0 +1,10 @@
+version: 2
+plmn: "28401"
+profiles:
+    - id: apple_mobilkom_bg
+      path: profiles/mobilkom_bg.yaml
+      generic: true
+      selectors:
+        - raw: "28401"
+          carrier_name: A1 BG
+          iso: BG

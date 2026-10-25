@@ -1,0 +1,10 @@
+version: 2
+plmn: "46692"
+profiles:
+    - id: apple_chunghwa_tw
+      path: profiles/chunghwa_tw.yaml
+      generic: true
+      selectors:
+        - raw: "46692"
+          carrier_name: 中華電信
+          iso: TW

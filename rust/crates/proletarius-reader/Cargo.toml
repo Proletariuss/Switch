@@ -1,0 +1,15 @@
+[package]
+name = "proletarius-reader"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+pcsc.workspace = true
+serde.workspace = true
+proletarius-ccid = { path = "../proletarius-ccid" }
+proletarius-euicc = { path = "../proletarius-euicc" }
+proletarius-lpa = { path = "../proletarius-lpa" }
+proletarius-sim = { path = "../proletarius-sim" }
+proletarius-sms = { path = "../proletarius-sms" }

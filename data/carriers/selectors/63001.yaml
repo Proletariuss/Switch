@@ -1,0 +1,10 @@
+version: 2
+plmn: "63001"
+profiles:
+    - id: apple_vodafone_cd
+      path: profiles/vodafone_cd.yaml
+      generic: true
+      selectors:
+        - raw: "63001"
+          carrier_name: VODACOM
+          iso: CD

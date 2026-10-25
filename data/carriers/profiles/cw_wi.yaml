@@ -1,0 +1,195 @@
+version: 3
+kind: carrier_bundle
+id: apple_cw_wi
+bundle: CW_wi.bundle
+supported_plmns:
+    - "338180"
+    - "342600"
+    - "344920"
+    - "346140"
+    - "348170"
+    - "352110"
+    - "35486"
+    - "354860"
+    - "35611"
+    - "356110"
+    - "35811"
+    - "358110"
+    - "360110"
+    - "365840"
+    - "366110"
+    - "37635"
+    - "376350"
+common:
+    apns:
+        - apn: internet
+          type_mask: 49
+        - apn: internet
+          type_mask: 48
+    ims:
+        register:
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+selector_overrides:
+    "37635":
+        apns:
+            - apn: internet
+              type_mask: 49
+            - apn: internet
+              type_mask: 48
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv4
+        e911:
+            over_itech_supported: false
+        ims:
+            apn: ims
+            ip_stack: ipv4
+            media:
+                rtp_inactivity_seconds: 10
+            signaling:
+                contact:
+                    always_add_sip_instance: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - "380"
+                        - 5XX
+                early_media_needs_header: false
+                preconditions: unsupported
+                support_p_early_media: true
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true
+    "338180":
+        apns:
+            - apn: internet
+              type_mask: 49
+            - apn: internet
+              type_mask: 48
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv4
+        e911:
+            over_itech_supported: false
+        ims:
+            apn: ims
+            ip_stack: ipv4
+            media:
+                rtp_inactivity_seconds: 10
+            signaling:
+                contact:
+                    always_add_sip_instance: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - "380"
+                        - 5XX
+                early_media_needs_header: false
+                preconditions: unsupported
+                support_p_early_media: true
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true
+    "344920":
+        apns:
+            - apn: internet
+              type_mask: 49
+            - apn: internet
+              type_mask: 48
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv4
+        e911:
+            over_itech_supported: false
+        ims:
+            apn: ims
+            ip_stack: ipv4
+            media:
+                rtp_inactivity_seconds: 10
+            signaling:
+                contact:
+                    always_add_sip_instance: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - "380"
+                        - 5XX
+                early_media_needs_header: false
+                preconditions: unsupported
+                support_p_early_media: true
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true
+    "365840":
+        apns:
+            - apn: internet
+              type_mask: 49
+            - apn: internet
+              type_mask: 48
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv4
+        e911:
+            over_itech_supported: false
+        ims:
+            apn: ims
+            ip_stack: ipv4
+            media:
+                rtp_inactivity_seconds: 10
+            signaling:
+                contact:
+                    always_add_sip_instance: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - "380"
+                        - 5XX
+                early_media_needs_header: false
+                preconditions: unsupported
+                support_p_early_media: true
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true
+    "376350":
+        apns:
+            - apn: internet
+              type_mask: 49
+            - apn: internet
+              type_mask: 48
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv4
+        e911:
+            over_itech_supported: false
+        ims:
+            apn: ims
+            ip_stack: ipv4
+            media:
+                rtp_inactivity_seconds: 10
+            signaling:
+                contact:
+                    always_add_sip_instance: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - "380"
+                        - 5XX
+                early_media_needs_header: false
+                preconditions: unsupported
+                support_p_early_media: true
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true

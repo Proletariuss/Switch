@@ -1,0 +1,13 @@
+version: 2
+plmn: "29510"
+profiles:
+    - id: apple_soracom
+      path: profiles/soracom.yaml
+      selectors:
+        - raw: 29510_ID-8942310
+          carrier_name: SORACOM
+          iso: LI
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "8942310"

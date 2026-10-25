@@ -1,0 +1,17 @@
+version: 3
+kind: carrier_bundle
+id: apple_moov_ga
+bundle: Moov_ga.bundle
+supported_plmns:
+    - "62802"
+plmn_overrides:
+    "62802":
+        apns:
+            - apn: moov
+              username: moov
+              password: moov
+              type_mask: 49
+            - apn: moov
+              username: moov
+              password: moov
+              type_mask: 48

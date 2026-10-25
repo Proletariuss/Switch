@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_tuntel_tn
+bundle: Tuntel_tn.bundle
+supported_plmns:
+    - "60502"
+plmn_overrides:
+    "60502":
+        apns:
+            - apn: internet.tn
+              type_mask: 49
+            - apn: mms.tn
+              type_mask: 4
+            - apn: internet.tn
+              type_mask: 48

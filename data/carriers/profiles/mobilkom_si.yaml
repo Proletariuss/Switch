@@ -1,0 +1,46 @@
+version: 3
+kind: carrier_bundle
+id: apple_mobilkom_si
+bundle: mobilkom_si.bundle
+supported_plmns:
+    - "29340"
+plmn_overrides:
+    "29340":
+        apns:
+            - apn: internet
+              password: internet
+              type_mask: 32817
+            - apn: mms
+              password: mms
+              type_mask: 4
+            - apn: hos
+              type_mask: 1048576
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 13313
+        entitlement:
+            entitlement_url: https://esim-es-open-prod-aonesi.esimcloud.net/aonesi/prod/executeAppleActions
+        ims:
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: false
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                        - 4XX
+                        - 5XX
+                        - 6XX
+                contact:
+                    always_add_sip_instance: true
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*[primary]
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            volte:
+                enable_volte_by_default: true

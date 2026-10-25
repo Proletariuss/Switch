@@ -1,0 +1,77 @@
+[package]
+name = "proletariusd"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[features]
+native-codec-fault-tests = ["proletarius-call/native-codec-fault-tests"]
+# Compile-only foundation; this does not enable v2 storage or dispatch routes.
+device-send-authority-codec = ["proletarius-store/device-sms-generation-seal"]
+
+[dependencies]
+switch-voice-supervisor = { path = "../switch-voice-supervisor" }
+aes.workspace = true
+proletarius-sip = { path = "../proletarius-sip" }
+base64.workspace = true
+proletarius-call = { path = "../proletarius-call" }
+proletarius-ccid = { path = "../proletarius-ccid" }
+bytes.workspace = true
+getrandom.workspace = true
+hmac.workspace = true
+httpdate.workspace = true
+http-body-util.workspace = true
+hyper.workspace = true
+hyper-util.workspace = true
+md-5.workspace = true
+nix.workspace = true
+regex.workspace = true
+reqwest.workspace = true
+proletarius-api-contract = { path = "../proletarius-api-contract" }
+proletarius-domain = { path = "../proletarius-domain" }
+proletarius-forwarding = { path = "../proletarius-forwarding" }
+proletarius-euicc = { path = "../proletarius-euicc" }
+proletarius-ike = { path = "../proletarius-ike" }
+proletarius-ims = { path = "../proletarius-ims" }
+proletarius-lpa = { path = "../proletarius-lpa" }
+proletarius-platform-fs = { path = "../proletarius-platform-fs" }
+proletarius-qmi-core = { path = "../proletarius-qmi-core" }
+proletarius-qmi-libusb = { path = "../proletarius-qmi-libusb" }
+proletarius-qmi-services = { path = "../proletarius-qmi-services" }
+proletarius-reader = { path = "../proletarius-reader" }
+proletarius-sim = { path = "../proletarius-sim" }
+proletarius-sms = { path = "../proletarius-sms" }
+proletarius-store = { path = "../proletarius-store" }
+proletarius-vowifi = { path = "../proletarius-vowifi" }
+serde.workspace = true
+serde_json = { workspace = true, features = ["raw_value"] }
+serialport.workspace = true
+socket2.workspace = true
+sha1.workspace = true
+sha2.workspace = true
+subtle.workspace = true
+time.workspace = true
+tokio.workspace = true
+url.workspace = true
+zeroize.workspace = true
+
+[target.'cfg(target_os = "macos")'.dependencies]
+rusb.workspace = true
+security-framework = "=3.7.0"
+proletarius-ike-trust = { path = "../proletarius-ike-trust" }
+
+[[bin]]
+name = "switchd-rs"
+path = "src/main.rs"
+
+[dev-dependencies]
+# Virtual clock control is used only by deterministic process-lifetime tests.
+tokio = { workspace = true, features = ["test-util"] }
+proletarius-store = { path = "../proletarius-store", features = ["raw-fault-tests", "device-sms-generation-seal"] }
+proletarius-forwarding = { path = "../proletarius-forwarding", features = ["queue-fault-tests"] }
+smoltcp = { version = "=0.14.0", default-features = false, features = ["std", "medium-ip", "proto-ipv4", "proto-ipv6", "socket-tcp", "socket-udp"] }
+
+[build-dependencies]
+sha2.workspace = true
+serde_json.workspace = true

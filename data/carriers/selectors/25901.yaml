@@ -1,0 +1,10 @@
+version: 2
+plmn: "25901"
+profiles:
+    - id: apple_orange_md
+      path: profiles/orange_md.yaml
+      generic: true
+      selectors:
+        - raw: "25901"
+          carrier_name: Orange Moldova
+          iso: MD

@@ -1,0 +1,12 @@
+version: 3
+kind: carrier_bundle
+id: apple_hutchison_lk
+bundle: Hutchison_lk.bundle
+supported_plmns:
+    - "41308"
+plmn_overrides:
+    "41308":
+        apns:
+            - apn: internet
+              type_mask: 53
+              allowed_ip_stack: ipv4v6

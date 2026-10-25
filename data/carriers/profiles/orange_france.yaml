@@ -1,0 +1,125 @@
+version: 3
+kind: carrier_bundle
+id: apple_orange_france
+bundle: Orange_France.bundle
+supported_plmns:
+    - "20801"
+    - "20802"
+common:
+    apns:
+        - apn: orange
+          username: orange
+          password: orange
+          type_mask: 1081399
+          allowed_ip_stack: ipv6
+          roaming_ip_stack: ipv4v6
+          xlat464_enabled: true
+        - apn: vowifiorange
+          username: orange
+          password: orange
+          tech_type_mask: 1081350
+          use_network_mtu: true
+        - apn: ims
+          username: orange
+          password: orange
+          type_mask: 131072
+          tech_type_mask: 131072
+          allowed_ip_stack: ipv4v6
+          support_switch_over: true
+          support_5g_sa_handover: true
+          use_network_mtu: true
+        - apn: sos
+          type_mask: 262144
+          tech_type_mask: 262144
+          allowed_ip_stack: ipv4v6
+          use_network_mtu: true
+          allow_no_dns: 1
+    apple:
+        carrier_entitlements:
+            supported_entitlements: 4236497
+    e911:
+        over_itech_supported: false
+        wifi_calling_without_entitlement: false
+    entitlement:
+        entitlement_url: https://aes.orange.fr/aes
+    ims:
+        apn: ims
+        epdg:
+            address: epdg.epc.mnc001.mcc208.pub.3gppnetwork.org
+            configuration_attributes:
+                - identifier: 20
+                  name: AssignedPCSCFIPv4
+                  type: v4
+                - identifier: 21
+                  name: AssignedPCSCFIPv6
+                  type: v6
+        ike:
+            child_sa:
+                proposals:
+                    - source_branch: FirstChild
+                      encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      rekey_pfs_group: 14
+                      esn: auto
+                      install_policies: true
+                      lifetime_seconds: 80000
+                replay_window_size: 12
+            dpd:
+                enabled: false
+                interval_seconds: 600
+                max_retries: 4
+                retry_interval_seconds: 10
+            local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+            nat_keepalive_enabled: true
+            nat_keepalive_seconds: 20
+            proposals:
+                - encryption:
+                    - aes256
+                  integrity:
+                    - sha256
+                  prf:
+                    - sha256
+                  dh_groups:
+                    - 14
+                  lifetime_seconds: 80000
+                  authentication_method: None
+                  eap_method: EAP-AKA
+            remote_identifier_type: KeyID
+            validate_remote_certificate: false
+        ip_stack: ipv4v6
+        media:
+            rtcp_interval_seconds: 5
+            rtp_inactivity_seconds: 20
+        register:
+            use_ipsec: true
+        signaling:
+            additional_headers:
+                - selector: INVITE
+                  headers:
+                    - 'Accept: application/sdp,application/3gpp-ims+xml'
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                always_add_sip_instance: true
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - "403"
+                    - "408"
+                    - 5XX
+            early_media_needs_header: true
+            preconditions: supported
+            require_preconditions_when_mandatory: false
+            sip_timers:
+                InviteResponseTimeout: 3000
+            support_p_early_media: true
+        volte:
+            enable_volte_by_default: true
+    roaming:
+        wifi_calling_allowed: false

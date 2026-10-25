@@ -1,0 +1,17 @@
+version: 3
+kind: carrier_bundle
+id: apple_qtel_dz
+bundle: Qtel_dz.bundle
+supported_plmns:
+    - "60303"
+plmn_overrides:
+    "60303":
+        apns:
+            - apn: internet
+              type_mask: 49
+            - apn: ooredooMMS
+              username: mms
+              password: mms
+              type_mask: 4
+            - apn: internet
+              type_mask: 48

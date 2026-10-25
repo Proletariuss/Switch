@@ -1,0 +1,10 @@
+version: 2
+plmn: "710300"
+profiles:
+    - id: apple_movistar_ni
+      path: profiles/movistar_ni.yaml
+      generic: true
+      selectors:
+        - raw: "710300"
+          carrier_name: Tigo
+          iso: NI

@@ -1,0 +1,90 @@
+version: 3
+kind: carrier_bundle
+id: apple_lebara_uk
+bundle: Lebara_uk.bundle
+supported_plmns:
+    - "20404"
+    - "23487"
+common:
+    apns:
+        - apn: uk.lebara.mobi
+          username: wap
+          password: wap
+          type_mask: 55
+          allowed_ip_stack: ipv4
+        - apn: ims
+          type_mask: 131072
+          tech_type_mask: 131072
+          allowed_ip_stack: ipv6
+          support_switch_over: true
+          support_5g_sa_handover: true
+    ims:
+        apn: ims
+        domain: ims.mnc087.mcc234.3gppnetwork.org
+        epdg:
+            address: epdg.epc.mnc087.mcc234.pub.3gppnetwork.org
+            configuration_attributes:
+                - identifier: 16389
+                  name: AssignedPCSCFIPv4
+                  type: v4
+                - identifier: 16390
+                  name: AssignedPCSCFIPv6
+                  type: v6
+        ike:
+            child_sa:
+                proposals:
+                    - source_branch: FirstChild
+                      encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      esn: auto
+                      install_policies: true
+                      lifetime_seconds: 80000
+                replay_window_size: 12
+            dpd:
+                enabled: false
+                interval_seconds: 600
+                max_retries: 4
+                retry_interval_seconds: 10
+            local_identifier: 0$imsi@nai.epc.mnc087.mcc234.3gppnetwork.org
+            proposals:
+                - encryption:
+                    - aes256
+                  integrity:
+                    - sha256
+                  prf:
+                    - sha256
+                  dh_groups:
+                    - 14
+                  lifetime_seconds: 80000
+                  authentication_method: None
+                  eap_method: EAP-AKA
+            username: 0$imsi@nai.epc.mnc087.mcc234.3gppnetwork.org
+            validate_remote_certificate: false
+        ip_stack: ipv6
+        media:
+            rtcp_interval_seconds: 5
+        register:
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                        - +g.3gpp.smsip
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - 5XX
+            early_media_needs_header: true
+            preconditions: supported
+            require_preconditions_when_mandatory: false
+            support_p_early_media: true
+        volte:
+            enable_volte_by_default: true
+    roaming:
+        wifi_calling_allowed: false

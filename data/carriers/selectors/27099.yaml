@@ -1,0 +1,10 @@
+version: 2
+plmn: "27099"
+profiles:
+    - id: apple_vox_lu
+      path: profiles/vox_lu.yaml
+      generic: true
+      selectors:
+        - raw: "27099"
+          carrier_name: Orange Luxembourg
+          iso: LU

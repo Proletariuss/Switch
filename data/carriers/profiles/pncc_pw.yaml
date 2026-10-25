@@ -1,0 +1,12 @@
+version: 3
+kind: carrier_bundle
+id: apple_pncc_pw
+bundle: PNCC_pw.bundle
+supported_plmns:
+    - "55201"
+plmn_overrides:
+    "55201":
+        apns:
+            - apn: palaucel
+              type_mask: 49
+              allowed_ip_stack: ipv4

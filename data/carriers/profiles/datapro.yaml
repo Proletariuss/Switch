@@ -1,0 +1,14 @@
+version: 3
+kind: carrier_bundle
+id: apple_datapro
+bundle: DataPro.bundle
+supported_plmns:
+    - "52501"
+plmn_overrides:
+    "52501":
+        apns:
+            - apn: e-ideas
+              type_mask: 49
+        ims:
+            volte:
+                enable_volte_by_default: false

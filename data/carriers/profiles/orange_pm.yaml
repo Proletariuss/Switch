@@ -1,0 +1,13 @@
+version: 3
+kind: carrier_bundle
+id: apple_orange_pm
+bundle: Orange_pm.bundle
+supported_plmns:
+    - "30803"
+plmn_overrides:
+    "30803":
+        apns:
+            - apn: spmtelecom
+              type_mask: 49
+            - apn: spmtelecom
+              type_mask: 48

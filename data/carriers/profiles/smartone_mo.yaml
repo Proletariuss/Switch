@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_smartone_mo
+bundle: SmarTone_mo.bundle
+supported_plmns:
+    - "45500"
+    - "45506"
+common:
+    apns:
+        - apn: smartgprs
+          type_mask: 5
+        - apn: smartweb
+          type_mask: 48
+        - apn: smartgprs
+          type_mask: 4

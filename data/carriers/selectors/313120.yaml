@@ -1,0 +1,10 @@
+version: 2
+plmn: "313120"
+profiles:
+    - id: apple_astca_as
+      path: profiles/astca_as.yaml
+      generic: true
+      selectors:
+        - raw: "313120"
+          carrier_name: FirstNet ASTCA
+          iso: AS

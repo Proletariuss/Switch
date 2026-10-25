@@ -1,0 +1,17 @@
+version: 3
+kind: carrier_bundle
+id: apple_etisalat_bj
+bundle: Etisalat_bj.bundle
+supported_plmns:
+    - "61602"
+plmn_overrides:
+    "61602":
+        apns:
+            - apn: moov
+              username: moov
+              password: moov
+              type_mask: 49
+            - apn: moov
+              username: moov
+              password: moov
+              type_mask: 48

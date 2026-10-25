@@ -1,0 +1,70 @@
+version: 3
+kind: carrier_bundle
+id: apple_ice_no
+bundle: Ice_no.bundle
+supported_plmns:
+    - "20404"
+    - "24214"
+common:
+    apns:
+        - apn: ice.net
+          type_mask: 49
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+        - apn: mms.ice.net
+          type_mask: 4
+          tech_type_mask: 4
+          allowed_ip_stack: ipv4v6
+        - apn: ims
+          type_mask: 131072
+          tech_type_mask: 131072
+          allowed_ip_stack: ipv6
+          support_switch_over: true
+          use_network_mtu: true
+    apple:
+        carrier_entitlements:
+            supported_entitlements: 8193
+    e911:
+        over_itech_supported: true
+        wifi_calling_without_entitlement: true
+    entitlement:
+        entitlement_url: https://esim-es-open-prod-ice.esimcloud.net/ice/prod/executeAppleActions
+    ims:
+        apn: ims
+        epdg:
+            address: epdg.epc.mnc014.mcc242.pub.3gppnetwork.org
+            configuration_attributes:
+                - identifier: 16386
+                  name: AssignedPCSCFIPv6
+                  type: v6
+        ike:
+            child_sa:
+                proposals:
+                    - source_branch: FirstChild
+                      encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      rekey_pfs_group: 14
+                      esn: auto
+                      lifetime_seconds: 86400
+            nat_keepalive_enabled: true
+        ip_stack: ipv6
+        media:
+            rtp_inactivity_seconds: 20
+        register:
+            include_cellular_network_info: true
+            use_ipsec: true
+        signaling:
+            contact:
+                always_add_sip_instance: true
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - 3XX
+            early_media_needs_header: true
+            preconditions: supported
+            require_preconditions_when_mandatory: false
+            support_p_early_media: true
+        volte:
+            enable_volte_by_default: true

@@ -1,0 +1,10 @@
+version: 2
+plmn: "33420"
+profiles:
+    - id: apple_telcel_mx
+      path: profiles/telcel_mx.yaml
+      generic: true
+      selectors:
+        - raw: "33420"
+          carrier_name: Telcel
+          iso: MX

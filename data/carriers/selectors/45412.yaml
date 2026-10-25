@@ -1,0 +1,83 @@
+version: 2
+plmn: "45412"
+profiles:
+    - id: apple_cmcc_cmi
+      path: profiles/cmcc_cmi.yaml
+      selectors:
+        - raw: 45412_ID-8985234
+          carrier_name: CMLink
+          iso: HK
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "8985234"
+    - id: apple_cmcc_hk
+      path: profiles/cmcc_hk.yaml
+      generic: true
+      selectors:
+        - raw: "45412"
+          carrier_name: CMHK
+          iso: HK
+    - id: apple_cmcc_hkbn_hk
+      path: profiles/cmcc_hkbn_hk.yaml
+      selectors:
+        - raw: 45412_GID1-0009
+          carrier_name: HKBN
+          iso: HK
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "0009"
+    - id: apple_holafly
+      path: profiles/holafly.yaml
+      selectors:
+        - raw: 45412_GID1-0407_ID-8935333
+          carrier_name: Holafly
+          iso: HK
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "0407"
+            - field: iccid
+              match: prefix
+              value: "8935333"
+        - raw: 45412_GID1-0407_ID-8985234
+          carrier_name: Holafly
+          iso: HK
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "0407"
+            - field: iccid
+              match: prefix
+              value: "8985234"
+    - id: apple_multibyte
+      path: profiles/multibyte.yaml
+      selectors:
+        - raw: 45412_GID1-0331
+          carrier_name: MultiByte
+          iso: HK
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "0331"
+    - id: apple_redteamobile
+      path: profiles/redteamobile.yaml
+      selectors:
+        - raw: 45412_ID-89852245280
+          carrier_name: RedteaMobile
+          iso: HK
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "89852245280"
+    - id: apple_webbing
+      path: profiles/webbing.yaml
+      selectors:
+        - raw: 45412_ID-8985235
+          carrier_name: Webbing
+          iso: HK
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "8985235"

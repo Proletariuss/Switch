@@ -1,0 +1,89 @@
+version: 3
+kind: carrier_bundle
+id: apple_vodafone_lowi_es
+bundle: Vodafone_Lowi_es.bundle
+supported_plmns:
+    - "21406"
+plmn_overrides:
+    "21406":
+        apns:
+            - apn: lowi.private.omv.es
+              type_mask: 49
+            - apn: hos
+              type_mask: 1048576
+              tech_type_mask: 1048576
+              allow_no_dns: 1
+            - apn: sos
+              type_mask: 262144
+              tech_type_mask: 262144
+              allowed_ip_stack: ipv4v6
+              allow_no_dns: 1
+        e911:
+            over_itech_supported: false
+        ims:
+            epdg:
+                address: epdg.epc.mnc001.mcc214.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 20
+                      name: AssignedPCSCFIPv4
+                      type: v4
+                    - identifier: 16386
+                      name: AssignedPCSCFIPv6
+                      type: v6
+            ike:
+                proposals:
+                    - encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      prf:
+                        - sha256
+                      dh_groups:
+                        - 2
+                      lifetime_seconds: 86400
+                      authentication_method: None
+                      eap_method: EAP-AKA
+                nat_keepalive_enabled: true
+                dpd:
+                    enabled: false
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes256
+                          integrity:
+                            - sha256
+                          esn: auto
+                          lifetime_seconds: 86400
+            register:
+                include_cellular_network_info: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                require_preconditions_when_mandatory: false
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            volte:
+                enable_volte_by_default: true
+        roaming:
+            wifi_calling_allowed: false
+selector_overrides:
+    21406_ID-89345712:
+        apns:
+            - apn: fi.omv.es
+              type_mask: 49
+            - apn: hos
+              type_mask: 1048576
+              tech_type_mask: 1048576
+              allow_no_dns: 1
+            - apn: sos
+              type_mask: 262144
+              tech_type_mask: 262144
+              allowed_ip_stack: ipv4v6
+              allow_no_dns: 1

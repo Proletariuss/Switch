@@ -1,0 +1,81 @@
+{
+  "schema": "switch.p0-1-current-baseline-activation.v1",
+  "activation_id": "p0-1-current-baseline-active-2026-10-23",
+  "status": "ADOPTED_SCOPE_RULE_NO_FUNCTIONAL_ACCEPTANCE",
+  "authority": {
+    "kind": "direct_user_instruction",
+    "decision": "同意改用当前可验证基线",
+    "decision_file": {
+      "path": "docs/optimization/all-rust/current-baseline-scope-decision.json",
+      "sha256": "b8b1446f1a46f1cdb63258e48a72fc5bc1037bdd816041b0ea546a3fb8a9b13e"
+    }
+  },
+  "historical_i677_ledger": {
+    "path": "docs/optimization/all-rust/acceptance-ledger-2026-10-19-iteration-677.json",
+    "sha256": "e72a76fb9f8deca8916fccd25ed7d4aab4bcb9572175dd9be1bcbaf4115e673b",
+    "source": "i677 immutable cold capsule, original active ledger bytes"
+  },
+  "pre_activation_i680_ledger": {
+    "path": "docs/optimization/all-rust/acceptance-ledger-2026-10-19-iteration-680-pre-activation.json",
+    "sha256": "33f41e2cf9c5a59b47c4e0fe6b4c3c62f0f6fe0874fb5080e30beb6ecbdb4b07"
+  },
+  "inactive_v3_candidate": {
+    "path": "docs/optimization/all-rust/acceptance-ledger-candidate-v3-2026-10-23.json",
+    "sha256": "41f3e1869e83346eacfbe095c7c1d3bf15bd28c27795c216364d47e17765ffc5"
+  },
+  "evidence_only_successor": {
+    "path": "docs/optimization/all-rust/current-baseline-scope-successor-2026-10-23.json",
+    "sha256": "33bccc9fbaed31e0f41d2dd0f56459100b2621d5314966ef49a97396041883e6",
+    "version_scope": "3.48/build348 only"
+  },
+  "active_documents": {
+    "ledger": "docs/optimization/all-rust/acceptance-ledger-2026-10-19.json",
+    "entry_map": "docs/optimization/all-rust/entry-acceptance-map.json",
+    "scope_protocol": "docs/optimization/all-rust/acceptance-scope-protocol.json"
+  },
+  "replacement_rules": [
+    {
+      "historical_leaf_id": "P0-1.working-baseline",
+      "current_leaf_id": "P0-1.current-source-baseline",
+      "scenario_class_ids": [
+        "SW"
+      ],
+      "normal_required_condition": "固定当前完整源码清单及来源身份，在隔离位置恢复全部文件并逐项核对原始字节、mode、数量和完整源码身份；每个待验版本须有与该版本匹配的恢复收据。",
+      "formal_acceptance_status": "NOT_REVIEWED",
+      "functional_pass_awarded": false
+    },
+    {
+      "historical_leaf_id": "P0-1.baseline-280",
+      "current_leaf_id": "P0-1.current-build-baseline",
+      "scenario_class_ids": [
+        "DELIVERY"
+      ],
+      "normal_required_condition": "从固定当前源码身份完成可复验的隔离冷构建及软件门禁，审定依赖闭包、App与后端版本、发布清单和产物身份均同源；交付目标版本另核相应收据。洁净安装及设备业务须另行验收。",
+      "formal_acceptance_status": "NOT_REVIEWED",
+      "functional_pass_awarded": false
+    }
+  ],
+  "other_113_raw_leaf_objects_sha256": "e1ed70945cb3565c2f4eb5d0c59f49fa39ef12852a5b39a394fb91860b56ae43",
+  "accounting": {
+    "parent_categories": 49,
+    "catalog_leaves": 115,
+    "scenario_classes": 21,
+    "status_counts": {
+      "PARTIAL": 5,
+      "NOT_REVIEWED": 110
+    },
+    "new_functional_passes": 0,
+    "overall_denominator_frozen": false,
+    "overall_denominator": null,
+    "overall_percentage": null,
+    "overall_product_complete": false
+  },
+  "historical_limits": {
+    "two_eighty_or_switch_time_restored": false,
+    "legacy_upgrade_equivalence_proven": false,
+    "current_source_restore_receipt_version": "3.48/build348",
+    "current_build_receipt_version": "3.48/build348",
+    "new_target_version_needs_matching_receipts": true,
+    "device_carrier_audio_external_and_long_run_acceptance": "UNVERIFIED"
+  }
+}

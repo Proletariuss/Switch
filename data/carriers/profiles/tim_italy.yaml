@@ -1,0 +1,85 @@
+version: 3
+kind: carrier_bundle
+id: apple_tim_italy
+bundle: TIM_Italy.bundle
+supported_plmns:
+    - "22201"
+plmn_overrides:
+    "22201":
+        apns:
+            - apn: wap.tim.it
+              type_mask: 32817
+            - apn: unico.tim.it
+              type_mask: 4
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              support_switch_over: true
+            - apn: xcap.tim.it
+              type_mask: 1048576
+            - apn: sos
+              type_mask: 262144
+              allowed_ip_stack: ipv4v6
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 13313
+        e911:
+            over_itech_supported: true
+            wifi_calling_without_entitlement: true
+        entitlement:
+            entitlement_url: https://es.tim.it/new-entitlement/
+        ims:
+            apn: ims
+            epdg:
+                address: epdg.epc.mnc001.mcc222.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 20
+                      name: AssignedPCSCFIPv4
+                      type: v4
+                    - identifier: 21
+                      name: AssignedPCSCFIPv6
+                      type: v6
+            ike:
+                nat_keepalive_enabled: true
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes256
+                          integrity:
+                            - sha512
+                          protocol: esp
+                          rekey_pfs_group: 16
+                          esn: auto
+                          install_policies: true
+                          lifetime_seconds: 86400
+                local_identifier: PseudoIMSI@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+                username: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+                remote_certificate_authority_name: TI Trust Technologies OV CA
+                remote_certificate_hostname: epdg.epc.mnc001.mcc222.pub.3gppnetwork.org
+                validate_remote_certificate: true
+            register:
+                use_ipsec: true
+                include_cellular_network_info: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - "380"
+                require_preconditions_when_mandatory: false
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            media:
+                rtp_inactivity_seconds: 15
+            volte:
+                enable_volte_by_default: true
+        roaming:
+            wifi_calling_allowed: false

@@ -1,0 +1,24 @@
+version: 3
+kind: carrier_bundle
+id: apple_orange_mu
+bundle: Orange_mu.bundle
+supported_plmns:
+    - "61701"
+plmn_overrides:
+    "61701":
+        apns:
+            - apn: my.t
+              type_mask: 49
+        ims:
+            register:
+                use_ipsec: true
+            signaling:
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            volte:
+                enable_volte_by_default: true

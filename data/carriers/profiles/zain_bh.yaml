@@ -1,0 +1,62 @@
+version: 3
+kind: carrier_bundle
+id: apple_zain_bh
+bundle: Zain_bh.bundle
+supported_plmns:
+    - "42602"
+plmn_overrides:
+    "42602":
+        apns:
+            - apn: internet
+              type_mask: 32817
+            - apn: MMS
+              type_mask: 4
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv4
+              allow_no_dns: 1
+              no_cellular_reconnect_cause_codes:
+                - cause_codes:
+                    - 55
+                  recovers_on_airplane_mode: true
+                  num_tries_allowed: 100
+                  type: 3GPP
+                  timeout: 86400
+            - apn: hos
+              type_mask: 1048576
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 23553
+        entitlement:
+            entitlement_url: https://es.bh.zain.com
+        ims:
+            apn: ims
+            ip_stack: ipv4
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                        - 5XX
+                        - 6XX
+                require_preconditions_when_mandatory: false
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                additional_headers:
+                    - selector: INVITE,INVITE:*
+                      headers:
+                        - 'Feature-Caps: *;+g.3gpp.srvcc-alerting'
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true

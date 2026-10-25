@@ -1,0 +1,9 @@
+# Iteration 627: Rust warning cleanup and source rebinding
+
+Date: 2026-10-21. Scope: only `/Users/StatTrak/Desktop/Switch_MAC/src`; reports are written under the sibling `build/reports` directory.
+
+This pass removes compiler-confirmed unused exports and redundant test plumbing. The reviewed deltas are limited to test-only re-exports/imports/helpers, an import needed only by non-test builds, and dead internal upstream adapters with no production callers. The remaining upstream transport policy is kept for its send/no-replay boundary and tests. No public route, DTO, dispatch branch, authentication rule, persistence format, protocol frame, or native-operation state transition was changed. The previous 294-route Rust ownership census remains unchanged.
+
+Manual source review covered the complete diffs in `call_mode_adb/startup_recovery.rs`, `call_mode_restore_journal.rs`, `call_mode_status.rs`, `startup_recovery/reconcile/storage.rs`, `usb_at_transport/recovery/reconcile.rs`, and `upstream.rs`. The four production fingerprint scopes in `api-contract-review.json` were re-reviewed and rebound to the exact current bytes; current historical graph anchors were rebound only where the full source file changed. Frozen-cut hashes and historical source records were retained.
+
+Validation: the isolated full `proletariusd` suite passed 3,057 tests, 0 failed, 8 ignored (`../build/reports/iteration-627-proletariusd-tests.log`). Focused upstream and environment-sensitive regressions also passed. The Rust release `cargo check` still needs a post-cleanup rerun, followed by the complete migration gate and a source-locked cold build. No hardware behavior, SMS/call delivery, P0–P6 completion, scored acceptance, or product completion is claimed. The acceptance denominator remains unfrozen and overall percentage remains null. No DMG is produced in this iteration.

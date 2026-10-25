@@ -1,0 +1,10 @@
+version: 2
+plmn: "64002"
+profiles:
+    - id: apple_tigo_tz
+      path: profiles/tigo_tz.yaml
+      generic: true
+      selectors:
+        - raw: "64002"
+          carrier_name: Tigo
+          iso: TZ

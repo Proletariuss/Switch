@@ -1,0 +1,13 @@
+version: 3
+kind: carrier_bundle
+id: apple_bhartiairtel_ug
+bundle: BhartiAirtel_ug.bundle
+supported_plmns:
+    - "64101"
+plmn_overrides:
+    "64101":
+        apns:
+            - apn: internet
+              type_mask: 49
+            - apn: internet
+              type_mask: 48

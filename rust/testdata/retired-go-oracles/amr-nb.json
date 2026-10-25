@@ -1,0 +1,520 @@
+{
+  "crate": "proletarius-call",
+  "example": "amr_fixture",
+  "kind": "go-computed historical disabled codec",
+  "rows": [
+    {
+      "name": "0-pack",
+      "args": [
+        "pack",
+        "003c2233445566778899aabbccddeeff102132435465768798a9bacbdcedfe0f20"
+      ],
+      "expected_stdout": "03c88cd115599de2266aaef3377bbfc4084c90d5195da1e62a6eb2f73b7f83c8"
+    },
+    {
+      "name": "0-unpack",
+      "args": [
+        "unpack",
+        "03c88cd115599de2266aaef3377bbfc4084c90d5195da1e62a6eb2f73b7f83c8"
+      ],
+      "expected_stdout": "003c2233445566778899aabbccddeeff102132435465768798a9bacbdcedfe0f20"
+    },
+    {
+      "name": "1-pack",
+      "args": [
+        "pack",
+        "103c3f5061728394a5b6c7d8e9fa0b1c2d3e4f60718293a4b5c6d7e8f90a1b2c30"
+      ],
+      "expected_stdout": "13cfd4185ca0e5296db1f63a7e82c70b4f93d81c60a4e92d71b5fa3e4286cb0c"
+    },
+    {
+      "name": "1-unpack",
+      "args": [
+        "unpack",
+        "13cfd4185ca0e5296db1f63a7e82c70b4f93d81c60a4e92d71b5fa3e4286cb0c"
+      ],
+      "expected_stdout": "103c3f5061728394a5b6c7d8e9fa0b1c2d3e4f60718293a4b5c6d7e8f90a1b2c30"
+    },
+    {
+      "name": "2-pack",
+      "args": [
+        "pack",
+        "203c5c6d7e8fa0b1c2d3e4f5061728394a5b6c7d8e9fb0c1d2e3f4051627384950"
+      ],
+      "expected_stdout": "23d71b5fa3e82c70b4f93d4185ca0e5296db1f63a7ec3074b8fd014589ce1254"
+    },
+    {
+      "name": "2-unpack",
+      "args": [
+        "unpack",
+        "23d71b5fa3e82c70b4f93d4185ca0e5296db1f63a7ec3074b8fd014589ce1254"
+      ],
+      "expected_stdout": "203c5c6d7e8fa0b1c2d3e4f5061728394a5b6c7d8e9fb0c1d2e3f4051627384950"
+    },
+    {
+      "name": "3-pack",
+      "args": [
+        "pack",
+        "303c798a9bacbdcedff00112233445566778899aabbccddeef0011223344556670"
+      ],
+      "expected_stdout": "33de62a6eb2f73b7fc004488cd115599de2266aaef3377bbc004488cd115599c"
+    },
+    {
+      "name": "3-unpack",
+      "args": [
+        "unpack",
+        "33de62a6eb2f73b7fc004488cd115599de2266aaef3377bbc004488cd115599c"
+      ],
+      "expected_stdout": "303c798a9bacbdcedff00112233445566778899aabbccddeef0011223344556670"
+    },
+    {
+      "name": "4-pack",
+      "args": [
+        "pack",
+        "403c96a7b8c9daebfc0d1e2f405162738495a6b7c8d9eafb0c1d2e3f5061728390"
+      ],
+      "expected_stdout": "43e5a9ee3276baff03478bd014589ce12569adf2367abec3074b8fd4185ca0e4"
+    },
+    {
+      "name": "4-unpack",
+      "args": [
+        "unpack",
+        "43e5a9ee3276baff03478bd014589ce12569adf2367abec3074b8fd4185ca0e4"
+      ],
+      "expected_stdout": "403c96a7b8c9daebfc0d1e2f405162738495a6b7c8d9eafb0c1d2e3f5061728390"
+    },
+    {
+      "name": "5-pack",
+      "args": [
+        "pack",
+        "503cb3c4d5e6f708192a3b4c5d6e7f90a1b2c3d4e5f60718293a4b5c6d7e8fa0b0"
+      ],
+      "expected_stdout": "53ecf13579bdc2064a8ed3175b9fe4286cb0f5397d81c60a4e92d71b5fa3e82c"
+    },
+    {
+      "name": "5-unpack",
+      "args": [
+        "unpack",
+        "53ecf13579bdc2064a8ed3175b9fe4286cb0f5397d81c60a4e92d71b5fa3e82c"
+      ],
+      "expected_stdout": "503cb3c4d5e6f708192a3b4c5d6e7f90a1b2c3d4e5f60718293a4b5c6d7e8fa0b0"
+    },
+    {
+      "name": "6-pack",
+      "args": [
+        "pack",
+        "603cd0e1f2031425364758697a8b9cadbecfe0f102132435465768798a9bacbdc0"
+      ],
+      "expected_stdout": "63f4387c80c5094d91d61a5ea2e72b6fb3f83c4084c90d5195da1e62a6eb2f70"
+    },
+    {
+      "name": "6-unpack",
+      "args": [
+        "unpack",
+        "63f4387c80c5094d91d61a5ea2e72b6fb3f83c4084c90d5195da1e62a6eb2f70"
+      ],
+      "expected_stdout": "603cd0e1f2031425364758697a8b9cadbecfe0f102132435465768798a9bacbdc0"
+    },
+    {
+      "name": "7-pack",
+      "args": [
+        "pack",
+        "703cedfe0f2031425364758697a8b9cadbecfd0e1f30415263748596a7b8c9dae0"
+      ],
+      "expected_stdout": "73fb7f83c80c5094d91d61a5ea2e72b6fb3f4387cc105498dd2165a9ee3276b8"
+    },
+    {
+      "name": "7-unpack",
+      "args": [
+        "unpack",
+        "73fb7f83c80c5094d91d61a5ea2e72b6fb3f4387cc105498dd2165a9ee3276b8"
+      ],
+      "expected_stdout": "703cedfe0f2031425364758697a8b9cadbecfd0e1f30415263748596a7b8c9dae0"
+    },
+    {
+      "name": "8-pack",
+      "args": [
+        "pack",
+        "803c0a1b2c3d4e5f708192a3b4c5d6e7f8091a2b3c4d5e6f8091a2b3c4d5e6f700"
+      ],
+      "expected_stdout": "83c286cb0f5397dc2064a8ed3175b9fe02468acf13579be02468acf13579bdc0"
+    },
+    {
+      "name": "8-unpack",
+      "args": [
+        "unpack",
+        "83c286cb0f5397dc2064a8ed3175b9fe02468acf13579be02468acf13579bdc0"
+      ],
+      "expected_stdout": "803c0a1b2c3d4e5f708192a3b4c5d6e7f8091a2b3c4d5e6f8091a2b3c4d5e6f700"
+    },
+    {
+      "name": "9-pack",
+      "args": [
+        "pack",
+        "903c2738495a6b7c8d9eafc0d1e2f30415263748596a7b8c9daebfd0e1f2031420"
+      ],
+      "expected_stdout": "93c9ce12569adf2367abf03478bcc105498dd2165a9ee3276baff4387c80c508"
+    },
+    {
+      "name": "9-unpack",
+      "args": [
+        "unpack",
+        "93c9ce12569adf2367abf03478bcc105498dd2165a9ee3276baff4387c80c508"
+      ],
+      "expected_stdout": "903c2738495a6b7c8d9eafc0d1e2f30415263748596a7b8c9daebfd0e1f2031420"
+    },
+    {
+      "name": "10-pack",
+      "args": [
+        "pack",
+        "a03c445566778899aabbccddeeff102132435465768798a9bacbdcedfe0f203140"
+      ],
+      "expected_stdout": "a3d115599de2266aaef3377bbfc4084c90d5195da1e62a6eb2f73b7f83c80c50"
+    },
+    {
+      "name": "10-unpack",
+      "args": [
+        "unpack",
+        "a3d115599de2266aaef3377bbfc4084c90d5195da1e62a6eb2f73b7f83c80c50"
+      ],
+      "expected_stdout": "a03c445566778899aabbccddeeff102132435465768798a9bacbdcedfe0f203140"
+    },
+    {
+      "name": "11-pack",
+      "args": [
+        "pack",
+        "b03c61728394a5b6c7d8e9fa0b1c2d3e4f60718293a4b5c6d7e8f90a1b2c3d4e50"
+      ],
+      "expected_stdout": "b3d85ca0e5296db1f63a7e82c70b4f93d81c60a4e92d71b5fa3e4286cb0f5394"
+    },
+    {
+      "name": "11-unpack",
+      "args": [
+        "unpack",
+        "b3d85ca0e5296db1f63a7e82c70b4f93d81c60a4e92d71b5fa3e4286cb0f5394"
+      ],
+      "expected_stdout": "b03c61728394a5b6c7d8e9fa0b1c2d3e4f60718293a4b5c6d7e8f90a1b2c3d4e50"
+    },
+    {
+      "name": "12-pack",
+      "args": [
+        "pack",
+        "c03c7e8fa0b1c2d3e4f5061728394a5b6c7d8e9fb0c1d2e3f405162738495a6b70"
+      ],
+      "expected_stdout": "c3dfa3e82c70b4f93d4185ca0e5296db1f63a7ec3074b8fd014589ce12569adc"
+    },
+    {
+      "name": "12-unpack",
+      "args": [
+        "unpack",
+        "c3dfa3e82c70b4f93d4185ca0e5296db1f63a7ec3074b8fd014589ce12569adc"
+      ],
+      "expected_stdout": "c03c7e8fa0b1c2d3e4f5061728394a5b6c7d8e9fb0c1d2e3f405162738495a6b70"
+    },
+    {
+      "name": "13-pack",
+      "args": [
+        "pack",
+        "d03c9bacbdcedff00112233445566778899aabbccddeef00112233445566778890"
+      ],
+      "expected_stdout": "d3e6eb2f73b7fc004488cd115599de2266aaef3377bbc004488cd115599de224"
+    },
+    {
+      "name": "13-unpack",
+      "args": [
+        "unpack",
+        "d3e6eb2f73b7fc004488cd115599de2266aaef3377bbc004488cd115599de224"
+      ],
+      "expected_stdout": "d03c9bacbdcedff00112233445566778899aabbccddeef00112233445566778890"
+    },
+    {
+      "name": "14-pack",
+      "args": [
+        "pack",
+        "e03cb8c9daebfc0d1e2f405162738495a6b7c8d9eafb0c1d2e3f5061728394a5b0"
+      ],
+      "expected_stdout": "e3ee3276baff03478bd014589ce12569adf2367abec3074b8fd4185ca0e5296c"
+    },
+    {
+      "name": "14-unpack",
+      "args": [
+        "unpack",
+        "e3ee3276baff03478bd014589ce12569adf2367abec3074b8fd4185ca0e5296c"
+      ],
+      "expected_stdout": "e03cb8c9daebfc0d1e2f405162738495a6b7c8d9eafb0c1d2e3f5061728394a5b0"
+    },
+    {
+      "name": "15-pack",
+      "args": [
+        "pack",
+        "f03cd5e6f708192a3b4c5d6e7f90a1b2c3d4e5f60718293a4b5c6d7e8fa0b1c2d0"
+      ],
+      "expected_stdout": "f3f579bdc2064a8ed3175b9fe4286cb0f5397d81c60a4e92d71b5fa3e82c70b4"
+    },
+    {
+      "name": "15-unpack",
+      "args": [
+        "unpack",
+        "f3f579bdc2064a8ed3175b9fe4286cb0f5397d81c60a4e92d71b5fa3e82c70b4"
+      ],
+      "expected_stdout": "f03cd5e6f708192a3b4c5d6e7f90a1b2c3d4e5f60718293a4b5c6d7e8fa0b1c2d0"
+    },
+    {
+      "name": "16-pack",
+      "args": [
+        "pack",
+        "003cf2031425364758697a8b9cadbecfe0f102132435465768798a9bacbdcedff0"
+      ],
+      "expected_stdout": "03fc80c5094d91d61a5ea2e72b6fb3f83c4084c90d5195da1e62a6eb2f73b7fc"
+    },
+    {
+      "name": "16-unpack",
+      "args": [
+        "unpack",
+        "03fc80c5094d91d61a5ea2e72b6fb3f83c4084c90d5195da1e62a6eb2f73b7fc"
+      ],
+      "expected_stdout": "003cf2031425364758697a8b9cadbecfe0f102132435465768798a9bacbdcedff0"
+    },
+    {
+      "name": "17-pack",
+      "args": [
+        "pack",
+        "103c0f2031425364758697a8b9cadbecfd0e1f30415263748596a7b8c9daebfc00"
+      ],
+      "expected_stdout": "13c3c80c5094d91d61a5ea2e72b6fb3f4387cc105498dd2165a9ee3276baff00"
+    },
+    {
+      "name": "17-unpack",
+      "args": [
+        "unpack",
+        "13c3c80c5094d91d61a5ea2e72b6fb3f4387cc105498dd2165a9ee3276baff00"
+      ],
+      "expected_stdout": "103c0f2031425364758697a8b9cadbecfd0e1f30415263748596a7b8c9daebfc00"
+    },
+    {
+      "name": "18-pack",
+      "args": [
+        "pack",
+        "203c2c3d4e5f708192a3b4c5d6e7f8091a2b3c4d5e6f8091a2b3c4d5e6f7081920"
+      ],
+      "expected_stdout": "23cb0f5397dc2064a8ed3175b9fe02468acf13579be02468acf13579bdc20648"
+    },
+    {
+      "name": "18-unpack",
+      "args": [
+        "unpack",
+        "23cb0f5397dc2064a8ed3175b9fe02468acf13579be02468acf13579bdc20648"
+      ],
+      "expected_stdout": "203c2c3d4e5f708192a3b4c5d6e7f8091a2b3c4d5e6f8091a2b3c4d5e6f7081920"
+    },
+    {
+      "name": "19-pack",
+      "args": [
+        "pack",
+        "303c495a6b7c8d9eafc0d1e2f30415263748596a7b8c9daebfd0e1f20314253640"
+      ],
+      "expected_stdout": "33d2569adf2367abf03478bcc105498dd2165a9ee3276baff4387c80c5094d90"
+    },
+    {
+      "name": "19-unpack",
+      "args": [
+        "unpack",
+        "33d2569adf2367abf03478bcc105498dd2165a9ee3276baff4387c80c5094d90"
+      ],
+      "expected_stdout": "303c495a6b7c8d9eafc0d1e2f30415263748596a7b8c9daebfd0e1f20314253640"
+    },
+    {
+      "name": "20-pack",
+      "args": [
+        "pack",
+        "403c66778899aabbccddeeff102132435465768798a9bacbdcedfe0f2031425360"
+      ],
+      "expected_stdout": "43d99de2266aaef3377bbfc4084c90d5195da1e62a6eb2f73b7f83c80c5094d8"
+    },
+    {
+      "name": "20-unpack",
+      "args": [
+        "unpack",
+        "43d99de2266aaef3377bbfc4084c90d5195da1e62a6eb2f73b7f83c80c5094d8"
+      ],
+      "expected_stdout": "403c66778899aabbccddeeff102132435465768798a9bacbdcedfe0f2031425360"
+    },
+    {
+      "name": "21-pack",
+      "args": [
+        "pack",
+        "503c8394a5b6c7d8e9fa0b1c2d3e4f60718293a4b5c6d7e8f90a1b2c3d4e5f7080"
+      ],
+      "expected_stdout": "53e0e5296db1f63a7e82c70b4f93d81c60a4e92d71b5fa3e4286cb0f5397dc20"
+    },
+    {
+      "name": "21-unpack",
+      "args": [
+        "unpack",
+        "53e0e5296db1f63a7e82c70b4f93d81c60a4e92d71b5fa3e4286cb0f5397dc20"
+      ],
+      "expected_stdout": "503c8394a5b6c7d8e9fa0b1c2d3e4f60718293a4b5c6d7e8f90a1b2c3d4e5f7080"
+    },
+    {
+      "name": "22-pack",
+      "args": [
+        "pack",
+        "603ca0b1c2d3e4f5061728394a5b6c7d8e9fb0c1d2e3f405162738495a6b7c8d90"
+      ],
+      "expected_stdout": "63e82c70b4f93d4185ca0e5296db1f63a7ec3074b8fd014589ce12569adf2364"
+    },
+    {
+      "name": "22-unpack",
+      "args": [
+        "unpack",
+        "63e82c70b4f93d4185ca0e5296db1f63a7ec3074b8fd014589ce12569adf2364"
+      ],
+      "expected_stdout": "603ca0b1c2d3e4f5061728394a5b6c7d8e9fb0c1d2e3f405162738495a6b7c8d90"
+    },
+    {
+      "name": "23-pack",
+      "args": [
+        "pack",
+        "703cbdcedff00112233445566778899aabbccddeef00112233445566778899aab0"
+      ],
+      "expected_stdout": "73ef73b7fc004488cd115599de2266aaef3377bbc004488cd115599de2266aac"
+    },
+    {
+      "name": "23-unpack",
+      "args": [
+        "unpack",
+        "73ef73b7fc004488cd115599de2266aaef3377bbc004488cd115599de2266aac"
+      ],
+      "expected_stdout": "703cbdcedff00112233445566778899aabbccddeef00112233445566778899aab0"
+    },
+    {
+      "name": "24-pack",
+      "args": [
+        "pack",
+        "803cdaebfc0d1e2f405162738495a6b7c8d9eafb0c1d2e3f5061728394a5b6c7d0"
+      ],
+      "expected_stdout": "83f6baff03478bd014589ce12569adf2367abec3074b8fd4185ca0e5296db1f4"
+    },
+    {
+      "name": "24-unpack",
+      "args": [
+        "unpack",
+        "83f6baff03478bd014589ce12569adf2367abec3074b8fd4185ca0e5296db1f4"
+      ],
+      "expected_stdout": "803cdaebfc0d1e2f405162738495a6b7c8d9eafb0c1d2e3f5061728394a5b6c7d0"
+    },
+    {
+      "name": "25-pack",
+      "args": [
+        "pack",
+        "903cf708192a3b4c5d6e7f90a1b2c3d4e5f60718293a4b5c6d7e8fa0b1c2d3e4f0"
+      ],
+      "expected_stdout": "93fdc2064a8ed3175b9fe4286cb0f5397d81c60a4e92d71b5fa3e82c70b4f93c"
+    },
+    {
+      "name": "25-unpack",
+      "args": [
+        "unpack",
+        "93fdc2064a8ed3175b9fe4286cb0f5397d81c60a4e92d71b5fa3e82c70b4f93c"
+      ],
+      "expected_stdout": "903cf708192a3b4c5d6e7f90a1b2c3d4e5f60718293a4b5c6d7e8fa0b1c2d3e4f0"
+    },
+    {
+      "name": "26-pack",
+      "args": [
+        "pack",
+        "a03c1425364758697a8b9cadbecfe0f102132435465768798a9bacbdcedff00110"
+      ],
+      "expected_stdout": "a3c5094d91d61a5ea2e72b6fb3f83c4084c90d5195da1e62a6eb2f73b7fc0044"
+    },
+    {
+      "name": "26-unpack",
+      "args": [
+        "unpack",
+        "a3c5094d91d61a5ea2e72b6fb3f83c4084c90d5195da1e62a6eb2f73b7fc0044"
+      ],
+      "expected_stdout": "a03c1425364758697a8b9cadbecfe0f102132435465768798a9bacbdcedff00110"
+    },
+    {
+      "name": "27-pack",
+      "args": [
+        "pack",
+        "b03c31425364758697a8b9cadbecfd0e1f30415263748596a7b8c9daebfc0d1e20"
+      ],
+      "expected_stdout": "b3cc5094d91d61a5ea2e72b6fb3f4387cc105498dd2165a9ee3276baff034788"
+    },
+    {
+      "name": "27-unpack",
+      "args": [
+        "unpack",
+        "b3cc5094d91d61a5ea2e72b6fb3f4387cc105498dd2165a9ee3276baff034788"
+      ],
+      "expected_stdout": "b03c31425364758697a8b9cadbecfd0e1f30415263748596a7b8c9daebfc0d1e20"
+    },
+    {
+      "name": "28-pack",
+      "args": [
+        "pack",
+        "c03c4e5f708192a3b4c5d6e7f8091a2b3c4d5e6f8091a2b3c4d5e6f708192a3b40"
+      ],
+      "expected_stdout": "c3d397dc2064a8ed3175b9fe02468acf13579be02468acf13579bdc2064a8ed0"
+    },
+    {
+      "name": "28-unpack",
+      "args": [
+        "unpack",
+        "c3d397dc2064a8ed3175b9fe02468acf13579be02468acf13579bdc2064a8ed0"
+      ],
+      "expected_stdout": "c03c4e5f708192a3b4c5d6e7f8091a2b3c4d5e6f8091a2b3c4d5e6f708192a3b40"
+    },
+    {
+      "name": "29-pack",
+      "args": [
+        "pack",
+        "d03c6b7c8d9eafc0d1e2f30415263748596a7b8c9daebfd0e1f203142536475860"
+      ],
+      "expected_stdout": "d3dadf2367abf03478bcc105498dd2165a9ee3276baff4387c80c5094d91d618"
+    },
+    {
+      "name": "29-unpack",
+      "args": [
+        "unpack",
+        "d3dadf2367abf03478bcc105498dd2165a9ee3276baff4387c80c5094d91d618"
+      ],
+      "expected_stdout": "d03c6b7c8d9eafc0d1e2f30415263748596a7b8c9daebfd0e1f203142536475860"
+    },
+    {
+      "name": "30-pack",
+      "args": [
+        "pack",
+        "e03c8899aabbccddeeff102132435465768798a9bacbdcedfe0f20314253647580"
+      ],
+      "expected_stdout": "e3e2266aaef3377bbfc4084c90d5195da1e62a6eb2f73b7f83c80c5094d91d60"
+    },
+    {
+      "name": "30-unpack",
+      "args": [
+        "unpack",
+        "e3e2266aaef3377bbfc4084c90d5195da1e62a6eb2f73b7f83c80c5094d91d60"
+      ],
+      "expected_stdout": "e03c8899aabbccddeeff102132435465768798a9bacbdcedfe0f20314253647580"
+    },
+    {
+      "name": "31-pack",
+      "args": [
+        "pack",
+        "f03ca5b6c7d8e9fa0b1c2d3e4f60718293a4b5c6d7e8f90a1b2c3d4e5f708192a0"
+      ],
+      "expected_stdout": "f3e96db1f63a7e82c70b4f93d81c60a4e92d71b5fa3e4286cb0f5397dc2064a8"
+    },
+    {
+      "name": "31-unpack",
+      "args": [
+        "unpack",
+        "f3e96db1f63a7e82c70b4f93d81c60a4e92d71b5fa3e4286cb0f5397dc2064a8"
+      ],
+      "expected_stdout": "f03ca5b6c7d8e9fa0b1c2d3e4f60718293a4b5c6d7e8f90a1b2c3d4e5f708192a0"
+    }
+  ],
+  "schema": 1
+}

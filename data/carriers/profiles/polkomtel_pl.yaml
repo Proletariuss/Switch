@@ -1,0 +1,63 @@
+version: 3
+kind: carrier_bundle
+id: apple_polkomtel_pl
+bundle: Polkomtel_pl.bundle
+supported_plmns:
+    - "26001"
+plmn_overrides:
+    "26001":
+        apns:
+            - apn: plus
+              type_mask: 51
+              allowed_ip_stack: ipv4v6
+              roaming_ip_stack: ipv4
+              no_cellular_reconnect_cause_codes:
+                - cause_codes:
+                    - 0
+                  recovers_on_airplane_mode: false
+                  num_tries_allowed: 1
+                  type: 3GPP
+                  timeout: 0
+            - apn: mms
+              type_mask: 4
+              no_cellular_reconnect_cause_codes:
+                - cause_codes:
+                    - 0
+                  recovers_on_airplane_mode: false
+                  num_tries_allowed: 1
+                  type: 3GPP
+                  timeout: 0
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv4v6
+              no_cellular_reconnect_cause_codes:
+                - cause_codes:
+                    - 26
+                  recovers_on_airplane_mode: false
+                  num_tries_allowed: 1
+                  type: 3GPP
+                  timeout: 600
+                - cause_codes:
+                    - 55
+                  recovers_on_airplane_mode: true
+                  num_tries_allowed: 1
+                  type: 3GPP
+                  timeout: 86400
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: required
+                support_p_early_media: true
+                early_media_needs_header: true
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*[primary]
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            volte:
+                enable_volte_by_default: true

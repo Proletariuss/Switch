@@ -1,0 +1,11 @@
+version: 3
+kind: carrier_bundle
+id: apple_btc_bw
+bundle: BTC_bw.bundle
+supported_plmns:
+    - "65204"
+plmn_overrides:
+    "65204":
+        apns:
+            - apn: internet.be
+              type_mask: 49

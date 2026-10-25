@@ -1,0 +1,13 @@
+version: 3
+kind: carrier_bundle
+id: apple_orange_gw
+bundle: Orange_gw.bundle
+supported_plmns:
+    - "63203"
+plmn_overrides:
+    "63203":
+        apns:
+            - apn: 4Gogb
+              type_mask: 49
+            - apn: 4Gogb
+              type_mask: 48

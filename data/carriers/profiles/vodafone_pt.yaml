@@ -1,0 +1,48 @@
+version: 3
+kind: carrier_bundle
+id: apple_vodafone_pt
+bundle: Vodafone_pt.bundle
+supported_plmns:
+    - "26801"
+plmn_overrides:
+    "26801":
+        apns:
+            - apn: net2.vodafone.pt
+              username: vodafone
+              password: vodafone
+              type_mask: 1081349
+            - apn: ims
+              type_mask: 131072
+            - apn: net2.vodafone.pt
+              username: vodafone
+              password: vodafone
+              type_mask: 1048580
+            - apn: internet.vodafone.pt
+              username: vodafone
+              password: vodafone
+              type_mask: 48
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 13312
+        entitlement:
+            entitlement_url: https://es-pt.vodafone.com:4451/ium-OEMInterface/servlet/IUMServlet
+        ims:
+            apn: ims
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: false
+                require_preconditions_when_mandatory: false
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            media:
+                rtcp_interval_seconds: 5
+            volte:
+                enable_volte_by_default: true

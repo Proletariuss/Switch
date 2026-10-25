@@ -1,0 +1,13 @@
+version: 3
+kind: carrier_bundle
+id: apple_spt_wf
+bundle: SPT_wf.bundle
+supported_plmns:
+    - "54301"
+plmn_overrides:
+    "54301":
+        apns:
+            - apn: MANUIA
+              type_mask: 49
+            - apn: MANUIA
+              type_mask: 48

@@ -1,0 +1,10 @@
+version: 2
+plmn: "24008"
+profiles:
+    - id: apple_telenor_se
+      path: profiles/telenor_se.yaml
+      generic: true
+      selectors:
+        - raw: "24008"
+          carrier_name: Telenor
+          iso: SE

@@ -1,0 +1,10 @@
+version: 2
+plmn: "27821"
+profiles:
+    - id: apple_gomobile_mt
+      path: profiles/gomobile_mt.yaml
+      generic: true
+      selectors:
+        - raw: "27821"
+          carrier_name: go mobile
+          iso: MT

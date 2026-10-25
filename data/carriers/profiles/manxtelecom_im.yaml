@@ -1,0 +1,17 @@
+version: 3
+kind: carrier_bundle
+id: apple_manxtelecom_im
+bundle: ManxTelecom_im.bundle
+supported_plmns:
+    - "23458"
+plmn_overrides:
+    "23458":
+        apns:
+            - apn: internet
+              type_mask: 49
+            - apn: mms.manxpronto.net
+              username: mms
+              password: mms
+              type_mask: 4
+            - apn: internet
+              type_mask: 48

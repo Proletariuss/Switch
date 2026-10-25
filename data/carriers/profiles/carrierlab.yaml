@@ -1,0 +1,83 @@
+version: 3
+kind: carrier_bundle
+id: apple_carrierlab
+bundle: CarrierLab.bundle
+supported_plmns:
+    - "00101"
+    - "001011"
+    - "00102"
+    - "00111"
+    - "00211"
+    - "00281"
+    - "00321"
+    - "00431"
+    - "00541"
+    - "00651"
+    - "00761"
+    - "00871"
+    - "00902"
+    - "01012"
+    - "01122"
+    - "01232"
+    - "10101"
+    - "240680"
+    - "240681"
+    - "24608"
+    - "246081"
+    - "24681"
+    - "246813"
+    - "26280"
+    - "262820"
+    - "26284"
+    - "29981"
+    - "311011"
+common:
+    apns:
+        - apn: ""
+          type_mask: 49
+          allowed_ip_stack: ipv4v6
+        - apn: IMS
+          type_mask: 131072
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+        - apn: xcap
+          type_mask: 1048576
+          allowed_ip_stack: ipv4v6
+        - apn: sos
+          type_mask: 262144
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+    ims:
+        apn: ims
+        ip_stack: ipv4v6
+        media:
+            rtcp_interval_seconds: 5
+            rtp_inactivity_seconds: 120
+        register:
+            use_ipsec: true
+        signaling:
+            additional_headers:
+                - selector: INVITE
+                  headers:
+                    - 'Accept: application/sdp,application/3gpp-ims+xml'
+            contact:
+                additional_contact_params:
+                    - selector: INVITE,INVITE:180,INVITE:183
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                        - audio
+                    - selector: INVITE:200,PRACK:200,UPDATE:200
+                      params:
+                        - audio
+                    - selector: REGISTER
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+                        - +g.3gpp.accesstype="cellular2"
+            early_media_needs_header: true
+            preconditions: supported
+            require_preconditions_when_mandatory: true
+            require_qos_before_ringing: true
+            support_p_early_media: true

@@ -1,0 +1,13 @@
+version: 2
+plmn: "24042"
+profiles:
+    - id: apple_uros
+      path: profiles/uros.yaml
+      selectors:
+        - raw: 24042_GID1-C5
+          carrier_name: Goodspeed
+          iso: SE
+          conditions:
+            - field: gid1
+              match: prefix
+              value: C5

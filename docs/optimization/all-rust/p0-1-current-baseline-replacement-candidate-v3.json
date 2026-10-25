@@ -1,0 +1,122 @@
+{
+  "schema": "switch.p0-1-current-baseline-replacement-candidate.v3",
+  "change_id": "p0-1-current-baseline-2026-10-23",
+  "status": "CANDIDATE_NOT_ACTIVE_NO_ACCEPTANCE",
+  "authority": {
+    "kind": "direct_user_instruction",
+    "decision": "改用当前可验证基线",
+    "historical_archive_available": false,
+    "decision_file": {
+      "path": "docs/optimization/all-rust/current-baseline-scope-decision.json",
+      "sha256": "b8b1446f1a46f1cdb63258e48a72fc5bc1037bdd816041b0ea546a3fb8a9b13e"
+    },
+    "evidence_successor": {
+      "path": "docs/optimization/all-rust/current-baseline-scope-successor-2026-10-23.json",
+      "sha256": "33bccc9fbaed31e0f41d2dd0f56459100b2621d5314966ef49a97396041883e6"
+    }
+  },
+  "predecessor_ledger": {
+    "path": "docs/optimization/all-rust/acceptance-ledger-2026-10-19-iteration-677.json",
+    "sha256": "e72a76fb9f8deca8916fccd25ed7d4aab4bcb9572175dd9be1bcbaf4115e673b",
+    "path_at_cut": "docs/optimization/all-rust/acceptance-ledger-2026-10-19.json"
+  },
+  "candidate_ledger": {
+    "path": "docs/optimization/all-rust/acceptance-ledger-candidate-v3-2026-10-23.json",
+    "sha256": "41f3e1869e83346eacfbe095c7c1d3bf15bd28c27795c216364d47e17765ffc5",
+    "activation": "NOT_ACTIVE"
+  },
+  "old_to_new_leaf_map": [
+    {
+      "old_id": "P0-1.working-baseline",
+      "old_status": "NOT_REVIEWED",
+      "old_disposition": "HISTORICAL_UNVERIFIABLE_RETAINED_NO_PASS",
+      "new_id": "P0-1.current-source-baseline",
+      "new_title": "当前源码恢复基线",
+      "new_status": "NOT_REVIEWED",
+      "scenario_class_ids_before": [
+        "SW"
+      ],
+      "scenario_class_ids_after": [
+        "SW"
+      ],
+      "required_condition": "固定当前完整源码清单及来源身份，在隔离位置恢复全部文件并逐项核对原始字节、mode、数量和完整源码身份；每个待验版本须有与该版本匹配的恢复收据。",
+      "software_evidence": "i678 仅核 i677 的 3.48/build348 源码 3928 文件恢复；正式条件尚未审定。"
+    },
+    {
+      "old_id": "P0-1.baseline-280",
+      "old_status": "NOT_REVIEWED",
+      "old_disposition": "HISTORICAL_UNVERIFIABLE_RETAINED_NO_PASS",
+      "new_id": "P0-1.current-build-baseline",
+      "new_title": "当前同源构建与交付基线",
+      "new_status": "NOT_REVIEWED",
+      "scenario_class_ids_before": [
+        "DELIVERY"
+      ],
+      "scenario_class_ids_after": [
+        "DELIVERY"
+      ],
+      "required_condition": "从固定当前源码身份完成可复验的隔离冷构建及软件门禁，审定依赖闭包、App与后端版本、发布清单和产物身份均同源；交付目标版本另核相应收据。洁净安装及设备业务须另行验收。",
+      "software_evidence": "i677 仅核 3.48/build348 同源软件构建与发布绑定；正式条件尚未审定。",
+      "non_normal_not_applicable_reasons": {
+        "cancel": "本叶核冷构建、软件门禁与交付产物的同源性；构建中断或失败由normal判据拒绝，不涉及用户业务取消、设备操作或租约取消。",
+        "partial": "本叶要求完整构建及身份核对；不完整或损坏产物不能满足normal判据。本叶不处理业务数据的局部写入或rename提交，故不另设partial栏。",
+        "durable": "本叶核发布清单、文件指纹及可复验构建收据，均归normal完整性判据；不承载密钥、journal或业务数据的持久提交协议，故不另设durable栏。",
+        "release": "本叶核构建与交付产物身份；构建进程完成属于normal门禁。本叶不持有运行中设备、业务worker或lease，其释放由相应运行时需求叶验收。"
+      }
+    }
+  ],
+  "proposed_normal_rules": {
+    "P0-1.current-source-baseline": {
+      "existing_leaf_id": "P0-1.current-source-baseline",
+      "normal_required_condition": "固定当前完整源码清单及来源身份，在隔离位置恢复全部文件并逐项核对原始字节、mode、数量和完整源码身份；每个待验版本须有与该版本匹配的恢复收据。",
+      "boundary": "当前源码恢复不能追认真实切换前 dirty/untracked 工作区、2.80 源码或旧版等价性。",
+      "formal_status": "NOT_REVIEWED"
+    },
+    "P0-1.current-build-baseline": {
+      "existing_leaf_id": "P0-1.current-build-baseline",
+      "normal_required_condition": "从固定当前源码身份完成可复验的隔离冷构建及软件门禁，审定依赖闭包、App与后端版本、发布清单和产物身份均同源；交付目标版本另核相应收据。洁净安装及设备业务须另行验收。",
+      "boundary": "同机隔离冷构建不证明洁净安装、2.80 升级、实体设备、运营商或旧版回滚。",
+      "formal_status": "NOT_REVIEWED"
+    }
+  },
+  "accounting_impact": {
+    "operation": "ONE_TO_ONE_LEAF_ID_REPLACEMENT_CANDIDATE",
+    "parent_categories_before_after": [
+      49,
+      49
+    ],
+    "leaf_catalog_rows_before_after": [
+      115,
+      115
+    ],
+    "scenario_classes_before_after": [
+      21,
+      21
+    ],
+    "functional_passes_awarded": 0,
+    "status_counts_before_after": {
+      "PARTIAL": [
+        5,
+        5
+      ],
+      "NOT_REVIEWED": [
+        110,
+        110
+      ]
+    },
+    "scored_unit_impact": "UNDETERMINED_NO_FROZEN_SEMANTIC_INSTANCE_REGISTRY",
+    "overall_denominator_frozen": false,
+    "overall_denominator": null,
+    "overall_percentage": null,
+    "overall_product_complete": false,
+    "other_113_leaves_unchanged": true
+  },
+  "historical_limits": {
+    "old_leaves_retained_in_predecessor": true,
+    "historical_2_80_source_or_switch_time_restored": false,
+    "legacy_equivalence_or_upgrade_proven": false,
+    "device_card_carrier_qmi_mbim_acceptance": "UNVERIFIED",
+    "rendered_gui_and_physical_audio_acceptance": "UNVERIFIED",
+    "external_delivery_and_legacy_rollback": "UNVERIFIED"
+  }
+}

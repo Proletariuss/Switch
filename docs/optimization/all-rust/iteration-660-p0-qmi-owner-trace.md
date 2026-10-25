@@ -1,0 +1,16 @@
+# Iteration 660：QMI 三项 typed operation 的 P0 有限静态责任图
+
+本轮延续 [i652 open/close/retry 静态图](iteration-652-p0-qmi-owner-trace.json)，只扩展 `POST /api/internal/qmi/probe`、`set-ims`、`operator`。原 i652 记录及 [i659 源码快照](iteration-659-source-snapshot.json)均不改写。当前 [机器可读审议记录](iteration-660-p0-qmi-owner-trace.json)固定 9 个当前源文件、59 个精确锚点（其中 27 个为本轮新增）和 3 条 typed operation。九个源文件采用双重 pin：7 个包含于 i659 的 209 文件快照，`proletarius-qmi-services/src/client.rs` 和 `uim.rs` 不在该快照内，由 i660 审议记录的独立 SHA-256 固定；绝不把 i659 快照表述为覆盖全部九个文件。`P0-2.owner-map` 与 `P2B-4.qmi-control` 仍为 `NOT_REVIEWED`，实例数组为空。本记录不覆盖 `P2B-4.qmi-uim` 的完整业务验收，不授予功能 PASS 或冻结产品分母。
+
+| 责任 | 已核对的当前源码路径 | 结果与边界 |
+| --- | --- | --- |
+| Swift 启动/producer | `app/Sources/BackendProcess.swift:227–237` 以 `-backend=qmi` 启动 Rust 后端。已审 Swift 源码没有直接调用 `/api/internal/qmi/`。私有 Unix socket 与 HTTP gateway 在 `main.rs:1695/1729–1734/1853–1854` 和 `1993–1995/2033–2038/2090–2092` 分别识别、鉴权、分派至同一 owner。 | 直接 Swift QMI RPC 消费者为 0；其他内部/历史客户端的存在与适用范围仍未审定。私有 socket 的退出门 `main.rs:1740–1766` 只允许 QMI close，不能在退出中接纳 probe、set-ims 或 operator。 |
+| 请求与响应 | `qmi_enhancement.rs:950–964` 对 probe/operator 要求空 JSON 对象，对 set-ims 使用 `deny_unknown_fields` 的可选设置字段且拒绝全空更新；POST 与 16 KiB 上限见 `901–940`。`971–986` 把有效结果映射为 200，非法输入 400，其余 owner/service 失败 503。 | 200 是 typed owner 的软件响应，不证明 DJI QMI 实体成功。HTTP 任务失败为 `qmi_owner_stopped`；在明确结果之前不可从连接中断推断 mutation 未提交。 |
+| probe 读路径 | `qmi_enhancement.rs:487–491,535–587,820–853` 在 QMI Gate 和 state mutex 下读取 IMS settings 与 IMSA registration。`proletarius-qmi-services/src/client.rs:72–102` 构造/验证两次 service request；现有 QMI core 与 libusb 锚点将包写入同一串行 bulk writer。 | IMS 成功而 IMSA 失败仍整体报错；分类为可恢复的读失败最多重开并重读一次。旧会话 abort/USB 清理结果不明时禁止替换。没有实体 IMS/IMSA 响应证明。 |
+| set-ims 写路径 | `qmi_enhancement.rs:245–311,493–523,854–856` 将非空 typed JSON 转成 `ImsSettingsUpdate`；`proletarius-qmi-services/src/client.rs:87–95,213–233` 编码 TLV 并执行 `IMS_SET_SERVICES`。只有验证服务响应后返回 `updated=true`。 | 错误后可进行 owner 清理/重开，**不会自动重放 set-ims**。写出后丢响应的实际 modem 结果为 `SUBMITTED_MUTATION_OUTCOME_UNKNOWN`，503 不等于未提交；本轮没有实体设置读回。 |
+| operator 读路径 | `qmi_enhancement.rs:525–527,858–872` 先用 UIM 取 MCC/MNC，再读 NAS 名称；`uim.rs:64–69` 优先 OPL，失败/缺失时按 IMSI/EF-AD 回退。`uim.rs:149–158,160–182,195–213` 分别构造 UIM 文件属性、记录、透明文件请求并验证服务响应，透明读取还保留 TLV `0x10` 兼容回退。`client.rs:121–135` 构造 NAS 请求。 | `uim.rs:107–110` 把 EF-AD 读取失败变成空 AD，`357–362` 随后可将 MNC 长度默认成 2；即便 UIM 返回 MCC/MNC，实际 EF-AD 是否读取成功仍为 **UNKNOWN**。NAS 名称失败也被投影为空字符串。因此 200 不证明全部 UIM/NAS 文件与名称读取成功，不能当作运营商身份实机验收。 |
+| 关闭与退出 | 三项 operation 共用 `operation_gate`、`QmiState` mutex、i652 已固定的 `platform_session_close`、`core_close_join`、`usb_release`、`retry_shutdown_join`、`main_qmi_shutdown`。 | 静态映射与 fault-injection 不能替代真实 USB close/release、CTL_SYNC、断连及服务结果。历史 macOS 型号/固件/卡/运营商支持成员仍未知。 |
+
+新增 27 个源码锚点按文件分布：`BackendProcess.swift:227–237`；`main.rs:1740–1766`；`qmi_enhancement.rs:245–274,294–311,321–328,487–491,493–523,525–527,535–587,820–853,854–856,858–872,950–964,971–986,990–996`；`proletarius-qmi-services/src/client.rs:72–85,87–95,98–102,121–135,142–165,213–233`；`proletarius-qmi-services/src/uim.rs:64–69,107–110,149–158,160–182,195–213,357–362`。每个锚点含当前源文件 SHA-256、精确行范围和原文字节；校验器还固定 operation→锚点集合、错误与 UNKNOWN 语义、双重 pin 覆盖、Swift 无直接调用的本次审议边界，并通过负向测试拒绝删项、虚假验收和源漂移。
+
+本轮只读源码及元数据校验，不启动 daemon、调用模块、写卡、发短信或拨号。P0 责任图其他家族、真实设备与线路业务、P5 双向音频、P6 外部 CI/升级/长稳/最终发行继续未闭合；总体分母未冻结，不报告产品百分比。

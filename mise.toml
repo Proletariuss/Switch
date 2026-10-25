@@ -1,0 +1,26 @@
+[tools]
+rust = "1.98.0"
+
+[tasks."rust:check"]
+description = "检查 Rust workspace；缓存仅写入 ../build"
+run = "sh -c 'SWITCH_SOURCE_ROOT=$PWD; . scripts/workspace-env.sh; python3 scripts/build-evs.py && cd rust && cargo fmt --all -- --check && cargo test --locked --workspace && cargo clippy --locked --workspace --all-targets -- -D warnings'"
+
+[tasks.build]
+description = "构建 Switch.app 到 ../dist（不生成 DMG）"
+run = "scripts/build.sh"
+
+[tasks.launch]
+description = "启动 Switch，运行数据保存在 ../build/runtime"
+run = "scripts/launch.sh"
+
+[tasks.quit]
+description = "正常退出 Switch 及其自有后端"
+run = "scripts/quit.sh"
+
+[tasks.clean]
+description = "仅列出可清理缓存；--remove 精确路径才删除"
+run = "scripts/clean-generated.sh"
+
+[tasks."test:gates"]
+description = "运行 Rust 原生后端、Swift 和固定协议样本门禁"
+run = "scripts/test-migration-gates.sh"

@@ -1,0 +1,25 @@
+version: 3
+kind: carrier_bundle
+id: apple_free_yt
+bundle: Free_yt.bundle
+supported_plmns:
+    - "20601"
+    - "64702"
+common:
+    apns:
+        - apn: internet
+          type_mask: 49
+        - apn: mms
+          type_mask: 4
+selector_overrides:
+    20601_GID1-f004_ID-8926202203:
+        apns:
+            - apn: event.proximus.be
+              username: mms
+              password: mms
+              type_mask: 4
+              allowed_ip_stack: ipv4
+            - apn: internet.proximus.be
+              type_mask: 49
+              allowed_ip_stack: ipv4
+              roaming_ip_stack: ipv4

@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_o2_1and1_de
+bundle: O2_1and1_de.bundle
+supported_plmns:
+    - "26207"
+plmn_overrides:
+    "26207":
+        apns:
+            - apn: internet
+              type_mask: 55
+            - apn: ""
+              type_mask: 0
+            - apn: internet
+              type_mask: 54

@@ -1,0 +1,33 @@
+version: 2
+plmn: "22801"
+profiles:
+    - id: apple_fastweb_it
+      path: profiles/fastweb_it.yaml
+      selectors:
+        - raw: 22801_GID1-D8FFFFFFFFFFFFFF
+          carrier_name: Fastweb
+          iso: IT
+          conditions:
+            - field: gid1
+              match: prefix
+              value: D8FFFFFFFFFFFFFF
+    - id: apple_swisscom_ch
+      path: profiles/swisscom_ch.yaml
+      generic: true
+      selectors:
+        - raw: "22801"
+          carrier_name: Swisscom
+          iso: CH
+    - id: apple_swisscom_wingo_ch
+      path: profiles/swisscom_wingo_ch.yaml
+      selectors:
+        - raw: 22801_GID1-01_GID2-01
+          carrier_name: Wingo
+          iso: CH
+          conditions:
+            - field: gid1
+              match: prefix
+              value: "01"
+            - field: gid2
+              match: prefix
+              value: "01"

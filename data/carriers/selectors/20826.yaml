@@ -1,0 +1,10 @@
+version: 2
+plmn: "20826"
+profiles:
+    - id: apple_nrj_fr
+      path: profiles/nrj_fr.yaml
+      generic: true
+      selectors:
+        - raw: "20826"
+          carrier_name: BTBD
+          iso: FR

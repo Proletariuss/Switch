@@ -1,0 +1,15 @@
+version: 3
+kind: carrier_bundle
+id: apple_vodafone_ls
+bundle: Vodafone_ls.bundle
+supported_plmns:
+    - "65101"
+plmn_overrides:
+    "65101":
+        apns:
+            - apn: internet
+              type_mask: 49
+              allowed_ip_stack: ipv4v6
+            - apn: MMS
+              type_mask: 4
+              allowed_ip_stack: ipv4v6

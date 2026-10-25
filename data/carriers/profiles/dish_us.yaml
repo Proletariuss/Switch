@@ -1,0 +1,131 @@
+version: 3
+kind: carrier_bundle
+id: apple_dish_us
+bundle: Dish_US.bundle
+supported_plmns:
+    - "302220"
+    - "313340"
+common:
+    apns:
+        - apn: internet
+          type_mask: 32771
+          tech_type_mask: 2
+          allowed_ip_stack: ipv4v6
+        - apn: ims
+          type_mask: 131072
+          tech_type_mask: 131072
+          allowed_ip_stack: ipv4v6
+          support_switch_over: true
+          support_5g_sa_handover: true
+        - apn: ota
+          type_mask: 512
+          tech_type_mask: 512
+          allowed_ip_stack: ipv4v6
+        - apn: hotspot
+          type_mask: 48
+          allowed_ip_stack: ipv4v6
+        - apn: xcap
+          type_mask: 1048580
+          tech_type_mask: 1048580
+          allowed_ip_stack: ipv4v6
+          support_5g_sa_handover: true
+        - apn: sos
+          type_mask: 262144
+          tech_type_mask: 262144
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+    apple:
+        carrier_entitlements:
+            supported_entitlements: 4205705
+    e911:
+        over_itech_supported: false
+    entitlement:
+        entitlement_url: https://aes.mnc340.mcc313.pub.3gppnetwork.org/entitlement
+    ims:
+        apn: ims
+        epdg:
+            address: epdg.epc.mnc340.mcc313.pub.3gppnetwork.org
+            configuration_attributes:
+                - identifier: 16384
+                  name: AssignedPCSCFIPv4
+                  type: v4
+                - identifier: 16386
+                  name: AssignedPCSCFIPv6
+                  type: v6
+                - identifier: 16386
+                  name: AssignedPCSCFIPv6
+                  type: v6
+        ike:
+            child_sa:
+                proposals:
+                    - source_branch: FirstChild
+                      encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      esn: auto
+                      install_policies: true
+                      lifetime_seconds: 80000
+                replay_window_size: 12
+            dpd:
+                enabled: false
+                interval_seconds: 600
+                max_retries: 4
+                retry_interval_seconds: 10
+            local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+            proposals:
+                - encryption:
+                    - aes256
+                  integrity:
+                    - sha256
+                  prf:
+                    - sha256
+                  dh_groups:
+                    - 14
+                  lifetime_seconds: 80000
+                  authentication_method: None
+                  eap_method: EAP-AKA
+            validate_remote_certificate: false
+        ip_stack: ipv4v6
+        media:
+            remote_rtcp_deactivation: true
+            rtcp_inactivity_seconds: 20
+            rtcp_interval_seconds: 5
+            rtp_inactivity_seconds: 20
+        register:
+            use_ipsec: true
+        signaling:
+            additional_headers:
+                - selector: INVITE[911,wifi]
+                  headers:
+                    - 'Supported: geolocation'
+            contact:
+                always_add_sip_instance: true
+            early_media_needs_header: true
+            preconditions: supported
+            re_register_on:
+                - method: REGISTER
+                  statuses:
+                    - "480"
+                    - "500"
+                    - "503"
+                    - "504"
+                - method: INVITE
+                  statuses:
+                    - "403"
+                    - "504"
+            require_preconditions_when_mandatory: false
+            sip_timers:
+                AckReceiveTimeout: 32000
+                AckRetransmitTimer: 32000
+                B: 32000
+                D: 32000
+                F: 32000
+                H: 32000
+                InviteResponseTimeout: 0
+                J: 32000
+            support_p_early_media: true
+        ussi:
+            enabled: true
+        volte:
+            enable_volte_by_default: true

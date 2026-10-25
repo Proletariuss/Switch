@@ -1,0 +1,57 @@
+version: 3
+kind: carrier_bundle
+id: apple_chinatelecom_hk
+bundle: ChinaTelecom_hk.bundle
+supported_plmns:
+    - "45400"
+    - "45431"
+common:
+    apns:
+        - apn: CTExcel
+          type_mask: 1048625
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+        - apn: ims
+          type_mask: 131072
+          tech_type_mask: 131072
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+          support_switch_over: true
+          wait_for_bring_up_complete: true
+        - apn: CTNET
+          type_mask: 561
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+          use_network_mtu: true
+        - apn: sos
+          type_mask: 262144
+          tech_type_mask: 262144
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+          allow_no_dns: 1
+    e911:
+        emergency_urns:
+            "110": urn:service:sos.police
+            "119": urn:service:sos.fire
+            "120": urn:service:sos.ambulance
+            "993": urn:service:sos.police
+            "999": urn:service:sos.fire
+    ims:
+        apn: ims
+        domain: ims.mnc031.mcc454.3gppnetwork.org
+        impi_format: imsi@carrierDomain
+        impu_format: imsi@carrierDomain
+        ip_stack: ipv4v6
+        media:
+            rtcp_inactivity_seconds: 20
+            rtcp_interval_seconds: 5
+        register:
+            use_ipsec: true
+        signaling:
+            early_media_needs_header: true
+            require_qos_before_ringing: true
+            support_p_early_media: true
+        ussi:
+            enabled: true
+        volte:
+            enable_volte_by_default: true

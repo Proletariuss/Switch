@@ -1,0 +1,107 @@
+version: 3
+kind: carrier_bundle
+id: apple_o2_sky_uk
+bundle: O2_Sky_uk.bundle
+supported_plmns:
+    - "23457"
+    - "24007"
+common:
+    apns:
+        - apn: mobile.sky
+          type_mask: 32819
+          tech_type_mask: 2
+          allowed_ip_stack: ipv4
+        - apn: mms.mobile.sky
+          type_mask: 4
+          allowed_ip_stack: ipv4
+        - apn: ims
+          type_mask: 131072
+          tech_type_mask: 131072
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4v6
+          support_switch_over: true
+          use_network_mtu: true
+          allow_no_dns: 1
+        - apn: wifi.mms.mobile.sky
+          tech_type_mask: 4
+          allowed_ip_stack: ipv4
+        - apn: ut.mobile.sky
+          type_mask: 1048576
+          tech_type_mask: 1048576
+          allowed_ip_stack: ipv4
+    apple:
+        carrier_entitlements:
+            supported_entitlements: 8193
+    e911:
+        over_itech_supported: true
+        wifi_calling_without_entitlement: true
+    entitlement:
+        entitlement_url: https://esim-es-open-prod-skyuk.esimcloud.net/skyuk/prod/executeAppleActions/
+    ims:
+        apn: ims
+        epdg:
+            address: epdg.epc.mnc057.mcc234.pub.3gppnetwork.org
+            configuration_attributes:
+                - identifier: 20
+                  name: AssignedPCSCFIPv4
+                  type: v4
+                - identifier: 21
+                  name: AssignedPCSCFIPv6
+                  type: v6
+        ike:
+            child_sa:
+                proposals:
+                    - source_branch: FirstChild
+                      encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      esn: auto
+                      install_policies: true
+                      lifetime_seconds: 86400
+                replay_window_size: 12
+            dpd:
+                enabled: false
+                interval_seconds: 600
+                max_retries: 4
+                retry_interval_seconds: 10
+            nat_keepalive_enabled: true
+            proposals:
+                - encryption:
+                    - aes256
+                  integrity:
+                    - sha256
+                  prf:
+                    - sha256
+                  dh_groups:
+                    - 14
+                  lifetime_seconds: 86400
+                  authentication_method: None
+                  eap_method: EAP-AKA
+        ip_stack: ipv4v6
+        media:
+            rtp_inactivity_seconds: 20
+        register:
+            include_cellular_network_info: false
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: REGISTER,INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.srvcc-alerting
+                always_add_sip_instance: true
+            csfb_on:
+                - method: INVITE
+                  statuses:
+                    - 5XX
+            early_media_needs_header: true
+            preconditions: supported
+            require_preconditions_when_mandatory: false
+            support_p_early_media: true
+        ussi:
+            enabled: false
+        volte:
+            enable_volte_by_default: true
+    roaming:
+        wifi_calling_allowed: false

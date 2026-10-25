@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "revision": "cdba73e551810681f16b4cce0693c70e9e216c37",
+  "provenance": "Exact registry and selector corpus used by iteration 511 independent Go parameter and effective-proposal captures. Captured unchanged before iteration 546 upstream refresh. Expected Go outputs remain in retired-go-oracles.",
+  "files": [
+    {
+      "path": "carrier-registry.json",
+      "bytes": 1193746,
+      "sha256": "9fdefa88ad608db046aab80feb39ff2bb39124e5dea9ef5076798739370eb0d8"
+    },
+    {
+      "path": "carrier-cases.json",
+      "bytes": 291192,
+      "sha256": "39302939c544b3732859b234df5b8fb4b164c43c186e28cda424e86510fe153b"
+    }
+  ]
+}

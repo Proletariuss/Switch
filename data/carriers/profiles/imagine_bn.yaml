@@ -1,0 +1,23 @@
+version: 3
+kind: carrier_bundle
+id: apple_imagine_bn
+bundle: Imagine_bn.bundle
+supported_plmns:
+    - "52801"
+plmn_overrides:
+    "52801":
+        apns:
+            - apn: internet.bn
+              type_mask: 49
+            - apn: ims
+              type_mask: 131072
+              allowed_ip_stack: ipv4
+            - apn: hos
+              type_mask: 1048576
+              allowed_ip_stack: ipv4
+        ims:
+            apn: ims
+            ip_stack: ipv4
+            signaling:
+                support_p_early_media: true
+                early_media_needs_header: true

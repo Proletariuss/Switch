@@ -1,0 +1,10 @@
+version: 2
+plmn: "61404"
+profiles:
+    - id: apple_orange_ne
+      path: profiles/orange_ne.yaml
+      generic: true
+      selectors:
+        - raw: "61404"
+          carrier_name: Orange Niger
+          iso: NE

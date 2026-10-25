@@ -1,0 +1,10 @@
+version: 2
+plmn: "72411"
+profiles:
+    - id: apple_vivo_br
+      path: profiles/vivo_br.yaml
+      generic: true
+      selectors:
+        - raw: "72411"
+          carrier_name: VIVO
+          iso: BR

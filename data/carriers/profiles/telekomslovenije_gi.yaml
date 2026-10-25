@@ -1,0 +1,25 @@
+version: 3
+kind: carrier_bundle
+id: apple_telekomslovenije_gi
+bundle: TelekomSlovenije_gi.bundle
+supported_plmns:
+    - "26601"
+plmn_overrides:
+    "26601":
+        apns:
+            - apn: www.gibtele.com
+              type_mask: 49
+            - apn: mms.gibtele.com
+              type_mask: 4
+            - apn: www.gibtele.com
+              type_mask: 48
+        ims:
+            register:
+                use_ipsec: true
+            signaling:
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                require_preconditions_when_mandatory: false
+            volte:
+                enable_volte_by_default: true

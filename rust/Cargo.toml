@@ -1,0 +1,82 @@
+[workspace]
+members = [
+    "crates/proletarius-call",
+    "crates/proletarius-ccid",
+    "crates/proletarius-domain",
+    "crates/proletarius-euicc",
+    "crates/proletarius-forwarding",
+    "crates/proletarius-handoff-core",
+    "crates/proletarius-ike",
+    "crates/proletarius-ike-trust",
+    "crates/proletarius-lpa",
+    "crates/proletarius-platform-fs",
+    "crates/proletarius-ims",
+    "crates/proletarius-api-contract",
+    "crates/proletarius-audio-core",
+    "crates/proletarius-ble-core",
+    "crates/proletarius-reader",
+    "crates/proletarius-sim",
+    "crates/proletarius-system-proxy",
+    "crates/proletarius-qmi-wire",
+    "crates/proletarius-qmi-core",
+    "crates/proletarius-qmi-libusb",
+    "crates/proletarius-qmi-services",
+  "crates/proletarius-sms",
+    "crates/proletarius-sip",
+    "crates/proletarius-sip-runtime",
+  "crates/proletarius-store",
+  "crates/proletarius-vowifi",
+    "crates/proletariusd",
+    "crates/switch-voice-supervisor",
+]
+resolver = "3"
+
+[workspace.package]
+version = "3.51.0"
+edition = "2024"
+rust-version = "1.98"
+license = "MIT"
+
+[workspace.dependencies]
+aes = { version = "=0.9.3", features = ["zeroize"] }
+aes-gcm = { version = "0.11.1", default-features = false, features = ["aes", "alloc", "zeroize"] }
+base64 = "0.22"
+bytes = "1.10"
+cc = "=1.6.0"
+cbc = { version = "=0.2.1", features = ["zeroize"] }
+crypto-bigint = { version = "0.7.5", features = ["hybrid-array", "zeroize"] }
+getrandom = "0.3"
+hmac = "0.12"
+md-5 = "=0.10.6"
+http-body-util = "0.1"
+hyper = { version = "1.7", features = ["client", "http1", "server"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+httpdate = "=1.0.3"
+nix = { version = "0.30", features = ["fs", "signal", "user"] }
+pcsc = "2.9"
+rusb = "=0.9.4"
+reqwest = { version = "=0.13.5", default-features = false, features = ["blocking", "form", "http2", "json", "rustls", "socks", "system-proxy"] }
+regex = "=1.12.2"
+sha1 = "0.10"
+sha2 = "0.10"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = { package = "serde_yaml_ng", version = "0.10" }
+serialport = { version = "=4.10.1", default-features = false }
+socket2 = "=0.6.5"
+http = "1"
+subtle = "2.6"
+tokio = { version = "1.47", features = ["io-util", "macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
+time = { version = "=0.3.55", default-features = false, features = ["formatting", "local-offset", "parsing", "std"] }
+zeroize = { version = "1.8", features = ["derive", "serde"] }
+url = "2.5"
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+opt-level = "s"
+# Keep Tokio task panics isolated to their task instead of aborting the entire
+# backend process. Two local macOS crash reports showed SIGABRT on tokio worker
+# threads; unwinding makes the task failure observable without killing service.
+panic = "unwind"
+strip = "symbols"

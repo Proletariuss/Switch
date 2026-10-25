@@ -1,0 +1,13 @@
+[package]
+name = "switch-voice-supervisor"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Single-owner authenticated supervisor for the existing module voice helper"
+
+[dependencies]
+hmac.workspace = true
+sha2.workspace = true
+libc = "=0.2.190"
+

@@ -1,0 +1,10 @@
+version: 2
+plmn: "28022"
+profiles:
+    - id: apple_cablenet_cy
+      path: profiles/cablenet_cy.yaml
+      generic: true
+      selectors:
+        - raw: "28022"
+          carrier_name: cablenet
+          iso: CY

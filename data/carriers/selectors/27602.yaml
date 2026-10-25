@@ -1,0 +1,10 @@
+version: 2
+plmn: "27602"
+profiles:
+    - id: apple_vodafone_al
+      path: profiles/vodafone_al.yaml
+      generic: true
+      selectors:
+        - raw: "27602"
+          carrier_name: Vodafone AL
+          iso: AL

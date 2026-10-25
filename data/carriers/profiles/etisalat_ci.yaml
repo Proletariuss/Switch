@@ -1,0 +1,13 @@
+version: 3
+kind: carrier_bundle
+id: apple_etisalat_ci
+bundle: Etisalat_ci.bundle
+supported_plmns:
+    - "61202"
+plmn_overrides:
+    "61202":
+        apns:
+            - apn: moov
+              type_mask: 49
+            - apn: moov
+              type_mask: 48

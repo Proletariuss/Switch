@@ -1,0 +1,10 @@
+version: 2
+plmn: "33012"
+profiles:
+    - id: apple_openmobile_lte_pr
+      path: profiles/openmobile_lte_pr.yaml
+      generic: true
+      selectors:
+        - raw: "33012"
+          carrier_name: Open Mobile
+          iso: PR

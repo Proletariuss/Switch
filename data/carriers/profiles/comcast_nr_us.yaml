@@ -1,0 +1,21 @@
+version: 3
+kind: carrier_bundle
+id: apple_comcast_nr_us
+bundle: Comcast_NR_US.bundle
+supported_plmns:
+    - "310014"
+    - "314200"
+common:
+    apns:
+        - apn: internet
+          type_mask: 65585
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4
+          suppress_pdn_tear_down: true
+        - apn: admin.comcast
+          type_mask: 41472
+          allowed_ip_stack: ipv4v6
+          roaming_ip_stack: ipv4
+    ims:
+        volte:
+            enable_volte_by_default: false

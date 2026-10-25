@@ -1,0 +1,116 @@
+version: 3
+kind: carrier_bundle
+id: apple_mobifone_vn
+bundle: Mobifone_vn.bundle
+supported_plmns:
+    - "45201"
+plmn_overrides:
+    "45201":
+        apns:
+            - apn: m-wap
+              username: mms
+              password: mms
+              type_mask: 53
+              allowed_ip_stack: ipv4v6
+            - apn: ims
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv4v6
+              support_switch_over: true
+              use_network_mtu: true
+            - apn: xcap
+              type_mask: 1048576
+              tech_type_mask: 1048576
+              allowed_ip_stack: ipv4v6
+        e911:
+            over_itech_supported: false
+            wifi_calling_without_entitlement: true
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            domain: ims.mnc001.mcc452.3gppnetwork.org
+            impi_format: imsi@carrierDomain
+            impu_format: imsi@carrierDomain
+            epdg:
+                address: witalkios.mobifone.vn
+                configuration_attributes:
+                    - identifier: 16384
+                      name: AssignedPCSCFIPv4
+                      type: v4
+                    - identifier: 16386
+                      name: AssignedPCSCFIPv6
+                      type: v6
+            ike:
+                proposals:
+                    - encryption:
+                        - aes256
+                      integrity:
+                        - sha512
+                      prf:
+                        - sha512
+                      dh_groups:
+                        - 18
+                      lifetime_seconds: 43200
+                      authentication_method: None
+                      eap_method: EAP-AKA
+                nat_keepalive_enabled: false
+                dpd:
+                    enabled: false
+                    interval_seconds: 600
+                    max_retries: 4
+                    retry_interval_seconds: 10
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes256
+                          integrity:
+                            - sha512
+                          rekey_pfs_group: 18
+                          esn: auto
+                          install_policies: true
+                          lifetime_seconds: 43200
+                    replay_window_size: 12
+                local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+                validate_remote_certificate: false
+            register:
+                use_ipsec: true
+                expires: 7200
+                include_cellular_network_info: true
+            signaling:
+                max_udp_message_size: 1280
+                preconditions: supported
+                support_p_early_media: true
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                        - 4XX
+                        - 5XX
+                        - 6XX
+                contact:
+                    always_add_sip_instance: true
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                sip_timers:
+                    B: 32000
+                    D: 32000
+                    F: 32000
+                    H: 32000
+                    InviteResponseTimeout: 30000
+                    J: 32000
+                    T1: 2000
+                    T2: 16000
+                    T4: 17000
+            media:
+                rtcp_inactivity_seconds: 36000
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: false
+        roaming:
+            wifi_calling_allowed: true

@@ -1,0 +1,2539 @@
+{
+  "historical_case_indices": [
+    48,
+    56,
+    58,
+    191,
+    222,
+    228,
+    427,
+    428,
+    663,
+    664,
+    742,
+    758,
+    774,
+    775,
+    807,
+    813,
+    847,
+    873,
+    890,
+    919,
+    999,
+    1004,
+    1007,
+    1012,
+    1017,
+    1018,
+    1059,
+    1060,
+    1065,
+    1068,
+    1070,
+    1071,
+    1077,
+    1080,
+    1083,
+    1091,
+    1110,
+    1111,
+    1116,
+    2161,
+    2162,
+    2271,
+    2719
+  ],
+  "profiles": {
+    "legacy_acs_us": {
+      "bundle": "ACS_US.bundle",
+      "common": {
+        "apns": [
+          {
+            "apn": "web.acs",
+            "type_mask": 49
+          },
+          {
+            "apn": "mms.acs",
+            "type_mask": 4
+          },
+          {
+            "apn": "vm.acs",
+            "type_mask": 2
+          },
+          {
+            "apn": "web.acs",
+            "type_mask": 48
+          }
+        ]
+      },
+      "id": "apple_acs_us",
+      "kind": "carrier_bundle",
+      "supported_plmns": [
+        "310050",
+        "311370"
+      ],
+      "version": 3
+    },
+    "legacy_apt_tw": {
+      "bundle": "APT_tw.bundle",
+      "common": {
+        "apns": [
+          {
+            "allowed_ip_stack": "ipv4v6",
+            "apn": "gtnet",
+            "default_ip_stack": "ipv4v6",
+            "type_mask": 1081393
+          },
+          {
+            "allowed_ip_stack": "ipv4v6",
+            "apn": "ims",
+            "default_ip_stack": "ipv4v6",
+            "support_switch_over": true,
+            "tech_type_mask": 131072,
+            "type_mask": 131072
+          },
+          {
+            "allow_no_dns": 1,
+            "allowed_ip_stack": "ipv4v6",
+            "apn": "sos",
+            "default_ip_stack": "ipv4v6",
+            "type_mask": 262144
+          }
+        ],
+        "apple": {
+          "carrier_entitlements": {
+            "supported_entitlements": 1040
+          }
+        },
+        "e911": {
+          "emergency_urns": {
+            "110": "urn:service:sos.police",
+            "112": "urn:service:sos.fire",
+            "119": "urn:service:sos.ambulance"
+          },
+          "over_itech_supported": true,
+          "wifi_calling_without_entitlement": true
+        },
+        "entitlement": {
+          "entitlement_url": "https://es.gtcloud.net.tw"
+        },
+        "ims": {
+          "apn": "ims",
+          "domain": "volte.aptg.com.tw",
+          "epdg": {
+            "address": "epdg.epc.aptg.com.tw",
+            "configuration_attributes": [
+              {
+                "identifier": 16384,
+                "name": "AssignedPCSCFIPv4",
+                "type": "v4"
+              },
+              {
+                "identifier": 16386,
+                "name": "AssignedPCSCFIPv6",
+                "type": "v6"
+              }
+            ]
+          },
+          "ike": {
+            "child_sa": {
+              "proposals": [
+                {
+                  "encryption": [
+                    "aes256"
+                  ],
+                  "esn": "auto",
+                  "install_policies": true,
+                  "integrity": [
+                    "sha256"
+                  ],
+                  "lifetime_seconds": 80000,
+                  "rekey_pfs_group": 14,
+                  "source_branch": "FirstChild"
+                }
+              ],
+              "replay_window_size": 12
+            },
+            "dpd": {
+              "enabled": false,
+              "interval_seconds": 600,
+              "max_retries": 4,
+              "retry_interval_seconds": 10
+            },
+            "local_identifier": "0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org",
+            "proposals": [
+              {
+                "authentication_method": "None",
+                "dh_groups": [
+                  14
+                ],
+                "eap_method": "EAP-AKA",
+                "encryption": [
+                  "aes256"
+                ],
+                "integrity": [
+                  "sha256"
+                ],
+                "lifetime_seconds": 80000,
+                "prf": [
+                  "sha1"
+                ]
+              }
+            ],
+            "validate_remote_certificate": false
+          },
+          "impi_format": "imsi@carrierDomain",
+          "impu_format": "msisdn@carrierDomain",
+          "ip_stack": "ipv4v6",
+          "media": {
+            "rtp_inactivity_seconds": 20
+          },
+          "register": {
+            "include_cellular_network_info": true
+          },
+          "signaling": {
+            "early_media_needs_header": true,
+            "max_udp_message_size": 1200,
+            "preconditions": "supported",
+            "require_preconditions_when_mandatory": false,
+            "support_p_early_media": true
+          },
+          "volte": {
+            "enable_volte_by_default": true
+          }
+        }
+      },
+      "id": "apple_apt_tw",
+      "kind": "carrier_bundle",
+      "supported_plmns": [
+        "46605",
+        "52505"
+      ],
+      "version": 3
+    },
+    "legacy_chat_lte_us": {
+      "bundle": "Chat_LTE_US.bundle",
+      "id": "apple_chat_lte_us",
+      "kind": "carrier_bundle",
+      "plmn_overrides": {
+        "311480": {
+          "apns": [
+            {
+              "allowed_ip_stack": "ipv4v6",
+              "apn": "vzwinternet",
+              "default_ip_stack": "ipv4v6",
+              "type_mask": 55
+            },
+            {
+              "allowed_ip_stack": "ipv4v6",
+              "apn": "vzwadmin",
+              "default_ip_stack": "ipv4v6",
+              "type_mask": 512
+            }
+          ],
+          "apple": {
+            "carrier_entitlements": {
+              "supported_entitlements": 208
+            }
+          },
+          "entitlement": {
+            "entitlement_url": "https://spc.myvzw.com/ium-RoadrunnerInterface/servlet/IUMServlet"
+          }
+        }
+      },
+      "supported_plmns": [
+        "311480"
+      ],
+      "version": 3
+    },
+    "legacy_crosswireless_lte_us": {
+      "bundle": "CrossWireless_LTE_US.bundle",
+      "id": "apple_crosswireless_lte_us",
+      "kind": "carrier_bundle",
+      "plmn_overrides": {
+        "311480": {
+          "apns": [
+            {
+              "allowed_ip_stack": "ipv4v6",
+              "apn": "vzwinternet",
+              "default_ip_stack": "ipv4v6",
+              "type_mask": 55
+            },
+            {
+              "allowed_ip_stack": "ipv4v6",
+              "apn": "vzwadmin",
+              "default_ip_stack": "ipv4v6",
+              "type_mask": 512
+            }
+          ]
+        }
+      },
+      "supported_plmns": [
+        "311480"
+      ],
+      "version": 3
+    },
+    "legacy_iwireless_us": {
+      "bundle": "iWireless_US.bundle",
+      "common": {
+        "apns": [
+          {
+            "apn": "i2.iwireless.com",
+            "type_mask": 51
+          },
+          {
+            "apn": "wap1.iwireless.com",
+            "type_mask": 4
+          },
+          {
+            "apn": "i2.iwireless.com",
+            "type_mask": 50
+          }
+        ]
+      },
+      "id": "apple_iwireless_us",
+      "kind": "carrier_bundle",
+      "supported_plmns": [
+        "20404",
+        "310770"
+      ],
+      "version": 3
+    },
+    "legacy_lebara_uk": {
+      "bundle": "Vodafone_uk.bundle",
+      "id": "lebara_uk",
+      "kind": "carrier_bundle",
+      "plmn_overrides": {
+        "23487": {
+          "apns": [
+            {
+              "allowed_ip_stack": "ipv4",
+              "apn": "uk.lebara.mobi",
+              "default_ip_stack": "ipv4",
+              "type_mask": 55
+            },
+            {
+              "allowed_ip_stack": "ipv4",
+              "apn": "ims",
+              "default_ip_stack": "ipv4",
+              "support_5g_sa_handover": true,
+              "support_switch_over": true,
+              "tech_type_mask": 131072,
+              "type_mask": 131072
+            },
+            {
+              "allowed_ip_stack": "ipv4",
+              "apn": "xcap",
+              "default_ip_stack": "ipv4",
+              "tech_type_mask": 1081344,
+              "type_mask": 1081344
+            }
+          ],
+          "ims": {
+            "apn": "ims",
+            "domain": "ims.mnc087.mcc234.3gppnetwork.org",
+            "epdg": {
+              "address": "epdg.epc.mnc087.mcc234.pub.3gppnetwork.org",
+              "configuration_attributes": [
+                {
+                  "identifier": 16384,
+                  "name": "AssignedPCSCFIPv4",
+                  "type": "v4"
+                },
+                {
+                  "identifier": 16386,
+                  "name": "AssignedPCSCFIPv6",
+                  "type": "v6"
+                }
+              ]
+            },
+            "ike": {
+              "child_sa": {
+                "proposals": [
+                  {
+                    "encryption": [
+                      "aes256"
+                    ],
+                    "esn": "auto",
+                    "install_policies": true,
+                    "integrity": [
+                      "sha256"
+                    ],
+                    "lifetime_seconds": 80000,
+                    "source_branch": "FirstChild"
+                  }
+                ],
+                "replay_window_size": 12
+              },
+              "dpd": {
+                "enabled": false,
+                "interval_seconds": 600,
+                "max_retries": 4,
+                "retry_interval_seconds": 10
+              },
+              "local_identifier": "0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org",
+              "proposals": [
+                {
+                  "authentication_method": "None",
+                  "dh_groups": [
+                    14
+                  ],
+                  "eap_method": "EAP-AKA",
+                  "encryption": [
+                    "aes256"
+                  ],
+                  "integrity": [
+                    "sha256"
+                  ],
+                  "lifetime_seconds": 80000,
+                  "prf": [
+                    "sha256"
+                  ]
+                }
+              ],
+              "validate_remote_certificate": false
+            },
+            "ip_stack": "ipv4",
+            "media": {
+              "rtcp_interval_seconds": 5
+            },
+            "register": {
+              "use_ipsec": true
+            },
+            "signaling": {
+              "contact": {
+                "additional_contact_params": [
+                  {
+                    "params": [
+                      "+g.3gpp.mid-call",
+                      "+g.3gpp.srvcc-alerting",
+                      "+g.3gpp.ps2cs-srvcc-orig-pre-alerting",
+                      "+g.3gpp.smsip"
+                    ],
+                    "selector": "REGISTER,INVITE,INVITE:*"
+                  }
+                ]
+              },
+              "csfb_on": [
+                {
+                  "method": "INVITE",
+                  "statuses": [
+                    "5XX"
+                  ]
+                }
+              ],
+              "early_media_needs_header": true,
+              "preconditions": "supported",
+              "require_preconditions_when_mandatory": false,
+              "support_p_early_media": true
+            },
+            "volte": {
+              "enable_volte_by_default": true
+            }
+          },
+          "roaming": {
+            "wifi_calling_allowed": false
+          }
+        }
+      },
+      "supported_plmns": [
+        "23487"
+      ],
+      "version": 3
+    },
+    "legacy_movistar_ec": {
+      "bundle": "movistar_ec.bundle",
+      "common": {
+        "apns": [
+          {
+            "apn": "internet.movistar.com.ec",
+            "password": "movistar",
+            "type_mask": 49,
+            "username": "movistar"
+          },
+          {
+            "apn": "ims",
+            "support_switch_over": true,
+            "type_mask": 131072
+          }
+        ],
+        "ims": {
+          "apn": "ims",
+          "media": {
+            "rtcp_inactivity_seconds": 36000
+          },
+          "register": {
+            "use_ipsec": true
+          },
+          "signaling": {
+            "contact": {
+              "additional_contact_params": [
+                {
+                  "params": [
+                    "+g.3gpp.mid-call",
+                    "+g.3gpp.srvcc-alerting",
+                    "+g.3gpp.ps2cs-srvcc-orig-pre-alerting"
+                  ],
+                  "selector": "REGISTER,INVITE,INVITE:*"
+                }
+              ]
+            },
+            "csfb_on": [
+              {
+                "method": "INVITE",
+                "statuses": [
+                  "380",
+                  "500"
+                ]
+              }
+            ],
+            "early_media_needs_header": true,
+            "preconditions": "supported",
+            "require_preconditions_when_mandatory": false,
+            "support_p_early_media": true
+          },
+          "ussi": {
+            "enabled": true
+          },
+          "volte": {
+            "enable_volte_by_default": true
+          }
+        }
+      },
+      "id": "apple_movistar_ec",
+      "kind": "carrier_bundle",
+      "supported_plmns": [
+        "21402",
+        "21407",
+        "74000"
+      ],
+      "version": 3
+    },
+    "legacy_movistar_uy": {
+      "bundle": "movistar_uy.bundle",
+      "common": {
+        "apns": [
+          {
+            "apn": "webapn.movistar.com.uy",
+            "type_mask": 1048625
+          },
+          {
+            "apn": "apnmms.movistar.com.uy",
+            "type_mask": 4
+          },
+          {
+            "allowed_ip_stack": "ipv6",
+            "apn": "ims",
+            "default_ip_stack": "ipv6",
+            "support_switch_over": true,
+            "type_mask": 131072
+          }
+        ],
+        "ims": {
+          "apn": "ims",
+          "ip_stack": "ipv6",
+          "register": {
+            "use_ipsec": true
+          },
+          "signaling": {
+            "contact": {
+              "additional_contact_params": [
+                {
+                  "params": [
+                    "+g.3gpp.mid-call",
+                    "+g.3gpp.srvcc-alerting"
+                  ],
+                  "selector": "REGISTER,INVITE,INVITE:*"
+                }
+              ]
+            },
+            "csfb_on": [
+              {
+                "method": "INVITE",
+                "statuses": [
+                  "3XX",
+                  "403",
+                  "408",
+                  "5XX",
+                  "6XX"
+                ]
+              }
+            ],
+            "early_media_needs_header": true,
+            "max_udp_message_size": 1500,
+            "preconditions": "supported",
+            "require_preconditions_when_mandatory": false,
+            "support_p_early_media": true
+          },
+          "volte": {
+            "enable_volte_by_default": true
+          }
+        }
+      },
+      "id": "apple_movistar_uy",
+      "kind": "carrier_bundle",
+      "supported_plmns": [
+        "21407",
+        "74807"
+      ],
+      "version": 3
+    },
+    "legacy_mts_ca": {
+      "bundle": "MTS_ca.bundle",
+      "common": {
+        "apns": [
+          {
+            "apn": "sp.mts",
+            "type_mask": 7
+          },
+          {
+            "apn": "internet.mts",
+            "type_mask": 48
+          },
+          {
+            "apn": "sp.mts",
+            "type_mask": 6
+          }
+        ]
+      },
+      "id": "apple_mts_ca",
+      "kind": "carrier_bundle",
+      "supported_plmns": [
+        "302370",
+        "302660"
+      ],
+      "version": 3
+    },
+    "legacy_nemont_lte_us": {
+      "bundle": "Nemont_LTE_US.bundle",
+      "id": "apple_nemont_lte_us",
+      "kind": "carrier_bundle",
+      "plmn_overrides": {
+        "312480": {
+          "apns": [
+            {
+              "apn": "nemont",
+              "type_mask": 55
+            }
+          ]
+        }
+      },
+      "supported_plmns": [
+        "312480"
+      ],
+      "version": 3
+    },
+    "legacy_nwm_lte_us": {
+      "bundle": "NWM_LTE_US.bundle",
+      "id": "apple_nwm_lte_us",
+      "kind": "carrier_bundle",
+      "plmn_overrides": {
+        "311480": {
+          "apns": [
+            {
+              "allowed_ip_stack": "ipv4v6",
+              "apn": "vzwinternet",
+              "default_ip_stack": "ipv4v6",
+              "type_mask": 55
+            },
+            {
+              "allowed_ip_stack": "ipv4v6",
+              "apn": "vzwadmin",
+              "default_ip_stack": "ipv4v6",
+              "type_mask": 512
+            }
+          ],
+          "apple": {
+            "carrier_entitlements": {
+              "supported_entitlements": 208
+            }
+          },
+          "entitlement": {
+            "entitlement_url": "https://spc.myvzw.com/ium-RoadrunnerInterface/servlet/IUMServlet"
+          }
+        }
+      },
+      "supported_plmns": [
+        "311480"
+      ],
+      "version": 3
+    },
+    "legacy_panhandle_us": {
+      "bundle": "Panhandle_US.bundle",
+      "id": "apple_panhandle_us",
+      "kind": "carrier_bundle",
+      "plmn_overrides": {
+        "311530": {
+          "apns": [
+            {
+              "apn": "ptci.mymobiletxt.com",
+              "type_mask": 55
+            },
+            {
+              "apn": "ptci.mymobiletxt.com",
+              "type_mask": 54
+            }
+          ]
+        }
+      },
+      "supported_plmns": [
+        "311530"
+      ],
+      "version": 3
+    },
+    "legacy_ptci_lte_us": {
+      "bundle": "PTCI_LTE_US.bundle",
+      "id": "apple_ptci_lte_us",
+      "kind": "carrier_bundle",
+      "plmn_overrides": {
+        "311650": {
+          "apns": [
+            {
+              "allowed_ip_stack": "ipv4",
+              "apn": "internet.ptci.net",
+              "default_ip_stack": "ipv4",
+              "type_mask": 7
+            },
+            {
+              "allowed_ip_stack": "ipv4",
+              "apn": "dun.ptci.net",
+              "default_ip_stack": "ipv4",
+              "type_mask": 48
+            },
+            {
+              "allowed_ip_stack": "ipv4",
+              "apn": "ota.unitedwireless",
+              "default_ip_stack": "ipv4",
+              "type_mask": 512
+            }
+          ]
+        }
+      },
+      "supported_plmns": [
+        "311650"
+      ],
+      "version": 3
+    },
+    "legacy_sfr_fr": {
+      "bundle": "SFR_fr.bundle",
+      "common": {
+        "apns": [
+          {
+            "allow_no_dns": 1,
+            "allowed_ip_stack": "ipv4v6",
+            "apn": "sl2sfr",
+            "default_ip_stack": "ipv4v6",
+            "roaming_ip_stack": "ipv4",
+            "tech_type_mask": 1081351,
+            "type_mask": 1081399
+          },
+          {
+            "allowed_ip_stack": "ipv6",
+            "apn": "ims",
+            "default_ip_stack": "ipv6",
+            "support_5g_sa_handover": true,
+            "support_switch_over": true,
+            "tech_type_mask": 131072,
+            "type_mask": 131072
+          }
+        ],
+        "apple": {
+          "carrier_entitlements": {
+            "supported_entitlements": 4236289
+          }
+        },
+        "e911": {
+          "over_itech_supported": true,
+          "wifi_calling_without_entitlement": true
+        },
+        "entitlement": {
+          "entitlement_url": "https://apple-entitlement.sd-sfr.fr"
+        },
+        "ims": {
+          "apn": "ims",
+          "epdg": {
+            "address": "epdg.epc.mnc010.mcc208.pub.3gppnetwork.org",
+            "configuration_attributes": [
+              {
+                "identifier": 16390,
+                "name": "AssignedPCSCFIPv6",
+                "type": "v6"
+              }
+            ]
+          },
+          "ike": {
+            "child_sa": {
+              "proposals": [
+                {
+                  "encryption": [
+                    "aes128"
+                  ],
+                  "esn": "auto",
+                  "integrity": [
+                    "sha256"
+                  ],
+                  "lifetime_seconds": 86400,
+                  "source_branch": "FirstChild"
+                }
+              ],
+              "replay_window_size": 12
+            },
+            "dpd": {
+              "enabled": false,
+              "interval_seconds": 600,
+              "max_retries": 4,
+              "retry_interval_seconds": 10
+            },
+            "local_identifier": "0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org",
+            "nat_keepalive_enabled": true,
+            "nat_keepalive_seconds": 20,
+            "proposals": [
+              {
+                "authentication_method": "None",
+                "dh_groups": [
+                  14
+                ],
+                "eap_method": "EAP-AKA",
+                "encryption": [
+                  "aes128"
+                ],
+                "integrity": [
+                  "sha256"
+                ],
+                "lifetime_seconds": 80000,
+                "prf": [
+                  "sha256"
+                ]
+              }
+            ],
+            "validate_remote_certificate": false
+          },
+          "ip_stack": "ipv6",
+          "media": {
+            "rtcp_interval_seconds": 5,
+            "rtp_inactivity_seconds": 30
+          },
+          "register": {
+            "use_ipsec": true
+          },
+          "signaling": {
+            "additional_headers": [
+              {
+                "headers": [
+                  "Accept: application/sdp,application/3gpp-ims+xml"
+                ],
+                "selector": "INVITE"
+              },
+              {
+                "headers": [
+                  "Feature-Caps: *;+g.3gpp.srvcc-alerting"
+                ],
+                "selector": "INVITE,INVITE:*"
+              }
+            ],
+            "contact": {
+              "additional_contact_params": [
+                {
+                  "params": [
+                    "+g.3gpp.mid-call",
+                    "+g.3gpp.srvcc-alerting",
+                    "+g.3gpp.ps2cs-srvcc-orig-pre-alerting"
+                  ],
+                  "selector": "REGISTER,INVITE,INVITE:*"
+                }
+              ],
+              "always_add_sip_instance": true
+            },
+            "early_media_needs_header": false,
+            "preconditions": "supported",
+            "require_preconditions_when_mandatory": false,
+            "sip_timers": {
+              "InviteResponseTimeout": 4000
+            },
+            "support_p_early_media": true
+          },
+          "volte": {
+            "enable_volte_by_default": true
+          }
+        },
+        "roaming": {
+          "wifi_calling_allowed": false
+        }
+      },
+      "id": "apple_sfr_fr",
+      "kind": "carrier_bundle",
+      "supported_plmns": [
+        "20810",
+        "28010"
+      ],
+      "version": 3
+    },
+    "legacy_sprint_virgin_isim_lte_us": {
+      "bundle": "Sprint_Virgin_ISIM_LTE_US.bundle",
+      "common": {
+        "apns": [
+          {
+            "allowed_ip_stack": "ipv4",
+            "apn": "cinet.spcs",
+            "type_mask": 36919
+          },
+          {
+            "allowed_ip_stack": "ipv4v6",
+            "apn": "n.vi.ispsn",
+            "default_ip_stack": "ipv4v6",
+            "type_mask": 7
+          },
+          {
+            "allowed_ip_stack": "ipv4",
+            "apn": "otasn",
+            "type_mask": 37376
+          },
+          {
+            "allowed_ip_stack": "ipv4",
+            "apn": "vi.pamsn",
+            "type_mask": 48
+          }
+        ]
+      },
+      "id": "apple_sprint_virgin_isim_lte_us",
+      "kind": "carrier_bundle",
+      "supported_plmns": [
+        "310120",
+        "312530"
+      ],
+      "version": 3
+    },
+    "legacy_telus_pcmobile_ca": {
+      "bundle": "Telus_PCMobile_ca.bundle",
+      "id": "apple_telus_pcmobile_ca",
+      "kind": "carrier_bundle",
+      "plmn_overrides": {
+        "302220": {
+          "apns": [
+            {
+              "apn": "sp.mb.com",
+              "type_mask": 32775
+            },
+            {
+              "apn": "isp.mb.com",
+              "type_mask": 48
+            },
+            {
+              "apn": "sp.mb.com",
+              "type_mask": 32774
+            }
+          ],
+          "apple": {
+            "carrier_entitlements": {
+              "supported_entitlements": 33
+            }
+          },
+          "entitlement": {
+            "entitlement_url": "https://ent.telus.com/acmegw"
+          }
+        }
+      },
+      "supported_plmns": [
+        "302220"
+      ],
+      "version": 3
+    },
+    "legacy_tmobile_mvno_us": {
+      "bundle": "TMobile_MVNO_US.bundle",
+      "common": {
+        "apns": [
+          {
+            "allowed_ip_stack": "ipv4v6",
+            "apn": "wholesale",
+            "default_ip_stack": "ipv4v6",
+            "domestic_roaming_ip_stack": "ipv4",
+            "roaming_ip_stack": "ipv4",
+            "type_mask": 32769,
+            "xlat464_enabled": true
+          },
+          {
+            "allowed_ip_stack": "ipv6",
+            "apn": "ims",
+            "default_ip_stack": "ipv4v6",
+            "domestic_roaming_ip_stack": "ipv4v6",
+            "roaming_ip_stack": "ipv4v6",
+            "support_switch_over": true,
+            "tech_type_mask": 131072,
+            "type_mask": 131072
+          },
+          {
+            "allowed_ip_stack": "ipv6",
+            "apn": "service",
+            "default_ip_stack": "ipv4v6",
+            "domestic_roaming_ip_stack": "ipv4",
+            "roaming_ip_stack": "ipv4",
+            "tech_type_mask": 1048582,
+            "type_mask": 1048582,
+            "xlat464_enabled": true
+          },
+          {
+            "allowed_ip_stack": "ipv4v6",
+            "apn": "hotspot",
+            "default_ip_stack": "ipv4v6",
+            "domestic_roaming_ip_stack": "ipv4",
+            "roaming_ip_stack": "ipv4",
+            "type_mask": 16,
+            "xlat464_enabled": true
+          },
+          {
+            "allowed_ip_stack": "ipv6",
+            "apn": "sos",
+            "default_ip_stack": "ipv4v6",
+            "domestic_roaming_ip_stack": "ipv4v6",
+            "roaming_ip_stack": "ipv4v6",
+            "tech_type_mask": 262144,
+            "type_mask": 262144
+          }
+        ],
+        "apple": {
+          "carrier_entitlements": {
+            "supported_entitlements": 4194457
+          }
+        },
+        "e911": {
+          "emergency_urns": {
+            "default": "urn:service:sos"
+          },
+          "over_itech_supported": false
+        },
+        "entitlement": {
+          "entitlement_url": "https://eas3.msg.t-mobile.com"
+        },
+        "ims": {
+          "apn": "ims",
+          "epdg": {
+            "address": "ss.epdg.epc.mnc260.mcc310.pub.3gppnetwork.org",
+            "configuration_attributes": [
+              {
+                "identifier": 16384,
+                "name": "AssignedPCSCFIPv4",
+                "type": "v4"
+              },
+              {
+                "identifier": 16386,
+                "name": "AssignedPCSCFIPv6",
+                "type": "v6"
+              },
+              {
+                "identifier": 16386,
+                "name": "AssignedPCSCFIPv6",
+                "type": "v6"
+              }
+            ]
+          },
+          "ike": {
+            "child_sa": {
+              "proposals": [
+                {
+                  "encryption": [
+                    "aes256"
+                  ],
+                  "esn": "auto",
+                  "install_policies": true,
+                  "integrity": [
+                    "sha256"
+                  ],
+                  "lifetime_seconds": 80000,
+                  "source_branch": "FirstChild"
+                }
+              ],
+              "replay_window_size": 12
+            },
+            "dpd": {
+              "enabled": false,
+              "interval_seconds": 600,
+              "max_retries": 4,
+              "retry_interval_seconds": 10
+            },
+            "local_identifier": "0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org",
+            "proposals": [
+              {
+                "authentication_method": "None",
+                "dh_groups": [
+                  14
+                ],
+                "eap_method": "EAP-AKA",
+                "encryption": [
+                  "aes256"
+                ],
+                "integrity": [
+                  "sha256"
+                ],
+                "lifetime_seconds": 80000,
+                "prf": [
+                  "sha256"
+                ]
+              }
+            ],
+            "validate_remote_certificate": false
+          },
+          "ip_stack": "ipv4v6",
+          "media": {
+            "rtp_inactivity_seconds": 30
+          },
+          "register": {
+            "use_ipsec": true
+          },
+          "signaling": {
+            "contact": {
+              "additional_contact_params": [
+                {
+                  "params": [
+                    "+g.3gpp.mid-call",
+                    "+g.3gpp.srvcc-alerting",
+                    "+g.3gpp.ps2cs-srvcc-orig-pre-alerting"
+                  ],
+                  "selector": "REGISTER,INVITE,INVITE:*"
+                }
+              ],
+              "always_add_sip_instance": true
+            },
+            "early_media_needs_header": true,
+            "max_udp_message_size": 1200,
+            "preconditions": "required",
+            "require_preconditions_when_mandatory": false,
+            "sip_timers": {
+              "InviteResponseTimeout": 8000
+            },
+            "support_p_early_media": true
+          },
+          "ussi": {
+            "enabled": true,
+            "response_timeout_milliseconds": 20000
+          },
+          "volte": {
+            "enable_volte_by_default": true
+          }
+        }
+      },
+      "id": "apple_tmobile_mvno_us",
+      "kind": "carrier_bundle",
+      "supported_plmns": [
+        "310240",
+        "310260"
+      ],
+      "version": 3
+    },
+    "legacy_tmobile_ting_us": {
+      "bundle": "TMobile_Ting_US.bundle",
+      "common": {
+        "apns": [
+          {
+            "allowed_ip_stack": "ipv6",
+            "apn": "wholesale",
+            "default_ip_stack": "ipv4v6",
+            "domestic_roaming_ip_stack": "ipv4",
+            "roaming_ip_stack": "ipv4",
+            "type_mask": 32785,
+            "xlat464_enabled": true
+          },
+          {
+            "allowed_ip_stack": "ipv6",
+            "always_on_pdu": true,
+            "apn": "ims",
+            "default_ip_stack": "ipv4v6",
+            "domestic_roaming_ip_stack": "ipv4v6",
+            "roaming_ip_stack": "ipv4v6",
+            "support_5g_sa_handover": true,
+            "support_switch_over": true,
+            "tech_type_mask": 131072,
+            "type_mask": 131072
+          },
+          {
+            "allowed_ip_stack": "ipv6",
+            "apn": "service",
+            "default_ip_stack": "ipv4v6",
+            "domestic_roaming_ip_stack": "ipv4",
+            "roaming_ip_stack": "ipv4",
+            "tech_type_mask": 1048582,
+            "type_mask": 1048582,
+            "xlat464_enabled": true
+          },
+          {
+            "allowed_ip_stack": "ipv6",
+            "always_on_pdu": true,
+            "apn": "sos",
+            "default_ip_stack": "ipv4v6",
+            "domestic_roaming_ip_stack": "ipv4v6",
+            "roaming_ip_stack": "ipv4v6",
+            "tech_type_mask": 262144,
+            "type_mask": 262144
+          }
+        ],
+        "apple": {
+          "carrier_entitlements": {
+            "supported_entitlements": 409
+          }
+        },
+        "e911": {
+          "emergency_urns": {
+            "default": "urn:service:sos"
+          },
+          "over_itech_supported": false
+        },
+        "entitlement": {
+          "entitlement_url": "https://eas3.msg.t-mobile.com"
+        },
+        "ims": {
+          "apn": "ims",
+          "epdg": {
+            "address": "ss.epdg.epc.mnc260.mcc310.pub.3gppnetwork.org",
+            "configuration_attributes": [
+              {
+                "identifier": 16384,
+                "name": "AssignedPCSCFIPv4",
+                "type": "v4"
+              },
+              {
+                "identifier": 16386,
+                "name": "AssignedPCSCFIPv6",
+                "type": "v6"
+              },
+              {
+                "identifier": 16386,
+                "name": "AssignedPCSCFIPv6",
+                "type": "v6"
+              }
+            ]
+          },
+          "ike": {
+            "child_sa": {
+              "proposals": [
+                {
+                  "encryption": [
+                    "aes256"
+                  ],
+                  "esn": "auto",
+                  "install_policies": true,
+                  "integrity": [
+                    "sha256"
+                  ],
+                  "lifetime_seconds": 80000,
+                  "source_branch": "FirstChild"
+                }
+              ],
+              "replay_window_size": 12
+            },
+            "disable_switch_to_natt_port": false,
+            "dpd": {
+              "enabled": false,
+              "interval_seconds": 600,
+              "max_retries": 4,
+              "retry_interval_seconds": 10
+            },
+            "local_identifier": "0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org",
+            "proposals": [
+              {
+                "authentication_method": "None",
+                "dh_groups": [
+                  14
+                ],
+                "eap_method": "EAP-AKA",
+                "encryption": [
+                  "aes256"
+                ],
+                "integrity": [
+                  "sha256"
+                ],
+                "lifetime_seconds": 80000,
+                "prf": [
+                  "sha256"
+                ]
+              }
+            ],
+            "validate_remote_certificate": false
+          },
+          "ip_stack": "ipv4v6",
+          "media": {
+            "rtp_inactivity_seconds": 30
+          },
+          "register": {
+            "use_ipsec": true
+          },
+          "signaling": {
+            "contact": {
+              "additional_contact_params": [
+                {
+                  "params": [],
+                  "selector": "REGISTER,INVITE,INVITE:*"
+                }
+              ],
+              "always_add_sip_instance": true
+            },
+            "early_media_needs_header": true,
+            "max_udp_message_size": 1200,
+            "preconditions": "required",
+            "re_register_on": [
+              {
+                "method": "INVITE",
+                "statuses": [
+                  "403"
+                ]
+              }
+            ],
+            "require_preconditions_when_mandatory": false,
+            "sip_timers": {
+              "EmergencyInviteResponseTimeout": 5000,
+              "F": 30000,
+              "InviteResponseTimeout": 0
+            },
+            "support_p_early_media": true
+          },
+          "ussi": {
+            "enabled": true,
+            "response_timeout_milliseconds": 20000
+          },
+          "volte": {
+            "enable_volte_by_default": true
+          }
+        }
+      },
+      "id": "apple_tmobile_ting_us",
+      "kind": "carrier_bundle",
+      "supported_plmns": [
+        "310240",
+        "310260"
+      ],
+      "version": 3
+    },
+    "legacy_verizon_lte_us": {
+      "bundle": "Verizon_LTE_US.bundle",
+      "common": {
+        "apns": [
+          {
+            "allowed_ip_stack": "ipv4v6",
+            "apn": "vzwinternet",
+            "default_ip_stack": "ipv4v6",
+            "domestic_roaming_ip_stack": "ipv4",
+            "type_mask": 4194835
+          },
+          {
+            "allowed_ip_stack": "ipv4v6",
+            "apn": "vzwapp",
+            "default_ip_stack": "ipv4v6",
+            "tech_type_mask": 16390,
+            "type_mask": 49156
+          },
+          {
+            "allowed_ip_stack": "ipv6",
+            "apn": "ims",
+            "default_ip_stack": "ipv6",
+            "no_cellular_reconnect_cause_codes": [
+              {
+                "cause_codes": [
+                  24
+                ],
+                "num_tries_allowed": 3,
+                "recovers_on_airplane_mode": true,
+                "type": "Non3GPP"
+              },
+              {
+                "cause_codes": [
+                  8
+                ],
+                "num_tries_allowed": 2,
+                "type": "3GPP"
+              },
+              {
+                "cause_codes": [
+                  27
+                ],
+                "num_tries_allowed": 2,
+                "type": "3GPP"
+              },
+              {
+                "cause_codes": [
+                  29
+                ],
+                "num_tries_allowed": 2,
+                "type": "3GPP"
+              },
+              {
+                "cause_codes": [
+                  32
+                ],
+                "num_tries_allowed": 2,
+                "type": "3GPP"
+              },
+              {
+                "cause_codes": [
+                  33
+                ],
+                "num_tries_allowed": 2,
+                "type": "3GPP"
+              }
+            ],
+            "roaming_ip_stack": "ipv6",
+            "support_5g_sa_handover": true,
+            "support_switch_over": true,
+            "tech_type_mask": 131072,
+            "type_mask": 131072
+          },
+          {
+            "allowed_ip_stack": "ipv4v6",
+            "apn": "vzwadmin",
+            "default_ip_stack": "ipv4v6",
+            "type_mask": 0
+          },
+          {
+            "allowed_ip_stack": "ipv4v6",
+            "apn": "vzwemergency",
+            "default_ip_stack": "ipv4v6",
+            "roaming_ip_stack": "ipv4v6",
+            "tech_type_mask": 262144,
+            "type_mask": 262144
+          }
+        ],
+        "apple": {
+          "carrier_entitlements": {
+            "supported_entitlements": 4238745
+          }
+        },
+        "e911": {
+          "emergency_urns": {
+            "922": "922@vzims.com"
+          },
+          "over_itech_supported": false,
+          "wifi_calling_without_entitlement": false
+        },
+        "entitlement": {
+          "entitlement_url": "https://spc.myvzw.com/ium-RoadrunnerInterface/servlet/IUMServlet"
+        },
+        "ims": {
+          "apn": "ims",
+          "epdg": {
+            "address": "wo.vzwwo.com",
+            "configuration_attributes": [
+              {
+                "identifier": 16390,
+                "name": "AssignedPCSCFIPv6",
+                "type": "v6"
+              }
+            ],
+            "timeout_seconds": 45
+          },
+          "ike": {
+            "child_sa": {
+              "proposals": [
+                {
+                  "encryption": [
+                    "aes256"
+                  ],
+                  "esn": "auto",
+                  "install_policies": true,
+                  "integrity": [
+                    "sha256"
+                  ],
+                  "lifetime_seconds": 86400,
+                  "protocol": "esp",
+                  "rekey_pfs_group": 14,
+                  "secure_rekey": false,
+                  "source_branch": "FirstChild"
+                }
+              ]
+            },
+            "disable_switch_to_natt_port": true,
+            "dpd": {
+              "enabled": false,
+              "interval_seconds": 600,
+              "max_retries": 4,
+              "retry_interval_seconds": 10
+            },
+            "local_identifier": "anonymous@nai.epc.mnc480.mcc311.3gppnetwork.org",
+            "proposals": [
+              {
+                "authentication_method": "Certificate",
+                "dh_groups": [
+                  14
+                ],
+                "eap_method": "EAP-AKA",
+                "encryption": [
+                  "aes256"
+                ],
+                "integrity": [
+                  "sha256"
+                ],
+                "lifetime_seconds": 80000,
+                "prf": [
+                  "sha256"
+                ]
+              }
+            ],
+            "remote_certificate_authority_name": "Verizon Wireless ROOT CA - RSA",
+            "remote_certificate_hostname": "wo.vzwwo.com",
+            "username": "0$imsi@nai.epc.mnc480.mcc311.3gppnetwork.org",
+            "validate_remote_certificate": true
+          },
+          "ip_stack": "ipv6",
+          "media": {
+            "rtcp_inactivity_seconds": 20,
+            "rtcp_interval_seconds": 5,
+            "rtp_inactivity_seconds": 20
+          },
+          "register": {
+            "use_ipsec": true
+          },
+          "signaling": {
+            "additional_headers": [
+              {
+                "headers": [
+                  "P-com.ServiceType: Static-Emergency"
+                ],
+                "selector": "INVITE[911,wifi]"
+              },
+              {
+                "headers": [
+                  "P-com.Service: ARC"
+                ],
+                "selector": "ACK,BYE,CANCEL,REGISTER,PRACK,SUBSCRIBE,INFO,REFER,MESSAGE,UPDATE,OPTIONS,INVITE:*[wifi]"
+              },
+              {
+                "headers": [
+                  "Security-Verify: sdes-srtp;mediasec",
+                  "Proxy-Require: mediasec",
+                  "P-com.Service: ARC"
+                ],
+                "selector": "INVITE[wifi]"
+              }
+            ],
+            "contact": {
+              "additional_contact_params": [
+                {
+                  "params": [],
+                  "selector": "REGISTER:*"
+                },
+                {
+                  "params": [
+                    "+g.3gpp.smsip",
+                    "q=0.5"
+                  ],
+                  "selector": "REGISTER"
+                }
+              ],
+              "always_add_sip_instance": true
+            },
+            "csfb_on": [
+              {
+                "method": "INVITE",
+                "statuses": [
+                  "503"
+                ]
+              }
+            ],
+            "early_media_needs_header": true,
+            "preconditions": "unsupported",
+            "require_preconditions_when_mandatory": false,
+            "sip_timers": {
+              "D": 128000,
+              "EPSInviteResponseTimeout": 6000,
+              "F": 30000,
+              "InviteResponseTimeout": 10000,
+              "T1": 3000,
+              "T2": 16000,
+              "T4": 17000
+            },
+            "support_p_early_media": true
+          },
+          "volte": {
+            "enable_volte_by_default": true
+          }
+        },
+        "roaming": {
+          "wifi_calling_allowed": true
+        }
+      },
+      "id": "apple_verizon_lte_us",
+      "kind": "carrier_bundle",
+      "supported_plmns": [
+        "20404",
+        "310590",
+        "310599",
+        "311480"
+      ],
+      "version": 3
+    },
+    "legacy_verizon_ting_lte_us": {
+      "bundle": "Verizon_Ting_LTE_US.bundle",
+      "common": {
+        "apns": [
+          {
+            "apn": "vzwinternet",
+            "type_mask": 51
+          },
+          {
+            "apn": "vzwapp",
+            "type_mask": 32772
+          },
+          {
+            "allowed_ip_stack": "ipv4v6",
+            "apn": "vzwinternet",
+            "default_ip_stack": "ipv4v6",
+            "type_mask": 51
+          },
+          {
+            "allowed_ip_stack": "ipv4v6",
+            "apn": "vzwapp",
+            "default_ip_stack": "ipv4v6",
+            "type_mask": 49156
+          },
+          {
+            "allowed_ip_stack": "ipv4v6",
+            "apn": "vzwadmin",
+            "default_ip_stack": "ipv4v6",
+            "type_mask": 512
+          }
+        ],
+        "apple": {
+          "carrier_entitlements": {
+            "supported_entitlements": 25
+          }
+        },
+        "entitlement": {
+          "entitlement_url": "https://spc.myvzw.com/ium-RoadrunnerInterface/servlet/IUMServlet"
+        }
+      },
+      "id": "apple_verizon_ting_lte_us",
+      "kind": "carrier_bundle",
+      "supported_plmns": [
+        "20404",
+        "311480"
+      ],
+      "version": 3
+    },
+    "legacy_wonet": {
+      "bundle": "Wonet.bundle",
+      "id": "apple_wonet",
+      "kind": "carrier_bundle",
+      "plmn_overrides": {
+        "90137": {
+          "apns": [
+            {
+              "apn": "mobiledata",
+              "type_mask": 49
+            }
+          ]
+        }
+      },
+      "supported_plmns": [
+        "90137"
+      ],
+      "version": 3
+    }
+  },
+  "reason": "Preserve historical supported selections removed or materially replaced upstream; these rules override only the listed raw selector identities. Other current upstream rules remain authoritative.",
+  "retention_notes": {
+    "apple_verizon_ting_lte_us": "The new upstream $impi_user local identifier is unsupported by the native identity expander. Preserve the historical identity until leased ISIM IMPI-user expansion and negative token validation exist."
+  },
+  "schema_version": 1,
+  "selectors": {
+    "20404": {
+      "plmn": "20404",
+      "profiles": [
+        {
+          "id": "apple_iwireless_us",
+          "path": "profiles/legacy_iwireless_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "iWireless",
+              "conditions": [
+                {
+                  "field": "iccid",
+                  "match": "prefix",
+                  "value": "890177"
+                }
+              ],
+              "iso": "US",
+              "raw": "20404_ID-890177"
+            }
+          ]
+        },
+        {
+          "id": "apple_verizon_lte_us",
+          "path": "profiles/legacy_verizon_lte_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "Verizon",
+              "conditions": [
+                {
+                  "field": "iccid",
+                  "match": "prefix",
+                  "value": "891480"
+                }
+              ],
+              "iso": "US",
+              "raw": "20404_ID-891480"
+            }
+          ]
+        },
+        {
+          "id": "apple_verizon_ting_lte_us",
+          "path": "profiles/legacy_verizon_ting_lte_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "Ting",
+              "conditions": [
+                {
+                  "field": "gid2",
+                  "match": "prefix",
+                  "value": "A9"
+                },
+                {
+                  "field": "iccid",
+                  "match": "prefix",
+                  "value": "891480"
+                }
+              ],
+              "iso": "US",
+              "raw": "20404_GID2-A9_ID-891480"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "21402": {
+      "plmn": "21402",
+      "profiles": [
+        {
+          "id": "apple_movistar_ec",
+          "path": "profiles/legacy_movistar_ec.yaml",
+          "selectors": [
+            {
+              "carrier_name": "movistar ec",
+              "conditions": [
+                {
+                  "field": "iccid",
+                  "match": "prefix",
+                  "value": "8959300"
+                }
+              ],
+              "iso": "EC",
+              "raw": "21402_ID-8959300"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "21407": {
+      "plmn": "21407",
+      "profiles": [
+        {
+          "id": "apple_movistar_ec",
+          "path": "profiles/legacy_movistar_ec.yaml",
+          "selectors": [
+            {
+              "carrier_name": "movistar ec",
+              "conditions": [
+                {
+                  "field": "iccid",
+                  "match": "prefix",
+                  "value": "8959300"
+                }
+              ],
+              "iso": "EC",
+              "raw": "21407_ID-8959300"
+            }
+          ]
+        },
+        {
+          "id": "apple_movistar_uy",
+          "path": "profiles/legacy_movistar_uy.yaml",
+          "selectors": [
+            {
+              "carrier_name": "Tigo",
+              "conditions": [
+                {
+                  "field": "iccid",
+                  "match": "prefix",
+                  "value": "8959807"
+                }
+              ],
+              "iso": "UY",
+              "raw": "21407_ID-8959807"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "23487": {
+      "plmn": "23487",
+      "profiles": [
+        {
+          "generic": true,
+          "id": "lebara_uk",
+          "path": "profiles/legacy_lebara_uk.yaml",
+          "selectors": [
+            {
+              "carrier_name": "Lebara UK",
+              "iso": "GB",
+              "raw": "23487"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "28010": {
+      "plmn": "28010",
+      "profiles": [
+        {
+          "id": "apple_sfr_fr",
+          "path": "profiles/legacy_sfr_fr.yaml",
+          "selectors": [
+            {
+              "carrier_name": "SFR",
+              "conditions": [
+                {
+                  "field": "iccid",
+                  "match": "prefix",
+                  "value": "89331014"
+                }
+              ],
+              "iso": "FR",
+              "raw": "28010_ID-89331014"
+            },
+            {
+              "carrier_name": "SFR",
+              "conditions": [
+                {
+                  "field": "iccid",
+                  "match": "prefix",
+                  "value": "893327"
+                }
+              ],
+              "iso": "FR",
+              "raw": "28010_ID-893327"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "302220": {
+      "plmn": "302220",
+      "profiles": [
+        {
+          "id": "apple_telus_pcmobile_ca",
+          "path": "profiles/legacy_telus_pcmobile_ca.yaml",
+          "selectors": [
+            {
+              "carrier_name": "PC Mobile",
+              "conditions": [
+                {
+                  "field": "gid1",
+                  "match": "prefix",
+                  "value": "50"
+                }
+              ],
+              "iso": "CA",
+              "raw": "302220_GID1-50"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "302370": {
+      "plmn": "302370",
+      "profiles": [
+        {
+          "id": "apple_mts_ca",
+          "path": "profiles/legacy_mts_ca.yaml",
+          "selectors": [
+            {
+              "carrier_name": "MTS",
+              "conditions": [
+                {
+                  "field": "iccid",
+                  "match": "prefix",
+                  "value": "891660"
+                }
+              ],
+              "iso": "CA",
+              "raw": "302370_ID-891660"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "302660": {
+      "plmn": "302660",
+      "profiles": [
+        {
+          "generic": true,
+          "id": "apple_mts_ca",
+          "path": "profiles/legacy_mts_ca.yaml",
+          "selectors": [
+            {
+              "carrier_name": "MTS",
+              "iso": "CA",
+              "raw": "302660"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "310050": {
+      "plmn": "310050",
+      "profiles": [
+        {
+          "id": "apple_acs_us",
+          "path": "profiles/legacy_acs_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "ACS",
+              "conditions": [
+                {
+                  "field": "iccid",
+                  "match": "prefix",
+                  "value": "8901310050"
+                }
+              ],
+              "iso": "US",
+              "raw": "310050_ID-8901310050"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "310120": {
+      "plmn": "310120",
+      "profiles": [
+        {
+          "id": "apple_sprint_virgin_isim_lte_us",
+          "path": "profiles/legacy_sprint_virgin_isim_lte_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "Virgin",
+              "conditions": [
+                {
+                  "field": "gid2",
+                  "match": "prefix",
+                  "value": "12"
+                }
+              ],
+              "iso": "US",
+              "raw": "310120_GID2-12"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "310240": {
+      "plmn": "310240",
+      "profiles": [
+        {
+          "id": "apple_tmobile_mvno_us",
+          "path": "profiles/legacy_tmobile_mvno_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "TMobile MVNO US",
+              "conditions": [
+                {
+                  "field": "gid1",
+                  "match": "prefix",
+                  "value": "1A53"
+                }
+              ],
+              "iso": "US",
+              "raw": "310240_GID1-1A53"
+            }
+          ]
+        },
+        {
+          "id": "apple_tmobile_ting_us",
+          "path": "profiles/legacy_tmobile_ting_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "Ting",
+              "conditions": [
+                {
+                  "field": "gid1",
+                  "match": "prefix",
+                  "value": "6135"
+                }
+              ],
+              "iso": "US",
+              "raw": "310240_GID1-6135"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "310260": {
+      "plmn": "310260",
+      "profiles": [
+        {
+          "id": "apple_tmobile_mvno_us",
+          "path": "profiles/legacy_tmobile_mvno_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "TMobile MVNO US",
+              "conditions": [
+                {
+                  "field": "gid1",
+                  "match": "prefix",
+                  "value": "1A53"
+                }
+              ],
+              "iso": "US",
+              "raw": "310260_GID1-1A53"
+            }
+          ]
+        },
+        {
+          "id": "apple_tmobile_ting_us",
+          "path": "profiles/legacy_tmobile_ting_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "Ting",
+              "conditions": [
+                {
+                  "field": "gid1",
+                  "match": "prefix",
+                  "value": "6135"
+                }
+              ],
+              "iso": "US",
+              "raw": "310260_GID1-6135"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "310590": {
+      "plmn": "310590",
+      "profiles": [
+        {
+          "generic": true,
+          "id": "apple_verizon_lte_us",
+          "path": "profiles/legacy_verizon_lte_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "Verizon",
+              "iso": "US",
+              "raw": "310590"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "310599": {
+      "plmn": "310599",
+      "profiles": [
+        {
+          "generic": true,
+          "id": "apple_verizon_lte_us",
+          "path": "profiles/legacy_verizon_lte_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "Verizon",
+              "iso": "US",
+              "raw": "310599"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "310770": {
+      "plmn": "310770",
+      "profiles": [
+        {
+          "generic": true,
+          "id": "apple_iwireless_us",
+          "path": "profiles/legacy_iwireless_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "iWireless",
+              "iso": "US",
+              "raw": "310770"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "311370": {
+      "plmn": "311370",
+      "profiles": [
+        {
+          "id": "apple_acs_us",
+          "path": "profiles/legacy_acs_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "ACS",
+              "conditions": [
+                {
+                  "field": "iccid",
+                  "match": "prefix",
+                  "value": "89013113702"
+                }
+              ],
+              "iso": "US",
+              "raw": "311370_ID-89013113702"
+            },
+            {
+              "carrier_name": "ACS",
+              "conditions": [
+                {
+                  "field": "iccid",
+                  "match": "prefix",
+                  "value": "89013113708"
+                }
+              ],
+              "iso": "US",
+              "raw": "311370_ID-89013113708"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "311480": {
+      "plmn": "311480",
+      "profiles": [
+        {
+          "id": "apple_chat_lte_us",
+          "path": "profiles/legacy_chat_lte_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "Chat Mobility",
+              "conditions": [
+                {
+                  "field": "gid2",
+                  "match": "prefix",
+                  "value": "CB"
+                }
+              ],
+              "iso": "US",
+              "raw": "311480_GID2-CB"
+            }
+          ]
+        },
+        {
+          "id": "apple_crosswireless_lte_us",
+          "path": "profiles/legacy_crosswireless_lte_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "Bravado Wireless",
+              "conditions": [
+                {
+                  "field": "gid2",
+                  "match": "prefix",
+                  "value": "AC"
+                }
+              ],
+              "iso": "US",
+              "raw": "311480_GID2-AC"
+            }
+          ]
+        },
+        {
+          "id": "apple_nwm_lte_us",
+          "path": "profiles/legacy_nwm_lte_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "NWM",
+              "conditions": [
+                {
+                  "field": "gid2",
+                  "match": "prefix",
+                  "value": "CD"
+                }
+              ],
+              "iso": "US",
+              "raw": "311480_GID2-CD"
+            }
+          ]
+        },
+        {
+          "generic": true,
+          "id": "apple_verizon_lte_us",
+          "path": "profiles/legacy_verizon_lte_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "Verizon",
+              "iso": "US",
+              "raw": "311480"
+            }
+          ]
+        },
+        {
+          "id": "apple_verizon_ting_lte_us",
+          "path": "profiles/legacy_verizon_ting_lte_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "Ting",
+              "conditions": [
+                {
+                  "field": "gid2",
+                  "match": "prefix",
+                  "value": "A9"
+                }
+              ],
+              "iso": "US",
+              "raw": "311480_GID2-A9"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "311530": {
+      "plmn": "311530",
+      "profiles": [
+        {
+          "id": "apple_panhandle_us",
+          "path": "profiles/legacy_panhandle_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "PTCI",
+              "conditions": [
+                {
+                  "field": "gid1",
+                  "match": "prefix",
+                  "value": "5054"
+                }
+              ],
+              "iso": "US",
+              "raw": "311530_GID1-5054"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "311650": {
+      "plmn": "311650",
+      "profiles": [
+        {
+          "id": "apple_ptci_lte_us",
+          "path": "profiles/legacy_ptci_lte_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "PTCI",
+              "conditions": [
+                {
+                  "field": "gid2",
+                  "match": "prefix",
+                  "value": "10FD"
+                }
+              ],
+              "iso": "US",
+              "raw": "311650_GID2-10FD"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "312480": {
+      "plmn": "312480",
+      "profiles": [
+        {
+          "generic": true,
+          "id": "apple_nemont_lte_us",
+          "path": "profiles/legacy_nemont_lte_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "Nemont",
+              "iso": "US",
+              "raw": "312480"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "312530": {
+      "plmn": "312530",
+      "profiles": [
+        {
+          "id": "apple_sprint_virgin_isim_lte_us",
+          "path": "profiles/legacy_sprint_virgin_isim_lte_us.yaml",
+          "selectors": [
+            {
+              "carrier_name": "Virgin",
+              "conditions": [
+                {
+                  "field": "gid2",
+                  "match": "prefix",
+                  "value": "12"
+                }
+              ],
+              "iso": "US",
+              "raw": "312530_GID2-12"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "46605": {
+      "plmn": "46605",
+      "profiles": [
+        {
+          "generic": true,
+          "id": "apple_apt_tw",
+          "path": "profiles/legacy_apt_tw.yaml",
+          "selectors": [
+            {
+              "carrier_name": "GT",
+              "iso": "TW",
+              "raw": "46605"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "52505": {
+      "plmn": "52505",
+      "profiles": [
+        {
+          "id": "apple_apt_tw",
+          "path": "profiles/legacy_apt_tw.yaml",
+          "selectors": [
+            {
+              "carrier_name": "GT",
+              "conditions": [
+                {
+                  "field": "iccid",
+                  "match": "prefix",
+                  "value": "8988605"
+                }
+              ],
+              "iso": "TW",
+              "raw": "52505_ID-8988605"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    },
+    "90137": {
+      "plmn": "90137",
+      "profiles": [
+        {
+          "id": "apple_wonet",
+          "path": "profiles/legacy_wonet.yaml",
+          "selectors": [
+            {
+              "carrier_name": "USIMS",
+              "conditions": [
+                {
+                  "field": "gid1",
+                  "match": "prefix",
+                  "value": "CC11"
+                }
+              ],
+              "raw": "90137_GID1-CC11"
+            }
+          ]
+        }
+      ],
+      "version": 2
+    }
+  },
+  "source_files": [
+    {
+      "path": "profiles/acs_us.yaml",
+      "sha256": "1a94ee8150c95b21fe87d9e282d09d7d500580e58448c152761298f37790aefb"
+    },
+    {
+      "path": "profiles/apt_tw.yaml",
+      "sha256": "77acc77fc79f521650a1b7c4d03fdb5b8c92d34f60c36cd34bc4ddf0fe6c3f20"
+    },
+    {
+      "path": "profiles/chat_lte_us.yaml",
+      "sha256": "ef93adcaba1803b5d19bcd3afd954462de6340d3afd46eb16a64e213cc034676"
+    },
+    {
+      "path": "profiles/crosswireless_lte_us.yaml",
+      "sha256": "dbd82a2a065725d1bf8a3bd16f8cb96ed24c29792f4a0181044e708a008290ac"
+    },
+    {
+      "path": "profiles/iwireless_us.yaml",
+      "sha256": "353bf4f8535613efad7f091d0419e3cdda6e0ccf6dfaad09bc1560785ddf9d18"
+    },
+    {
+      "path": "profiles/lebara_uk.yaml",
+      "sha256": "5638eac9f89b785cfcaeedb8b97cac054946e1a7b717b5501cfe206f88656a00"
+    },
+    {
+      "path": "profiles/movistar_ec.yaml",
+      "sha256": "c692b8af2a06bb240df8b018fd527e3aec2a5bd90312ee72d52fd341de38ae6d"
+    },
+    {
+      "path": "profiles/movistar_uy.yaml",
+      "sha256": "572decd079966954fc063c84eba6dc8a076a95dd31cbcd367c27e46b64d30fca"
+    },
+    {
+      "path": "profiles/mts_ca.yaml",
+      "sha256": "62e0376fe7198d0866e259124a46827e6a8c64697de396500f5732e689d9cee0"
+    },
+    {
+      "path": "profiles/nemont_lte_us.yaml",
+      "sha256": "5757dd9c6b0cdafb687f2eff10c6756e2065cd54598a52aaeaebf59165ab3ec3"
+    },
+    {
+      "path": "profiles/nwm_lte_us.yaml",
+      "sha256": "077138162eb6ef947e1e78d98e1669476644b3802d4f4b4aefba7bd608f3d22c"
+    },
+    {
+      "path": "profiles/panhandle_us.yaml",
+      "sha256": "584d4ade9d56a63dba1b36e6d733b7c5d67f46de1a6d0643a77e8e3bd6d8bc4c"
+    },
+    {
+      "path": "profiles/ptci_lte_us.yaml",
+      "sha256": "536c3bfa6b46d85b95a20b563dea790068144cb4b12888c971c95139cdd14e61"
+    },
+    {
+      "path": "profiles/sfr_fr.yaml",
+      "sha256": "ffbca7930389d30367f38df01be7bc082a4653536f9b0e340c0b2cd5e023e033"
+    },
+    {
+      "path": "profiles/sprint_virgin_isim_lte_us.yaml",
+      "sha256": "1e69bbf22f75d50de2edfaf11577516f07ce59532382922de8be3c3382c280cf"
+    },
+    {
+      "path": "profiles/telus_pcmobile_ca.yaml",
+      "sha256": "2d9ac9e5a4cda91fdcce40d2a84b8d734d375ed8887d44e355fb7837be5661b3"
+    },
+    {
+      "path": "profiles/tmobile_mvno_us.yaml",
+      "sha256": "b08a52e4e2203a434a2f714cb7727641666e1534c7a421cef34abca26ae6c6c4"
+    },
+    {
+      "path": "profiles/tmobile_ting_us.yaml",
+      "sha256": "dc16b825970d6083b6cdd546260a2da1403754b3f94e6013dff102b87e3a6839"
+    },
+    {
+      "path": "profiles/verizon_lte_us.yaml",
+      "sha256": "1d828c3622933d3c13022a8b775e0ed38502f5fa3104158baf05fb4ac8441168"
+    },
+    {
+      "path": "profiles/verizon_ting_lte_us.yaml",
+      "sha256": "1470b8d003b65c229eec6601b82d715f34878c8ff84b5c7f91ec00b9d9e331d1"
+    },
+    {
+      "path": "profiles/wonet.yaml",
+      "sha256": "0bcf436e0915c2d24a83cb2b64215562bae6fd952d6b86aec35803025cffefe1"
+    },
+    {
+      "path": "selectors/20404.yaml",
+      "sha256": "e1f273729c5321a04febf2cedb558529ee3ac29ca69123f7aed6b0d2bc5079a6"
+    },
+    {
+      "path": "selectors/21402.yaml",
+      "sha256": "b4cc81a2323e3f4dd383608585c4fe993eadc34411ea4847d917c095618da364"
+    },
+    {
+      "path": "selectors/21407.yaml",
+      "sha256": "3b4f694df61200a943869ed32b031afd7cf22f994a0d688912bec4441c3a98e1"
+    },
+    {
+      "path": "selectors/23487.yaml",
+      "sha256": "283538051825c7941247359dffced8d8ad2560e2d7ed0767cdf87950ffed68f6"
+    },
+    {
+      "path": "selectors/28010.yaml",
+      "sha256": "e87f987bf4af7a7a3f4b0b4d209487ae79a5063c479e6768391e61e4da5f2981"
+    },
+    {
+      "path": "selectors/302220.yaml",
+      "sha256": "da2fa2d4f87950edf891a253e7de3f6fc8dfb9e08a17667cfc9b62f9b87bbf5c"
+    },
+    {
+      "path": "selectors/302370.yaml",
+      "sha256": "d26a2f227a35efcec2f500754ec37453259e585871f84d2ae0737bd517ff7d71"
+    },
+    {
+      "path": "selectors/302660.yaml",
+      "sha256": "d10a96e7b729df63af75cbb9a4170adc287102ae39cb1e229d3bdd47ba9892b5"
+    },
+    {
+      "path": "selectors/310050.yaml",
+      "sha256": "30b98a6b2a77896ef7e7609e4efd0e24e9237161ad2dd83499b0a98c803d0bf1"
+    },
+    {
+      "path": "selectors/310120.yaml",
+      "sha256": "a84357c27093b9a69e2f89f6548e676b0393fd53aeed31ae2e52285aabe9ef79"
+    },
+    {
+      "path": "selectors/310240.yaml",
+      "sha256": "32a00f70fb232ba83ab7250a06c5d932e3d1b1e31123bc7a3e19f0ae0c4da30f"
+    },
+    {
+      "path": "selectors/310260.yaml",
+      "sha256": "6e226280df02e4b3d4657711edfc5a76570767b3385a4957c5852c27761a269f"
+    },
+    {
+      "path": "selectors/310590.yaml",
+      "sha256": "ad906fe217d68d94effdcde850dc3b80af2cd0f0bfeccb36619e924c23c016ac"
+    },
+    {
+      "path": "selectors/310599.yaml",
+      "sha256": "9ba83e064218be9178e9e7b99958efa7655f76028105fa988d9541fb8e6d502b"
+    },
+    {
+      "path": "selectors/310770.yaml",
+      "sha256": "0906a8c74773fee440ab803dcb517ba911bb9d799f405e8d5e423393138d44ce"
+    },
+    {
+      "path": "selectors/311370.yaml",
+      "sha256": "399bda67721c30740c5fb6d1266bce54abb0a0983e8b1c880488bb61b4d21d4d"
+    },
+    {
+      "path": "selectors/311480.yaml",
+      "sha256": "07479de7383b1b64b2a9855ac3a2cc5b9fb5db163b7f1622c365e675c3d3a57a"
+    },
+    {
+      "path": "selectors/311530.yaml",
+      "sha256": "00a7b84472831d49250cd9687f2cbf72d5ca13bef836d73781b19b074580bebd"
+    },
+    {
+      "path": "selectors/311650.yaml",
+      "sha256": "6fea766d5c26e963265cd03f3e27abd71c6e07c82c032c96fe914f850222c3b8"
+    },
+    {
+      "path": "selectors/312480.yaml",
+      "sha256": "7ce5475a7634c67544f098e9f251ed120bc558018a0a65afa91e1f97ffbf4998"
+    },
+    {
+      "path": "selectors/312530.yaml",
+      "sha256": "440698e6965ea161c3463a206193a742f48d1bfb8a0797db1c257b1ef06a011c"
+    },
+    {
+      "path": "selectors/46605.yaml",
+      "sha256": "8a3565c131db42c8284a7f7a6aa663c9ebe41c06562c37ecb5464ee716895037"
+    },
+    {
+      "path": "selectors/52505.yaml",
+      "sha256": "582e0f840630557f0434d28afc1e0c1849287a72c73bf08bed3f3a47abe10677"
+    },
+    {
+      "path": "selectors/90137.yaml",
+      "sha256": "c509e218cb9ea47778db2c9d3a4996289251fe7e00490f9c8c058005926d4220"
+    }
+  ],
+  "source_registry_sha256": "9fdefa88ad608db046aab80feb39ff2bb39124e5dea9ef5076798739370eb0d8",
+  "source_revision": "cdba73e551810681f16b4cce0693c70e9e216c37",
+  "upstream_revision": "09b8ae86a6bb6f2a9bff87e9411e0f67f9c2fb25"
+}

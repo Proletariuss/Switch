@@ -1,0 +1,93 @@
+version: 3
+kind: carrier_bundle
+id: apple_smart_kh
+bundle: Smart_kh.bundle
+supported_plmns:
+    - "45602"
+    - "45605"
+    - "45606"
+common:
+    apns:
+        - apn: smart
+          type_mask: 1081395
+        - apn: ims
+          type_mask: 131072
+          tech_type_mask: 131072
+          support_switch_over: true
+        - apn: mms
+          type_mask: 4
+    apple:
+        carrier_entitlements:
+            supported_entitlements: 1
+    e911:
+        over_itech_supported: true
+        wifi_calling_without_entitlement: true
+    entitlement:
+        entitlement_url: https://es.smart.com.kh
+    ims:
+        apn: ims
+        epdg:
+            address: epdg.epc.mnc006.mcc456.pub.3gppnetwork.org
+            configuration_attributes:
+                - identifier: 16384
+                  name: AssignedPCSCFIPv4
+                  type: v4
+                - identifier: 16386
+                  name: AssignedPCSCFIPv6
+                  type: v6
+        ike:
+            child_sa:
+                proposals:
+                    - source_branch: FirstChild
+                      encryption:
+                        - aes128
+                      integrity:
+                        - sha256
+                      protocol: esp
+                      rekey_pfs_group: 14
+                      esn: auto
+                      install_policies: true
+                      lifetime_seconds: 80000
+                replay_window_size: 12
+            disable_switch_to_natt_port: true
+            dpd:
+                enabled: false
+                interval_seconds: 600
+                max_retries: 4
+                retry_interval_seconds: 10
+            local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+            local_identifier_type: IDUserFQDN
+            nat_keepalive_enabled: true
+            nat_keepalive_seconds: 20
+            proposals:
+                - encryption:
+                    - aes128
+                  integrity:
+                    - sha256
+                  prf:
+                    - sha256
+                  dh_groups:
+                    - 14
+                  lifetime_seconds: 80000
+                  authentication_method: None
+                  eap_method: EAP-AKA
+            validate_remote_certificate: false
+        register:
+            use_ipsec: true
+        signaling:
+            contact:
+                additional_contact_params:
+                    - selector: INVITE,INVITE:*
+                      params:
+                        - +g.3gpp.mid-call
+                        - +g.3gpp.srvcc-alerting
+            early_media_needs_header: true
+            preconditions: required
+            require_preconditions_when_mandatory: false
+            support_p_early_media: true
+        ussi:
+            enabled: true
+        volte:
+            enable_volte_by_default: true
+    roaming:
+        wifi_calling_allowed: true

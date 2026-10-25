@@ -1,0 +1,13 @@
+version: 3
+kind: carrier_bundle
+id: apple_btl_bz
+bundle: BTL_bz.bundle
+supported_plmns:
+    - "70267"
+plmn_overrides:
+    "70267":
+        apns:
+            - apn: data
+              type_mask: 49
+            - apn: data
+              type_mask: 48

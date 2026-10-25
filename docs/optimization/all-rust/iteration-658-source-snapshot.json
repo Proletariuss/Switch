@@ -1,0 +1,1063 @@
+{
+  "schema": "switch.current-source-snapshot.v1",
+  "iteration": 658,
+  "frozen_cut_iteration": 597,
+  "frozen_cut_source_snapshot_sha256": "eea99c8784a1253f2eec597316cfd370d35cdb6fce11db9054b0fe11fdde2653",
+  "purpose": "Rustfmt-only formatting of the reader host-audio admission let-array destructuring; all decisions, FFI semantics, API identities, Rust owner claims, historical raw hashes and acceptance states remain unchanged. No physical-device acceptance, functional PASS or denominator freeze.",
+  "files": [
+    {
+      "path": "app/Sources/AudioBridge.swift",
+      "sha256": "2b4e6a00e3d39eeb86a43c8c3d2f9b4cbba7503556328a09de13ad0f8c65d5b8",
+      "size_bytes": 25453
+    },
+    {
+      "path": "app/Sources/AudioIOProcRetirement.swift",
+      "sha256": "ed0fc6d379c519cf85ee41a138a64518c33e8f5077212b2e29c475afeba3127c",
+      "size_bytes": 2271
+    },
+    {
+      "path": "app/Sources/BackendProcess.swift",
+      "sha256": "92d87b7c8687b0cb7eb7a774e98ea86ddc12776e09216cf8fa894f9fda97ec1c",
+      "size_bytes": 22805
+    },
+    {
+      "path": "app/Sources/BluetoothReaderManager.swift",
+      "sha256": "8ac66b3ece5e7b0668e9078a077b485913d25a458cde100a06800276d89fcced",
+      "size_bytes": 116508
+    },
+    {
+      "path": "app/Sources/CallAudioStore.swift",
+      "sha256": "0a7161f39ad1b6fee5b68df4a771165341b5eba20d4c2d208b0aceea03cbd63e",
+      "size_bytes": 20454
+    },
+    {
+      "path": "app/Sources/CallHistoryStore.swift",
+      "sha256": "7e646916d0ec1b24d1cde0f3bb738814fdaa2688efcd4ff794c7c64caa927565",
+      "size_bytes": 4899
+    },
+    {
+      "path": "app/Sources/CallModeStore.swift",
+      "sha256": "9a325d278d159b04e8c7d73f530d4cdb0ffd712e1a0365112813c9736aaf8967",
+      "size_bytes": 11893
+    },
+    {
+      "path": "app/Sources/CallRuntimeStore.swift",
+      "sha256": "a6d1cfb8d24ce5d17790f03eb8ab0f8a4dc7799f5f4f487216a3eb0c5fd092b3",
+      "size_bytes": 17247
+    },
+    {
+      "path": "app/Sources/DeviceSMSSendLive.swift",
+      "sha256": "a0055baa9df78d38d29e436128eef1b6c7e6810f4f9c8920feca43bc2c936fa4",
+      "size_bytes": 1636
+    },
+    {
+      "path": "app/Sources/DeviceSnapshotStore.swift",
+      "sha256": "14f9da5c53b917097dcca30bcef12a8dd39179d98d73bdb8b102c859a88d9fe6",
+      "size_bytes": 10000
+    },
+    {
+      "path": "app/Sources/DiagnosticEventStore.swift",
+      "sha256": "ecbe6aa5a52ea56ae9bd20ee4f847f0e9effc4e428bda325d8d58439f2d978a2",
+      "size_bytes": 1398
+    },
+    {
+      "path": "app/Sources/ESIMModels.swift",
+      "sha256": "fb90637199a0298ff51376132a17010de1f62d2d2e254d4a8f4ac3680077f4d9",
+      "size_bytes": 15833
+    },
+    {
+      "path": "app/Sources/MenuBarStatusSnapshot.swift",
+      "sha256": "ea04af051e74a3c70f1e73a5be0e0cf1912c08f9654631ad651c3d1612f49c25",
+      "size_bytes": 3035
+    },
+    {
+      "path": "app/Sources/MenuBarViews.swift",
+      "sha256": "d7fa479e8b08d6146fc840425e3ed357c49d1ff7d7457a1b6a0b54a5f75d2425",
+      "size_bytes": 25019
+    },
+    {
+      "path": "app/Sources/ModuleESIMStore.swift",
+      "sha256": "c135ba9d606a8357f8c37d3c503cbe45e93d6ac78a57b9cae1b2141d43527196",
+      "size_bytes": 9942
+    },
+    {
+      "path": "app/Sources/ModuleNetworkStore.swift",
+      "sha256": "622c882ec78185d844ebaecebe407e0693a215b7363d4f38d891c197301b5e36",
+      "size_bytes": 20018
+    },
+    {
+      "path": "app/Sources/ModuleVoWiFiStore.swift",
+      "sha256": "538e4537fdc2d0643f09144c707186b636b0947f2b981db729e509eadd2cf7fa",
+      "size_bytes": 15829
+    },
+    {
+      "path": "app/Sources/MultiStandbyModels.swift",
+      "sha256": "5a17490af486abd35573090a28c6d35ad53b3c01466524f30720fad733a43756",
+      "size_bytes": 19322
+    },
+    {
+      "path": "app/Sources/MultiStandbyStore.swift",
+      "sha256": "bda1611d509cc90e5aba95ba79b89b61eeccd78153bbc38bfb4e37fa77cf3e87",
+      "size_bytes": 43026
+    },
+    {
+      "path": "app/Sources/NetworkServicesStore.swift",
+      "sha256": "1d45f48811bb707a1f33ed3c967eb184d8c06995fa970f68542c680d6b4a722a",
+      "size_bytes": 3416
+    },
+    {
+      "path": "app/Sources/ProletariusApp.swift",
+      "sha256": "b854d1519171145e83c24db1889d90c2c01aa1cfcae83c9a425263c87438a19c",
+      "size_bytes": 28619
+    },
+    {
+      "path": "app/Sources/ReaderAudioAdmission.swift",
+      "sha256": "ce3448537df316c7ecb2f74d932c575dc03f8e3dab49fcca562c553fd28fc58e",
+      "size_bytes": 2487
+    },
+    {
+      "path": "app/Sources/ReaderBLEBridge.swift",
+      "sha256": "43302ef175c2f90202624462443d34401643b82ceb22338811074b38af80fe5a",
+      "size_bytes": 18879
+    },
+    {
+      "path": "app/Sources/ReaderBLEOperationLedger.swift",
+      "sha256": "dd9344378c3531dbd1e07ad45dc2199398b7411d64b5b65554006099c4544034",
+      "size_bytes": 7806
+    },
+    {
+      "path": "app/Sources/ReaderESIMStore.swift",
+      "sha256": "154ee1b39611c3b753aaaf2259a1f5f3dfb400cef28cbc055c30d05590875042",
+      "size_bytes": 27837
+    },
+    {
+      "path": "app/Sources/ReaderModels.swift",
+      "sha256": "4301f3d29ae656cdca9542add7491140e1d3ea745fe8120d6d265df66770b6b2",
+      "size_bytes": 15174
+    },
+    {
+      "path": "app/Sources/ReaderRuntimeStore.swift",
+      "sha256": "54705fc0e1de25535866f9943251993c3104a4db495c375e92b8c8d7b01db3a3",
+      "size_bytes": 51270
+    },
+    {
+      "path": "app/Sources/ReaderVoWiFiAudioBridge.swift",
+      "sha256": "a751b29ff8cd674eb2e717e03801ac6d19717412d9e9eb1d489020507dc3cc74",
+      "size_bytes": 29074
+    },
+    {
+      "path": "app/Sources/SMSArchiveExport.swift",
+      "sha256": "dfc0106b9c057b1a067b0403f333fa397862ae7dc03b153e872eab021dc4088e",
+      "size_bytes": 9275
+    },
+    {
+      "path": "app/Sources/SMSForwardingCheckpoint.swift",
+      "sha256": "68f5f78ae59e59201c49bd347cdc51bb637d09c88dc6ff12cce04c405a458962",
+      "size_bytes": 14365
+    },
+    {
+      "path": "app/Sources/SMSForwardingStore.swift",
+      "sha256": "7fd5ac6ac477db9480335a90679560da8e15b21c65b7a4b392497e54cc22ee37",
+      "size_bytes": 30157
+    },
+    {
+      "path": "app/Sources/SMSStore.swift",
+      "sha256": "6905d617ebd87b2977723cafba321fc94f1b93e3e2bd2ef12d0c26fc5569f6aa",
+      "size_bytes": 22705
+    },
+    {
+      "path": "app/Sources/SMSStoreHealth.swift",
+      "sha256": "d40fb15f784d9fd8cefcd81ec7cc7593155cd184d389a0e624db21445576f81a",
+      "size_bytes": 4250
+    },
+    {
+      "path": "app/Sources/UnixSocketURLProtocol.swift",
+      "sha256": "c36b3be6d53005b5e761e0938b7972e0283e3c3c39a59dc5936dbe4dfe6ce943",
+      "size_bytes": 10847
+    },
+    {
+      "path": "app/Sources/Views/ActivityView.swift",
+      "sha256": "faa3fa3f4cae655dc63bf158136fd0123a59d78032ce09d581500a0e6171dd51",
+      "size_bytes": 18527
+    },
+    {
+      "path": "app/Sources/Views/DiagnosticsView.swift",
+      "sha256": "2ea48e438a38ac8115575a5eb15b2025fffc6fe976d1410da69b96a63d01ff79",
+      "size_bytes": 29020
+    },
+    {
+      "path": "app/Sources/Views/HomeView.swift",
+      "sha256": "f31a8b37263911e1f5e9fb64dc4571b08fe6c18d81ba4fd159eb16818b79e213",
+      "size_bytes": 61925
+    },
+    {
+      "path": "app/Sources/Views/SMSConversationViews.swift",
+      "sha256": "2432dc44227bfc7937ed707004cd44eab8a284a3a4f318a8bd9982fe83f7d688",
+      "size_bytes": 28482
+    },
+    {
+      "path": "app/Sources/Views/UDPProxyDiagnosticView.swift",
+      "sha256": "b9c68392f83e5169c1a8a8070e99ed4c93cd52d6c3e3ba2636aa868cde149aeb",
+      "size_bytes": 7542
+    },
+    {
+      "path": "app/Tests/MenuBarPresentation/Adapters.swift",
+      "sha256": "8bf8f1aad6c563dbc9ecd2926059a0c52521d9d1fd88571e461028dd6c7dfb14",
+      "size_bytes": 3960
+    },
+    {
+      "path": "app/Tests/MenuBarPresentation/main.swift",
+      "sha256": "74f1542cbafa4e32b3cdc22363538b152a561df3edcb128041415b47a24e7274",
+      "size_bytes": 13606
+    },
+    {
+      "path": "rust/crates/proletarius-audio-core/src/lib.rs",
+      "sha256": "28ed6d4e841d29d8ac1f05dec1b06948c5da1f29543cf7b35784343c4e2c5ef5",
+      "size_bytes": 36545
+    },
+    {
+      "path": "rust/crates/proletarius-audio-core/src/pcm_format.rs",
+      "sha256": "76a1dc4bde0ed3eae9940456eee13cfd8ebe07fc501bd45ea049642d12156792",
+      "size_bytes": 20085
+    },
+    {
+      "path": "rust/crates/proletarius-audio-core/src/reader_admission.rs",
+      "sha256": "a5f44ee4a5e1a5389d762b9a08d7a257556f71265e885d9a01c3c3b6ce3f3932",
+      "size_bytes": 6146
+    },
+    {
+      "path": "rust/crates/proletarius-ble-core/src/lib.rs",
+      "sha256": "32d80a56bbe4ef8bbfcfca01d67e3f2a84436f9f880b0d865175f53e09b40b2a",
+      "size_bytes": 44214
+    },
+    {
+      "path": "rust/crates/proletarius-ble-core/src/operation_ledger.rs",
+      "sha256": "367860c15fea4e7215b4b7d5f65d952d4bf81ed48518c008306cb7bcaa770a90",
+      "size_bytes": 25568
+    },
+    {
+      "path": "rust/crates/proletarius-forwarding/src/lib.rs",
+      "sha256": "3aedf7348bb186ace3b8aa110240bd50e839a05111c29344cda84ae08d409a4a",
+      "size_bytes": 12051
+    },
+    {
+      "path": "rust/crates/proletarius-forwarding/src/provider.rs",
+      "sha256": "78eb658a572d5f0509a610ccaba6d8b4dadfea1ed4fdb3cbf8401ee319062a6a",
+      "size_bytes": 49040
+    },
+    {
+      "path": "rust/crates/proletarius-forwarding/src/queue_store.rs",
+      "sha256": "0323c76420ab034a1f2f1f4dab4d3d345f987c1c84d63a7ec4d9547533411f45",
+      "size_bytes": 58560
+    },
+    {
+      "path": "rust/crates/proletarius-forwarding/src/schema.rs",
+      "sha256": "81252492968cfd8bfe47718a40bb89364e45508954127dcd152b0eee1d403d86",
+      "size_bytes": 56348
+    },
+    {
+      "path": "rust/crates/proletarius-forwarding/src/worker.rs",
+      "sha256": "6576ca4f455ab34c9a63517412ef07d0c9f33911147dcba51973551407fe8484",
+      "size_bytes": 48185
+    },
+    {
+      "path": "rust/crates/proletarius-ims/src/registration_connection.rs",
+      "sha256": "007b09f9511585145eef53f09dd1e9960483f005a4d2360f7442db08c235e8f8",
+      "size_bytes": 72820
+    },
+    {
+      "path": "rust/crates/proletarius-qmi-core/src/lib.rs",
+      "sha256": "cec04a9bdddfceb2aedd6792bec357097bd3b7a25a97e0b159f4ead160dd4a34",
+      "size_bytes": 34892
+    },
+    {
+      "path": "rust/crates/proletarius-qmi-libusb/src/macos.rs",
+      "sha256": "6f854b75198d47f2e6942639dacce953d565d2e5b6dd8c2c4cb188f2a2fb1cdc",
+      "size_bytes": 22777
+    },
+    {
+      "path": "rust/crates/proletarius-qmi-libusb/src/selection.rs",
+      "sha256": "8e8a4c0d1ce792c2ecf9523e7a16f1075adeb51bcf3ba58a71a13b6618c6f81c",
+      "size_bytes": 6791
+    },
+    {
+      "path": "rust/crates/proletarius-store/src/lib.rs",
+      "sha256": "1ecfdaba35fa910203010f3e153bade054204f9902a832b3833d5e7b3b396c7b",
+      "size_bytes": 22426
+    },
+    {
+      "path": "rust/crates/proletarius-vowifi/src/auth.rs",
+      "sha256": "67fa9b859318e90cf8fb5e6e8c84d9c3bed7c2bea70cc6992c052f9b57246c25",
+      "size_bytes": 100854
+    },
+    {
+      "path": "rust/crates/proletarius-vowifi/src/carrier_overrides.rs",
+      "sha256": "7e67f47d1bbfce51d5dcd12396eac74edda14b8561f66740f2a698c28f48ddbd",
+      "size_bytes": 21663
+    },
+    {
+      "path": "rust/crates/proletarius-vowifi/src/startup.rs",
+      "sha256": "f5c55d4f359d4042f5cf69a0568563b0b70a2c13e79352f746012786c9cabb57",
+      "size_bytes": 22045
+    },
+    {
+      "path": "rust/crates/proletariusd/src/archive_io.rs",
+      "sha256": "0badb83d6895f9c2023c18c857f314711d1b3ae26590a4d717ba7c956234fa14",
+      "size_bytes": 13311
+    },
+    {
+      "path": "rust/crates/proletariusd/src/availability.rs",
+      "sha256": "9a55ba397a4df7f6ea1a0a46665d0a74bf1d924e30e1e5fe6a49f0befd3d1f11",
+      "size_bytes": 5949
+    },
+    {
+      "path": "rust/crates/proletariusd/src/blocking_pool.rs",
+      "sha256": "80969b5bb55944ff9290038a75a49a155c74f9e349a35e162d6996b44eb9a368",
+      "size_bytes": 5142
+    },
+    {
+      "path": "rust/crates/proletariusd/src/call_archive.rs",
+      "sha256": "20028f21c2837541418c8e4f333f3f9de58b08623a7905e665b143ef6ea0800c",
+      "size_bytes": 14090
+    },
+    {
+      "path": "rust/crates/proletariusd/src/call_audio.rs",
+      "sha256": "039ce82127b2b4c804647b2af6688bc323712baba060b905054bd2bc1c89256d",
+      "size_bytes": 11000
+    },
+    {
+      "path": "rust/crates/proletariusd/src/call_codec.rs",
+      "sha256": "94a22c8029666b20898299b2f7566bb0796114e7371ad67423eabec8190d94e1",
+      "size_bytes": 59173
+    },
+    {
+      "path": "rust/crates/proletariusd/src/call_control.rs",
+      "sha256": "9b7f100e0c1a310a4c7e9a74d7ed76423cc44da779902afc215b3d6a8bff7081",
+      "size_bytes": 9994
+    },
+    {
+      "path": "rust/crates/proletariusd/src/call_facts.rs",
+      "sha256": "5db2409c8122280cfdfbef13c7fe062f9063f0d72cc8d61a7bf8c61e27b8a662",
+      "size_bytes": 30054
+    },
+    {
+      "path": "rust/crates/proletariusd/src/call_facts/native.rs",
+      "sha256": "d96c825c772a51e33930e0f97c9a139d11d4d6baa27f581af4ee8fd2b0c9b800",
+      "size_bytes": 15480
+    },
+    {
+      "path": "rust/crates/proletariusd/src/call_mode_adb.rs",
+      "sha256": "bed1b1a1e7093e7506b4945e6f7526e3921ef9bf447eff52c48a7f19a644d3d4",
+      "size_bytes": 185250
+    },
+    {
+      "path": "rust/crates/proletariusd/src/call_mode_adb/managed_control.rs",
+      "sha256": "1591d211cf9add2e7f38ca00d6ab2c1df8466be49ee9af83a49e975e53526f97",
+      "size_bytes": 35381
+    },
+    {
+      "path": "rust/crates/proletariusd/src/call_mode_adb/startup_recovery.rs",
+      "sha256": "ee4db53e7e050b7a6613cb19dcfdff06d628cefd7a0186679f1d2858f484c01f",
+      "size_bytes": 50032
+    },
+    {
+      "path": "rust/crates/proletariusd/src/call_mode_backups.rs",
+      "sha256": "814d560caaf71489a9d9e191af27a50c863f1f4d9d420b14c985a731a72d36b6",
+      "size_bytes": 113611
+    },
+    {
+      "path": "rust/crates/proletariusd/src/call_mode_enable.rs",
+      "sha256": "94389d067d0c73f9661b24bc971a75796c1af97802faaf14ba9ef95569f5770d",
+      "size_bytes": 7084
+    },
+    {
+      "path": "rust/crates/proletariusd/src/call_mode_file_lock.rs",
+      "sha256": "5afc44afd6b961e7bdcb24f981bf375c1a4ca12be44a7b3cd19c9e19c880b6a6",
+      "size_bytes": 28521
+    },
+    {
+      "path": "rust/crates/proletariusd/src/call_mode_lifecycle.rs",
+      "sha256": "f77650df473abf00a11d0d4d626fcdd5da361c4a270d0ca7d87ef0369f0cfa09",
+      "size_bytes": 83365
+    },
+    {
+      "path": "rust/crates/proletariusd/src/call_mode_restore.rs",
+      "sha256": "61fe6d32ae136abd53e2bf5d79562f87b41fa33cd14b579eca9b836a4afffda7",
+      "size_bytes": 8162
+    },
+    {
+      "path": "rust/crates/proletariusd/src/call_mode_restore_journal.rs",
+      "sha256": "b89d14a18a3ca0d1d6cf37df902dc38f2ac7c89fcb592387cc99962d9cd714da",
+      "size_bytes": 31757
+    },
+    {
+      "path": "rust/crates/proletariusd/src/call_mode_restore_journal/storage.rs",
+      "sha256": "6472d62f212eb163ddbead0ffb0e2b998a3bebe55b4cbe87747ba409c561478b",
+      "size_bytes": 39969
+    },
+    {
+      "path": "rust/crates/proletariusd/src/call_mode_retry.rs",
+      "sha256": "f71d3f909c0119ff4a8956849a470db24236b9ac13b79d3907568479cdcb98a0",
+      "size_bytes": 4441
+    },
+    {
+      "path": "rust/crates/proletariusd/src/call_mode_runtime.rs",
+      "sha256": "370988699b2ac0f35445bfc9a0a4b096f52cbf9a25c42fc15480779382212413",
+      "size_bytes": 18411
+    },
+    {
+      "path": "rust/crates/proletariusd/src/call_mode_runtime_download.rs",
+      "sha256": "8c54e6f65d6687536b21b053c585323adb88af2bde81f53517fe448fdc6c87ab",
+      "size_bytes": 20930
+    },
+    {
+      "path": "rust/crates/proletariusd/src/call_mode_status.rs",
+      "sha256": "c54297daa37cc2310655577c27cadd9976d9766b9cce710b263a81e1f123d04a",
+      "size_bytes": 37542
+    },
+    {
+      "path": "rust/crates/proletariusd/src/carrier.rs",
+      "sha256": "cabe053bc55d9f63579765ab38b14ea9b4fcb274c022878d53c1d57a66a211f1",
+      "size_bytes": 6846
+    },
+    {
+      "path": "rust/crates/proletariusd/src/device_forwarding_store.rs",
+      "sha256": "0de744ccfe193836755b0020ba5bf48a4c91a50484e41eb551d0799db7e6be24",
+      "size_bytes": 15223
+    },
+    {
+      "path": "rust/crates/proletariusd/src/device_send_store.rs",
+      "sha256": "def7d1e7eeab695eaafc1826f059ffbe3134661dea908e6fbb2a5e512298e1aa",
+      "size_bytes": 33312
+    },
+    {
+      "path": "rust/crates/proletariusd/src/device_sms_forwarding.rs",
+      "sha256": "39f5faa774aeb3e47a334fb455267e1c3ed5e6d6804f0e96081572c4fe529888",
+      "size_bytes": 29051
+    },
+    {
+      "path": "rust/crates/proletariusd/src/device_sms_send.rs",
+      "sha256": "e20a51a3393e734b90bdb46dd3fd4eba9619a2c420da60750824053f4a25acbc",
+      "size_bytes": 52280
+    },
+    {
+      "path": "rust/crates/proletariusd/src/device_status_projection.rs",
+      "sha256": "0aca0800d23e38e72c84d9c3ba04ecdb9260352552849dda1861fb42cbc65dcb",
+      "size_bytes": 4731
+    },
+    {
+      "path": "rust/crates/proletariusd/src/diagnostics.rs",
+      "sha256": "0eb0a944e280c4e7cb93297a2b4e8b87640cfcc42565dfa523be13ac15e3f6b5",
+      "size_bytes": 7640
+    },
+    {
+      "path": "rust/crates/proletariusd/src/eap_identity.rs",
+      "sha256": "d80f89799f2d75344670c7b9f5646fdf08a7cc7d66520afd1abd10312f35da99",
+      "size_bytes": 16300
+    },
+    {
+      "path": "rust/crates/proletariusd/src/forwarding_admission.rs",
+      "sha256": "664b13dfa5de55e7587b30376977ead9957065d5f8f8636807d024b7143f4f0e",
+      "size_bytes": 17295
+    },
+    {
+      "path": "rust/crates/proletariusd/src/forwarding_admission_store.rs",
+      "sha256": "74569c38d814690bf9cafaaf1f0459557f7e8775a45968034f59a04245a2b71c",
+      "size_bytes": 7826
+    },
+    {
+      "path": "rust/crates/proletariusd/src/forwarding_handoff_store.rs",
+      "sha256": "7025a052a503a3f57c41bd03268417c7ca99b56efd404c277a66718a2ba4ffbb",
+      "size_bytes": 14276
+    },
+    {
+      "path": "rust/crates/proletariusd/src/health_projection.rs",
+      "sha256": "b07c4445f3a42261a63b87d2b7c583e7a5f7f8b4a8ac199c327abf6266d19cfc",
+      "size_bytes": 3289
+    },
+    {
+      "path": "rust/crates/proletariusd/src/ims_codec.rs",
+      "sha256": "469d24013f14d93451ae9696a954a625984eefd479c6c51ddb8bf0554a74b426",
+      "size_bytes": 160752
+    },
+    {
+      "path": "rust/crates/proletariusd/src/ims_sms_transactions.rs",
+      "sha256": "3293ca637ef855df0553406031bd66520f2c227de1e313d8bb9cfcf4f259c9e7",
+      "size_bytes": 143538
+    },
+    {
+      "path": "rust/crates/proletariusd/src/main.rs",
+      "sha256": "fa714a70caadeba0bde1be31bae88b6caaf684c9c30ff9504b713029dd679e1c",
+      "size_bytes": 231553
+    },
+    {
+      "path": "rust/crates/proletariusd/src/message_archive.rs",
+      "sha256": "0a55d013a02881874ba47c04e1733e450bd1d021dba939e66ad1ba26afd6d884",
+      "size_bytes": 83430
+    },
+    {
+      "path": "rust/crates/proletariusd/src/modem_actor.rs",
+      "sha256": "70f8c8a402e0c103741a2ea08587d480a96224032ba2ed5a5fa22af99169ea4f",
+      "size_bytes": 273395
+    },
+    {
+      "path": "rust/crates/proletariusd/src/modem_actor/admission.rs",
+      "sha256": "ddd350c71cb4672a1fb1d5e4052cac2df79ace25a8e4bed0711802931381a737",
+      "size_bytes": 10308
+    },
+    {
+      "path": "rust/crates/proletariusd/src/modem_actor/serial_card.rs",
+      "sha256": "032ad6d42c129be2b359b2d50f49a90c82fa9ee311de28304c65064d5ade4658",
+      "size_bytes": 32543
+    },
+    {
+      "path": "rust/crates/proletariusd/src/modem_actor/sms_ingest.rs",
+      "sha256": "b0f55340c2b0e789e046f36fa6ad0aaff1a92075231241343ab1354bf88549e6",
+      "size_bytes": 11544
+    },
+    {
+      "path": "rust/crates/proletariusd/src/modem_actor/sms_receive.rs",
+      "sha256": "2a23c9b4e54d289a76f3bbd0a1a5d5a10707e8b1d1b0c58d7a57dcb9f8ef02df",
+      "size_bytes": 15928
+    },
+    {
+      "path": "rust/crates/proletariusd/src/module_call.rs",
+      "sha256": "8b27f725ff85a8171e4b2ec7864c8e17a0c48e0a6395b1b93a59e4c2721dccab",
+      "size_bytes": 28608
+    },
+    {
+      "path": "rust/crates/proletariusd/src/module_call_state.rs",
+      "sha256": "d1d1b91dbd4f6a59f9b5122e14dee78169fb8e798e4757689f20e88807cbf1b6",
+      "size_bytes": 15014
+    },
+    {
+      "path": "rust/crates/proletariusd/src/module_discovery.rs",
+      "sha256": "f6db52ee9e6e505e66495d0b2709025838a0da06b6530c5902a3d232147e8250",
+      "size_bytes": 10385
+    },
+    {
+      "path": "rust/crates/proletariusd/src/module_discovery/tests.rs",
+      "sha256": "d6f8a967f397607347c6bfd6c73f33b798156d61e1d880597863c7d3102d0f29",
+      "size_bytes": 11164
+    },
+    {
+      "path": "rust/crates/proletariusd/src/module_esim.rs",
+      "sha256": "7485b8b5cb0b93277edc4f1a1d354e8ea652ba74f52ef5d4705d7bc9b2b95275",
+      "size_bytes": 72308
+    },
+    {
+      "path": "rust/crates/proletariusd/src/module_esim_transport.rs",
+      "sha256": "c2512f7b5744bf86e4f138f9ed36f0275b19ae01cd41596dacd303eafb1b35d0",
+      "size_bytes": 18021
+    },
+    {
+      "path": "rust/crates/proletariusd/src/module_profile_notes.rs",
+      "sha256": "ba82857540686f886766c161355246cde1de2864b4a941a90034b52e8f959ff0",
+      "size_bytes": 7341
+    },
+    {
+      "path": "rust/crates/proletariusd/src/module_radio.rs",
+      "sha256": "22912be4c8adced1a567db50894e338626e20c657b3b9f5f6996bdf6392d8fe6",
+      "size_bytes": 177136
+    },
+    {
+      "path": "rust/crates/proletariusd/src/module_radio_store.rs",
+      "sha256": "b4c62e7f6195ce42d1df3a41ac7468c2f2c7181616a03e6a59e8c3dc4a95f249",
+      "size_bytes": 5017
+    },
+    {
+      "path": "rust/crates/proletariusd/src/module_radio_transport.rs",
+      "sha256": "a3b44e6d539ba2cf12949603e634d8ac3d443a501ab5592745a4a5d9543aca4a",
+      "size_bytes": 110483
+    },
+    {
+      "path": "rust/crates/proletariusd/src/module_recovery.rs",
+      "sha256": "8bf5cc92820dd9855802934a27258b05ceb090bb30e75e5829bb482c1928a1ad",
+      "size_bytes": 68985
+    },
+    {
+      "path": "rust/crates/proletariusd/src/module_recovery/reconciliation.rs",
+      "sha256": "df540863cb54d4f0f9473d7d6b3e80f2e21403b94fc1010e93891e66ef04771a",
+      "size_bytes": 8535
+    },
+    {
+      "path": "rust/crates/proletariusd/src/module_startup.rs",
+      "sha256": "4e0912714eb31e5904c31f443965275798331afeec66e9accd95b208879c9358",
+      "size_bytes": 16475
+    },
+    {
+      "path": "rust/crates/proletariusd/src/module_startup/native_serial.rs",
+      "sha256": "a91b7283ce1ba3f481077e8c23696d09a59381872b9e28fed45f6ada1dc70e4b",
+      "size_bytes": 9201
+    },
+    {
+      "path": "rust/crates/proletariusd/src/multistandby_card.rs",
+      "sha256": "4494cbc58bc6b7c8eb932c40a81ebe2ee3814881618a55740c0ba943ad9d01ee",
+      "size_bytes": 16345
+    },
+    {
+      "path": "rust/crates/proletariusd/src/multistandby_maintenance.rs",
+      "sha256": "fe7e9e3761a77b0404aba751e28455b8fc1ea4deccd56c1c5151323509916f0c",
+      "size_bytes": 1818
+    },
+    {
+      "path": "rust/crates/proletariusd/src/multistandby_native_runtime.rs",
+      "sha256": "d8c536aa3d3b76ebc71fd932caacbce37fd6eb100f7c02026fdc76d7643333d6",
+      "size_bytes": 27196
+    },
+    {
+      "path": "rust/crates/proletariusd/src/multistandby_native_runtime/sending.rs",
+      "sha256": "d42c19e32d31da14e8df1cae9a3559bdcc640b11fc5055c943e7d3ada2b624cf",
+      "size_bytes": 5276
+    },
+    {
+      "path": "rust/crates/proletariusd/src/multistandby_native_runtime/worker.rs",
+      "sha256": "5d54f1b1fdaec3c0a5c2dfae5c818350a81e8ba4c97371253438778b6475cc1f",
+      "size_bytes": 18358
+    },
+    {
+      "path": "rust/crates/proletariusd/src/multistandby_operations.rs",
+      "sha256": "1358393db29aebfcf2d609302db867b0a9d0edeb7a5f6a26d4f3d7f7772b1cb5",
+      "size_bytes": 49189
+    },
+    {
+      "path": "rust/crates/proletariusd/src/multistandby_recovery.rs",
+      "sha256": "4847448dcf9c4c65123ea5ac80c332a92e7b250432c49b07ba5e731775a06ab8",
+      "size_bytes": 1982
+    },
+    {
+      "path": "rust/crates/proletariusd/src/multistandby_retry.rs",
+      "sha256": "a9ec333037cee3debb1d688d86f649155350b4091f02e29a01e12c3a4917b4cc",
+      "size_bytes": 3110
+    },
+    {
+      "path": "rust/crates/proletariusd/src/multistandby_runtime_report.rs",
+      "sha256": "91bcbb936fecaf5912e2453d6f478625d296fa2b136bc592425ca61bef81ad10",
+      "size_bytes": 76851
+    },
+    {
+      "path": "rust/crates/proletariusd/src/multistandby_runtime_report/legacy_http.rs",
+      "sha256": "687f6428afc41eb6f3147a8a16d03c28e8b013752cb5f2caf0ee82a2e3d06d42",
+      "size_bytes": 4175
+    },
+    {
+      "path": "rust/crates/proletariusd/src/multistandby_send.rs",
+      "sha256": "0ef58752a99823b193124387a4b6868099b1ffade3c97fcea35ce56c6773d23a",
+      "size_bytes": 16715
+    },
+    {
+      "path": "rust/crates/proletariusd/src/multistandby_store.rs",
+      "sha256": "c05251e5487a839490700354f7e264617f84c391585869230b6f145d256eb72c",
+      "size_bytes": 144788
+    },
+    {
+      "path": "rust/crates/proletariusd/src/native_ims_actor.rs",
+      "sha256": "86f25a2cd47c6138dbbdc14a9410fe919a3e1eb7c0a584d99f8a4e97aa84e20f",
+      "size_bytes": 40902
+    },
+    {
+      "path": "rust/crates/proletariusd/src/native_ims_calls.rs",
+      "sha256": "0b3a0910123310fdf9df51dfa86ab9e203d10e744928b7dc5725716e7d9c6cb1",
+      "size_bytes": 173139
+    },
+    {
+      "path": "rust/crates/proletariusd/src/native_ims_calls/media.rs",
+      "sha256": "67db6074a7c2c952da9c1822f99e53cc237182030ebbd356359ec2e239ba46fc",
+      "size_bytes": 59274
+    },
+    {
+      "path": "rust/crates/proletariusd/src/native_registered_session.rs",
+      "sha256": "ea9993f05da5f625b354d914c84fa7cc0547d035f748af3c3cd4d04de9272031",
+      "size_bytes": 20808
+    },
+    {
+      "path": "rust/crates/proletariusd/src/native_vowifi_session.rs",
+      "sha256": "781ab3ef43264f40727e62352703e88eb35eded5a5b5ecebc3f92b419de18225",
+      "size_bytes": 193513
+    },
+    {
+      "path": "rust/crates/proletariusd/src/native_vowifi_session/api.rs",
+      "sha256": "69cd4a83497b2cf6085163d4c4fbeb736a0cc469757afbff19be12da929f46da",
+      "size_bytes": 18753
+    },
+    {
+      "path": "rust/crates/proletariusd/src/native_vowifi_session/configuration.rs",
+      "sha256": "995fd4f484cd0f54615499f192775f555fcce2924af9608e65f8e227c3bcc5e9",
+      "size_bytes": 14520
+    },
+    {
+      "path": "rust/crates/proletariusd/src/native_vowifi_session/module.rs",
+      "sha256": "968eb73d574996bf6f3898a0bf377c76561e6f49b28b3ee185ee6c0e3b3cb971",
+      "size_bytes": 37290
+    },
+    {
+      "path": "rust/crates/proletariusd/src/native_vowifi_session/multi.rs",
+      "sha256": "07ac72245b2ee011de9c583f47219392806ffdcb4f047b1302e1458908a13d29",
+      "size_bytes": 11649
+    },
+    {
+      "path": "rust/crates/proletariusd/src/native_vowifi_session/ordinary/registration_identity.rs",
+      "sha256": "f88890fbac06c1d8429ef1ef8f104be291f613e43ef1a491d57b155b318142dc",
+      "size_bytes": 8227
+    },
+    {
+      "path": "rust/crates/proletariusd/src/native_vowifi_session/registration_refresh.rs",
+      "sha256": "c4d04d2f2376e440495af87fe4b8719b380515a6270746c12f7eea2863e21455",
+      "size_bytes": 1148
+    },
+    {
+      "path": "rust/crates/proletariusd/src/native_vowifi_session/service.rs",
+      "sha256": "90fcfd8a1e5e8e01addd072fba444f5dbf446d26a92beff97733809e6a2ded09",
+      "size_bytes": 62199
+    },
+    {
+      "path": "rust/crates/proletariusd/src/native_vowifi_session/service/production_integration/module_exchange.rs",
+      "sha256": "5accd8ace3038b1a47154ef3880b01e49e7e147e6f9da5c80a991bfcf62066f1",
+      "size_bytes": 17538
+    },
+    {
+      "path": "rust/crates/proletariusd/src/native_vowifi_session/service/sms.rs",
+      "sha256": "36dbcdd83bfc6b0e55a247fdeed9543a66a5fbcd0b1357fe99b72a9a4e4746de",
+      "size_bytes": 3149
+    },
+    {
+      "path": "rust/crates/proletariusd/src/native_vowifi_session/startup_transport.rs",
+      "sha256": "e815b0b174b5945325e344f503f1dfae9bceb57065bdf077f8315e491ada3c45",
+      "size_bytes": 7856
+    },
+    {
+      "path": "rust/crates/proletariusd/src/network_check.rs",
+      "sha256": "fb6bdfaeff9b0b016bdeea9a7580092b2fe9244effe10bb9755578ef1127bc3f",
+      "size_bytes": 7349
+    },
+    {
+      "path": "rust/crates/proletariusd/src/network_diagnostic.rs",
+      "sha256": "d9ac968fdd2f8f0371dae45ccdaa5537699a5ca1b10f8c503069393459e6932b",
+      "size_bytes": 19393
+    },
+    {
+      "path": "rust/crates/proletariusd/src/network_services.rs",
+      "sha256": "79462cd00d6f14825e39f6d2d970fc5c6931cdd79e3701415f4828062f5add1e",
+      "size_bytes": 16183
+    },
+    {
+      "path": "rust/crates/proletariusd/src/network_traffic.rs",
+      "sha256": "e24d4b244de344915fc3da1cf38363b4efc2a0a86da7c444c23cff493312cfba",
+      "size_bytes": 14162
+    },
+    {
+      "path": "rust/crates/proletariusd/src/ordinary_vowifi_admission.rs",
+      "sha256": "cd28a2449fdea23e27c1b07eef615894ad85079831541a9102decfebb6abaf55",
+      "size_bytes": 26296
+    },
+    {
+      "path": "rust/crates/proletariusd/src/profile_notes.rs",
+      "sha256": "6b029ec86eb486b5212ebcf2883429cfcd77f1c8ebdf2b7f595df16efc85f1ac",
+      "size_bytes": 17964
+    },
+    {
+      "path": "rust/crates/proletariusd/src/proxy_policy.rs",
+      "sha256": "0b7fc803e254c6fcfac2ce8e943d1ed60cf12e53f690202ab0961dda4b5c092b",
+      "size_bytes": 5809
+    },
+    {
+      "path": "rust/crates/proletariusd/src/proxy_probe.rs",
+      "sha256": "d4d08a7bbda466979f0f6c70222f63bb55bd84e385a8c93140754e49a6fb7333",
+      "size_bytes": 15149
+    },
+    {
+      "path": "rust/crates/proletariusd/src/public_http.rs",
+      "sha256": "87bb6c3ee78523a4282a549dd1611fb8b9cfa47a6f450e0570967425601d8870",
+      "size_bytes": 43367
+    },
+    {
+      "path": "rust/crates/proletariusd/src/qmi_enhancement.rs",
+      "sha256": "121f685e2bb86799ddb53c5ea4a78dfe76a5bc3dff2a90228ded02822f4df514",
+      "size_bytes": 91115
+    },
+    {
+      "path": "rust/crates/proletariusd/src/qmi_native_startup.rs",
+      "sha256": "61bb7ddf11095dd968fcc4a6fdd5b9322f3203ef2c104524430cc243cc5451bd",
+      "size_bytes": 26416
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_auth.rs",
+      "sha256": "4e79efadd491249e4e59a686dc84c80ba85a0048f04f1959b0c8e1de18d2a3d6",
+      "size_bytes": 34514
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_ble_apdu.rs",
+      "sha256": "5e03c5d2315d080832bd13b564d88a040edb9ac4586986c3671c2338a9fb49d7",
+      "size_bytes": 34408
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_ble_control.rs",
+      "sha256": "515b753dd852f54bd39a9029fb279bd9ccb03c7381ee93d8b1e502ebb2e69b82",
+      "size_bytes": 9369
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_ble_gateway.rs",
+      "sha256": "bdccf4e4b0142c47300a7cd70ddf27f31c88c4515649dc847ad7ffc381d870dc",
+      "size_bytes": 9522
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_ble_status.rs",
+      "sha256": "c664c4aa7f2f1fa04f2dd5a1bf7de056b0e5b3110bd83cad82bf9cdeb640c428",
+      "size_bytes": 5958
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_control.rs",
+      "sha256": "3ca47c04886b6cb65cffc740d25709b7c667f76fccb1d234cf6cf41be63ff3d0",
+      "size_bytes": 10523
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_device_identity.rs",
+      "sha256": "179d0ed6d29038bf462298f2a84ea57e8af6baf9416934578da9ab38897f7291",
+      "size_bytes": 21276
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_eap_aka.rs",
+      "sha256": "518cb2f55dc34bca9a19a41afb1dadbe32ed255b7fa3ad0c99512884308c001f",
+      "size_bytes": 15277
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_esim_download.rs",
+      "sha256": "14f5a32a57c870f986b698c25564f97feb9578cad7f6b2a8429d1f4b6a91d83e",
+      "size_bytes": 298654
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_hotplug.rs",
+      "sha256": "26c03e1abf062fc7aea5c7635d4c8c8b875b00f7ccbad94a3dfea88d9acc0b3f",
+      "size_bytes": 14156
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_identity.rs",
+      "sha256": "ff566b2795a357560d417846cf121808fe18dcc1113a99d00421c11dd621517e",
+      "size_bytes": 7503
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_info_projection.rs",
+      "sha256": "a5e6ab658aaa1f88796eff38a762f7dbaab917193c980d9ccd1480471cdd42ef",
+      "size_bytes": 7211
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_inventory.rs",
+      "sha256": "5e9d280f8871b5a8cfc2059e3a39822a538a24f06d29762df62d091373618f90",
+      "size_bytes": 10653
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_lifecycle.rs",
+      "sha256": "604c4040b8a6d590bfcf59f56bc2f153ef200820214513117dbcf903ef673239",
+      "size_bytes": 64625
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_lifecycle/presence.rs",
+      "sha256": "91b0aa65f382df88420af53b77289714f9de33af60a0fe5394c7612896f2e04d",
+      "size_bytes": 29846
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_pcsc.rs",
+      "sha256": "d7c7492e44821ac3e2f24cddea223c8355c99af20aa59852e358f2d614f89376",
+      "size_bytes": 76812
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_pcsc/lifecycle_binding.rs",
+      "sha256": "aab9661a4d0e10243cbc67dce96575978bb86f321ca4dc11690e3d11a8aa8663",
+      "size_bytes": 3774
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_pcsc/presence.rs",
+      "sha256": "70b2841e07fc28fc19ec76ec4179bd3b2f7615777891014f94e5c05402671276",
+      "size_bytes": 14123
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_proxy_check.rs",
+      "sha256": "dc173f5ffdb899ea405abb7558e6f8367921fa1c17210a2f8c37df861c9ac3a3",
+      "size_bytes": 13785
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_reservation/business.rs",
+      "sha256": "70354e81535aa755d2c8c7b37ca2158c54e60ddd0331bf307862231dd500ed6d",
+      "size_bytes": 20496
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_reservation/lifecycle.rs",
+      "sha256": "701fe171370a12568b5f3b5578b6ee418cbb8d907663e689a482920fdd51805c",
+      "size_bytes": 34422
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_reservation/native.rs",
+      "sha256": "02b1ed858f2e8b82f9bdcf9adec52cc944472555b864c659c3a6c82ea6a577ff",
+      "size_bytes": 21786
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_session_lease.rs",
+      "sha256": "88305cc83566eb882588b145a42fabaa70aa218a7d808d1519549dab5f5e22fd",
+      "size_bytes": 35515
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_session_lease/coordinator.rs",
+      "sha256": "c17245f343ffbfee38da012dafada163d973e44e4fd97bfcdfa86572293275eb",
+      "size_bytes": 34586
+    },
+    {
+      "path": "rust/crates/proletariusd/src/reader_task.rs",
+      "sha256": "96e877471343798d488a89fd8af541957b223b35e55f2f6b06aa8ce85fba8a3a",
+      "size_bytes": 8328
+    },
+    {
+      "path": "rust/crates/proletariusd/src/safe_events.rs",
+      "sha256": "64a7ba0a47dd547957e60fd3bd7f1a149215cce0d3d13212a5000d972ea9d16d",
+      "size_bytes": 18554
+    },
+    {
+      "path": "rust/crates/proletariusd/src/sms_adopt.rs",
+      "sha256": "83aa359ff5905e2868a992e33dc97f8d75ea24e3da801c03b84020d187e17531",
+      "size_bytes": 7642
+    },
+    {
+      "path": "rust/crates/proletariusd/src/sms_clear.rs",
+      "sha256": "34c1f74eb0f8fdc68daec26922fef552b1ce41a2a83d5e8182b1d21a442648d2",
+      "size_bytes": 11094
+    },
+    {
+      "path": "rust/crates/proletariusd/src/sms_codec.rs",
+      "sha256": "94b4132fae2311a07bdb0016e0e6da365e738b6feeb9e8b571b8fca94d4602bf",
+      "size_bytes": 41116
+    },
+    {
+      "path": "rust/crates/proletariusd/src/sms_delete.rs",
+      "sha256": "d6067eca22a7cd2879c44cd1f06bdbe6a6965101f225a028e474e71ddc3783e8",
+      "size_bytes": 14004
+    },
+    {
+      "path": "rust/crates/proletariusd/src/sms_delete_sender.rs",
+      "sha256": "562d14b693ed23e24cedcf71422e60374e04be6c6c7efbc413225ded165f5d53",
+      "size_bytes": 14657
+    },
+    {
+      "path": "rust/crates/proletariusd/src/sms_device_service.rs",
+      "sha256": "f255f9cf74a56dffc271c09ab80e4128004b1347965927468f83d247faa3d4fb",
+      "size_bytes": 35681
+    },
+    {
+      "path": "rust/crates/proletariusd/src/sms_export.rs",
+      "sha256": "fea5fb30805aa78e870e889bdc0b57283050657dcfa10507d76c344ec92dd28e",
+      "size_bytes": 58521
+    },
+    {
+      "path": "rust/crates/proletariusd/src/sms_forwarding.rs",
+      "sha256": "f5050ac0ed988b09be8c4e5eaaf97ebc009b1818e869ce35f063df3b995a47bd",
+      "size_bytes": 82720
+    },
+    {
+      "path": "rust/crates/proletariusd/src/sms_status.rs",
+      "sha256": "198c5c8b9b0e24c75a5e78fac17867fd56b28fce4aa1724bddebfcec1a520067",
+      "size_bytes": 3580
+    },
+    {
+      "path": "rust/crates/proletariusd/src/sms_store_health.rs",
+      "sha256": "f8003a4b129662016245807fb88bc08f3c3d0e32606091dc6f0585dbd24ea53f",
+      "size_bytes": 34756
+    },
+    {
+      "path": "rust/crates/proletariusd/src/snapshot.rs",
+      "sha256": "3977b8993a84a03204945fca2a8a179a321280f72465c5a6fa4b456363e9377e",
+      "size_bytes": 22673
+    },
+    {
+      "path": "rust/crates/proletariusd/src/startup_recovery/reconcile.rs",
+      "sha256": "8ceb9b164fe34344172f64b80349c351e3ab3b658183fc93f2c40780faa48f82",
+      "size_bytes": 32913
+    },
+    {
+      "path": "rust/crates/proletariusd/src/startup_recovery/reconcile/backup_lifecycle.rs",
+      "sha256": "8b9e203aad234bf94e7da9accfcb5d35faa36d080b4e69a2861563cbf1538b1d",
+      "size_bytes": 59193
+    },
+    {
+      "path": "rust/crates/proletariusd/src/startup_recovery/reconcile/backup_lifecycle/durability.rs",
+      "sha256": "3e11ae13ceaf7d7b1c916fdabddd0d16e72fedae22568b16da7422c23af1e25d",
+      "size_bytes": 15030
+    },
+    {
+      "path": "rust/crates/proletariusd/src/startup_recovery/reconcile/ledger.rs",
+      "sha256": "6baed0e791e5745cb64e64cfb4f55275c63204f8dac0b2c838cfea592f1f0f4a",
+      "size_bytes": 65093
+    },
+    {
+      "path": "rust/crates/proletariusd/src/startup_recovery/reconcile/storage.rs",
+      "sha256": "3421c95542bccf62a61e2edf6bcc153deb4dc5b35331301a675f273c8c7acd12",
+      "size_bytes": 37778
+    },
+    {
+      "path": "rust/crates/proletariusd/src/transport_selection.rs",
+      "sha256": "5df4ca2eca478d783583fbf12495483e88dd0a6977f61123f1142998265318b9",
+      "size_bytes": 38841
+    },
+    {
+      "path": "rust/crates/proletariusd/src/upstream.rs",
+      "sha256": "431fcb9f503e3367eeff30359fea9aed64eccc3e0c61f8e0ad8b596c9dbc28b2",
+      "size_bytes": 19598
+    },
+    {
+      "path": "rust/crates/proletariusd/src/usb_at.rs",
+      "sha256": "650a6616f0bf12a22d3337ae86b2940d4e925e8b22cbbf5477f39b96b36ee911",
+      "size_bytes": 157089
+    },
+    {
+      "path": "rust/crates/proletariusd/src/usb_at/native_startup.rs",
+      "sha256": "4a63f9260915f5715f73680b9df997e446c7b54a3c81410a352f548ae98a0e73",
+      "size_bytes": 5169
+    },
+    {
+      "path": "rust/crates/proletariusd/src/usb_at_storage.rs",
+      "sha256": "25a25e049d0aaa408c362c6eb8bde1cfd94b7a7dd11b93a23e7672600f9eb004",
+      "size_bytes": 21348
+    },
+    {
+      "path": "rust/crates/proletariusd/src/usb_at_transport.rs",
+      "sha256": "79386a1a991761d6db052fd5e3186dbb78d18163fbca881eba625818cf6f5bec",
+      "size_bytes": 40098
+    },
+    {
+      "path": "rust/crates/proletariusd/src/usb_at_transport/recovery/reconcile.rs",
+      "sha256": "2e15ab9d6022800df7ff6aadf9e40d19106ba5f66fb0f801d29926e61bce6641",
+      "size_bytes": 26517
+    },
+    {
+      "path": "rust/crates/proletariusd/src/usb_sms_receive.rs",
+      "sha256": "b8cd3087a77255b0a8fe3821a4a46b60a162f08f156ad1d12f2bbde882c37b0e",
+      "size_bytes": 41023
+    },
+    {
+      "path": "rust/crates/proletariusd/src/usb_sms_storage_service.rs",
+      "sha256": "91d6f3d2459487e3d951bf0f0dfca3ad851e1b8afbba5ebf6508754ff42e6de7",
+      "size_bytes": 28815
+    },
+    {
+      "path": "rust/crates/proletariusd/src/voice_enabled.rs",
+      "sha256": "690c1bf938bec06d9a44d698771b74d76831ac0bfa72a3fb5450832b3fa4a8f2",
+      "size_bytes": 12081
+    },
+    {
+      "path": "rust/crates/proletariusd/src/vowifi_session_policy.rs",
+      "sha256": "5b19d49dfa2999e15cefb7844002433ff991714612f5820fb36ab82cfc44ad79",
+      "size_bytes": 2884
+    }
+  ],
+  "previous_snapshot": {
+    "path": "docs/optimization/all-rust/iteration-657-source-snapshot.json",
+    "sha256": "e45d1573ca0d7ace4eb95cd739105260ca31239ff4bcb4c5d9691ae451400383"
+  },
+  "scope_metadata_binding": {
+    "protocol": {
+      "path": "docs/optimization/all-rust/acceptance-scope-protocol.json",
+      "sha256": "dd821262f0a7656bb55cd5706112eef1befcb4af91869a83696bc0a717715985"
+    },
+    "retained_catalog_sha256": "b246fb5ee4776b5e3b30f062fa646f9b0a45bc7b7c7e256402ce9377184f3d21",
+    "previous_retained_catalog_sha256": "b246fb5ee4776b5e3b30f062fa646f9b0a45bc7b7c7e256402ce9377184f3d21",
+    "new_leaf_ids": 0,
+    "new_functional_passes": 0
+  }
+}

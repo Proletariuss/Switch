@@ -1,0 +1,99 @@
+{
+  "crate": "proletarius-ims",
+  "example": "ussd_request_fixture",
+  "kind": "go-computed serializer contract; dialog composition separate",
+  "rows": [
+    {
+      "name": "USSD INFO",
+      "args": [
+        "INFO",
+        "sip:*123%23;phone-context=ims.example@ims.example;user=dialstring",
+        "VVNTRCBib2R5",
+        "11",
+        "VmlhAFNJUC8yLjAvVENQIDE5Mi4wLjIuMTo1MDYwO2JyYW5jaD16OWhHNGJLLkJXZmR4T0o3Vm9Gb0FONFE7cnBvcnQ=",
+        "RnJvbQA8c2lwOnVzZXJAaW1zLmV4YW1wbGU+O3RhZz1sb2NhbA==",
+        "VG8APHNpcDpzZXJ2aWNlQGltcy5leGFtcGxlPg==",
+        "Q2FsbC1JRAB1c3NkLTE=",
+        "Q1NlcQAyIElORk8=",
+        "TWF4LUZvcndhcmRzADcw",
+        "Um91dGUAPHNpcDpwcm94eS5leGFtcGxlO2xyPg==",
+        "SW5mby1QYWNrYWdlAGcuM2dwcC51c3Nk",
+        "Q29udGVudC1EaXNwb3NpdGlvbgBJbmZvLVBhY2thZ2U=",
+        "VXNlci1BZ2VudABTd2l0Y2g=",
+        "Q29udGVudC1UeXBlAGFwcGxpY2F0aW9uL3ZuZC4zZ3BwLnVzc2QreG1s"
+      ],
+      "expected_stdout": "SU5GTyBzaXA6KjEyMyUyMztwaG9uZS1jb250ZXh0PWltcy5leGFtcGxlQGltcy5leGFtcGxlO3VzZXI9ZGlhbHN0cmluZyBTSVAvMi4wDQpWaWE6IFNJUC8yLjAvVENQIDE5Mi4wLjIuMTo1MDYwO2JyYW5jaD16OWhHNGJLLkJXZmR4T0o3Vm9Gb0FONFE7cnBvcnQNCkZyb206IDxzaXA6dXNlckBpbXMuZXhhbXBsZT47dGFnPWxvY2FsDQpUbzogPHNpcDpzZXJ2aWNlQGltcy5leGFtcGxlPg0KQ2FsbC1JRDogdXNzZC0xDQpDU2VxOiAyIElORk8NCk1heC1Gb3J3YXJkczogNzANClJvdXRlOiA8c2lwOnByb3h5LmV4YW1wbGU7bHI+DQpJbmZvLVBhY2thZ2U6IGcuM2dwcC51c3NkDQpDb250ZW50LURpc3Bvc2l0aW9uOiBJbmZvLVBhY2thZ2UNClVzZXItQWdlbnQ6IFN3aXRjaA0KQ29udGVudC1UeXBlOiBhcHBsaWNhdGlvbi92bmQuM2dwcC51c3NkK3htbA0KQ29udGVudC1MZW5ndGg6IDkNCg0KVVNTRCBib2R5"
+    },
+    {
+      "name": "invite-with-sdp",
+      "args": [
+        "INVITE",
+        "tel:+8618907313060",
+        "dj0wDQo=",
+        "18",
+        "VmlhAFNJUC8yLjAvVENQIDE5Mi4wLjIuMTo1MDY0O2JyYW5jaD16OWhHNGJLLllUbEVKOTVERnZkZFJxTTg7cnBvcnQ=",
+        "RnJvbQA8c2lwOnN1YnNjcmliZXJAaW1zLmV4YW1wbGUudGVzdD47dGFnPWI5c0prUFZSRjQ5MVNLdnc=",
+        "VG8APHRlbDorODYxODkwNzMxMzA2MD4=",
+        "Q2FsbC1JRABjYWxsQGV4YW1wbGUudGVzdA==",
+        "Q1NlcQA4IElOVklURQ==",
+        "TWF4LUZvcndhcmRzADcw",
+        "Um91dGUAPHNpcDppbXMuZXhhbXBsZS50ZXN0OjUwNjA7bHI+",
+        "Q29udGFjdAA8c2lwOnN1YnNjcmliZXJAMTkyLjAuMi4xOjUwNjM7dHJhbnNwb3J0PXRjcD47K2cuM2dwcC5hY2Nlc3N0eXBlPSJJRUVFLTgwMi4xMSI7YXVkaW87K2cuM2dwcC5zbXNpcDsrZy4zZ3BwLmljc2ktcmVmPSJ1cm4lM0F1cm4tNyUzQTNncHAtc2VydmljZS5pbXMuaWNzaS5tbXRlbCI7K3NpcC5pbnN0YW5jZT0iPHVybjp1dWlkOmNmZTZiOTBiLTE1ODYtNGMxYy04NzkyLTQ3MTcxMDRmNTg0Nj4iO2V4cGlyZXM9MzYwMA==",
+        "UC1QcmVmZXJyZWQtSWRlbnRpdHkAPHNpcDpzdWJzY3JpYmVyQGltcy5leGFtcGxlLnRlc3Q+",
+        "UC1QcmVmZXJyZWQtU2VydmljZQB1cm46dXJuLTc6M2dwcC1zZXJ2aWNlLmltcy5pY3NpLm1tdGVs",
+        "QWNjZXB0LUNvbnRhY3QAKjsrZy4zZ3BwLmljc2ktcmVmPSJ1cm4lM0F1cm4tNyUzQTNncHAtc2VydmljZS5pbXMuaWNzaS5tbXRlbCI=",
+        "U2Vzc2lvbi1FeHBpcmVzADE4MDA7cmVmcmVzaGVyPXVhYw==",
+        "TWluLVNFADkw",
+        "QWNjZXB0AGFwcGxpY2F0aW9uL3NkcA==",
+        "U3VwcG9ydGVkADEwMHJlbCx0aW1lcixyZXBsYWNlcw==",
+        "QWxsb3cASU5WSVRFLEFDSyxDQU5DRUwsQllFLFVQREFURSxQUkFDSyxJTkZPLE9QVElPTlMsTUVTU0FHRQ==",
+        "VXNlci1BZ2VudABTd2l0Y2gtdGVzdA==",
+        "Q29udGVudC1UeXBlAGFwcGxpY2F0aW9uL3NkcA=="
+      ],
+      "expected_stdout": "SU5WSVRFIHRlbDorODYxODkwNzMxMzA2MCBTSVAvMi4wDQpWaWE6IFNJUC8yLjAvVENQIDE5Mi4wLjIuMTo1MDY0O2JyYW5jaD16OWhHNGJLLllUbEVKOTVERnZkZFJxTTg7cnBvcnQNCkZyb206IDxzaXA6c3Vic2NyaWJlckBpbXMuZXhhbXBsZS50ZXN0Pjt0YWc9YjlzSmtQVlJGNDkxU0t2dw0KVG86IDx0ZWw6Kzg2MTg5MDczMTMwNjA+DQpDYWxsLUlEOiBjYWxsQGV4YW1wbGUudGVzdA0KQ1NlcTogOCBJTlZJVEUNCk1heC1Gb3J3YXJkczogNzANClJvdXRlOiA8c2lwOmltcy5leGFtcGxlLnRlc3Q6NTA2MDtscj4NCkNvbnRhY3Q6IDxzaXA6c3Vic2NyaWJlckAxOTIuMC4yLjE6NTA2Mzt0cmFuc3BvcnQ9dGNwPjsrZy4zZ3BwLmFjY2Vzc3R5cGU9IklFRUUtODAyLjExIjthdWRpbzsrZy4zZ3BwLnNtc2lwOytnLjNncHAuaWNzaS1yZWY9InVybiUzQXVybi03JTNBM2dwcC1zZXJ2aWNlLmltcy5pY3NpLm1tdGVsIjsrc2lwLmluc3RhbmNlPSI8dXJuOnV1aWQ6Y2ZlNmI5MGItMTU4Ni00YzFjLTg3OTItNDcxNzEwNGY1ODQ2PiI7ZXhwaXJlcz0zNjAwDQpQLVByZWZlcnJlZC1JZGVudGl0eTogPHNpcDpzdWJzY3JpYmVyQGltcy5leGFtcGxlLnRlc3Q+DQpQLVByZWZlcnJlZC1TZXJ2aWNlOiB1cm46dXJuLTc6M2dwcC1zZXJ2aWNlLmltcy5pY3NpLm1tdGVsDQpBY2NlcHQtQ29udGFjdDogKjsrZy4zZ3BwLmljc2ktcmVmPSJ1cm4lM0F1cm4tNyUzQTNncHAtc2VydmljZS5pbXMuaWNzaS5tbXRlbCINClNlc3Npb24tRXhwaXJlczogMTgwMDtyZWZyZXNoZXI9dWFjDQpNaW4tU0U6IDkwDQpBY2NlcHQ6IGFwcGxpY2F0aW9uL3NkcA0KU3VwcG9ydGVkOiAxMDByZWwsdGltZXIscmVwbGFjZXMNCkFsbG93OiBJTlZJVEUsQUNLLENBTkNFTCxCWUUsVVBEQVRFLFBSQUNLLElORk8sT1BUSU9OUyxNRVNTQUdFDQpVc2VyLUFnZW50OiBTd2l0Y2gtdGVzdA0KQ29udGVudC1UeXBlOiBhcHBsaWNhdGlvbi9zZHANCkNvbnRlbnQtTGVuZ3RoOiA1DQoNCnY9MA0K"
+    },
+    {
+      "name": "prack-with-route-set",
+      "args": [
+        "PRACK",
+        "sip:tas@ims.example.test",
+        "",
+        "12",
+        "VmlhAFNJUC8yLjAvVENQIDE5Mi4wLjIuMTo1MDY0O2JyYW5jaD16OWhHNGJLLnNYQmNYVU5TN05PTWJJN1I7cnBvcnQ=",
+        "RnJvbQA8c2lwOnN1YnNjcmliZXJAaW1zLmV4YW1wbGUudGVzdD47dGFnPWxvY2Fs",
+        "VG8APHRlbDorODYxODkwNzMxMzA2MD47dGFnPXJlbW90ZQ==",
+        "Q2FsbC1JRABjYWxsQGV4YW1wbGUudGVzdA==",
+        "Q1NlcQA4IFBSQUNL",
+        "TWF4LUZvcndhcmRzADcw",
+        "Um91dGUAPHNpcDplZGdlLWEuZXhhbXBsZS50ZXN0O2xyPg==",
+        "Um91dGUAPHNpcDplZGdlLWIuZXhhbXBsZS50ZXN0O2xyPg==",
+        "U3VwcG9ydGVkADEwMHJlbCx0aW1lcixyZXBsYWNlcw==",
+        "QWxsb3cASU5WSVRFLEFDSyxDQU5DRUwsQllFLFVQREFURSxQUkFDSyxJTkZPLE9QVElPTlMsTUVTU0FHRQ==",
+        "VXNlci1BZ2VudABTd2l0Y2gtdGVzdA==",
+        "UkFjawAyIDcgSU5WSVRF"
+      ],
+      "expected_stdout": "UFJBQ0sgc2lwOnRhc0BpbXMuZXhhbXBsZS50ZXN0IFNJUC8yLjANClZpYTogU0lQLzIuMC9UQ1AgMTkyLjAuMi4xOjUwNjQ7YnJhbmNoPXo5aEc0Yksuc1hCY1hVTlM3Tk9NYkk3UjtycG9ydA0KRnJvbTogPHNpcDpzdWJzY3JpYmVyQGltcy5leGFtcGxlLnRlc3Q+O3RhZz1sb2NhbA0KVG86IDx0ZWw6Kzg2MTg5MDczMTMwNjA+O3RhZz1yZW1vdGUNCkNhbGwtSUQ6IGNhbGxAZXhhbXBsZS50ZXN0DQpDU2VxOiA4IFBSQUNLDQpNYXgtRm9yd2FyZHM6IDcwDQpSb3V0ZTogPHNpcDplZGdlLWEuZXhhbXBsZS50ZXN0O2xyPg0KUm91dGU6IDxzaXA6ZWRnZS1iLmV4YW1wbGUudGVzdDtscj4NClN1cHBvcnRlZDogMTAwcmVsLHRpbWVyLHJlcGxhY2VzDQpBbGxvdzogSU5WSVRFLEFDSyxDQU5DRUwsQllFLFVQREFURSxQUkFDSyxJTkZPLE9QVElPTlMsTUVTU0FHRQ0KVXNlci1BZ2VudDogU3dpdGNoLXRlc3QNClJBY2s6IDIgNyBJTlZJVEUNCkNvbnRlbnQtTGVuZ3RoOiAwDQoNCg=="
+    },
+    {
+      "name": "cancel-keeps-invite-branch",
+      "args": [
+        "CANCEL",
+        "tel:+8618907313060",
+        "",
+        "10",
+        "VmlhAFNJUC8yLjAvVENQIDE5Mi4wLjIuMTo1MDY0O2JyYW5jaD16OWhHNGJLLW9yaWdpbmFsO3Jwb3J0",
+        "RnJvbQA8c2lwOnN1YnNjcmliZXJAaW1zLmV4YW1wbGUudGVzdD47dGFnPWxvY2Fs",
+        "VG8APHRlbDorODYxODkwNzMxMzA2MD4=",
+        "Q2FsbC1JRABjYWxsQGV4YW1wbGUudGVzdA==",
+        "Q1NlcQA3IENBTkNFTA==",
+        "TWF4LUZvcndhcmRzADcw",
+        "Um91dGUAPHNpcDppbXMuZXhhbXBsZS50ZXN0OjUwNjA7bHI+",
+        "U3VwcG9ydGVkADEwMHJlbCx0aW1lcixyZXBsYWNlcw==",
+        "QWxsb3cASU5WSVRFLEFDSyxDQU5DRUwsQllFLFVQREFURSxQUkFDSyxJTkZPLE9QVElPTlMsTUVTU0FHRQ==",
+        "VXNlci1BZ2VudABTd2l0Y2gtdGVzdA=="
+      ],
+      "expected_stdout": "Q0FOQ0VMIHRlbDorODYxODkwNzMxMzA2MCBTSVAvMi4wDQpWaWE6IFNJUC8yLjAvVENQIDE5Mi4wLjIuMTo1MDY0O2JyYW5jaD16OWhHNGJLLW9yaWdpbmFsO3Jwb3J0DQpGcm9tOiA8c2lwOnN1YnNjcmliZXJAaW1zLmV4YW1wbGUudGVzdD47dGFnPWxvY2FsDQpUbzogPHRlbDorODYxODkwNzMxMzA2MD4NCkNhbGwtSUQ6IGNhbGxAZXhhbXBsZS50ZXN0DQpDU2VxOiA3IENBTkNFTA0KTWF4LUZvcndhcmRzOiA3MA0KUm91dGU6IDxzaXA6aW1zLmV4YW1wbGUudGVzdDo1MDYwO2xyPg0KU3VwcG9ydGVkOiAxMDByZWwsdGltZXIscmVwbGFjZXMNCkFsbG93OiBJTlZJVEUsQUNLLENBTkNFTCxCWUUsVVBEQVRFLFBSQUNLLElORk8sT1BUSU9OUyxNRVNTQUdFDQpVc2VyLUFnZW50OiBTd2l0Y2gtdGVzdA0KQ29udGVudC1MZW5ndGg6IDANCg0K"
+    }
+  ],
+  "schema": 1
+}

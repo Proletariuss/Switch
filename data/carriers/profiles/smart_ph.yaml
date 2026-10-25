@@ -1,0 +1,114 @@
+version: 3
+kind: carrier_bundle
+id: apple_smart_ph
+bundle: Smart_ph.bundle
+supported_plmns:
+    - "51503"
+plmn_overrides:
+    "51503":
+        apns:
+            - apn: internet
+              type_mask: 32817
+              allowed_ip_stack: ipv4
+            - apn: IMS
+              type_mask: 131072
+              tech_type_mask: 131072
+              allowed_ip_stack: ipv4v6
+              support_switch_over: true
+              use_network_mtu: false
+        apple:
+            carrier_entitlements:
+                supported_entitlements: 5137
+        e911:
+            over_itech_supported: true
+            wifi_calling_without_entitlement: true
+            emergency_urns:
+                "911": urn:service:sos
+        entitlement:
+            entitlement_url: https://esim-pldt-es-prd.ipaas.amdocs.com/pldt/prd/executeAppleActions
+        ims:
+            apn: ims
+            ip_stack: ipv4v6
+            domain: ims.mnc003.mcc515.3gppnetwork.org
+            impi_format: imsi@carrierDomain
+            impu_format: msisdn@carrierDomain
+            epdg:
+                address: epdg.epc.mnc003.mcc515.pub.3gppnetwork.org
+                configuration_attributes:
+                    - identifier: 16384
+                      name: AssignedPCSCFIPv4
+                      type: v4
+                    - identifier: 16386
+                      name: AssignedPCSCFIPv6
+                      type: v6
+            ike:
+                proposals:
+                    - encryption:
+                        - aes256
+                      integrity:
+                        - sha256
+                      prf:
+                        - sha256
+                      dh_groups:
+                        - 14
+                      lifetime_seconds: 86400
+                      authentication_method: None
+                      eap_method: EAP-AKA
+                nat_keepalive_enabled: true
+                dpd:
+                    enabled: false
+                    interval_seconds: 600
+                    max_retries: 4
+                    retry_interval_seconds: 10
+                child_sa:
+                    proposals:
+                        - source_branch: FirstChild
+                          encryption:
+                            - aes256
+                          integrity:
+                            - sha256
+                          rekey_pfs_group: 14
+                          esn: auto
+                          install_policies: true
+                          lifetime_seconds: 86400
+                    replay_window_size: 12
+                local_identifier: 0$imsi@nai.epc.mnc$mnc.mcc$mcc.3gppnetwork.org
+                validate_remote_certificate: false
+            register:
+                use_ipsec: false
+                expires: 7200
+                include_cellular_network_info: true
+            signaling:
+                max_udp_message_size: 1200
+                preconditions: supported
+                support_p_early_media: false
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - 3XX
+                        - 4XX
+                        - 5XX
+                        - 6XX
+                contact:
+                    always_add_sip_instance: true
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+                sip_timers:
+                    D: 128000
+                    F: 0
+                    T1: 2000
+                    T2: 16000
+                    T4: 17000
+            media:
+                rtcp_interval_seconds: 5
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true
+        roaming:
+            wifi_calling_allowed: true

@@ -1,0 +1,16 @@
+version: 3
+kind: carrier_bundle
+id: apple_digicel_mq
+bundle: Digicel_mq.bundle
+supported_plmns:
+    - "34020"
+plmn_overrides:
+    "34020":
+        apns:
+            - apn: digicel
+              type_mask: 53
+selector_overrides:
+    34020_ID-895962002:
+        apns:
+            - apn: internet
+              type_mask: 49

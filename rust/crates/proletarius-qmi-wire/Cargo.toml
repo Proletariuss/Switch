@@ -1,0 +1,7 @@
+[package]
+name = "proletarius-qmi-wire"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "MIT"
+description = "Allocation-free QMI/QMUX wire framing and TLV codec"

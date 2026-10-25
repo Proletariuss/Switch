@@ -1,0 +1,13 @@
+version: 2
+plmn: "732111"
+profiles:
+    - id: apple_tigo_co
+      path: profiles/tigo_co.yaml
+      selectors:
+        - raw: 732111_ID-895773
+          carrier_name: Tigo
+          iso: CO
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "895773"

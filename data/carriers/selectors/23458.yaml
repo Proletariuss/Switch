@@ -1,0 +1,20 @@
+version: 2
+plmn: "23458"
+profiles:
+    - id: apple_manxtelecom_im
+      path: profiles/manxtelecom_im.yaml
+      generic: true
+      selectors:
+        - raw: "23458"
+          carrier_name: Manx Telecom
+          iso: IM
+    - id: apple_redteamobile
+      path: profiles/redteamobile.yaml
+      selectors:
+        - raw: 23458_ID-89852245280
+          carrier_name: RedteaMobile
+          iso: GB
+          conditions:
+            - field: iccid
+              match: prefix
+              value: "89852245280"

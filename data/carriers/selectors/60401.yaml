@@ -1,0 +1,10 @@
+version: 2
+plmn: "60401"
+profiles:
+    - id: apple_maroc_ma
+      path: profiles/maroc_ma.yaml
+      generic: true
+      selectors:
+        - raw: "60401"
+          carrier_name: IAM
+          iso: MA

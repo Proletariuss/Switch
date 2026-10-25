@@ -1,0 +1,44 @@
+version: 3
+kind: carrier_bundle
+id: apple_orange_sn
+bundle: Orange_sn.bundle
+supported_plmns:
+    - "60801"
+plmn_overrides:
+    "60801":
+        apns:
+            - apn: internet
+              username: internet
+              password: internet
+              type_mask: 49
+              allowed_ip_stack: ipv4
+            - apn: xcap
+              username: internet
+              password: internet
+              type_mask: 1048576
+              allowed_ip_stack: ipv4v6
+        ims:
+            register:
+                use_ipsec: true
+            signaling:
+                support_p_early_media: false
+                early_media_needs_header: true
+                csfb_on:
+                    - method: INVITE
+                      statuses:
+                        - "403"
+                        - "408"
+                        - 5XX
+                contact:
+                    additional_contact_params:
+                        - selector: REGISTER,INVITE,INVITE:*
+                          params:
+                            - +g.3gpp.mid-call
+                            - +g.3gpp.srvcc-alerting
+                            - +g.3gpp.ps2cs-srvcc-orig-pre-alerting
+            media:
+                rtp_inactivity_seconds: 20
+            ussi:
+                enabled: true
+            volte:
+                enable_volte_by_default: true

@@ -1,0 +1,10 @@
+version: 2
+plmn: "23487"
+profiles:
+    - id: apple_lebara_uk
+      path: profiles/lebara_uk.yaml
+      generic: true
+      selectors:
+        - raw: "23487"
+          carrier_name: Lebara UK
+          iso: GB
