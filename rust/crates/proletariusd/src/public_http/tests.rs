@@ -218,7 +218,9 @@ async fn g3_stop_control_public_rejections_always_disable_caching() {
         ("/api/vowifi/stop-control", "module"),
         ("/api/vowifi/%73top-control", "module"),
     ] {
-        let target = format!("{route}?scope={scope}&daemon_epoch=epoch-1&owner_id=owner-1&owner_generation=1");
+        let target = format!(
+            "{route}?scope={scope}&daemon_epoch=epoch-1&owner_id=owner-1&owner_generation=1"
+        );
         for method in ["GET", "HEAD", "POST"] {
             let stale = public(&fixture, method, &target, &[]).await;
             assert_eq!(stale.status, 409, "{method} {route}: no retained service");
