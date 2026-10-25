@@ -8,7 +8,7 @@ proletarius-platform-fs = { path = "../../../rust/crates/proletarius-platform-fs
 nix = { version = "0.30", features = ["fs", "user", "signal"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-sha2 = "0.10"
+sha2 = "0.11"
 [[bin]]
 name = "daemon-capsule-fixture"
 path = "main.rs"
