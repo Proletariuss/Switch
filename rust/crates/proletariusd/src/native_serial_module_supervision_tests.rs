@@ -739,7 +739,11 @@ async fn captured_serial_intent_retired_before_hold_releases_without_touching_re
     let intent = f.state.module_radio.native_vowifi_intent().unwrap();
     // Freeze the automatic bootstrap owner so it cannot configure another RF
     // epoch while the deliberately stale captured capability is exercised.
+    // Join the unrelated retained SMS worker before taking the command
+    // baseline; otherwise its already-admitted empty-store scan can be
+    // mistaken for work caused by the rejected stale intent.
     f.startup.begin_shutdown();
+    f.state.modem_actor.finish_sms_receiver().await.unwrap();
     f.state
         .module_radio
         .retire_producer(PRODUCER.into())
