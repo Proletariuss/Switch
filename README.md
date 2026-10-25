@@ -91,7 +91,7 @@ scripts/quit.sh                  # 正常退出应用与所属后端
 scripts/preflight-source.sh      # 可移植的版本、Rust-only 与运营商源契约检查
 ```
 
-GitHub Workflow 还会构建原生依赖、执行 Rust workspace 与完整 daemon 软件测试、将共享串口状态测试逐例放入独立进程执行，并在 App 相关变更时构建 Release App。免费额度、云端 PR 检查、Dependabot 与权限边界见 [GitHub 自动化策略](docs/GITHUB_AUTOMATION.md)。`scripts/test-migration-gates.sh` 是完整本地验收入口，其中包含冻结的宿主机来源台账；普通克隆不具备全部外部历史证据时，不应把其台账失败解释为业务源码或 DMG 失败。
+GitHub Workflow 还会构建原生依赖、执行 Rust workspace 与完整 daemon 软件测试，并把共享串口、验收 capsule 和进程级文件描述符测试放入相互隔离的进程中执行；App 相关变更还会构建 Release App。免费额度、云端 PR 检查、Dependabot 与权限边界见 [GitHub 自动化策略](docs/GITHUB_AUTOMATION.md)。`scripts/test-migration-gates.sh` 是完整本地验收入口，其中包含冻结的宿主机来源台账；普通克隆不具备全部外部历史证据时，不应把其台账失败解释为业务源码或 DMG 失败。
 
 构建脚本只接受仓库约定的相邻 `build/` 与 `dist/` 工作区布局。发布来源与为私有发布进行的最小转换见 [SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md)。
 

@@ -69,6 +69,12 @@ existing daemon warning baseline is intentionally not converted into a global
 `-D warnings` gate in one step. New warning classes should be retired in small,
 reviewable pull requests until the baseline can be made blocking.
 
+The daemon gate keeps ordinary tests parallel, but runs acceptance-capsule
+tests with an isolated physical fixture root, the process-wide file-descriptor
+baseline test in its own process, and retained serial-supervision tests one at a
+time. This preserves strict leak and ownership assertions without allowing
+unrelated parallel tests to contaminate process-global baselines.
+
 Without a paid Copilot plan, GitHub does not perform semantic AI rewrites. The
 free automation therefore limits automatic source changes to GitHub-native
 Dependabot pull requests. It does not grant a workflow permission to rewrite

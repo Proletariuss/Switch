@@ -14,7 +14,11 @@ use std::sync::{
     Arc, Mutex, OnceLock,
     atomic::{AtomicBool, Ordering},
 };
+use std::time::Duration;
 use tokio::sync::watch;
+
+const SERIAL_ADMISSION_BUDGET: Duration = Duration::from_secs(12);
+const SERIAL_ADMISSION_RETRY_DELAY: Duration = Duration::from_millis(10);
 
 /// Stable physical identity; SIM identity is compared separately on reconnect.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -216,10 +220,37 @@ impl ModuleSessionCard {
                 .serial
                 .as_ref()
                 .ok_or("module_vowifi_serial_unavailable")?;
-            let hold = actor
-                .retain_serial_module(&binding, intent.usb_inhibit())
-                .await
-                .map_err(|e| e.code)?;
+            let deadline = tokio::time::Instant::now() + SERIAL_ADMISSION_BUDGET;
+            let mut stop_changed = stop.clone();
+            let hold = loop {
+                self.check_preparation(stop)?;
+                if tokio::time::Instant::now() >= deadline {
+                    return Err("serial_card_busy");
+                }
+                // Let every retain request settle before observing cancellation.
+                // Aborting an in-flight request could discard a granted hold and
+                // strand the physical module owner.
+                match actor
+                    .retain_serial_module(&binding, intent.usb_inhibit())
+                    .await
+                {
+                    Ok(hold) => break hold,
+                    Err(error)
+                        if error.code == "serial_card_busy"
+                            && tokio::time::Instant::now() < deadline =>
+                    {
+                        let wake_at = std::cmp::min(
+                            tokio::time::Instant::now() + SERIAL_ADMISSION_RETRY_DELAY,
+                            deadline,
+                        );
+                        tokio::select! {
+                            _ = tokio::time::sleep_until(wake_at) => {},
+                            _ = stop_changed.changed() => return Err("module_vowifi_cancelled"),
+                        }
+                    }
+                    Err(error) => return Err(error.code),
+                }
+            };
             let _ = self.serial_hold.set(hold);
         } else {
             self.usb.retain_native_module(intent).map_err(|e| e.code)?;

@@ -90,9 +90,9 @@ GET 连续网络失败或长期 pending 是否会延后持久回执恢复，必�
 
 1. source preflight、契约 census、Rustfmt 和两份 Cargo metadata；
 2. Rust workspace 非 daemon 测试；
-3. daemon 除六个共享串口用例以外的完整软件测试；
-4. 六个共享串口用例逐例、独立进程、单线程执行；
-5. daemon capsule 独立 workspace 的 fmt、clippy 和 test；
+3. daemon 普通软件测试；验收 capsule 使用独立物理 fixture 根目录并单线程执行；
+4. 六个共享串口用例以及进程级文件描述符基线用例逐例、独立进程、单线程执行；
+5. daemon capsule 独立 workspace 的 fmt、clippy 和单线程 test；
 6. App 相关改动的 `Switch.app` 构建。
 
 故障注入测试不是实际只读挂载、ENOSPC、真实设备或运营商验收。macOS 26 GitHub
