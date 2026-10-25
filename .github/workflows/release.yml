@@ -39,6 +39,8 @@ jobs:
       - name: Run portable source and Rust gates
         working-directory: src
         run: |
+          export SWITCH_SOURCE_ROOT="$PWD"
+          . scripts/workspace-env.sh
           scripts/preflight-source.sh
           python3 scripts/build-evs.py
           python3 scripts/build-module-supervisor.py
