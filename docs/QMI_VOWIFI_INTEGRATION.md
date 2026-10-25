@@ -1,5 +1,7 @@
 # QMI 支持与 VoWiFi 集成说明
 
+> **历史Proletarius/Go集成记录：** 下方quectel-qmi-go、cgo构建、旧默认AT路径及“新增/当前”措辞仅属于原始集成时期；保留设计和步骤原文，不作为当前构建指令。当前Rust QMI owner、G6绝对deadline及同步transport协作限制见[当前运行时所有权](optimization/all-rust/README.md#current-runtime-ownership)和[G6软件证据](../../build/reports/stability-implementation-20261025/g6/summary.json)。当前来源为 `source-not-final-G0B`；未授予QMI硬件或运营商验收。
+
 > 本文档记录 Proletarius 新增 **QMI 支持** 与 **VoWiFi（WiFi 通话）** 两个功能模块的设计、改动清单与验证步骤。
 > 适用范围：Proletarius macOS 原生应用。
 

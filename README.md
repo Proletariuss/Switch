@@ -21,13 +21,15 @@ Switch 将 USB/QMI 模块、PC/SC 与 BLE 读卡器、实体 eSIM Profile、VoWi
 
 > 本仓库为私有源码仓库。3.51 是经过软件与发行包检查的快照，不等同于所有硬件、运营商和长期运行场景均已验收。请先阅读下方“验证范围与已知边界”。
 
+`v3.51` 标签继续对应已发布安装包的冻结源码；`main` 已在 2026-10-25 接入最后一次本地开发快照，状态为 `source-not-final-G0B`，用于后续 GitHub PR 迭代，不代表产生了新的 3.51 发行包。两条来源边界见 [SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md)。
+
 ## 下载
 
 | 版本 | 平台 | 安装包 | SHA-256 |
 | --- | --- | --- | --- |
-| 3.51 / build 351 | Apple Silicon，macOS 27.0+ | [Switch-3.51-macOS27.dmg](https://github.com/Gigassss/Switch/releases/download/v3.51/Switch-3.51-macOS27.dmg) | `616c276ef75da7965f3a95a9a754d52d4b1701f8802d29ba7cabc2dc0ba5cbde` |
+| 3.51 / build 351 | Apple Silicon，macOS 27.0+ | [Switch-3.51-macOS27.dmg](https://github.com/Proletariuss/Switch/releases/download/v3.51/Switch-3.51-macOS27.dmg) | `616c276ef75da7965f3a95a9a754d52d4b1701f8802d29ba7cabc2dc0ba5cbde` |
 
-Release 页面：<https://github.com/Gigassss/Switch/releases/tag/v3.51>
+Release 页面：<https://github.com/Proletariuss/Switch/releases/tag/v3.51>
 
 ## 安装
 
@@ -89,7 +91,7 @@ scripts/quit.sh                  # 正常退出应用与所属后端
 scripts/preflight-source.sh      # 可移植的版本、Rust-only 与运营商源契约检查
 ```
 
-GitHub Workflow 还会构建原生依赖、执行可移植的 Rust workspace 测试、编译完整 daemon 测试二进制、将共享串口状态测试逐例放入独立进程执行，并构建 Release App。`scripts/test-migration-gates.sh` 是完整本地验收入口，其中包含冻结的宿主机来源台账；普通克隆不具备全部外部历史证据时，不应把其台账失败解释为业务源码或 DMG 失败。
+GitHub Workflow 还会构建原生依赖、执行 Rust workspace 与完整 daemon 软件测试，并把共享串口、验收 capsule 和进程级文件描述符测试放入相互隔离的进程中执行；App 相关变更还会构建 Release App。免费额度、云端 PR 检查、Dependabot 与权限边界见 [GitHub 自动化策略](docs/GITHUB_AUTOMATION.md)。`scripts/test-migration-gates.sh` 是完整本地验收入口，其中包含冻结的宿主机来源台账；普通克隆不具备全部外部历史证据时，不应把其台账失败解释为业务源码或 DMG 失败。
 
 构建脚本只接受仓库约定的相邻 `build/` 与 `dist/` 工作区布局。发布来源与为私有发布进行的最小转换见 [SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md)。
 

@@ -211,6 +211,46 @@ async fn public(fixture: &Fixture, method: &str, path: &str, body: &[u8]) -> Wir
 }
 
 #[tokio::test]
+async fn g3_stop_control_public_rejections_always_disable_caching() {
+    let fixture = Fixture::new(); // Neither reader nor module service is retained.
+    for (route, scope) in [
+        ("/api/reader/vowifi/stop-control", "reader"),
+        ("/api/vowifi/stop-control", "module"),
+        ("/api/vowifi/%73top-control", "module"),
+    ] {
+        let target = format!(
+            "{route}?scope={scope}&daemon_epoch=epoch-1&owner_id=owner-1&owner_generation=1"
+        );
+        for method in ["GET", "HEAD", "POST"] {
+            let stale = public(&fixture, method, &target, &[]).await;
+            assert_eq!(stale.status, 409, "{method} {route}: no retained service");
+            assert_eq!(stale.header("cache-control"), Some("no-store"));
+            let invalid = public(&fixture, method, route, &[]).await;
+            assert_eq!(invalid.status, 400);
+            assert_eq!(invalid.header("cache-control"), Some("no-store"));
+            let unauthorized = exchange(
+                fixture.state.clone(),
+                Surface::Public,
+                method,
+                &target,
+                None,
+                None,
+                &[],
+            )
+            .await;
+            assert_eq!(unauthorized.status, 401);
+            assert_eq!(unauthorized.header("cache-control"), Some("no-store"));
+        }
+        let method = public(&fixture, "PUT", &target, &[]).await;
+        assert!((400..600).contains(&method.status));
+        assert_eq!(method.header("cache-control"), Some("no-store"));
+        let nonempty = public(&fixture, "POST", &target, b"x").await;
+        assert_eq!(nonempty.status, 400);
+        assert_eq!(nonempty.header("cache-control"), Some("no-store"));
+    }
+}
+
+#[tokio::test]
 async fn runtime_reports_backend_app_build_and_source_identity_separately() {
     let fixture = Fixture::new();
     let response = public(&fixture, "GET", "/api/v2/runtime", &[]).await;

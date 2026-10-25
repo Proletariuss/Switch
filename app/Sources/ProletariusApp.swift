@@ -34,10 +34,10 @@ private final class AppDependencies: ObservableObject {
     let attentionStore: AttentionStore
     let updateChecker: UpdateChecker
 
-    init() {
+    init(context: AcceptanceContext?) {
         let backend = BackendProcess.shared
         self.backend = backend
-        ReaderBLEBridge.shared.start(socketPath: backend.bleSocketPath)
+        if context == nil { ReaderBLEBridge.shared.start(socketPath: backend.bleSocketPath) }
         store = DashboardStore(backend: backend)
         smsStore = .shared
         multiStandbyStore = .shared
@@ -46,11 +46,16 @@ private final class AppDependencies: ObservableObject {
     }
 }
 
-@main
 struct ProletariusApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @StateObject private var dependencies = AppDependencies()
+    @StateObject private var dependencies: AppDependencies
     private let launchSilently = AppLaunchMode.shouldLaunchSilently
+
+    init() {
+        // SwitchEntry has already validated the immutable context before any
+        // wrapper/delegate. Keep this explicit ordering at the dependency seam.
+        _dependencies = StateObject(wrappedValue: AppDependencies(context: AcceptanceBootstrap.context))
+    }
 
     var body: some Scene {
         Window("Switch", id: AppSceneID.mainWindow) {
@@ -195,16 +200,16 @@ final class AppDelegate: NSObject, ObservableObject, NSApplicationDelegate,
     func applicationDidFinishLaunching(_ notification: Notification) {
         URLProtocol.registerClass(UnixSocketURLProtocol.self)
         // 通知权限按需请求（收到短信时弹出系统授权框），启动时不自动注册
-        UNUserNotificationCenter.current().delegate = self
+        if !AcceptanceBootstrap.isAcceptance { UNUserNotificationCenter.current().delegate = self }
         // Forwarding must restore its Keychain-backed configuration even on a
         // silent menu-bar launch where SMSView is never constructed. Install
         // the backend-state subscriber before starting the daemon, so both
         // this launch and later daemon restarts reconfigure the Rust worker.
-        _ = SMSForwardingStore.shared
+        if !AcceptanceBootstrap.isAcceptance { _ = SMSForwardingStore.shared }
         // 打开应用即自动启动后端，退出应用时自动停止
         BackendProcess.shared.start()
-        Task {
-            await UpdateChecker.shared.autoCheckIfNeeded()
+        if !AcceptanceBootstrap.isAcceptance {
+            Task { await UpdateChecker.shared.autoCheckIfNeeded() }
         }
 
         // Dock and the persistent menu-bar entry coexist; closing the window
@@ -213,7 +218,7 @@ final class AppDelegate: NSObject, ObservableObject, NSApplicationDelegate,
 
         // 首次启动默认开启开机自启
         let defaults = UserDefaults.standard
-        if !defaults.bool(forKey: "autoLaunchConfigured") {
+        if !AcceptanceBootstrap.isAcceptance && !defaults.bool(forKey: "autoLaunchConfigured") {
             defaults.set(true, forKey: "autoLaunchConfigured")
             try? AutoLaunch.setEnabled(true)
         }
@@ -609,7 +614,7 @@ final class AppDelegate: NSObject, ObservableObject, NSApplicationDelegate,
         // Do not block the main actor: BLE close/status receipts are serviced
         // here while the owned Rust process drains its actual device owners.
         backendTermination.request(backend: BackendProcess.shared,
-            stopBridge: { ReaderBLEBridge.shared.stop() },
+            stopBridge: { if !AcceptanceBootstrap.isAcceptance { ReaderBLEBridge.shared.stop() } },
             reply: { sender.reply(toApplicationShouldTerminate: true) })
         return .terminateLater
     }

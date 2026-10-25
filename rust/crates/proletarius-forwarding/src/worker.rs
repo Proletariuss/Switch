@@ -21,6 +21,8 @@ use crate::{
     StateStoreError, TelegramSender, telegram_chunks,
 };
 
+mod queue_io;
+
 const RETRY_TICK: Duration = Duration::from_secs(5);
 const PRE_SUBMIT_CONNECT_RETRY_LIMIT: i64 = 5;
 const MAX_PENDING_RELEASES: usize = 64;
@@ -95,6 +97,8 @@ pub enum WorkerError {
     ClockUnavailable,
     Stopped,
     ReleaseUnconfirmed,
+    QueueIoBusy,
+    QueueIoUnconfirmed,
     Queue(QueueMutationError),
     StateStore(StateStoreError),
 }
@@ -106,6 +110,8 @@ impl std::fmt::Display for WorkerError {
             Self::ClockUnavailable => "forwarding_clock_unavailable",
             Self::Stopped => "forwarding_worker_stopped",
             Self::ReleaseUnconfirmed => "forwarding_release_unconfirmed",
+            Self::QueueIoBusy => "forwarding_queue_io_busy",
+            Self::QueueIoUnconfirmed => "forwarding_queue_io_unconfirmed",
             Self::Queue(error) => return error.fmt(f),
             Self::StateStore(error) => return error.fmt(f),
         })
@@ -136,6 +142,7 @@ pub struct ForwardingWorker<C: ForwardingClock = SystemForwardingClock> {
     flush_gate: Mutex<()>,
     wake: Notify,
     releases: Arc<ReleaseLedger>,
+    disk: Arc<queue_io::Owner>,
     #[cfg(test)]
     unknown_release_pause: StdMutex<Option<Arc<ReleaseBarrier>>>,
 }
@@ -164,6 +171,7 @@ impl<C: ForwardingClock> ForwardingWorker<C> {
             flush_gate: Mutex::new(()),
             wake: Notify::new(),
             releases: Arc::new(ReleaseLedger::default()),
+            disk: Arc::new(queue_io::Owner::default()),
             #[cfg(test)]
             unknown_release_pause: StdMutex::new(None),
         })
@@ -187,6 +195,29 @@ impl<C: ForwardingClock> ForwardingWorker<C> {
         let mut notified = std::pin::pin!(self.wake.notified());
         let mut context = std::task::Context::from_waker(std::task::Waker::noop());
         std::future::Future::poll(notified.as_mut(), &mut context).is_ready()
+    }
+
+    /// Installs a deterministic disk-owner checkpoint for offline daemon
+    /// integration tests. The normal dependency does not enable this feature.
+    #[cfg(feature = "queue-fault-tests")]
+    #[doc(hidden)]
+    pub fn test_disk_hook(&self, call: usize, after: bool, action: impl FnOnce() + Send + 'static) {
+        self.disk.hook(call, after, action);
+    }
+
+    /// Returns the next disk-owner call index in offline fault fixtures only.
+    #[cfg(feature = "queue-fault-tests")]
+    #[doc(hidden)]
+    pub fn test_disk_call_count(&self) -> usize {
+        self.disk.test_call_count()
+    }
+
+    /// Returns `(registered commands, sticky uncertainty)` after all three
+    /// completion facts have settled in offline fault fixtures only.
+    #[cfg(feature = "queue-fault-tests")]
+    #[doc(hidden)]
+    pub fn test_disk_snapshot(&self) -> (usize, bool) {
+        self.disk.test_snapshot()
     }
 
     /// Sends the fixed, non-sensitive provider test notification without
@@ -235,14 +266,14 @@ impl<C: ForwardingClock> ForwardingWorker<C> {
         let _flush = self.flush_gate.lock().await;
         self.releases.ensure_open()?;
         let now = self.clock.now_rfc3339()?;
-        let candidates = {
-            let queue = self.queue.lock().await;
-            queue.due_deliveries(
-                &now,
-                self.telegram_binding.as_ref(),
-                self.bark_binding.as_ref(),
-            )?
-        };
+        let telegram = self.telegram_binding.clone();
+        let bark = self.bark_binding.clone();
+        let candidates = self
+            .disk
+            .run(self.queue.clone(), move |queue| {
+                Ok(queue.due_deliveries(&now, telegram.as_ref(), bark.as_ref())?)
+            })
+            .await?;
         let mut summary = WorkerSummary::default();
         for candidate in candidates {
             let result = match candidate.channel() {
@@ -270,7 +301,10 @@ impl<C: ForwardingClock> ForwardingWorker<C> {
                 Err(error) => return Err(error),
             }
         }
-        summary.pending = self.queue.lock().await.inspect()?.tasks.len();
+        summary.pending = self
+            .disk
+            .run(self.queue.clone(), |queue| Ok(queue.inspect()?.tasks.len()))
+            .await?;
         Ok(summary)
     }
 
@@ -280,9 +314,122 @@ impl<C: ForwardingClock> ForwardingWorker<C> {
     /// Cancelling this observer leaves closure, pending work and errors intact.
     /// No queue guard is held while waiting for cleanup completion.
     pub async fn finish_releases(&self) -> Result<(), WorkerError> {
-        self.releases.close();
+        self.close_admission();
         let _flush = self.flush_gate.lock().await;
-        self.releases.finish().await
+        self.disk.close();
+        // Orphan begin outputs can enqueue exact-token cleanup on destruction.
+        // They must retire before observing the release ledger as empty.
+        let disk = self.disk.finish().await;
+        let releases = self.releases.finish().await;
+        disk.and(releases)
+    }
+
+    /// Close new provider work synchronously while retaining accepted owners.
+    pub fn close_admission(&self) {
+        // Accepted attempts may still checkpoint/finish while the flush gate
+        // is occupied. finish_releases closes disk admission after that gate
+        // proves no live flush can produce another command.
+        self.releases.close();
+    }
+
+    /// Provider runner status also verifies on-disk identity; keep that complete
+    /// transaction off the async executor just like mutation checkpoints.
+    pub async fn inspect_for_bindings(
+        &self,
+        telegram: Option<DestinationBinding>,
+        bark: Option<DestinationBinding>,
+    ) -> Result<crate::ForwardingQueueSummary, WorkerError> {
+        self.disk
+            .run(self.queue.clone(), move |queue| {
+                Ok(queue.inspect_for_bindings(telegram.as_ref(), bark.as_ref())?)
+            })
+            .await
+    }
+
+    async fn begin_attempt(
+        &self,
+        candidate: &ForwardingDelivery,
+        channel: ForwardingChannel,
+        binding: &DestinationBinding,
+        attempted_at: String,
+    ) -> Result<AttemptReservation, WorkerError> {
+        let task_id = candidate.task_id().to_owned();
+        let binding = binding.clone();
+        let queue_handle = self.queue.clone();
+        let releases = self.releases.clone();
+        self.disk
+            .run_begin(self.queue.clone(), releases.clone(), move |queue| {
+                let token = queue.begin_destination_attempt(
+                    &task_id,
+                    channel,
+                    true,
+                    &binding,
+                    &attempted_at,
+                )?;
+                // The ACK owns cleanup before the blocking output can be lost.
+                // There is no await/enrollment gap after the durable begin.
+                Ok(AttemptReservation::new(
+                    queue_handle,
+                    &task_id,
+                    channel,
+                    token,
+                    releases,
+                ))
+            })
+            .await
+    }
+
+    async fn checkpoint(
+        &self,
+        candidate: &ForwardingDelivery,
+        binding: &DestinationBinding,
+        index: usize,
+        submitting: bool,
+        updated_at: String,
+        token: &AttemptToken,
+    ) -> Result<(), WorkerError> {
+        let task_id = candidate.task_id().to_owned();
+        let binding = binding.clone();
+        let token = token.clone();
+        self.disk
+            .run(self.queue.clone(), move |queue| {
+                Ok(queue.checkpoint_telegram_chunk(
+                    &task_id,
+                    true,
+                    &binding,
+                    index,
+                    submitting,
+                    &updated_at,
+                    &token,
+                )?)
+            })
+            .await
+    }
+
+    async fn finish_attempt(
+        &self,
+        candidate: &ForwardingDelivery,
+        channel: ForwardingChannel,
+        binding: &DestinationBinding,
+        updated_at: String,
+        outcome: DeliveryOutcome,
+        token: &AttemptToken,
+    ) -> Result<(), WorkerError> {
+        let task_id = candidate.task_id().to_owned();
+        let binding = binding.clone();
+        let token = token.clone();
+        self.disk
+            .run(self.queue.clone(), move |queue| {
+                Ok(queue.finish_destination_attempt(
+                    &task_id,
+                    channel,
+                    &binding,
+                    &updated_at,
+                    &outcome,
+                    &token,
+                )?)
+            })
+            .await
     }
 
     /// Runs until the watch channel is closed or set to `true`. Cancelling an
@@ -337,47 +484,31 @@ impl<C: ForwardingClock> ForwardingWorker<C> {
                 timestamp_local: timestamp_local.as_deref(),
                 content: message.content(),
             });
-            self.queue.lock().await.freeze_telegram_progress(
-                candidate.task_id(),
-                binding,
-                &chunks,
-            )?;
-            chunks
+            let task_id = candidate.task_id().to_owned();
+            let binding = binding.clone();
+            self.disk
+                .run(self.queue.clone(), move |queue| {
+                    queue.freeze_telegram_progress(&task_id, &binding, &chunks)?;
+                    Ok(chunks)
+                })
+                .await?
         };
         let confirmed = candidate.confirmed_chunks();
         let attempted_at = self.clock.now_rfc3339()?;
-        let token = {
-            let mut queue = self.queue.lock().await;
-            // Check every attempt, including later candidates in this flush.
-            // An already admitted owner may still finish/release after closure.
-            self.releases.ensure_open()?;
-            queue.begin_destination_attempt(
-                candidate.task_id(),
+        let reservation = self
+            .begin_attempt(
+                candidate,
                 ForwardingChannel::Telegram,
-                true,
                 binding,
-                &attempted_at,
-            )?
-        };
-        let _reservation = AttemptReservation::new(
-            self.queue.clone(),
-            candidate.task_id(),
-            ForwardingChannel::Telegram,
-            token.clone(),
-            self.releases.clone(),
-        );
+                attempted_at,
+            )
+            .await?;
+        let token = &reservation.token;
 
         for (index, chunk) in chunks.iter().enumerate().skip(confirmed) {
             let now = self.clock.now_rfc3339()?;
-            self.queue.lock().await.checkpoint_telegram_chunk(
-                candidate.task_id(),
-                true,
-                binding,
-                index,
-                true,
-                &now,
-                &token,
-            )?;
+            self.checkpoint(candidate, binding, index, true, now, token)
+                .await?;
             if let Err(failure) = sender.send_chunk(chunk).await {
                 return self
                     .finish_failure(
@@ -385,31 +516,25 @@ impl<C: ForwardingClock> ForwardingWorker<C> {
                         ForwardingChannel::Telegram,
                         binding,
                         failure,
-                        &token,
+                        token,
                     )
                     .await;
             }
             let now = self.clock.now_rfc3339()?;
-            self.queue.lock().await.checkpoint_telegram_chunk(
-                candidate.task_id(),
-                true,
-                binding,
-                index + 1,
-                false,
-                &now,
-                &token,
-            )?;
+            self.checkpoint(candidate, binding, index + 1, false, now, token)
+                .await?;
         }
 
         let now = self.clock.now_rfc3339()?;
-        self.queue.lock().await.finish_destination_attempt(
-            candidate.task_id(),
+        self.finish_attempt(
+            candidate,
             ForwardingChannel::Telegram,
             binding,
-            &now,
-            &DeliveryOutcome::Delivered,
-            &token,
-        )?;
+            now,
+            DeliveryOutcome::Delivered,
+            token,
+        )
+        .await?;
         Ok(AttemptResult::Delivered)
     }
 
@@ -435,40 +560,25 @@ impl<C: ForwardingClock> ForwardingWorker<C> {
             content: message.content(),
         };
         let attempted_at = self.clock.now_rfc3339()?;
-        let token = {
-            let mut queue = self.queue.lock().await;
-            // Check every attempt, including later candidates in this flush.
-            // An already admitted owner may still finish/release after closure.
-            self.releases.ensure_open()?;
-            queue.begin_destination_attempt(
-                candidate.task_id(),
-                ForwardingChannel::Bark,
-                true,
-                binding,
-                &attempted_at,
-            )?
-        };
-        let _reservation = AttemptReservation::new(
-            self.queue.clone(),
-            candidate.task_id(),
-            ForwardingChannel::Bark,
-            token.clone(),
-            self.releases.clone(),
-        );
+        let reservation = self
+            .begin_attempt(candidate, ForwardingChannel::Bark, binding, attempted_at)
+            .await?;
+        let token = &reservation.token;
         if let Err(failure) = sender.send(&sms).await {
             return self
-                .finish_failure(candidate, ForwardingChannel::Bark, binding, failure, &token)
+                .finish_failure(candidate, ForwardingChannel::Bark, binding, failure, token)
                 .await;
         }
         let now = self.clock.now_rfc3339()?;
-        self.queue.lock().await.finish_destination_attempt(
-            candidate.task_id(),
+        self.finish_attempt(
+            candidate,
             ForwardingChannel::Bark,
             binding,
-            &now,
-            &DeliveryOutcome::Delivered,
-            &token,
-        )?;
+            now,
+            DeliveryOutcome::Delivered,
+            token,
+        )
+        .await?;
         Ok(AttemptResult::Delivered)
     }
 
@@ -520,14 +630,8 @@ impl<C: ForwardingClock> ForwardingWorker<C> {
             result_unknown: false,
             retry_at,
         };
-        self.queue.lock().await.finish_destination_attempt(
-            candidate.task_id(),
-            channel,
-            binding,
-            &updated_at,
-            &outcome,
-            token,
-        )?;
+        self.finish_attempt(candidate, channel, binding, updated_at, outcome, token)
+            .await?;
         Ok(AttemptResult::Failed)
     }
 }

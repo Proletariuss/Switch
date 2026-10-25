@@ -139,6 +139,7 @@ impl Fixture {
     }
     fn retained_record(&self, retired: bool) -> Arc<Record> {
         let record = Arc::new(Record {
+            control: Default::default(),
             id: 1,
             claim: self
                 .service
@@ -159,7 +160,7 @@ impl Fixture {
                 ..Default::default()
             }),
             completed: Notify::new(),
-            task: Mutex::new(None),
+            join: Default::default(),
         });
         let options =
             super::super::operation::Options::body(&body("retained-start", true)).unwrap();
@@ -196,8 +197,9 @@ impl Fixture {
         // Only this test's explicit Record fixture can be manually completed;
         // no live worker/card exists in these control-transaction tests.
         if let Some(record) = self.service.record() {
-            assert!(record.task.lock().unwrap().is_none());
+            assert!(!record.join.started());
             record.claim.release_confirmed().unwrap();
+            record.join.confirm_unspawned().unwrap();
             record.state.lock().unwrap().complete_cleanup();
         }
         self.server
@@ -205,9 +207,12 @@ impl Fixture {
             .finish_shutdown(tokio::time::Instant::now() + Duration::from_secs(2))
             .await
             .unwrap();
+        self.server.sms_forwarding.shutdown().await.unwrap();
+        self.server.reader_pcsc.shutdown().await.unwrap();
         drop(self.service);
         drop(self.server);
-        std::fs::remove_dir_all(self.root).unwrap();
+        std::fs::remove_dir_all(&self.root).unwrap();
+        assert!(!self.root.exists());
     }
 }
 struct BlockedRoot {
@@ -323,7 +328,7 @@ async fn unconfirmed_provisional_release_stays_visible_and_only_exact_stop_retri
     );
     drop(readonly);
     let record = f.service.record().expect("exact unlaunched owner retained");
-    assert!(record.task.lock().unwrap().is_none());
+    assert!(!record.join.started());
     assert!(record.claim.try_is_current().unwrap());
     let state = record.state.lock().unwrap();
     assert!(state.provisional && state.stopping && !state.retired);
@@ -559,7 +564,7 @@ async fn concurrent_provisional_stops_release_exact_claim_once_and_both_confirm_
     let record = f.service.record().unwrap();
     assert!(record.state.lock().unwrap().provisional);
     assert!(record.claim.try_is_current().unwrap());
-    assert!(record.task.lock().unwrap().is_none());
+    assert!(!record.join.started());
     assert_eq!(
         f.service
             .0
@@ -620,5 +625,372 @@ async fn concurrent_provisional_stops_release_exact_claim_once_and_both_confirm_
             .load(Ordering::SeqCst),
         1
     );
+    f.close().await;
+}
+
+#[tokio::test]
+async fn g3_module_exact_stop_survives_ledger_failure_cancel_and_retired_before_join() {
+    let f = Fixture::new();
+    let record = f.retained_record(false);
+    let target = record
+        .control
+        .target("module", &f.service.0.epoch, record.id);
+    let get = Request::builder()
+        .method("GET")
+        .uri(format!(
+            "/api/vowifi/stop-control?{}",
+            target.query_string()
+        ))
+        .body(Full::new(Bytes::new()))
+        .unwrap();
+    assert_eq!(f.service.handle(get).await.status(), StatusCode::OK);
+    assert!(!*record.stop.borrow());
+    assert!(!record.control.started());
+    let (released, release) = tokio::sync::oneshot::channel();
+    let (done, tail) = tokio::sync::oneshot::channel();
+    let worker = record.clone();
+    record
+        .join
+        .spawn(async move {
+            release.await.unwrap();
+            worker.claim.release_confirmed().unwrap();
+            worker.state.lock().unwrap().complete_cleanup();
+            worker.completed.notify_waiters();
+            tail.await.unwrap();
+        })
+        .unwrap();
+    let path = f.path();
+    std::fs::write(&path, b"g3-preserved-broken-module-ledger").unwrap();
+    let bytes = std::fs::read(&path).unwrap();
+    let response = f
+        .service
+        .handle(
+            Request::builder()
+                .method("POST")
+                .uri("/api/vowifi")
+                .body(Full::new(Bytes::from(body(
+                    "g3-normal-stop-blocked",
+                    false,
+                ))))
+                .unwrap(),
+        )
+        .await;
+    assert_eq!(response.status(), StatusCode::CONFLICT);
+    assert!(!*record.stop.borrow());
+    let req = || {
+        Request::builder()
+            .method("POST")
+            .uri(format!(
+                "/api/vowifi/stop-control?{}",
+                target.query_string()
+            ))
+            .body(Full::new(Bytes::new()))
+            .unwrap()
+    };
+    assert_eq!(f.service.handle(req()).await.status(), StatusCode::ACCEPTED);
+    assert!(*record.stop.borrow());
+    assert!(record.claim.try_is_current().unwrap());
+    let observer = f.service.clone();
+    let observer = tokio::spawn(async move {
+        observer
+            .stop_before(tokio::time::Instant::now() + Duration::from_secs(3))
+            .await
+    });
+    tokio::task::yield_now().await;
+    observer.abort();
+    assert!(observer.await.unwrap_err().is_cancelled());
+    released.send(()).unwrap();
+    tokio::time::timeout(Duration::from_secs(1), async {
+        while !record.state.lock().unwrap().retired {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    assert!(record.control.busy(), "retired is not a true outer join");
+    assert_eq!(
+        f.service
+            .request_with_observation(true, request::automatic(), None, "")
+            .err()
+            .unwrap(),
+        "module_vowifi_busy"
+    );
+    done.send(()).unwrap();
+    tokio::time::timeout(Duration::from_secs(1), async {
+        while record.control.busy() {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    assert_eq!(std::fs::read(&path).unwrap(), bytes);
+    let successor = Arc::new(Record {
+        control: Default::default(),
+        id: 2,
+        claim: f
+            .service
+            .0
+            .admission
+            .acquire_native_module(&f.service.0.epoch, 2)
+            .unwrap(),
+        connection: request::automatic(),
+        stop: watch::channel(false).0,
+        state: Mutex::new(RecordState::default()),
+        completed: Notify::new(),
+        join: Default::default(),
+    });
+    {
+        let mut state = f.service.0.state.lock().unwrap();
+        state.last_stop = Some((target.clone(), record.control.clone()));
+        state.record = Some(successor.clone());
+        state.next = 2;
+    }
+    assert_eq!(f.service.handle(req()).await.status(), StatusCode::OK);
+    assert!(!*successor.stop.borrow(), "old POST never stops successor");
+    let mut stale = target.clone();
+    stale.daemon_epoch.push('x');
+    let request = Request::builder()
+        .method("POST")
+        .uri(format!("/api/vowifi/stop-control?{}", stale.query_string()))
+        .body(Full::new(Bytes::new()))
+        .unwrap();
+    assert_eq!(
+        f.service.handle(request).await.status(),
+        StatusCode::CONFLICT
+    );
+    assert!(!*successor.stop.borrow());
+    // Teardown only manually constructed, never-dispatched successor fixture.
+    f.close().await;
+}
+
+#[tokio::test]
+async fn g3_module_capacity_and_injected_readonly_enospc_ack_loss_preserve_history() {
+    for fault in [
+        "count",
+        "bytes",
+        "readonly-injected",
+        "enospc-injected",
+        "rename-ack-loss",
+    ] {
+        let f = Fixture::new();
+        let record = f.retained_record(false);
+        let target = record
+            .control
+            .target("module", &f.service.0.epoch, record.id);
+        let (finish, finished) = tokio::sync::oneshot::channel();
+        let worker = record.clone();
+        record
+            .join
+            .spawn(async move {
+                finished.await.unwrap();
+                worker.claim.release_confirmed().unwrap();
+                worker.state.lock().unwrap().complete_cleanup();
+                worker.completed.notify_waiters();
+            })
+            .unwrap();
+        let path = f.path();
+        match fault {
+            "count" => {
+                assert_eq!(
+                    f.service
+                        .0
+                        .state
+                        .lock()
+                        .unwrap()
+                        .requests
+                        .test_fill_capacity(),
+                    100_000
+                );
+            }
+            "bytes" => std::fs::write(&path, vec![b' '; 32 * 1024 * 1024 + 1]).unwrap(),
+            "readonly-injected" => f
+                .service
+                .0
+                .state
+                .lock()
+                .unwrap()
+                .requests
+                .test_write_fault(std::io::ErrorKind::ReadOnlyFilesystem),
+            "enospc-injected" => f
+                .service
+                .0
+                .state
+                .lock()
+                .unwrap()
+                .requests
+                .test_write_fault(std::io::ErrorKind::StorageFull),
+            _ => f
+                .service
+                .0
+                .persistence_hooks
+                .on_insert(|ledger| ledger.test_fail_after_next_persist()),
+        }
+        let response = f
+            .service
+            .handle(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/vowifi")
+                    .body(Full::new(Bytes::from(body(
+                        "g3-module-blocked-stop",
+                        false,
+                    ))))
+                    .unwrap(),
+            )
+            .await;
+        assert_eq!(response.status(), StatusCode::CONFLICT, "{fault}");
+        assert!(!*record.stop.borrow());
+        let before = std::fs::read(&path).unwrap();
+        let req = Request::builder()
+            .method("POST")
+            .uri(format!(
+                "/api/vowifi/stop-control?{}",
+                target.query_string()
+            ))
+            .body(Full::new(Bytes::new()))
+            .unwrap();
+        assert_eq!(
+            f.service.handle(req).await.status(),
+            StatusCode::ACCEPTED,
+            "{fault}"
+        );
+        assert!(*record.stop.borrow());
+        assert!(record.claim.try_is_current().unwrap());
+        finish.send(()).unwrap();
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while record.control.busy() {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        assert_eq!(
+            std::fs::read(&path).unwrap(),
+            before,
+            "{fault} fallback does not write history"
+        );
+        if fault == "count" {
+            assert_eq!(
+                f.service.0.state.lock().unwrap().requests.test_count(),
+                100_000
+            );
+        }
+        if fault == "rename-ack-loss" {
+            let ledger =
+                super::super::operation::RequestLedger::open(&f.service.0.root, "module").unwrap();
+            let unknown = ledger
+                .lookup("g3-module-blocked-stop", None)
+                .unwrap()
+                .unwrap()
+                .resolve(None);
+            assert_eq!(unknown.outcome.as_deref(), Some("unknown"));
+            assert!(!unknown.terminal && !unknown.succeeded && !unknown.cleanup_confirmed);
+        }
+        f.service.0.state.lock().unwrap().record = None;
+        f.close().await;
+    }
+}
+
+#[tokio::test]
+async fn g3_poisoned_control_reservation_never_changes_stopping_or_sends_signal() {
+    let f = Fixture::new();
+    let record = f.retained_record(false);
+    record.control.test_poison();
+    let target = record
+        .control
+        .target("module", &f.service.0.epoch, record.id);
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!(
+            "/api/vowifi/stop-control?{}",
+            target.query_string()
+        ))
+        .body(Full::new(Bytes::new()))
+        .unwrap();
+    assert_eq!(
+        f.service.handle(req).await.status(),
+        StatusCode::SERVICE_UNAVAILABLE
+    );
+    assert!(!record.state.lock().unwrap().stopping);
+    assert!(!*record.stop.borrow());
+    assert!(record.claim.try_is_current().unwrap());
+    f.close().await;
+}
+
+#[tokio::test]
+async fn g3_module_head_current_retired_stale_invalid_never_signals_or_writes() {
+    let f = Fixture::new();
+    let record = f.retained_record(false);
+    let target = record
+        .control
+        .target("module", &f.service.0.epoch, record.id);
+    let query = target.query_string();
+    let before = std::fs::read(f.path()).unwrap();
+    for (query, status) in [
+        (query.clone(), StatusCode::OK),
+        (
+            query.replace(&target.daemon_epoch, "stale-epoch"),
+            StatusCode::CONFLICT,
+        ),
+        (
+            query.replace("owner_generation=1", "owner_generation=01"),
+            StatusCode::BAD_REQUEST,
+        ),
+    ] {
+        let observed = record.stop.subscribe();
+        assert_eq!(
+            super::super::stop_control::test_head_request(
+                f.server.clone(),
+                &format!("/api/vowifi/stop-control?{query}")
+            )
+            .await,
+            status
+        );
+        assert!(!observed.has_changed().unwrap());
+        assert!(!*record.stop.borrow());
+        assert_eq!(std::fs::read(f.path()).unwrap(), before);
+    }
+    // This fixture has never installed any network/RF task; explicitly prove
+    // that zero-dispatch release before publishing a retired completion.
+    record.claim.release_confirmed().unwrap();
+    record.join.confirm_unspawned().unwrap();
+    record.state.lock().unwrap().complete_cleanup();
+    record
+        .control
+        .begin(
+            || {
+                record.stop.send_replace(true);
+            },
+            {
+                let owner = record.control.clone();
+                async move {
+                    owner.finish(true, true, None);
+                }
+            },
+        )
+        .unwrap();
+    tokio::time::timeout(Duration::from_secs(1), async {
+        while record.control.busy() {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    {
+        let mut state = f.service.0.state.lock().unwrap();
+        state.last_stop = Some((target.clone(), record.control.clone()));
+        state.record = None;
+    }
+    let observed = record.stop.subscribe();
+    assert_eq!(
+        super::super::stop_control::test_head_request(
+            f.server.clone(),
+            &format!("/api/vowifi/stop-control?{}", target.query_string())
+        )
+        .await,
+        StatusCode::OK
+    );
+    assert!(!observed.has_changed().unwrap());
+    assert_eq!(std::fs::read(f.path()).unwrap(), before);
     f.close().await;
 }

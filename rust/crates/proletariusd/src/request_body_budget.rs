@@ -106,6 +106,8 @@ fn body_limit(method: &Method, path: &str) -> Option<(usize, bool)> {
             | "/api/reader/vowifi"
             | "/api/vowifi/reconcile"
             | "/api/reader/vowifi/reconcile"
+            | "/api/reader/vowifi/stop-control"
+            | "/api/vowifi/stop-control"
     ) {
         return Some((4 * 1024, true));
     }
@@ -696,6 +698,8 @@ mod tests {
             "/api/reader/vowifi",
             "/api/vowifi/reconcile",
             "/api/reader/vowifi/reconcile",
+            "/api/reader/vowifi/stop-control",
+            "/api/vowifi/stop-control",
             "/api/vowifi/calls/hangup",
             "/api/reader/vowifi/calls/reject",
         ] {

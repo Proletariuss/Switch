@@ -18,6 +18,11 @@ import Foundation
     var starts = 0
     var stops = 0
     var stopError: String?
+    var platformRunning = false
+    var retirementPending = false
+    var lifecycleSnapshot: AudioIOProcLifecycleSnapshot {
+        AudioIOProcLifecycleSnapshot(running: platformRunning, retirementPending: retirementPending)
+    }
     var holdPermission = false
     private var permissionWaiters: [Int: CheckedContinuation<Bool, Never>] = [:]
     var waitingPermissions: [Int] { permissionWaiters.keys.sorted() }
@@ -34,11 +39,19 @@ import Foundation
         permissionWaiters.removeValue(forKey: request)!.resume(returning: granted)
     }
     func start() -> String? {
+        guard !retirementPending else { return "prior IOProc retirement pending" }
+        precondition(ReaderVoWiFiAudioBridge.shared.connected == nil, "overlapping module/reader owners")
         starts += 1
+        platformRunning = true
         onStart?()
         return nil
     }
-    func stop() -> String? { stops += 1; return stopError }
+    func stop() -> String? {
+        stops += 1
+        retirementPending = stopError != nil
+        if stopError == nil || stopError?.contains("Destroy") == true { platformRunning = false }
+        return stopError
+    }
     func reset() {
         precondition(permissionWaiters.isEmpty, "unconsumed module permission completion")
         onDefaultDeviceChange = nil
@@ -49,6 +62,8 @@ import Foundation
         starts = 0
         stops = 0
         stopError = nil
+        platformRunning = false
+        retirementPending = false
     }
 }
 
@@ -81,6 +96,8 @@ final class ReaderAudioSessionTicket {}
 
     func start(port: Int, token: String, captureMicrophone: Bool, localRingback: Bool,
                sampleRate: Int, diagnosticURL: URL?, session: ReaderAudioSessionTicket) async -> String? {
+        precondition(!AudioBridge.shared.platformRunning && !AudioBridge.shared.retirementPending,
+                     "reader admitted before module retirement")
         precondition(sampleRate == 16_000)
         precondition(diagnosticURL != nil)
         sessionTicket = session
@@ -161,14 +178,30 @@ final class ReaderAudioSessionTicket {}
 
 @MainActor enum APITrace {
     static var paths: [String] = []
+    static var heldPaths = Set<String>()
+    static var waiters: [Int: CheckedContinuation<String, Never>] = [:]
+    static var startResult = true
+    static var startThrows = false
+    static func complete(_ index: Int, json: String) {
+        precondition(waiters[index] != nil)
+        waiters.removeValue(forKey: index)!.resume(returning: json)
+    }
 }
 @MainActor struct APIClient {
     init(timeoutInterval: TimeInterval = 20) {}
     func send<T: Decodable>(_ path: String) async throws -> T {
         APITrace.paths.append(path)
+        if path == "api/call/audio/start", APITrace.startThrows {
+            throw NSError(domain: "fixture deterministic start failure", code: 1)
+        }
+        let index = APITrace.paths.count - 1
         let json: String
+        if APITrace.heldPaths.contains(path) {
+            json = await withCheckedContinuation { APITrace.waiters[index] = $0 }
+            return try JSONDecoder().decode(T.self, from: Data(json.utf8))
+        }
         switch path {
-        case "api/call/audio/start": json = #"{"started":true,"runtime_version":"fixture"}"#
+        case "api/call/audio/start": json = "{\"started\":\(APITrace.startResult),\"runtime_version\":\"fixture\"}"
         case "api/call/audio/stop": json = #"{"stopped":true}"#
         default: preconditionFailure("unexpected mock API path: \(path)")
         }
@@ -178,6 +211,7 @@ final class ReaderAudioSessionTicket {}
 
 @MainActor private final class Fixture {
     let store: CallAudioStore
+    let backend = BackendProcess()
     var endpoint = "reader"
     var moduleReady = true
     var status = CallStatus(state: "idle", number: nil, incoming: false, active: false)
@@ -186,7 +220,11 @@ final class ReaderAudioSessionTicket {}
         AudioBridge.shared.reset()
         ReaderVoWiFiAudioBridge.shared.reset()
         APITrace.paths = []
-        store = CallAudioStore(backend: BackendProcess())
+        precondition(APITrace.waiters.isEmpty, "unconsumed backend completion")
+        APITrace.heldPaths = []
+        APITrace.startResult = true
+        APITrace.startThrows = false
+        store = CallAudioStore(backend: backend)
         store.currentEndpoint = { [weak self] in self?.endpoint ?? "module" }
         store.currentStatus = { [weak self] in self!.status }
         store.currentReaderState = { [weak self] in self?.reader }
@@ -246,6 +284,16 @@ final class ReaderAudioSessionTicket {}
         await moduleRouteIsPreserved()
         await staleModuleStartSurfacesUnconfirmedLocalRetirement()
         await moduleRouteRecoveryDoesNotRestartWhenIOProcRetirementFails()
+        await moduleRetirementBlocksReaderUntilAcknowledged()
+        await modulePendingDuringReaderAttachmentRetiresIt()
+        await modulePendingDuringMicrophoneGrantRetiresReader()
+        await readerToModuleReplacementRespectsPlatformRetirement()
+        await liveModuleHandoffRetiresActualOwner()
+        await liveModuleHandoffWaitsForBackendStartAndStop()
+        await stoppedHandoffCannotResumeFromLateBackendStop()
+        await backendStopRefusalKeepsReplacementFenced()
+        await failedModuleActivationDoesNotLeaveLiveOwner()
+        await backendUnavailableHandoffRecoversAfterRestart()
         await receiveOnlyRouteRecoveryDoesNotCapture()
         await pendingHangupFencesSameCallStatusUpdates()
         await sameCallIDChangingRouteDoesNotReleaseHangupFence()
@@ -262,7 +310,7 @@ final class ReaderAudioSessionTicket {}
         await retiredModulePermissionCannotAffectNewCall()
         await readerEndpointFallbackStopsCaptureBeforeUnknownModuleStatus()
         await readerEndpointFallbackDirectlyToActiveModuleStartsOnce()
-        print("PASS: 33 async CallAudioStore scenarios, reader admission adapter, CoreAudio retirement ledger, and route-recovery retry fence; mock audio/API only")
+        print("PASS: 43 async CallAudioStore scenarios, reader admission adapter, CoreAudio retirement ledger, and route-recovery retry fence; mock audio/API only")
     }
 
     static func audioIOProcRetirementLedgerRequiresAcknowledgedCleanup() {
@@ -624,7 +672,7 @@ final class ReaderAudioSessionTicket {}
         await waitFor("module route before retirement failure", { f.store.running && !f.store.activationInFlight })
         bridge.stopError = "AudioDeviceStop failed (OSStatus -1); callback context retained"
         bridge.onDefaultDeviceChange?()
-        await waitFor("retirement failure surfaced", { !f.store.running && f.store.error != nil })
+        await waitFor("retirement failure surfaced", { f.store.running && f.store.error != nil })
         expect(bridge.starts == 1 && bridge.stops == 1,
                "route recovery restarted while old IOProc retirement was unconfirmed")
         expect(f.store.error?.contains("callback context retained") == true,
@@ -633,6 +681,267 @@ final class ReaderAudioSessionTicket {}
                "failed local retirement issued an unexpected backend route operation")
         bridge.stopError = nil
         print("PASS: module route recovery stays fenced and reports an unconfirmed IOProc retirement")
+    }
+
+    @MainActor static func moduleRetirementBlocksReaderUntilAcknowledged() async {
+        for stopFailed in [true, false] {
+            let f = Fixture(); defer { f.finish() }
+            let module = AudioBridge.shared
+            let reader = ReaderVoWiFiAudioBridge.shared
+            f.endpoint = "module"
+            f.publish("active")
+            await waitFor("module active before cross-route failure", { f.store.running && !f.store.activationInFlight })
+            module.stopError = stopFailed ? "AudioDeviceStop failed" : "AudioDeviceDestroyIOProcID failed"
+            f.store.stop(stopModuleRoute: false)
+            expect(f.store.running == stopFailed && module.retirementPending,
+                   "UI did not project the platform's running/pending snapshot")
+            f.endpoint = "reader"
+            f.store.running = false // A writable UI flag cannot erase authority.
+            f.publish("active", raw: "active")
+            await settle()
+            expect(reader.starts.isEmpty && reader.permissionRequests == 0,
+                   "reader replaced unretired module IOProcs")
+            expect(f.store.running == stopFailed && f.store.error?.contains("未确认") == true,
+                   "pending retirement state or its error was overwritten")
+            f.store.reset()
+            expect(module.retirementPending && f.store.error?.contains("未确认") == true,
+                   "reset erased an unconfirmed platform retirement")
+            module.stopError = nil
+            f.store.stop(stopModuleRoute: false)
+            f.publish("active", raw: "active")
+            await waitFor("reader after confirmed module retirement", { f.store.running && !f.store.activationInFlight })
+            expect(reader.starts.count == 1 && !module.retirementPending,
+                   "confirmed cleanup failed to release reader admission")
+        }
+        print("PASS: module stop/destroy failures fence reader startup despite UI/reset changes; acknowledged cleanup releases admission")
+    }
+
+    @MainActor static func liveModuleHandoffRetiresActualOwner() async {
+        for endpoint in ["reader", "module-vowifi"] {
+            for failure in [nil, "AudioDeviceStop failed", "AudioDeviceDestroyIOProcID failed"] as [String?] {
+                let f = Fixture(); defer { f.finish() }
+                let module = AudioBridge.shared
+                let reader = ReaderVoWiFiAudioBridge.shared
+                f.endpoint = "module"
+                f.publish("active")
+                await waitFor("live module before handoff", { f.store.running && !f.store.activationInFlight })
+                // No manual stop/idle. The scheduled old notification must not
+                // recover a module graph after the signalling endpoint changes.
+                module.onDefaultDeviceChange?()
+                module.stopError = failure
+                f.endpoint = endpoint
+                f.store.running = false // Published UI state is not ownership.
+                f.publish("active", raw: "active")
+                module.onDefaultDeviceChange?()
+                await settle()
+                expect(module.stops > 0, "live module owner was not retired on endpoint change")
+                if failure != nil {
+                    expect(reader.starts.isEmpty && reader.permissionRequests == 0,
+                           "failed live retirement admitted a Reader effect")
+                    expect(module.retirementPending && f.store.error?.contains("未确认") == true,
+                           "live handoff lost retirement authority/error")
+                    try? await Task.sleep(for: .milliseconds(400))
+                    expect(reader.starts.isEmpty, "default-device recovery bypassed retirement")
+                    module.stopError = nil
+                    f.publish("active", raw: "active")
+                }
+                await waitFor("reader after live module retirement", { reader.connected != nil && !f.store.activationInFlight })
+                expect(!module.platformRunning && !module.retirementPending && module.starts == 1,
+                       "live module and Reader platform owners overlapped")
+                let count = reader.starts.count
+                f.publish("active", raw: "active")
+                await settle()
+                expect(reader.starts.count == count, "duplicate live handoff restarted Reader")
+                module.onDefaultDeviceChange?()
+                await waitFor("Reader-only device recovery", { reader.starts.count > count && !f.store.activationInFlight })
+                expect(!module.platformRunning && module.starts == 1, "notification revived old HAL owner")
+                f.endpoint = "module"
+                f.publish("active")
+                await waitFor("normal reverse live switch", { module.platformRunning && !f.store.activationInFlight })
+                expect(reader.connected == nil && !reader.microphone, "reverse switch retained Reader owner")
+            }
+        }
+        print("PASS: live module→reader/module-vowifi retires HAL without manual stop; Stop/Destroy failures and device notifications never admit two owners; reverse switch works")
+    }
+
+    @MainActor static func liveModuleHandoffWaitsForBackendStartAndStop() async {
+        let f = Fixture(); defer { f.finish() }
+        APITrace.heldPaths = ["api/call/audio/start", "api/call/audio/stop"]
+        f.endpoint = "module"
+        f.publish("active")
+        await waitFor("held old module backend start", { APITrace.waiters[0] != nil })
+        f.endpoint = "reader"
+        f.publish("active", raw: "active")
+        await settle()
+        expect(APITrace.paths.count == 1 && ReaderVoWiFiAudioBridge.shared.starts.isEmpty,
+               "handoff did not wait for captured backend start")
+        APITrace.complete(0, json: #"{"started":true,"runtime_version":"fixture"}"#)
+        await waitFor("captured old backend stop", { APITrace.waiters[1] != nil })
+        expect(AudioBridge.shared.starts == 0 && ReaderVoWiFiAudioBridge.shared.starts.isEmpty,
+               "late old start or pending stop admitted a platform owner")
+        AudioBridge.shared.onDefaultDeviceChange?()
+        APITrace.complete(1, json: #"{"stopped":true}"#)
+        await waitFor("Reader after captured backend retirement", { f.store.running && !f.store.activationInFlight })
+        expect(APITrace.paths == ["api/call/audio/start", "api/call/audio/stop"],
+               "late module completion submitted an unscoped extra stop")
+        print("PASS: live handoff waits for captured backend start then stop; late module response never starts HAL or stops Reader")
+    }
+
+    @MainActor static func stoppedHandoffCannotResumeFromLateBackendStop() async {
+        for next in ["stop", "hangup", "module", "reader"] {
+            let f = Fixture(); defer { f.finish() }
+            f.endpoint = "module"; f.publish("active")
+            await waitFor("module before held stop", { f.store.running && !f.store.activationInFlight })
+            APITrace.heldPaths = ["api/call/audio/stop"]
+            f.endpoint = "module-vowifi"; f.publish("active", raw: "active")
+            await waitFor("backend stop held", { APITrace.waiters[1] != nil })
+            if next == "stop" {
+                f.store.stop(stopModuleRoute: false)
+            } else if next == "hangup" {
+                f.store.prepareForHangup(endpoint: "module-vowifi")
+                f.publish("active", raw: "active")
+            } else {
+                f.endpoint = next
+                if next == "module" { f.publish("active") }
+                else { f.publish("active", raw: "active", token: "replacement-token", callID: "replacement-call") }
+            }
+            APITrace.complete(1, json: #"{"stopped":true}"#)
+            if next == "stop" || next == "hangup" {
+                await settle()
+                expect(ReaderVoWiFiAudioBridge.shared.starts.isEmpty && !f.store.running,
+                       "late backend stop bypassed newer stop/hangup revision")
+            } else if next == "module" {
+                await waitFor("current module after old retirement", { AudioBridge.shared.starts == 2 && !f.store.activationInFlight })
+                expect(ReaderVoWiFiAudioBridge.shared.starts.isEmpty, "old handoff resumed obsolete Reader intent")
+            } else {
+                await waitFor("current Reader identity after old retirement", { f.store.running && !f.store.activationInFlight })
+                expect(ReaderVoWiFiAudioBridge.shared.connected?.token == "replacement-token",
+                       "old handoff resumed obsolete Reader identity")
+            }
+        }
+        print("PASS: late backend stop respects newer stop/hangup revision and re-evaluates changed endpoint/call identity")
+    }
+
+    @MainActor static func backendStopRefusalKeepsReplacementFenced() async {
+        let f = Fixture(); defer { f.finish() }
+        f.endpoint = "module"; f.publish("active")
+        await waitFor("module before backend refusal", { f.store.running && !f.store.activationInFlight })
+        APITrace.heldPaths = ["api/call/audio/stop"]
+        f.endpoint = "reader"; f.publish("active", raw: "active")
+        await waitFor("backend refusal held", { APITrace.waiters[1] != nil })
+        APITrace.complete(1, json: #"{"stopped":false}"#)
+        await settle()
+        expect(ReaderVoWiFiAudioBridge.shared.starts.isEmpty && f.store.error?.contains("未确认") == true,
+               "backend refusal did not fence replacement")
+        f.publish("active", raw: "active")
+        await waitFor("retry same old backend stop", { APITrace.waiters[2] != nil })
+        APITrace.complete(2, json: #"{"stopped":true}"#)
+        await waitFor("replacement after backend acknowledgement", { f.store.running && !f.store.activationInFlight })
+        print("PASS: backend stop refusal retains owner fence until acknowledged retry")
+    }
+
+    @MainActor static func failedModuleActivationDoesNotLeaveLiveOwner() async {
+        for failure in ["permission", "refused", "throw"] {
+            let f = Fixture(); defer { f.finish() }
+            AudioBridge.shared.permissionGranted = failure != "permission"
+            APITrace.startResult = failure != "refused"
+            APITrace.startThrows = failure == "throw"
+            f.endpoint = "module"; f.publish("active")
+            await waitFor("failed module activation", { !f.store.activationInFlight && f.store.error != nil })
+            await settle()
+            let paths = APITrace.paths.count
+            AudioBridge.shared.onDefaultDeviceChange?()
+            try? await Task.sleep(for: .milliseconds(400))
+            expect(AudioBridge.shared.starts == 0 && APITrace.paths.count == paths,
+                   "failed activation left a ghost live owner for device recovery")
+            f.endpoint = "reader"; f.publish("active", raw: "active")
+            await waitFor("Reader after failed module activation", { f.store.running && !f.store.activationInFlight })
+            expect(!AudioBridge.shared.platformRunning, "failed module activation blocked clean replacement")
+        }
+        print("PASS: permission denial, started=false and deterministic start error leave no ghost live owner or device-triggered HAL start")
+    }
+
+    @MainActor static func backendUnavailableHandoffRecoversAfterRestart() async {
+        let f = Fixture(); defer { f.finish() }
+        f.endpoint = "module"; f.publish("active")
+        await waitFor("module before backend unavailable", { f.store.running && !f.store.activationInFlight })
+        f.backend.state = .stopped
+        f.endpoint = "reader"; f.publish("active", raw: "active")
+        await settle()
+        expect(ReaderVoWiFiAudioBridge.shared.starts.isEmpty && !AudioBridge.shared.platformRunning
+               && f.store.error?.contains("后端未运行") == true,
+               "unavailable backend admitted replacement or hid the recovery condition")
+        f.store.reset()
+        expect(f.store.error?.contains("后端未运行") == true,
+               "reset erased the backend retirement failure")
+        f.backend.state = .running
+        f.publish("active", raw: "active")
+        await waitFor("handoff after backend restart", { f.store.running && !f.store.activationInFlight })
+        expect(APITrace.paths == ["api/call/audio/start", "api/call/audio/stop"],
+               "backend restart did not settle the captured original route")
+        print("PASS: backend unavailable fails closed explicitly; a post-restart status retry settles old route and admits Reader")
+    }
+
+    @MainActor static func modulePendingDuringReaderAttachmentRetiresIt() async {
+        for stopFailed in [true, false] {
+            let f = Fixture(); defer { f.finish() }
+            let reader = ReaderVoWiFiAudioBridge.shared
+            reader.holdStarts = true
+            f.publish("dialing", raw: "connecting", early: true)
+            await waitFor("reader attachment held at platform await", { reader.waitingStarts.count == 1 })
+            let waiting = reader.waitingStarts[0]
+            let module = AudioBridge.shared
+            module.platformRunning = stopFailed
+            module.retirementPending = true
+            reader.completeStart(waiting)
+            await waitFor("pending module cancels late reader attachment", { !f.store.activationInFlight })
+            expect(reader.connected == nil && !reader.microphone && f.store.running == stopFailed,
+                   "late reader attachment bypassed the post-await module snapshot fence")
+            expect(f.store.error?.contains("未确认") == true,
+                   "late attachment hid unconfirmed platform retirement")
+            module.stopError = nil
+        }
+        print("PASS: module pending during reader attachment retires the captured reader session before publication")
+    }
+
+    @MainActor static func modulePendingDuringMicrophoneGrantRetiresReader() async {
+        let f = Fixture(); defer { f.finish() }
+        let reader = ReaderVoWiFiAudioBridge.shared
+        f.publish("dialing", raw: "connecting", early: true)
+        await waitFor("reader playback before held microphone", { f.store.running && !f.store.activationInFlight })
+        reader.holdMicrophone = true
+        f.publish("active", raw: "active")
+        await waitFor("held microphone grant", { reader.waitingMicrophones.count == 1 })
+        AudioBridge.shared.retirementPending = true
+        reader.completeMicrophone(reader.waitingMicrophones[0])
+        await waitFor("pending module rejects microphone completion", { !f.store.activationInFlight })
+        expect(reader.connected == nil && !reader.microphone && !f.store.readerMicrophoneActive,
+               "late microphone completion crossed platform retirement fence")
+        expect(f.store.error?.contains("未确认") == true,
+               "late microphone completion erased retirement error")
+        print("PASS: pending module retirement fences late reader microphone promotion")
+    }
+
+    @MainActor static func readerToModuleReplacementRespectsPlatformRetirement() async {
+        let f = Fixture(); defer { f.finish() }
+        let module = AudioBridge.shared
+        let reader = ReaderVoWiFiAudioBridge.shared
+        f.publish("active", raw: "active")
+        await waitFor("reader active before module replacement", { f.store.running && !f.store.activationInFlight })
+        module.stopError = "AudioDeviceDestroyIOProcID failed"
+        f.endpoint = "module"
+        f.publish("active")
+        await settle()
+        expect(reader.connected == nil && !reader.microphone && module.starts == 0,
+               "module replacement started while HAL retirement was pending")
+        expect(f.store.error?.contains("未确认") == true,
+               "reader-to-module replacement lost retirement failure")
+        module.stopError = nil
+        f.store.stop(stopModuleRoute: false)
+        f.store.startModuleAudio()
+        await waitFor("module after confirmed retirement", { f.store.running && !f.store.activationInFlight })
+        expect(module.starts == 1, "clean retirement did not release module admission")
+        print("PASS: reader-to-module replacement stops old reader and waits for platform retirement acknowledgement")
     }
     @MainActor static func staleModuleStartSurfacesUnconfirmedLocalRetirement() async {
         let f = Fixture(); defer { f.finish() }
@@ -924,7 +1233,7 @@ final class ReaderAudioSessionTicket {}
         f.store.reset()
         f.store.startModuleAudio()
         await waitFor("module audio after reset", { f.store.running && !f.store.activationInFlight })
-        expect(APITrace.paths.count == 2 && bridge.starts == 2,
+        expect(APITrace.paths == ["api/call/audio/start", "api/call/audio/stop", "api/call/audio/start"] && bridge.starts == 2,
                "reset retained a stale module hangup fence")
         print("PASS: module pending hangup blocks late permission/backendStart and repeated active polls; idle/reset recover")
     }

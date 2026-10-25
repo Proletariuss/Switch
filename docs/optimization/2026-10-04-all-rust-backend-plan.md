@@ -1,5 +1,7 @@
 # Switch 全 Rust 后端改造方案
 
+> **执行更新（2026-10-25）：** 批准的全 Rust 目标与功能范围继续有效；当前软件快照为3.51/build351，来源状态 `source-not-final-G0B`。当前 Rust业务owner、Swift系统桥、codec FFI和审计计数见[当前运行时所有权](all-rust/README.md#current-runtime-ownership)，整改状态见[当前进度](all-rust/progress-current.md)。下方605等“当前/最新”条目保留为各自时期历史原文，不代表本轮来源、最终软件验收或长稳通过。G0B/G8/G9仍NO_GO、正式长稳0小时、P0未闭合、P1–P4验收中、P5/P6开放；不冻结整体分母，不生成DMG。
+
 > **当前项目目标与唯一有效工作区：** `/Users/StatTrak/Desktop/Switch_MAC/`；可编辑源码为 `/Users/StatTrak/Desktop/Switch_MAC/src/`，构建、测试和运行数据位于 `/Users/StatTrak/Desktop/Switch_MAC/build/`，发行物位于 `/Users/StatTrak/Desktop/Switch_MAC/dist/`。这条路径取代早期目标中 `/Users/proletarius/Desktop/Switch/` 的写入地址。旧迭代记录保留当时路径作为历史证据，不代表当前工作目录。
 
 当前工作包605（2026-10-21）：唯一工作目录为 `/Users/StatTrak/Desktop/Switch_MAC/`，源码/构建/发行物分别位于 `src/`、`build/`、`dist/`。Iteration 604 的 SIM World 454/03 实卡 VoWiFi IMS 注册结果及安全清理保持有效。Iteration 605 修复读卡器 eSIM 下载 detached worker 未持有共享操作闸门的并发缺口：闸门随 worker 移交，并在物理租约释放和最终读卡器刷新后释放；读卡器 eSIM 专项51项测试通过，新增回归验证操作日志已终态而 owner 清理仍未结束时，模块写操作继续被拒绝。Rust fmt 检查通过。未执行实体下载、切换 Profile、收发短信或拨号，未生成 DMG。严格 Rust-only 静态盘点仍为294/294 Rust owner、0 Go owner；P0分母/历史支持成员尚未闭合，P1–P4验收中，P5语音与P6最终验收未完成，不报告总体百分比。当前读写路径已统一至 `Switch_MAC/src`、`build`、`dist`；Codex内部 goal objective 仍含旧地址，而可用工具没有 objective 文本编辑接口。见[Iteration 605](all-rust/iteration-605-reader-download-gate-lifetime.md)、[Iteration 604](all-rust/iteration-604-simworld-vowifi-registration.md)、[路径修正记录](all-rust/iteration-601-workspace-path-and-source-map-refresh.md)及[整体进度](all-rust/progress-current.md)。

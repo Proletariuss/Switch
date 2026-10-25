@@ -45,20 +45,11 @@ impl Fixture {
         .await
         .unwrap();
         let session = state.modem_actor.native_serial_session().unwrap();
-        // Drain the initial empty-storage scan before taking a no-I/O baseline.
-        tokio::time::timeout(Duration::from_secs(3), async {
-            let mut previous = physical.command_count();
-            loop {
-                tokio::time::sleep(Duration::from_millis(35)).await;
-                let current = physical.command_count();
-                if current == previous {
-                    break;
-                }
-                previous = current;
-            }
-        })
-        .await
-        .unwrap();
+        // This suite does not test stored-SMS ingest. Stop and join its worker
+        // before taking any no-I/O baseline: a quiet command-count window cannot
+        // prove the asynchronous initial scan has finished. Keep startup running
+        // so the shutdown test still exercises begin_shutdown itself.
+        state.modem_actor.finish_sms_receiver().await.unwrap();
         Self {
             physical,
             state,
@@ -177,6 +168,9 @@ async fn request(
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn native_serial_public_status_health_are_cache_only_with_go_absent_or_trapped() {
     let f = Fixture::new().await;
+    // The fixture has joined the SMS worker. Freeze autonomous metadata/reconnect
+    // work before measuring whether the two public GETs cause physical I/O.
+    f.startup.begin_shutdown();
     f.state.availability.mark_failed();
     assert!(!f.state.go_socket_path.exists());
     for trap_live in [false, true] {

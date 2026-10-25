@@ -454,6 +454,9 @@ enum NineEsimBluetoothCredentials {
     }
 
     static func password(for id: UUID) throws -> String? {
+        guard !AcceptanceBootstrap.isAcceptance else {
+            throw NSError(domain: "SwitchAcceptanceUnavailable", code: 1)
+        }
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -475,6 +478,9 @@ enum NineEsimBluetoothCredentials {
     }
 
     static func save(_ password: String?, for id: UUID) throws {
+        guard !AcceptanceBootstrap.isAcceptance else {
+            throw NSError(domain: "SwitchAcceptanceUnavailable", code: 1)
+        }
         let identity: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -997,6 +1003,7 @@ final class BluetoothReaderManager: NSObject, ObservableObject, CBCentralManager
     }
 
     private func beginDiscovery(on central: CBCentralManager) {
+        guard !AcceptanceBootstrap.isAcceptance else { return }
         importSystemConnectedReaders(central)
         central.scanForPeripherals(withServices: nil,
             options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
@@ -1056,6 +1063,10 @@ final class BluetoothReaderManager: NSObject, ObservableObject, CBCentralManager
     }
 
     func scan() {
+        guard !AcceptanceBootstrap.isAcceptance else {
+            fail(.connectFailed, "隔离验收中蓝牙不可用")
+            return
+        }
         scanRequested = true
         if !hasActiveLink {
             targetSelectionPolicy.beginScan(
@@ -1134,6 +1145,10 @@ final class BluetoothReaderManager: NSObject, ObservableObject, CBCentralManager
     // MARK: - Connect / Disconnect
 
     func connect(_ id: UUID) {
+        guard !AcceptanceBootstrap.isAcceptance else {
+            fail(.connectFailed, "隔离验收中蓝牙不可用")
+            return
+        }
         guard targetSelectionPolicy.selectExplicitly(id) else {
             fail(.connectFailed, "蓝牙设备标识无效，请重新扫描")
             return
@@ -1249,6 +1264,7 @@ final class BluetoothReaderManager: NSObject, ObservableObject, CBCentralManager
     }
 
     private func startConnectionAttempt(_ id: UUID, detail: String) {
+        guard !AcceptanceBootstrap.isAcceptance else { return }
         guard CBManager.authorization == .allowedAlways else {
             if CBManager.authorization != .notDetermined { failBluetoothAuthorization() }
             return

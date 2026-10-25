@@ -1,0 +1,307 @@
+name: Review Switch changes
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+  workflow_dispatch:
+    inputs:
+      build_app:
+        description: Also build Switch.app after the software gates
+        required: false
+        default: false
+        type: boolean
+  schedule:
+    # Monthly drift check. Pull requests remain the primary validation path.
+    - cron: '43 3 1 * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: switch-quality-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  classify:
+    name: Classify changed paths
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      needs_macos: ${{ steps.paths.outputs.needs_macos }}
+      needs_app: ${{ steps.paths.outputs.needs_app }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          path: src
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Select the proportional validation tier
+        id: paths
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          MANUAL_BUILD_APP: ${{ inputs.build_app }}
+        run: |
+          set -euo pipefail
+          needs_macos=false
+          needs_app=false
+
+          case "$EVENT_NAME" in
+            pull_request)
+              mapfile -t files < <(git -C src diff --name-only "$BASE_SHA" "$HEAD_SHA")
+              for file in "${files[@]}"; do
+                case "$file" in
+                  rust/*|app/*|scripts/*|third_party/*|data/*|licenses/*|Switch.xcodeproj/*|project.yml|VERSION|BUILD_NUMBER|mise.toml|.github/workflows/quality.yml)
+                    needs_macos=true
+                    ;;
+                esac
+                case "$file" in
+                  app/*|third_party/*|Switch.xcodeproj/*|project.yml|VERSION|BUILD_NUMBER|scripts/build*|scripts/workspace-env.sh|scripts/package-dmg.sh|scripts/audit-release-bundle.py|scripts/prepare-module-supervisor.py)
+                    needs_app=true
+                    ;;
+                esac
+              done
+              ;;
+            workflow_dispatch)
+              needs_macos=true
+              if [[ "$MANUAL_BUILD_APP" == "true" ]]; then
+                needs_app=true
+              fi
+              ;;
+            schedule)
+              needs_macos=true
+              ;;
+            *)
+              echo "Unsupported event: $EVENT_NAME" >&2
+              exit 2
+              ;;
+          esac
+
+          {
+            echo "needs_macos=$needs_macos"
+            echo "needs_app=$needs_app"
+          } >> "$GITHUB_OUTPUT"
+
+  source-review:
+    name: Source contracts and formatting
+    needs: classify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          path: src
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: 1.98.0
+          components: rustfmt
+      - name: Run portable source checks
+        working-directory: src
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          scripts/preflight-source.sh
+          cargo +1.98.0 fmt --manifest-path rust/Cargo.toml --all -- --check
+          cargo +1.98.0 metadata \
+            --manifest-path rust/Cargo.toml \
+            --locked \
+            --no-deps \
+            --format-version 1 >/dev/null
+          cargo +1.98.0 fmt \
+            --manifest-path scripts/acceptance/daemon-capsule-fixture/Cargo.toml \
+            --all \
+            -- --check
+          cargo +1.98.0 metadata \
+            --manifest-path scripts/acceptance/daemon-capsule-fixture/Cargo.toml \
+            --locked \
+            --no-deps \
+            --format-version 1 >/dev/null
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            git diff --check "$BASE_SHA" "$HEAD_SHA"
+          fi
+          git diff --exit-code
+
+  macos-software-gate:
+    name: macOS Rust software gate
+    needs:
+      - classify
+      - source-review
+    if: >-
+      needs.classify.outputs.needs_macos == 'true' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          path: src
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: 1.98.0
+          components: clippy,rustfmt
+      - name: Install native build dependencies
+        run: brew install libusb
+      - name: Install the app project generator when needed
+        if: needs.classify.outputs.needs_app == 'true'
+        run: brew install xcodegen
+      - name: Prepare pinned ARM Rust standard library
+        working-directory: src
+        run: python3 scripts/prepare-module-supervisor.py --fetch
+      - name: Fetch locked Rust build inputs
+        working-directory: src
+        run: CARGO_HOME="$GITHUB_WORKSPACE/build/cargo-home" cargo +1.98.0 fetch --locked --manifest-path rust/Cargo.toml
+      - name: Run native Rust gates
+        working-directory: src
+        shell: bash
+        run: |
+          set -euo pipefail
+          export SWITCH_SOURCE_ROOT="$PWD"
+          export SWITCH_TEST_TMPDIR="$RUNNER_TEMP/switch-tests/"
+          umask 077
+          G8_FIXTURE_ROOT="$(mktemp -d "${RUNNER_TEMP%/}/switch-g8.XXXXXX")"
+          G8_FIXTURE_ROOT="$(cd "$G8_FIXTURE_ROOT" && pwd -P)"
+          export G8_FIXTURE_ROOT
+          trap 'rm -rf -- "$G8_FIXTURE_ROOT"' EXIT
+          . scripts/workspace-env.sh
+          scripts/preflight-source.sh
+          python3 scripts/build-evs.py
+          python3 scripts/build-module-supervisor.py
+          (
+            cd rust
+            cargo +1.98.0 fmt --all -- --check
+            # The current daemon has a reviewed warning baseline. Clippy still
+            # reports new findings, but warnings are not globally denied until
+            # the baseline has been retired deliberately.
+            cargo +1.98.0 clippy --locked --workspace --all-targets
+            cargo +1.98.0 test --locked --workspace --exclude proletariusd
+            # Run the full daemon suite. Tests with process-wide descriptor or
+            # retained serial state are exercised below with explicit isolation.
+            cargo +1.98.0 test --locked -p proletariusd -- \
+              --skip native_serial_module_supervision_tests:: \
+              --skip acceptance_capsule:: \
+              --skip connection_pools::tests::production_three_pool_driver_reaps_64_admits_queued_65_and_preserves_other_pools
+          )
+          python3 - <<'PY'
+          import subprocess
+
+          base = [
+              "cargo", "+1.98.0", "test", "--locked", "-p", "proletariusd",
+              "--bin", "switchd-rs",
+          ]
+          def list_tests(pattern):
+              listed = subprocess.run(
+                  base + [pattern, "--", "--list"],
+                  cwd="rust",
+                  check=True,
+                  text=True,
+                  stdout=subprocess.PIPE,
+              )
+              return [
+                  line[:-len(": test")]
+                  for line in listed.stdout.splitlines()
+                  if line.endswith(": test")
+              ]
+
+          serial_prefix = "native_serial_module_supervision_tests::"
+          serial_tests = [
+              test for test in list_tests(serial_prefix)
+              if test.startswith(serial_prefix)
+          ]
+          if len(serial_tests) != 6 or len(set(serial_tests)) != 6:
+              raise SystemExit(
+                  f"expected 6 serial supervision tests, found {len(serial_tests)}"
+              )
+
+          capsule_prefix = "acceptance_capsule::"
+          capsule_tests = [
+              test for test in list_tests(capsule_prefix)
+              if test.startswith(capsule_prefix)
+          ]
+          if not capsule_tests or len(capsule_tests) != len(set(capsule_tests)):
+              raise SystemExit(
+                  f"expected unique capsule tests, found {len(capsule_tests)}"
+              )
+
+          exact_tests = [
+              "connection_pools::tests::production_three_pool_driver_reaps_64_admits_queued_65_and_preserves_other_pools",
+          ]
+          for test in exact_tests:
+              if list_tests(test) != [test]:
+                  raise SystemExit(f"expected one exact isolated test: {test}")
+
+          isolated = serial_tests + capsule_tests + exact_tests
+          if len(isolated) != len(set(isolated)):
+              raise SystemExit("isolated test selectors overlap")
+
+          subprocess.run(
+              base + [capsule_prefix, "--", "--test-threads=1"],
+              cwd="rust",
+              check=True,
+          )
+          for test in serial_tests + exact_tests:
+              subprocess.run(
+                  base + [test, "--", "--exact", "--test-threads=1"],
+                  cwd="rust",
+                  check=True,
+              )
+          PY
+          cargo +1.98.0 fmt \
+            --manifest-path scripts/acceptance/daemon-capsule-fixture/Cargo.toml \
+            --all \
+            -- --check
+          cargo +1.98.0 clippy \
+            --manifest-path scripts/acceptance/daemon-capsule-fixture/Cargo.toml \
+            --locked \
+            --all-targets
+          cargo +1.98.0 test \
+            --manifest-path scripts/acceptance/daemon-capsule-fixture/Cargo.toml \
+            --locked \
+            -- --test-threads=1
+      - name: Build Switch.app for app-affecting changes
+        if: needs.classify.outputs.needs_app == 'true'
+        working-directory: src
+        run: scripts/build.sh
+
+  review-result:
+    name: Review result
+    if: always()
+    needs:
+      - classify
+      - source-review
+      - macos-software-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    env:
+      CLASSIFY_RESULT: ${{ needs.classify.result }}
+      SOURCE_RESULT: ${{ needs.source-review.result }}
+      MACOS_RESULT: ${{ needs.macos-software-gate.result }}
+      NEEDS_MACOS: ${{ needs.classify.outputs.needs_macos }}
+      IS_DRAFT: ${{ github.event.pull_request.draft }}
+      EVENT_NAME: ${{ github.event_name }}
+    steps:
+      - name: Reject failed or unexpectedly skipped checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$CLASSIFY_RESULT" == "success" ]]
+          [[ "$SOURCE_RESULT" == "success" ]]
+          if [[ "$NEEDS_MACOS" == "true" && ! ( "$EVENT_NAME" == "pull_request" && "$IS_DRAFT" == "true" ) ]]; then
+            [[ "$MACOS_RESULT" == "success" ]]
+          else
+            [[ "$MACOS_RESULT" == "success" || "$MACOS_RESULT" == "skipped" ]]
+          fi

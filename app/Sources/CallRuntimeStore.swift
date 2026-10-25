@@ -169,7 +169,7 @@ final class CallRuntimeStore: ObservableObject {
             do {
                 let response: CallStatus = try await APIClient().get("api/call/status")
                 guard revision == pollRevision else { return }
-                publish(response)
+                acceptModuleStatus(response)
             } catch {
                 guard revision == pollRevision else { return }
                 publish(CallStatus(state: "unknown", number: status.number, incoming: false, active: false))

@@ -1,6 +1,8 @@
 # 全 Rust 迁移：非 HTTP 运行时能力清单
 
-当前核对（Iteration 665，2026-10-22）：下面 Iteration505 和能力表中的 Go 路径/归属是历史快照，**不是当前仍运行的 owner**。当前源码结构门禁为零 Go 构建/嵌入/启动/转发，契约为 295 Rust / 0 Go；当前 Rust runtime 的 forwarding、N待 recovery/maintenance/retry、BLE/presence/hotplug、module startup 与清理定时器由 `proletariusd/src/main.rs` 启动，退出在其 native/module/reader/QMI 协调分支汇合。全量非 HTTP 能力仍需各自运行证据，不能只据路由计数标记完成。 本轮按用户直接指令仅做软件验收，不接入 DJI 模块或读卡器；物理/运营商叶子仍未验证，零新增功能 PASS，不冻结总分母或百分比。
+当前核对（2026-10-25，3.51/build351，`source-not-final-G0B`）：现行审计为312条method/path（Rust312/Go0，59条HEAD别名）、130个Swift HTTP调用点；来源/库存审计仍exit1，诊断与旧库存保留，未采纳最终successor。Rust runtime 的 forwarding、N待 recovery/maintenance/retry、BLE/presence/hotplug、module startup 与清理定时器由 `proletariusd/src/main.rs` 启动，退出在其 native/module/reader/QMI 协调分支汇合。Rust业务、Swift系统桥、codec FFI和原始证据见[当前运行时所有权](README.md#current-runtime-ownership)。非HTTP能力仍需各自运行证据，不能只据路由数标记完成；G0B/G8/G9仍NO_GO、正式长稳0小时，不冻结总分母或百分比。
+
+> 以下为各时期原文，包括Iteration665以前的“最新/当前”、Go路径/归属、构建阻断、计数与能力表；这些均是历史快照，**不是当前仍运行的owner或当前验收结果**。保留原日期、行号和失败，不改写历史表。
 
 RT-H02 本轮实际修复为 `R/diagnostics.rs` 的有界日志 writer 与 `R/main.rs` 四个有界 exit drain，满/闭 OS 管道下真实 daemon API 和退出通过；Swift `BackendProcess` 仍是日志系统桥，未迁移 UI。RT-H03/V6 的本地备注由 `R/profile_notes.rs` 三个 Rust writer 保留精确未知扩展；这只验证该文件，不能推及所有配置格式。见 [Iteration564](iteration-564-notes-and-nonblocking-diagnostics.md)。P5 编码重协商、P6 生命周期 admission/旧回退与实机/长稳/性能等剩余项见 [565审议](iteration-565-p5-renegotiation-residual.md) 和 [561残余计划](iteration-561-p6-residual-plan.md)。
 

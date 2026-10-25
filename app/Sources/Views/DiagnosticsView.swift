@@ -591,6 +591,11 @@ struct DiagnosticNotifyView: View {
     }
 
     private func loadNotifyAuth() {
+        guard !AcceptanceBootstrap.isAcceptance else {
+            notifyAuth = "隔离验收中不可用"
+            notifyBannerOff = false
+            return
+        }
         Task {
             let settings = await UNUserNotificationCenter.current().notificationSettings()
             let text: String

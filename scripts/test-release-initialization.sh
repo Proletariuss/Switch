@@ -15,6 +15,7 @@ SWITCH_RELEASE_INIT_TEST_ROOT="$INIT_TEST_DIR" python3 "$SWITCH_SOURCE_ROOT/scri
 SWITCH_RELEASE_INIT_TEST_ROOT="$INIT_TEST_DIR" python3 "$SWITCH_SOURCE_ROOT/app/Tests/ReleaseInitialization/test_license_pin.py"
 ruby "$SWITCH_SOURCE_ROOT/app/Tests/ReleaseInitialization/prepare.rb" "$SWITCH_SOURCE_ROOT" "$INIT_TEST_DIR"
 xcrun swiftc -parse-as-library -D SWITCH_FORWARDING_TESTS \
+  "$SWITCH_SOURCE_ROOT/app/Sources/AcceptanceContext.swift" \
   "$INIT_TEST_DIR/SMSForwardingStore.swift" "$INIT_TEST_DIR/SMSForwardingCheckpoint.swift" \
   "$INIT_TEST_DIR/MockBoundaries.swift" "$SWITCH_SOURCE_ROOT/app/Tests/SMSForwardingClient/UnixHandoff.swift" \
   "$SWITCH_SOURCE_ROOT/app/Tests/ReleaseInitialization/main.swift" \

@@ -1233,3 +1233,343 @@ async fn reader_stop_success_publishes_once_but_waiter_timeout_does_not_retire_h
     assert_eq!(final_receipt["operation"]["requested_enable"], false);
     finish_held_reader_stop(fixture, service, record).await;
 }
+
+#[tokio::test]
+async fn g3_reader_stop_control_ignores_broken_ledger_and_joins_only_the_exact_owner() {
+    let (fixture, service, record) = held_reader_stop_fixture().await;
+    let cleanup = ResumeHeldReaderOnDrop {
+        fixture: &fixture,
+        service: &service,
+    };
+    let target = record.control.target(
+        "reader",
+        &service.0.sms_epoch,
+        record.expected.reader_generation,
+    );
+    let path = service
+        .0
+        .resources
+        .data_root
+        .join("vowifi-reader-request-ledger.json");
+    let original = std::fs::read(&path).unwrap();
+    let get = Request::builder()
+        .method("GET")
+        .uri(format!(
+            "/api/reader/vowifi/stop-control?{}",
+            target.query_string()
+        ))
+        .body(Full::new(Bytes::new()))
+        .unwrap();
+    assert_eq!(service.handle_public(get).await.status(), StatusCode::OK);
+    assert!(!*record.stop.borrow());
+    assert!(!record.control.started());
+
+    std::fs::write(&path, b"unreadable ledger retained by G3 fixture").unwrap();
+    let broken = std::fs::read(&path).unwrap();
+    let stop = reader_enable_wire(r#""enable":false"#, "g3-reader-normal-io-failed", r#""""#);
+    assert_eq!(post(&service, &stop).await.0, StatusCode::CONFLICT);
+    assert!(!*record.stop.borrow());
+    let req = || {
+        Request::builder()
+            .method("POST")
+            .uri(format!(
+                "/api/reader/vowifi/stop-control?{}",
+                target.query_string()
+            ))
+            .body(Full::new(Bytes::new()))
+            .unwrap()
+    };
+    let response = service.handle_public(req()).await;
+    assert_eq!(response.status(), StatusCode::ACCEPTED);
+    assert!(
+        *record.stop.borrow(),
+        "signal is synchronous before observer return"
+    );
+    assert!(record.claim.try_is_current().unwrap());
+    assert!(record.control.busy());
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let value: Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(value["stop_control"]["owner_join"], "pending");
+    assert_eq!(value["stop_control"]["cleanup"], "unconfirmed");
+    assert!(value.get("operation").is_none());
+    service.handle_public(req()).await;
+    assert_eq!(
+        std::fs::read(&path).unwrap(),
+        broken,
+        "temporary control never writes ledger bytes"
+    );
+    fixture.resume();
+    tokio::time::timeout(Duration::from_secs(3), async {
+        while record.control.busy() {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    assert!(!record.claim.try_is_current().unwrap());
+    let result = record.control.project(target.clone()).unwrap();
+    let value = serde_json::to_value(result).unwrap();
+    assert_eq!(value["owner_join"], "joined");
+    assert_eq!(value["cleanup"], "confirmed");
+    // Restore only this fixture's fault, then use the actual start path to
+    // publish a live successor and populate the bounded retired completion.
+    std::fs::write(&path, original).unwrap();
+    fixture.hold();
+    let start = reader_enable_wire(r#""enable":true"#, "g3-reader-successor", r#""""#);
+    assert_eq!(post(&service, &start).await.0, StatusCode::ACCEPTED);
+    fixture.entered(2).await;
+    let successor = service.record().unwrap().unwrap();
+    assert!(!Arc::ptr_eq(&successor, &record));
+    assert!(!*successor.stop.borrow());
+    let before_old_retry = std::fs::read(&path).unwrap();
+    assert_eq!(service.handle_public(req()).await.status(), StatusCode::OK);
+    assert!(
+        !*successor.stop.borrow(),
+        "retired POST never stops the live successor"
+    );
+    let mut stale = target.clone();
+    stale.owner_generation += 1;
+    let request = Request::builder()
+        .method("POST")
+        .uri(format!(
+            "/api/reader/vowifi/stop-control?{}",
+            stale.query_string()
+        ))
+        .body(Full::new(Bytes::new()))
+        .unwrap();
+    assert_eq!(
+        service.handle_public(request).await.status(),
+        StatusCode::CONFLICT
+    );
+    assert!(!*successor.stop.borrow());
+    assert_eq!(std::fs::read(&path).unwrap(), before_old_retry);
+    drop(cleanup);
+    service
+        .finish_before(tokio::time::Instant::now() + Duration::from_secs(3))
+        .await
+        .unwrap();
+    assert!(!successor.claim.try_is_current().unwrap());
+    drop(successor);
+    drop(record);
+    drop(service);
+    fixture.close().await;
+}
+
+#[tokio::test]
+async fn g3_reader_100k_32mib_and_injected_storage_failures_preserve_stop_and_history() {
+    for fault in [
+        "count",
+        "bytes",
+        "readonly-injected",
+        "enospc-injected",
+        "rename-ack-loss",
+    ] {
+        let (fixture, service, record) = held_reader_stop_fixture().await;
+        let resume = ResumeHeldReaderOnDrop {
+            fixture: &fixture,
+            service: &service,
+        };
+        let target = record.control.target(
+            "reader",
+            &service.0.sms_epoch,
+            record.expected.reader_generation,
+        );
+        let path = service
+            .0
+            .resources
+            .data_root
+            .join("vowifi-reader-request-ledger.json");
+        let original = std::fs::read(&path).unwrap();
+        match fault {
+            "count" => {
+                assert_eq!(
+                    service
+                        .0
+                        .state
+                        .lock()
+                        .unwrap()
+                        .requests
+                        .test_fill_capacity(),
+                    100_000
+                );
+            }
+            "bytes" => {
+                std::fs::write(&path, vec![b' '; 32 * 1024 * 1024 + 1]).unwrap();
+            }
+            "readonly-injected" => service
+                .0
+                .state
+                .lock()
+                .unwrap()
+                .requests
+                .test_write_fault(std::io::ErrorKind::ReadOnlyFilesystem),
+            "enospc-injected" => service
+                .0
+                .state
+                .lock()
+                .unwrap()
+                .requests
+                .test_write_fault(std::io::ErrorKind::StorageFull),
+            _ => {
+                service.0.state.lock().unwrap().before_stop_insert =
+                    Some(Box::new(|ledger| ledger.test_fail_after_next_persist()));
+            }
+        }
+        let stop = reader_enable_wire(r#""enable":false"#, "g3-reader-denied-stop", r#""""#);
+        assert_eq!(
+            post(&service, &stop).await.0,
+            StatusCode::CONFLICT,
+            "{fault}"
+        );
+        assert!(!*record.stop.borrow());
+        let before = std::fs::read(&path).unwrap();
+        let request = Request::builder()
+            .method("POST")
+            .uri(format!(
+                "/api/reader/vowifi/stop-control?{}",
+                target.query_string()
+            ))
+            .body(Full::new(Bytes::new()))
+            .unwrap();
+        assert_eq!(
+            service.handle_public(request).await.status(),
+            StatusCode::ACCEPTED,
+            "{fault}"
+        );
+        assert!(*record.stop.borrow());
+        assert!(record.claim.try_is_current().unwrap());
+        fixture.resume();
+        tokio::time::timeout(Duration::from_secs(3), async {
+            while record.control.busy() {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        assert_eq!(
+            std::fs::read(&path).unwrap(),
+            before,
+            "no durable writes during fallback {fault}"
+        );
+        if fault == "count" {
+            assert_eq!(
+                service.0.state.lock().unwrap().requests.test_count(),
+                100_000
+            );
+        }
+        if fault == "rename-ack-loss" {
+            let reopened = super::super::operation::RequestLedger::open(
+                &service.0.resources.data_root,
+                "reader",
+            )
+            .unwrap();
+            let receipt = reopened
+                .lookup("g3-reader-denied-stop", None)
+                .unwrap()
+                .unwrap()
+                .resolve(None);
+            assert_eq!(receipt.outcome.as_deref(), Some("unknown"));
+            assert!(!receipt.succeeded && !receipt.cleanup_confirmed && !receipt.terminal);
+        }
+        // Restore only this fixture's faulted bytes for independent teardown;
+        // no production recovery/ledger cleanup path performs this operation.
+        if fault == "bytes" {
+            std::fs::write(&path, original).unwrap();
+        }
+        drop(resume);
+        drop(record);
+        drop(service);
+        fixture.close().await;
+    }
+}
+
+#[tokio::test]
+async fn g3_reader_head_current_retired_stale_invalid_never_signals_or_writes() {
+    let (fixture, service, record) = held_reader_stop_fixture().await;
+    let root = service.0.resources.data_root.join("g3-head-server");
+    let mut server = crate::reader_pcsc_gateway_tests::state(&root);
+    let lifecycle = service.0.resources.lifecycle.upgrade().unwrap();
+    server.native_vowifi_lifecycle = lifecycle.clone();
+    assert!(lifecycle.ordinary_service.set(Ok(service.clone())).is_ok());
+    let target = record.control.target(
+        "reader",
+        &service.0.sms_epoch,
+        record.expected.reader_generation,
+    );
+    let path = service
+        .0
+        .resources
+        .data_root
+        .join("vowifi-reader-request-ledger.json");
+    let before = std::fs::read(&path).unwrap();
+    let query = target.query_string();
+    for (query, status) in [
+        (query.clone(), StatusCode::OK),
+        (
+            query.replace(&target.daemon_epoch, "stale-epoch"),
+            StatusCode::CONFLICT,
+        ),
+        (
+            query.replace(
+                &format!("owner_generation={}", target.owner_generation),
+                "owner_generation=01",
+            ),
+            StatusCode::BAD_REQUEST,
+        ),
+    ] {
+        let observed = record.stop.subscribe();
+        assert_eq!(
+            super::super::stop_control::test_head_request(
+                server.clone(),
+                &format!("/api/reader/vowifi/stop-control?{query}")
+            )
+            .await,
+            status
+        );
+        assert!(!observed.has_changed().unwrap());
+        assert!(!*record.stop.borrow());
+        assert_eq!(std::fs::read(&path).unwrap(), before);
+    }
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!(
+            "/api/reader/vowifi/stop-control?{}",
+            target.query_string()
+        ))
+        .body(Full::new(Bytes::new()))
+        .unwrap();
+    assert_eq!(
+        service.handle_public(req).await.status(),
+        StatusCode::ACCEPTED
+    );
+    fixture.resume();
+    tokio::time::timeout(Duration::from_secs(2), async {
+        while record.control.busy() {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    {
+        let mut state = service.0.state.lock().unwrap();
+        state.last_stop = Some((target.clone(), record.control.clone()));
+        state.record = None;
+    }
+    let observed = record.stop.subscribe();
+    assert_eq!(
+        super::super::stop_control::test_head_request(
+            server.clone(),
+            &format!("/api/reader/vowifi/stop-control?{}", target.query_string())
+        )
+        .await,
+        StatusCode::OK
+    );
+    assert!(!observed.has_changed().unwrap());
+    assert_eq!(std::fs::read(&path).unwrap(), before);
+    server.sms_forwarding.shutdown().await.unwrap();
+    server.reader_pcsc.shutdown().await.unwrap();
+    drop(server);
+    drop(record);
+    drop(service);
+    fixture.close().await;
+}

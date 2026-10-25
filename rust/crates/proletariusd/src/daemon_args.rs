@@ -6,6 +6,7 @@ use std::os::unix::ffi::{OsStrExt, OsStringExt};
 
 #[derive(Default, Debug, PartialEq, Eq)]
 pub(crate) struct DaemonArgs {
+    pub(crate) acceptance_capsule: Option<String>,
     pub(crate) port: Option<OsString>,
     pub(crate) listen: Option<OsString>,
     pub(crate) backend: Option<OsString>,
@@ -13,8 +14,30 @@ pub(crate) struct DaemonArgs {
 }
 
 pub(crate) fn parse(arguments: impl IntoIterator<Item = OsString>) -> Result<DaemonArgs, String> {
-    let mut result = DaemonArgs::default();
-    let mut arguments = arguments.into_iter();
+    // Scan the complete argv before the historical flag parser: acceptance
+    // switches cannot hide behind a positional, terminator or flag value.
+    let mut ordinary = Vec::new();
+    let mut capsule = None;
+    for argument in arguments {
+        let bytes = argument.as_bytes();
+        if bytes.starts_with(b"--switch-acceptance") || bytes.starts_with(b"-switch-acceptance") {
+            let value = bytes
+                .strip_prefix(b"--switch-acceptance-capsule=")
+                .and_then(|v| std::str::from_utf8(v).ok())
+                .filter(|v| crate::acceptance_capsule::canonical(v).is_ok())
+                .ok_or("invalid acceptance arguments")?;
+            if capsule.replace(value.to_owned()).is_some() {
+                return Err("invalid acceptance arguments".into());
+            }
+        } else {
+            ordinary.push(argument);
+        }
+    }
+    let mut result = DaemonArgs {
+        acceptance_capsule: capsule,
+        ..DaemonArgs::default()
+    };
+    let mut arguments = ordinary.into_iter();
     while let Some(argument) = arguments.next() {
         let bytes = argument.as_bytes();
         if bytes == b"--" || bytes == b"-" || !bytes.starts_with(b"-") {

@@ -159,14 +159,18 @@ async fn poll_once(
     };
 
     let progress = runtime.current_progress().await?;
-    if let Some(progress) = progress.as_ref()
-        && progress.handoff_id.as_deref() != Some(handoff.handoff_id.as_str())
+    if let Some(id) = progress
+        .as_ref()
+        .and_then(|progress| progress.handoff_id.as_deref())
+        && id != handoff.handoff_id
     {
         return Err("device_sms_handoff_conflict");
     }
-    let baseline_only = progress
-        .as_ref()
-        .is_none_or(|progress| progress.was_enabled != Some(true) || progress.skip_next_snapshot);
+    let baseline_only = progress.as_ref().is_none_or(|progress| {
+        progress.handoff_id.is_none()
+            || progress.was_enabled != Some(true)
+            || progress.skip_next_snapshot
+    });
     let snapshot = runtime.inbox().await?;
 
     if baseline_only {
@@ -487,6 +491,66 @@ mod tests {
     #[derive(Clone)]
     struct FakeRuntime(Arc<Mutex<FakeState>>);
 
+    struct LedgerRuntime {
+        fake: FakeRuntime,
+        ledger: crate::device_forwarding_store::Store,
+        service: Option<crate::sms_forwarding::Service>,
+        handoffs: Option<crate::forwarding_handoff_store::Store>,
+    }
+
+    impl Runtime for LedgerRuntime {
+        async fn current_handoff(
+            &self,
+        ) -> Result<Option<proletarius_api_contract::SmsForwardingHandoffV1>, &'static str>
+        {
+            if let Some(handoffs) = &self.handoffs {
+                handoffs
+                    .current()
+                    .map_err(|_| "device_sms_handoff_unavailable")
+            } else {
+                self.fake.current_handoff().await
+            }
+        }
+        async fn current_progress(
+            &self,
+        ) -> Result<Option<crate::device_forwarding_store::Progress>, &'static str> {
+            self.ledger
+                .current()
+                .map_err(|_| "device_sms_admission_unavailable")
+        }
+        async fn forwarding_enabled(&self) -> Result<bool, &'static str> {
+            if let Some(service) = &self.service {
+                service.admission_enabled().await
+            } else {
+                self.fake.forwarding_enabled().await
+            }
+        }
+        async fn inbox(&self) -> Result<InboxSnapshot, &'static str> {
+            self.fake.inbox().await
+        }
+        async fn submit(
+            &self,
+            ids: Vec<String>,
+            messages: Vec<crate::sms_forwarding::DeviceSnapshotMessage>,
+            baseline: bool,
+            snapshot: bool,
+        ) -> Result<String, &'static str> {
+            if let Some(service) = &self.service {
+                self.fake.0.lock().unwrap().submissions.push(Submission {
+                    current_ids: ids.clone(),
+                    messages: messages.clone(),
+                    baseline_only: baseline,
+                    include_snapshot: snapshot,
+                });
+                service
+                    .submit_device_snapshot_from_rust(ids, messages, baseline, snapshot)
+                    .await
+            } else {
+                self.fake.submit(ids, messages, baseline, snapshot).await
+            }
+        }
+    }
+
     struct FakeState {
         handoff: Option<proletarius_api_contract::SmsForwardingHandoffV1>,
         progress: Option<crate::device_forwarding_store::Progress>,
@@ -638,6 +702,328 @@ mod tests {
                 .collect(),
             messages,
         }
+    }
+
+    #[tokio::test]
+    async fn damaged_real_ledger_stops_device_producer_before_inbox_or_queue_submission() {
+        for damage in [b"".as_slice(), b"null", b"[]", b"[]\n", b"{broken"] {
+            let root = std::env::temp_dir()
+                .join("device-forwarding-producer-tests")
+                .join(crate::multistandby_store::random_token().unwrap());
+            std::fs::create_dir_all(&root).unwrap();
+            let ledger = crate::device_forwarding_store::Store::open(&root).unwrap();
+            ledger.note_configuration_enabled(false).unwrap();
+            let path = root.join("device-sms-forwarding-admission.json");
+            let original = std::fs::read(&path).unwrap();
+            std::fs::write(&path, damage).unwrap();
+            let runtime = LedgerRuntime {
+                fake: FakeRuntime::new(true, None, synthetic_snapshot(3)),
+                ledger,
+                service: None,
+                handoffs: None,
+            };
+            let mut last = None;
+            assert_eq!(
+                poll_once(&runtime, &mut last).await,
+                Err("device_sms_admission_unavailable")
+            );
+            assert_eq!(std::fs::read(&path).unwrap(), damage);
+            assert_eq!(runtime.fake.0.lock().unwrap().reads, 0);
+            assert!(runtime.fake.submissions().is_empty());
+            // Repair does not clear GuardedArchive's process-local latch.
+            std::fs::write(&path, original).unwrap();
+            assert!(poll_once(&runtime, &mut last).await.is_err());
+            assert!(runtime.fake.submissions().is_empty());
+            std::fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[tokio::test]
+    async fn semantic_ledger_corruption_and_external_repair_never_reach_real_queue_or_post() {
+        use bytes::Bytes;
+        use http_body_util::{BodyExt, Full};
+        use hyper::{Method, Request, StatusCode};
+        use serde_json::{Value, json};
+        fn request(method: Method, path: &str, body: Value) -> Request<Full<Bytes>> {
+            Request::builder()
+                .method(method)
+                .uri(path)
+                .body(Full::new(Bytes::from(serde_json::to_vec(&body).unwrap())))
+                .unwrap()
+        }
+        let a = "a".repeat(64);
+        let b = "b".repeat(64);
+        for (field, damage) in [
+            ("schema_version", json!(999)),
+            ("accepted_notification_ids", json!(["invalid"])),
+            ("accepted_notification_ids", json!([b, a.clone()])),
+            ("accepted_notification_ids", json!([a.clone(), a])),
+        ] {
+            let root = std::env::temp_dir()
+                .join("device-forwarding-producer-tests")
+                .join(crate::multistandby_store::random_token().unwrap());
+            std::fs::create_dir_all(&root).unwrap();
+            let ledger = crate::device_forwarding_store::Store::open(&root).unwrap();
+            let fake = FakeRuntime::new(true, None, synthetic_snapshot(3));
+            let handoff = fake.0.lock().unwrap().handoff.clone().unwrap();
+            ledger.import_handoff(&handoff).unwrap();
+            let handoffs = crate::forwarding_handoff_store::Store::open(&root).unwrap();
+            {
+                let _serial = crate::forwarding_handoff_store::REQUEST_TEST_LOCK
+                    .lock()
+                    .await;
+                let response = crate::forwarding_handoff_store::handle(
+                    request(
+                        Method::POST,
+                        "/api/v2/sms/forwarding/handoff",
+                        serde_json::to_value(&handoff).unwrap(),
+                    ),
+                    handoffs.clone(),
+                )
+                .await;
+                assert_eq!(response.status(), StatusCode::OK);
+            }
+            // A configured real Service and an observable loopback endpoint
+            // make a producer escape visible as a queue task or TCP connection.
+            let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let endpoint = format!("http://{}", listener.local_addr().unwrap());
+            let service = crate::sms_forwarding::Service::new_with_admission(
+                &root,
+                handoffs.clone(),
+                ledger.clone(),
+            );
+            let state_key =
+                base64::Engine::encode(&base64::engine::general_purpose::STANDARD, [62_u8; 32]);
+            let response = service.handle(request(Method::POST, "/api/sms/forwarding/configure", json!({
+                "client_request_id":"g1-semantic-corruption", "client_sequence":1,
+                "telegram":{"enabled":false,"bot_token":"","chat_id":"","proxy":{"mode":"system","url":""}},
+                "bark":{"enabled":true,"server_url":endpoint,"device_key":"g1-synthetic","icon_url":"","group":"Switch-SMS","encrypted":false,"encryption_algorithm":"AES-128-CBC","encryption_key":""},
+                "state_key":state_key
+            }))).await;
+            assert_eq!(response.status(), StatusCode::OK);
+            let path = root.join("device-sms-forwarding-admission.json");
+            let valid = std::fs::read(&path).unwrap();
+            let mut records: Value = serde_json::from_slice(&valid).unwrap();
+            records[0][field] = damage;
+            let damaged = serde_json::to_vec(&records).unwrap();
+            std::fs::write(&path, &damaged).unwrap();
+            let runtime = LedgerRuntime {
+                fake,
+                ledger,
+                service: Some(service.clone()),
+                handoffs: Some(handoffs),
+            };
+            let mut last = None;
+            for repaired in [false, true] {
+                if repaired {
+                    std::fs::write(&path, &valid).unwrap();
+                }
+                assert_eq!(
+                    poll_once(&runtime, &mut last).await,
+                    Err("device_sms_admission_unavailable")
+                );
+                assert_eq!(runtime.fake.0.lock().unwrap().reads, 0);
+                assert!(runtime.fake.submissions().is_empty());
+                assert_eq!(
+                    std::fs::read(&path).unwrap(),
+                    if repaired { &valid } else { &damaged }.as_slice()
+                );
+                let response = service
+                    .handle(request(
+                        Method::GET,
+                        "/api/sms/forwarding/status",
+                        json!({}),
+                    ))
+                    .await;
+                assert_eq!(response.status(), StatusCode::OK);
+                let status: Value = serde_json::from_slice(
+                    &response.into_body().collect().await.unwrap().to_bytes(),
+                )
+                .unwrap();
+                assert!(status["tasks"].as_array().unwrap().is_empty());
+                assert!(
+                    tokio::time::timeout(Duration::from_millis(100), listener.accept())
+                        .await
+                        .is_err(),
+                    "damaged admission reached the provider endpoint"
+                );
+            }
+            service.shutdown().await.unwrap();
+            std::fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[tokio::test]
+    async fn migrated_unbound_ledger_baselines_then_real_service_binds_before_local_post() {
+        use bytes::Bytes;
+        use http_body_util::{BodyExt, Full};
+        use hyper::{Method, Request, StatusCode};
+        use serde_json::{Value, json};
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        fn request(method: Method, path: &str, body: Value) -> Request<Full<Bytes>> {
+            Request::builder()
+                .method(method)
+                .uri(path)
+                .body(Full::new(Bytes::from(serde_json::to_vec(&body).unwrap())))
+                .unwrap()
+        }
+        let root = std::env::temp_dir()
+            .join("device-forwarding-producer-tests")
+            .join(crate::multistandby_store::random_token().unwrap());
+        std::fs::create_dir_all(&root).unwrap();
+        let path = root.join("device-sms-forwarding-admission.json");
+        std::fs::write(&path, b"[]").unwrap();
+        let ledger = crate::device_forwarding_store::Store::open(&root).unwrap();
+        assert!(ledger.current().unwrap().unwrap().handoff_id.is_none());
+        let handoffs = crate::forwarding_handoff_store::Store::open(&root).unwrap();
+        let fake = FakeRuntime::new(true, None, synthetic_snapshot(2));
+        let handoff = fake.0.lock().unwrap().handoff.clone().unwrap();
+        {
+            let _serial = crate::forwarding_handoff_store::REQUEST_TEST_LOCK
+                .lock()
+                .await;
+            let response = crate::forwarding_handoff_store::handle(
+                request(
+                    Method::POST,
+                    "/api/v2/sms/forwarding/handoff",
+                    serde_json::to_value(&handoff).unwrap(),
+                ),
+                handoffs.clone(),
+            )
+            .await;
+            assert_eq!(response.status(), StatusCode::OK);
+        }
+        // A synthetic local Bark endpoint records real HTTP POSTs without any
+        // external provider, DNS, account, device, or user message.
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}", listener.local_addr().unwrap());
+        let posts = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let post_count = posts.clone();
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut wire = Vec::new();
+            let mut header = Vec::new();
+            while !header.ends_with(b"\r\n\r\n") {
+                let mut byte = [0];
+                assert_eq!(socket.read(&mut byte).await.unwrap(), 1);
+                header.push(byte[0]);
+                assert!(header.len() < 8192);
+            }
+            assert!(header.starts_with(b"POST "));
+            let headers = String::from_utf8(header.clone()).unwrap();
+            let length: usize = headers
+                .lines()
+                .find_map(|line| {
+                    let (name, value) = line.split_once(':')?;
+                    name.eq_ignore_ascii_case("content-length")
+                        .then(|| value.trim().parse().unwrap())
+                })
+                .unwrap();
+            assert!(length < 65536);
+            wire.resize(length, 0);
+            socket.read_exact(&mut wire).await.unwrap();
+            post_count.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            socket.write_all(b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 12\r\nConnection: close\r\n\r\n{\"code\":200}").await.unwrap();
+            wire
+        });
+        struct AbortTask<T>(tokio::task::JoinHandle<T>);
+        impl<T> Drop for AbortTask<T> {
+            fn drop(&mut self) {
+                self.0.abort();
+            }
+        }
+        let mut server = AbortTask(server);
+        let service = crate::sms_forwarding::Service::new_with_admission(
+            &root,
+            handoffs.clone(),
+            ledger.clone(),
+        );
+        let state_key =
+            base64::Engine::encode(&base64::engine::general_purpose::STANDARD, [61_u8; 32]);
+        let response = service.handle(request(Method::POST, "/api/sms/forwarding/configure", json!({
+            "client_request_id":"g1-baseline-local-provider", "client_sequence":1,
+            "telegram":{"enabled":false,"bot_token":"","chat_id":"","proxy":{"mode":"system","url":""}},
+            "bark":{"enabled":true,"server_url":endpoint,"device_key":"g1-synthetic","icon_url":"","group":"Switch-SMS","encrypted":false,"encryption_algorithm":"AES-128-CBC","encryption_key":""},
+            "state_key":state_key
+        }))).await;
+        assert_eq!(response.status(), StatusCode::OK);
+        let runtime = LedgerRuntime {
+            fake,
+            ledger: ledger.clone(),
+            service: Some(service.clone()),
+            handoffs: Some(handoffs),
+        };
+        let mut last = None;
+        poll_once(&runtime, &mut last).await.unwrap();
+        let baseline = runtime.fake.submissions();
+        assert_eq!(baseline.len(), 1);
+        assert!(baseline[0].baseline_only && baseline[0].messages.is_empty());
+        let bound = ledger.current().unwrap().unwrap();
+        assert_eq!(
+            bound.handoff_id.as_deref(),
+            Some(handoff.handoff_id.as_str())
+        );
+        assert_eq!(bound.accepted_notification_ids.len(), 2);
+        assert_eq!(posts.load(std::sync::atomic::Ordering::SeqCst), 0);
+        let response = service
+            .handle(request(
+                Method::GET,
+                "/api/sms/forwarding/status",
+                json!({}),
+            ))
+            .await;
+        assert_eq!(response.status(), StatusCode::OK);
+        let value: Value =
+            serde_json::from_slice(&response.into_body().collect().await.unwrap().to_bytes())
+                .unwrap();
+        assert!(
+            value["tasks"].as_array().unwrap().is_empty(),
+            "baseline queued a body"
+        );
+
+        runtime.fake.0.lock().unwrap().inbox = synthetic_snapshot(3);
+        poll_once(&runtime, &mut last).await.unwrap();
+        let wire = tokio::time::timeout(Duration::from_secs(5), &mut server.0)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(posts.load(std::sync::atomic::Ordering::SeqCst), 1);
+        assert!(String::from_utf8(wire).unwrap().contains("synthetic"));
+        assert_eq!(
+            runtime
+                .fake
+                .submissions()
+                .iter()
+                .map(|s| s.messages.len())
+                .sum::<usize>(),
+            1
+        );
+        assert_eq!(
+            ledger
+                .current()
+                .unwrap()
+                .unwrap()
+                .accepted_notification_ids
+                .len(),
+            3
+        );
+
+        // A different already-bound ID is still rejected before any inbox read
+        // or submission; allowing the initial null ID does not weaken fencing.
+        let mut values: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+        values[0]["handoff_id"] = json!("123e4567-e89b-12d3-a456-426614174001");
+        std::fs::write(&path, serde_json::to_vec(&values).unwrap()).unwrap();
+        let before = runtime.fake.0.lock().unwrap().reads;
+        let submitted = runtime.fake.submissions().len();
+        assert_eq!(
+            poll_once(&runtime, &mut last).await,
+            Err("device_sms_handoff_conflict")
+        );
+        assert_eq!(runtime.fake.0.lock().unwrap().reads, before);
+        assert_eq!(runtime.fake.submissions().len(), submitted);
+        assert_eq!(posts.load(std::sync::atomic::Ordering::SeqCst), 1);
+        service.shutdown().await.unwrap();
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[tokio::test]

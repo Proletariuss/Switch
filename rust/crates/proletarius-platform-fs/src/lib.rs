@@ -18,6 +18,10 @@ use nix::fcntl::{OFlag, openat};
 use nix::libc;
 use nix::sys::stat::Mode;
 
+mod process_identity;
+pub use process_identity::process_identity;
+pub use process_identity::{ProcessStartIdentity, process_start_identity};
+
 mod rename;
 pub use rename::{rename_directory_noreplace, rename_regular_noreplace};
 

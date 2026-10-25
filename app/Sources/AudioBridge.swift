@@ -101,11 +101,11 @@ final class AudioBridge: @unchecked Sendable {
     private var speakerDeviceID: AudioDeviceID = 0
     private var micDeviceID: AudioDeviceID = 0
     private var running = false
+    private var retirementPending = false
     private let stateLock = NSLock()
     private struct IORegistration {
         let device: AudioDeviceID
         let procID: AudioDeviceIOProcID
-        let context: UnsafeMutableRawPointer
     }
     private var registrations = AudioIOProcRetirementLedger<IORegistration>()
 
@@ -121,6 +121,7 @@ final class AudioBridge: @unchecked Sendable {
     private var speakerFormat = DeviceFormat()
     private var micFormat = DeviceFormat()
     private let bridgeLock = NSLock()
+    private var ioGeneration = AudioIOProcGenerationFence()
     private let deviceChangeQueue = DispatchQueue(label: "com.proletarius.module-audio-route")
 
     /// Delivered on the main queue when macOS changes its default input or
@@ -128,6 +129,7 @@ final class AudioBridge: @unchecked Sendable {
     var onDefaultDeviceChange: (() -> Void)?
 
     private init() {
+#if !SWITCH_AUDIO_LIFETIME_TESTING
         for selector in [
             kAudioHardwarePropertyDefaultInputDevice,
             kAudioHardwarePropertyDefaultOutputDevice,
@@ -146,9 +148,16 @@ final class AudioBridge: @unchecked Sendable {
                 }
             }
         }
+#endif
     }
 
-    var isRunning: Bool { stateLock.lock(); defer { stateLock.unlock() }; return running }
+    var lifecycleSnapshot: AudioIOProcLifecycleSnapshot {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return AudioIOProcLifecycleSnapshot(running: running, retirementPending: retirementPending)
+    }
+
+    var isRunning: Bool { lifecycleSnapshot.running }
 
     func requestMicrophoneAccess() async -> Bool {
         switch AVCaptureDevice.authorizationStatus(for: .audio) {
@@ -343,15 +352,8 @@ final class AudioBridge: @unchecked Sendable {
     func start() -> String? {
         stateLock.lock()
         defer { stateLock.unlock() }
-        guard !running else { return nil }
-        if !registrations.isEmpty {
-            let failure = unregisterIOProcs()
-            guard registrations.isEmpty else {
-                if !registrations.callbacksMayRun { resetAudioPipeline() }
-                return failure.map(retirementMessage) ?? "上一次音频设备清理尚未确认"
-            }
-            resetAudioPipeline()
-        }
+        guard !running || retirementPending else { return nil }
+        if let failure = retirePreviousIOProcs() { return failure }
 
         let (moduleIn, moduleOut, speaker, mic) = discoverDevices()
         guard let moduleIn, moduleIn != 0 else {
@@ -408,16 +410,24 @@ final class AudioBridge: @unchecked Sendable {
         self.downResampler = downResampler
         self.upResampler = upResampler
 
-        if let registrationStatus = registerIOProcs() {
+        return startIOProcs()
+    }
+
+    private func startIOProcs() -> String? {
+        guard let generation = beginIOGeneration() else {
+            resetAudioPipeline()
+            return "音频回调代际已耗尽或平台位宽不受支持，请重新启动应用"
+        }
+        if let registrationStatus = registerIOProcs(generation: generation) {
             let retirementFailure = unregisterIOProcs()
-            running = false
-            if !registrations.callbacksMayRun { resetAudioPipeline() }
+            reconcileRetirementState()
             if let retirementFailure {
                 return "音频设备注册失败（OSStatus \(registrationStatus)）；\(retirementMessage(retirementFailure))"
             }
             return "音频设备注册失败（OSStatus \(registrationStatus)）"
         }
         running = true
+        retirementPending = false
         return nil
     }
 
@@ -425,13 +435,33 @@ final class AudioBridge: @unchecked Sendable {
         stateLock.lock()
         defer { stateLock.unlock() }
         let failure = unregisterIOProcs()
-        running = false
-        if !registrations.callbacksMayRun { resetAudioPipeline() }
+        reconcileRetirementState()
         return failure.map(retirementMessage)
+    }
+
+    private func retirePreviousIOProcs() -> String? {
+        guard !registrations.isEmpty else { return nil }
+        let failure = unregisterIOProcs()
+        reconcileRetirementState()
+        guard registrations.isEmpty else {
+            return failure.map(retirementMessage) ?? "上一次音频设备清理尚未确认"
+        }
+        return nil
+    }
+
+    private func reconcileRetirementState() {
+        // A stop error cannot be projected as stopped. Retained registrations
+        // also block the normal running-route idempotent-start shortcut.
+        running = registrations.callbacksMayRun
+        retirementPending = !registrations.isEmpty
+        if !registrations.callbacksMayRun { resetAudioPipeline() }
     }
 
     private func resetAudioPipeline() {
         bridgeLock.lock()
+        // A callback already inside this lock finishes first. A delayed entry
+        // has only a scalar cookie and is rejected before touching reset data.
+        ioGeneration.deactivate()
         downInputBytes.removeAll()
         upInputBytes.removeAll()
         downOutputSamples.removeAll()
@@ -443,7 +473,21 @@ final class AudioBridge: @unchecked Sendable {
 
     // MARK: - IOProc
 
-    private func registerIOProcs() -> OSStatus? {
+    private func beginIOGeneration() -> UInt? {
+        bridgeLock.lock()
+        defer { bridgeLock.unlock() }
+        return ioGeneration.begin()
+    }
+
+    private static func dispatchIOProc(
+        cookie: UnsafeMutableRawPointer?,
+        input: UnsafePointer<AudioBufferList>?, output: UnsafeMutablePointer<AudioBufferList>?
+    ) -> OSStatus {
+        guard let cookie = AudioIOProcCookie(opaque: cookie) else { return noErr }
+        return shared.ioProc(cookie: cookie, input: input, output: output)
+    }
+
+    private func registerIOProcs(generation: UInt) -> OSStatus? {
         let routes: [(AudioDeviceID, Int)] = [
             (moduleInDeviceID, 0),    // 模块输入（下行数据源）
             (moduleOutDeviceID, 1),   // 模块输出（上行目标）
@@ -452,27 +496,23 @@ final class AudioBridge: @unchecked Sendable {
         ]
         for (device, role) in routes {
             var procID: AudioDeviceIOProcID?
-            let context = UnsafeMutableRawPointer(Unmanaged.passRetained(BridgeContext(role: role)).toOpaque())
-            let err = AudioDeviceCreateIOProcID(device, { _, _, inInputData, _, outOutputData, _, inClientData -> OSStatus in
-                guard let inClientData else { return noErr }
-                let context = Unmanaged<BridgeContext>.fromOpaque(inClientData).takeUnretainedValue()
-                return AudioBridge.shared.ioProc(role: context.role, input: inInputData, output: outOutputData)
-            }, context, &procID)
+            guard let cookie = AudioIOProcCookie(generation: generation, role: role) else {
+                return kAudioHardwareUnspecifiedError
+            }
+            let err = createIOProc(device: device, cookie: cookie.opaque, procID: &procID)
             if err != noErr {
-                Unmanaged<BridgeContext>.fromOpaque(context).release()
                 return err
             }
             guard let procID else {
-                Unmanaged<BridgeContext>.fromOpaque(context).release()
                 return kAudioHardwareUnspecifiedError
             }
             let registrationIndex = registrations.append(
-                IORegistration(device: device, procID: procID, context: context))
-            let startStatus = AudioDeviceStart(device, procID)
+                IORegistration(device: device, procID: procID))
+            let startStatus = startIOProc(device: device, procID: procID)
             guard startStatus == noErr else {
                 // A failed AudioDeviceStart did not acknowledge active I/O;
-                // the ledger will destroy the created IOProc without release
-                // until CoreAudio confirms that destroy succeeded.
+                // The created IOProc remains in the retirement ledger until
+                // CoreAudio confirms destruction; its cookie owns no memory.
                 return startStatus
             }
             registrations.markStarted(at: registrationIndex)
@@ -482,20 +522,61 @@ final class AudioBridge: @unchecked Sendable {
 
     private func unregisterIOProcs() -> AudioIOProcRetirementFailure? {
         registrations.retire(
-            stop: { AudioDeviceStop($0.device, $0.procID) },
-            destroy: { AudioDeviceDestroyIOProcID($0.device, $0.procID) },
-            release: { Unmanaged<BridgeContext>.fromOpaque($0.context).release() })
+            stop: { self.stopIOProc(device: $0.device, procID: $0.procID) },
+            destroy: { self.destroyIOProc(device: $0.device, procID: $0.procID) },
+            release: { _ in })
+    }
+
+    private func createIOProc(device: AudioDeviceID, cookie: UnsafeMutableRawPointer, procID: inout AudioDeviceIOProcID?) -> OSStatus {
+#if SWITCH_AUDIO_LIFETIME_TESTING
+        let result = lifetimePlatform.create(device, cookie)
+        procID = result.1
+        return result.0
+#else
+        return AudioDeviceCreateIOProcID(device, { _, _, input, _, output, _, clientData -> OSStatus in
+            AudioBridge.dispatchIOProc(cookie: clientData, input: input, output: output)
+        }, cookie, &procID)
+#endif
+    }
+
+    private func startIOProc(device: AudioDeviceID, procID: AudioDeviceIOProcID) -> OSStatus {
+#if SWITCH_AUDIO_LIFETIME_TESTING
+        return lifetimePlatform.start(device, procID)
+#else
+        return AudioDeviceStart(device, procID)
+#endif
+    }
+
+    private func stopIOProc(device: AudioDeviceID, procID: AudioDeviceIOProcID) -> OSStatus {
+#if SWITCH_AUDIO_LIFETIME_TESTING
+        return lifetimePlatform.stop(device, procID)
+#else
+        return AudioDeviceStop(device, procID)
+#endif
+    }
+
+    private func destroyIOProc(device: AudioDeviceID, procID: AudioDeviceIOProcID) -> OSStatus {
+#if SWITCH_AUDIO_LIFETIME_TESTING
+        return lifetimePlatform.destroy(device, procID)
+#else
+        return AudioDeviceDestroyIOProcID(device, procID)
+#endif
     }
 
     private func retirementMessage(_ failure: AudioIOProcRetirementFailure) -> String {
-        "\(failure.operation.rawValue) 失败（OSStatus \(failure.status)）；回调上下文已保留，未启动替代音频路由"
+        "\(failure.operation.rawValue) 失败（OSStatus \(failure.status)）；旧音频注册仍由原路由持有，未启动替代音频路由"
     }
 
-    private func ioProc(role: Int, input: UnsafePointer<AudioBufferList>?, output: UnsafeMutablePointer<AudioBufferList>?) -> OSStatus {
+    private func ioProc(cookie: AudioIOProcCookie, input: UnsafePointer<AudioBufferList>?, output: UnsafeMutablePointer<AudioBufferList>?) -> OSStatus {
         bridgeLock.lock()
         defer { bridgeLock.unlock() }
+        guard ioGeneration.admits(cookie) else { return noErr }
+#if SWITCH_AUDIO_LIFETIME_TESTING
+        lifetimePipelineAccesses += 1
+        lifetimeInsidePipeline?()
+#endif
 
-        switch role {
+        switch cookie.role {
         case 0: // 模块输入：读下行（对方语音）
             if let input {
                 appendBufferList(input, format: moduleInFormat, to: &downInputBytes)
@@ -625,6 +706,66 @@ final class AudioBridge: @unchecked Sendable {
         }
     }
 
+#if SWITCH_AUDIO_LIFETIME_TESTING
+    // Test builds replace only HAL registration calls/listeners. These hooks
+    // exercise the production generation, registration, retirement and callback
+    // adapter without device enumeration, microphone access or real audio I/O.
+    struct LifetimeTestPlatform {
+        var create: (AudioDeviceID, UnsafeMutableRawPointer) -> (OSStatus, AudioDeviceIOProcID?)
+        var start: (AudioDeviceID, AudioDeviceIOProcID) -> OSStatus
+        var stop: (AudioDeviceID, AudioDeviceIOProcID) -> OSStatus
+        var destroy: (AudioDeviceID, AudioDeviceIOProcID) -> OSStatus
+    }
+    private var lifetimePlatform = LifetimeTestPlatform(
+        create: { _, _ in preconditionFailure("install isolated HAL test platform") },
+        start: { _, _ in preconditionFailure("install isolated HAL test platform") },
+        stop: { _, _ in preconditionFailure("install isolated HAL test platform") },
+        destroy: { _, _ in preconditionFailure("install isolated HAL test platform") })
+    private var lifetimePipelineAccesses = 0
+    private var lifetimeInsidePipeline: (() -> Void)?
+
+    func lifetimeTestInstall(_ platform: LifetimeTestPlatform) {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        precondition(registrations.isEmpty)
+        lifetimePlatform = platform
+        moduleInDeviceID = 1
+        moduleOutDeviceID = 2
+        speakerDeviceID = 3
+        micDeviceID = 4
+    }
+
+    func lifetimeTestStartIO() -> String? {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        guard !running || retirementPending else { return nil }
+        // Same replacement-route admission as start(), without device queries.
+        if let failure = retirePreviousIOProcs() { return failure }
+        bridgeLock.lock()
+        downInputBytes = Data([0x5a])
+        bridgeLock.unlock()
+        return startIOProcs()
+    }
+
+    func lifetimeTestSetInsidePipeline(_ hook: (() -> Void)?) {
+        bridgeLock.lock()
+        lifetimeInsidePipeline = hook
+        bridgeLock.unlock()
+    }
+
+    func lifetimeTestSnapshot() -> (generation: UInt?, last: UInt, accesses: Int, bytes: Int, registrations: Int, retirementPending: Bool) {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        bridgeLock.lock()
+        defer { bridgeLock.unlock() }
+        return (ioGeneration.activeGeneration, ioGeneration.lastGeneration,
+                lifetimePipelineAccesses, downInputBytes.count, registrations.entries.count, retirementPending)
+    }
+
+    static func lifetimeTestInvoke(_ cookie: UnsafeMutableRawPointer?) -> OSStatus {
+        dispatchIOProc(cookie: cookie, input: nil, output: nil)
+    }
+#endif
 }
 
 /// 线性插值重采样器（Float32 单声道，跨帧保持状态）
@@ -665,12 +806,5 @@ final class FloatResampler {
         guard count >= 0, count <= output.count else { return [] }
         output.removeSubrange(count..<output.count)
         return output
-    }
-}
-
-private final class BridgeContext {
-    let role: Int
-    init(role: Int) {
-        self.role = role
     }
 }

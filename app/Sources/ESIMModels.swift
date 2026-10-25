@@ -830,6 +830,7 @@ struct ESIMDownloadConfirmationRequest: Encodable {
 /// GET /api/vowifi
 struct VoWiFiStatus: Decodable, Equatable {
     // 操作状态
+    let stopTarget: VoWiFiStopTarget?
     let state: String
     let summary: String
     let detail: String?
@@ -882,6 +883,7 @@ struct VoWiFiStatus: Decodable, Equatable {
     let qmiError: String?
 
     enum CodingKeys: String, CodingKey {
+        case stopTarget = "stop_target"
         case state
         case summary
         case detail
@@ -913,6 +915,71 @@ struct VoWiFiStatus: Decodable, Equatable {
         case qmiWiFiRegistered = "qmi_wifi_registered"
         case qmiError = "qmi_error"
     }
+}
+
+/// Ephemeral stop identity. It never identifies a durable request receipt.
+struct VoWiFiStopTarget: Codable, Equatable {
+    let scope: String
+    let daemonEpoch: String
+    let ownerID: String
+    let ownerGeneration: UInt64
+    enum CodingKeys: String, CodingKey {
+        case scope
+        case daemonEpoch = "daemon_epoch", ownerID = "owner_id", ownerGeneration = "owner_generation"
+    }
+    func valid(for expectedScope: String) -> Bool {
+        func opaque(_ value: String) -> Bool {
+            !value.isEmpty && value.utf8.count <= 128 && value.utf8.allSatisfy {
+                (48...57).contains($0) || (65...90).contains($0) || (97...122).contains($0) || [45, 46, 95].contains($0)
+            }
+        }
+        return scope == expectedScope && ownerGeneration > 0 && opaque(daemonEpoch) && opaque(ownerID)
+    }
+    var query: String {
+        var components = URLComponents()
+        components.queryItems = [URLQueryItem(name: "scope", value: scope),
+            URLQueryItem(name: "daemon_epoch", value: daemonEpoch),
+            URLQueryItem(name: "owner_id", value: ownerID),
+            URLQueryItem(name: "owner_generation", value: String(ownerGeneration))]
+        return components.percentEncodedQuery ?? ""
+    }
+
+}
+struct VoWiFiStopControl: Decodable {
+    let scope: String
+    let daemonEpoch: String
+    let ownerID: String
+    let ownerGeneration: UInt64
+    let signalState: String
+    let receiptDurability: String
+    let ownerJoin: String
+    let cleanup: String
+    let restartEffect: String
+    let pollAfterMS: UInt64
+    let message: String
+    enum CodingKeys: String, CodingKey {
+        case scope, cleanup, message
+        case daemonEpoch = "daemon_epoch", ownerID = "owner_id", ownerGeneration = "owner_generation"
+        case signalState = "signal_state", receiptDurability = "receipt_durability", ownerJoin = "owner_join"
+        case restartEffect = "restart_effect", pollAfterMS = "poll_after_ms"
+    }
+    func matches(_ target: VoWiFiStopTarget) -> Bool {
+        scope == target.scope && daemonEpoch == target.daemonEpoch && ownerID == target.ownerID
+            && ownerGeneration == target.ownerGeneration && receiptDurability == "not_requested" && restartEffect == "none"
+    }
+    var finished: Bool { ownerJoin == "failed" || cleanup == "failed" || ownerJoin == "joined" && cleanup == "confirmed" && ["published", "observed"].contains(signalState) }
+    var displayMessage: String {
+        if ownerJoin == "joined", cleanup == "confirmed", ["published", "observed"].contains(signalState) {
+            return "原会话已退出并释放资源（仅本次运行）；没有耐久回执或重启保证"
+        }
+        if ownerJoin == "failed" || cleanup == "failed" { return "原会话停止或清理未确认；资源保持隔离" }
+        if ["published", "observed"].contains(signalState) { return "已发布临时停止；原会话退出和清理尚未确认" }
+        return "临时停止信号尚未确认；没有退出或清理回执"
+    }
+}
+struct VoWiFiStopControlResponse: Decodable {
+    let stopControl: VoWiFiStopControl
+    enum CodingKeys: String, CodingKey { case stopControl = "stop_control" }
 }
 
 /// Read-only projection of the retained Rust owner. Observation expiry never
@@ -989,6 +1056,8 @@ struct VoWiFiOperation: Decodable, Equatable {
 
 struct VoWiFiAccepted: Decodable {
     let operation: VoWiFiOperation?
+    let stopTarget: VoWiFiStopTarget?
+    enum CodingKeys: String, CodingKey { case operation; case stopTarget = "stop_target" }
 }
 
 /// POST /api/vowifi

@@ -832,10 +832,13 @@ impl Service {
                             &SystemForwardingClock,
                         )
                         .unwrap_or_else(|_| "1970-01-01T00:00:00Z".to_owned());
-                        let paused = match runner_worker.queue().lock().await.inspect_for_bindings(
-                            Some(&status_telegram_binding),
-                            Some(&status_bark_binding),
-                        ) {
+                        let paused = match runner_worker
+                            .inspect_for_bindings(
+                                Some(status_telegram_binding.clone()),
+                                Some(status_bark_binding.clone()),
+                            )
+                            .await
+                        {
                             Ok(queue) => queue.tasks.iter().any(|task| {
                                 pending_channel(&task.telegram, telegram_enabled, &now, true)
                                     .state
@@ -1581,10 +1584,11 @@ impl Service {
         };
         let summary = match active
             .worker
-            .queue()
-            .lock()
+            .inspect_for_bindings(
+                Some(active.telegram_binding.clone()),
+                Some(active.bark_binding.clone()),
+            )
             .await
-            .inspect_for_bindings(Some(&active.telegram_binding), Some(&active.bark_binding))
         {
             Ok(summary) => summary,
             Err(_) => {
@@ -1718,6 +1722,7 @@ impl ServiceState {
         if let Some(active) = self.active.as_mut() {
             active.retiring = true;
             active.queue_io.close();
+            active.worker.close_admission();
             let _ = active.shutdown.send(true);
         }
         // Retain both the generation and mode writer while either await can
@@ -1799,6 +1804,7 @@ impl Configured {
         }
         self.retiring = true;
         self.queue_io.close();
+        self.worker.close_admission();
         let _ = self.shutdown.send(true);
         if self.runner_result.is_none() {
             let result = match self.runner.as_mut() {
@@ -1914,6 +1920,7 @@ impl Drop for Configured {
         // cancellation retains the generation in ServiceState instead. The
         // pre-submit SWF1 unknown marker is never cleared by dropping a waiter.
         self.queue_io.close();
+        self.worker.close_admission();
         let _ = self.shutdown.send(true);
     }
 }

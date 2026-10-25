@@ -12,6 +12,7 @@ enum AutoLaunch {
 
     /// 当前是否已启用自启
     static var isEnabled: Bool {
+        guard !AcceptanceBootstrap.isAcceptance else { return false }
         if SMAppService.mainApp.status == .enabled {
             return true
         }
@@ -19,6 +20,9 @@ enum AutoLaunch {
     }
 
     static func setEnabled(_ enabled: Bool) throws {
+        guard !AcceptanceBootstrap.isAcceptance else {
+            throw AutoLaunchError.failed("隔离验收中开机自启不可用")
+        }
         if enabled {
             try enable()
         } else {

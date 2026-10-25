@@ -10,6 +10,7 @@ mod legacy_stop;
 mod sessions;
 mod sms;
 mod status_projection;
+mod stop_control;
 pub(crate) use sms::NativeSmsBinding;
 
 trait IdentitySource: Send + Sync {
@@ -110,6 +111,7 @@ struct Resources {
     calls: crate::call_facts::CallFacts,
 }
 struct Record {
+    control: Arc<super::stop_control::Owner>,
     id: u64,
     expected: intent::ExpectedIdentity,
     driver: Arc<LiveDriver>,
@@ -184,6 +186,7 @@ impl Record {
 }
 #[derive(Default)]
 struct State {
+    last_stop: super::stop_control::Retired,
     stopping: bool,
     next: u64,
     record: Option<Arc<Record>>,
@@ -276,6 +279,25 @@ impl NativeLifecycle {
     }
 }
 impl Service {
+    fn stop_target_for(
+        &self,
+        projection: &super::operation::Projection,
+    ) -> Option<super::stop_control::Target> {
+        let state = self.0.state.lock().ok()?;
+        let record = state.record.as_ref()?;
+        let current = self
+            .operation_projection_in_state(&state, Some(record))
+            .ok()?;
+        (current.operation_id == projection.operation_id
+            && current.generation == projection.generation)
+            .then(|| {
+                record.control.target(
+                    "reader",
+                    &self.0.sms_epoch,
+                    record.expected.reader_generation,
+                )
+            })
+    }
     fn record(&self) -> Result<Option<Arc<Record>>, &'static str> {
         self.0
             .state
@@ -496,6 +518,9 @@ impl Service {
         if state.stopping {
             return Err("Switch 正在退出，未启动 VoWiFi".into());
         }
+        if state.record.as_ref().is_some_and(|r| r.control.busy()) {
+            return Err(StartFailure::Busy);
+        }
         let same_record = match (&state.record, &previous) {
             (None, None) => true,
             (Some(current), Some(previous)) => Arc::ptr_eq(current, previous),
@@ -578,6 +603,7 @@ impl Service {
             }
         };
         let record = Arc::new(Record {
+            control: Default::default(),
             id,
             expected,
             driver,
@@ -589,6 +615,15 @@ impl Service {
             operation: Mutex::new(clock),
         });
         record.observe_terminal();
+        if let Some(previous) = &state.record {
+            let owner = previous.control.clone();
+            let target = owner.target(
+                "reader",
+                &self.0.sms_epoch,
+                previous.expected.reader_generation,
+            );
+            super::stop_control::retire(&mut state.last_stop, &owner, target);
+        }
         state.record = Some(record);
         Ok(id)
     }
@@ -1206,6 +1241,7 @@ pub(crate) fn public_route(method: &hyper::Method, path: &str) -> bool {
             (method.as_str(), path),
             ("GET" | "HEAD" | "POST", "/api/reader/vowifi")
                 | ("POST", "/api/reader/vowifi/reconcile")
+                | ("GET" | "POST", "/api/reader/vowifi/stop-control")
                 | ("GET" | "HEAD", "/api/reader/vowifi/sessions")
                 | ("GET", "/api/reader/vowifi/calls/status")
                 | (
@@ -1225,6 +1261,18 @@ impl Service {
     }
 
     fn status_for(&self, record: Option<Arc<Record>>) -> serde_json::Value {
+        let target = record.as_ref().map(|r| {
+            r.control
+                .target("reader", &self.0.sms_epoch, r.expected.reader_generation)
+        });
+        let mut value = self.status_details_for(record);
+        if let Some(target) = target {
+            value["stop_target"] = json!(target);
+        }
+        value
+    }
+
+    fn status_details_for(&self, record: Option<Arc<Record>>) -> serde_json::Value {
         let unavailable = || json!({"available":false,"tunnel_state":"disconnected","ims_state":"idle","incoming_listener_started":false,"incoming_accept_count":0,"incoming_reachability":"unknown","progress_step":0});
         let Some(record) = record else {
             return unavailable();
@@ -1786,6 +1834,10 @@ impl Service {
         B: hyper::body::Body<Data = Bytes> + Send,
         B::Error: std::error::Error + Send + Sync + 'static,
     {
+        if request.uri().path() == super::stop_control::READER_PATH {
+            // Entire validation and signal publication precede any await.
+            return self.handle_stop_control(&request);
+        }
         if request.method() == hyper::Method::POST
             && request.uri().path() == "/api/reader/vowifi/reconcile"
         {
@@ -1884,7 +1936,7 @@ impl Service {
                     let projection = receipt.resolve(self.operation_projection().ok());
                     return crate::json_response(
                         StatusCode::ACCEPTED,
-                        &json!({"accepted":true,"operation":projection}),
+                        &json!({"accepted":true,"stop_target":self.stop_target_for(&projection),"operation":projection}),
                     );
                 }
                 Ok(None) => {}
@@ -1954,7 +2006,7 @@ impl Service {
                                 });
                                 crate::json_response(
                                     StatusCode::ACCEPTED,
-                                    &json!({"accepted":true,"operation":projection}),
+                                    &json!({"accepted":true,"stop_target":self.stop_target_for(&projection),"operation":projection}),
                                 )
                             }
                             Err(code) => crate::json_response(
@@ -2047,7 +2099,7 @@ impl Service {
                             });
                             crate::json_response(
                                 StatusCode::ACCEPTED,
-                                &json!({"accepted":true,"operation":projection}),
+                                &json!({"accepted":true,"stop_target":self.stop_target_for(&projection),"operation":projection}),
                             )
                         }
                         Err(code) => crate::json_response(

@@ -70,6 +70,9 @@ final class ReaderRuntimeStore: ObservableObject {
     private let backend: BackendProcess
     private var voWiFiPollTask: Task<Void, Never>?
     private var voWiFiOwnerOperation: VoWiFiOperation?
+    private var stopTargetCache: VoWiFiStopTarget?
+    private var activeStopTarget: VoWiFiStopTarget?
+    private var temporaryStopMessage: String?
     private var proxyCheckTask: Task<Void, Never>?
     private var listRequestRevision: UInt64 = 0
     private var voWiFiOperationRevision: UInt64 = 0
@@ -114,6 +117,9 @@ final class ReaderRuntimeStore: ObservableObject {
     }
 
     func reset() {
+        stopTargetCache = nil
+        activeStopTarget = nil
+        temporaryStopMessage = nil
         listRequestRevision &+= 1
         listRefreshInFlight = false
         fallbackRecoveryInFlight = false
@@ -832,6 +838,8 @@ final class ReaderRuntimeStore: ObservableObject {
     func enableVoWiFi() {
         guard !actionInFlight else { return }
         guard !voWiFiActionInFlight else { return }
+        // A fresh start cannot borrow the previous owner's optional target.
+        stopTargetCache = nil
         let expectedGeneration = generation
         voWiFiOperationRevision &+= 1
         invalidatePendingVoWiFiStatusReads()
@@ -867,6 +875,7 @@ final class ReaderRuntimeStore: ObservableObject {
                         clientRequestID: clientRequestID)
                     return
                 }
+                cacheStopTarget(accepted.stopTarget, fromAcceptedStart: true)
                 voWiFiOwnerOperation = operation
                 pollVoWiFi(
                     expectedGeneration: expectedGeneration,
@@ -903,6 +912,8 @@ final class ReaderRuntimeStore: ObservableObject {
             // its Rust owner is still unresolved must not create another owner.
             guard voWiFiOwnerOperation?.requestedEnable == true else { return }
         }
+        activeStopTarget = stopTargetCache
+        let originalStopTarget = activeStopTarget
         voWiFiPollTask?.cancel()
         voWiFiPollTask = nil
         voWiFiOperationRevision &+= 1
@@ -919,7 +930,12 @@ final class ReaderRuntimeStore: ObservableObject {
                                          observeOperation: true, operation: ownerOperation,
                                          clientRequestID: clientRequestID)
         do { pendingCheckpoint = try checkpoints.begin(id: clientRequestID, enable: false, request: request) }
-        catch { markVoWiFiObservationPending("无法保存 VoWiFi 请求检查点；操作保持锁定"); return }
+        catch {
+            checkpointFailure = true
+            markVoWiFiObservationPending("无法保存 VoWiFi 请求检查点；操作保持锁定")
+            Task { await fallbackStop(target: originalStopTarget, generation: expectedGeneration, revision: operationRevision) }
+            return
+        }
         Task {
             do {
                 let accepted: VoWiFiAccepted = try await APIClient(timeoutInterval: 15).send(
@@ -943,6 +959,9 @@ final class ReaderRuntimeStore: ObservableObject {
             } catch {
                 guard expectedGeneration == generation,
                       operationRevision == voWiFiOperationRevision else { return }
+                if fallbackAllowed(error) {
+                    await fallbackStop(target: originalStopTarget, generation: expectedGeneration, revision: operationRevision)
+                }
                 if mutationFailureRequiresStatusReconciliation(error) {
                     markVoWiFiObservationPending(
                         "关闭请求已发出，但回执暂不可见；正在从 Rust owner 恢复")
@@ -957,6 +976,47 @@ final class ReaderRuntimeStore: ObservableObject {
                 await recoverVoWiFiOwner(expectedGeneration: expectedGeneration,
                     operationRevision: operationRevision, requestedEnable: false, clientRequestID: clientRequestID)
             }
+        }
+    }
+
+    private func cacheStopTarget(_ target: VoWiFiStopTarget?, fromAcceptedStart: Bool = false) {
+        guard activeStopTarget == nil, (!voWiFiActionInFlight || fromAcceptedStart), let target, target.valid(for: "reader") else { return }
+        stopTargetCache = target
+    }
+
+    private func fallbackAllowed(_ error: Error) -> Bool {
+        if let code = (error as? APIError)?.code,
+           ["vowifi_request_ledger_full", "vowifi_request_ledger_unavailable"].contains(code) { return true }
+        return mutationFailureRequiresStatusReconciliation(error)
+    }
+
+    private func fallbackStop(target: VoWiFiStopTarget?, generation expectedGeneration: Int, revision: UInt64) async {
+        guard let target, target.valid(for: "reader"), target == activeStopTarget else { return }
+        let query = target.query
+        var first = true
+        while !Task.isCancelled, generation == expectedGeneration, voWiFiOperationRevision == revision {
+            do {
+                let result: VoWiFiStopControlResponse
+                if first { result = try await APIClient(timeoutInterval: 10).upload("api/reader/vowifi/stop-control?\(query)", data: Data()) }
+                else { result = try await APIClient(timeoutInterval: 10).get("api/reader/vowifi/stop-control?\(query)") }
+                guard generation == expectedGeneration, voWiFiOperationRevision == revision,
+                      target == activeStopTarget, result.stopControl.matches(target) else { return }
+                first = false
+                temporaryStopMessage = result.stopControl.displayMessage
+                markVoWiFiObservationPending("临时控制没有耐久回执或重启保证")
+                if result.stopControl.finished || result.stopControl.pollAfterMS == 0 { return }
+            } catch is CancellationError { return }
+            catch {
+                guard generation == expectedGeneration, voWiFiOperationRevision == revision else { return }
+                temporaryStopMessage = "原会话临时停止结果未确认：\(error.localizedDescription)"
+                markVoWiFiObservationPending("原请求检查点保持不变")
+                // An unknown POST response is followed only by exact-target GET.
+                // Repeated POST is unnecessary and must never recapture a target.
+                first = false
+                if let code = (error as? APIError)?.code,
+                   ["vowifi_stop_target_stale", "invalid_vowifi_stop_target"].contains(code) { return }
+            }
+            do { try await Task.sleep(for: .milliseconds(1_500)) } catch { return }
         }
     }
 
@@ -1136,6 +1196,7 @@ final class ReaderRuntimeStore: ObservableObject {
     }
 
     private func markVoWiFiObservationPending(_ message: String) {
+        let message = temporaryStopMessage.map { "临时停止：\($0)；永久请求回执仍待核对。\(message)" } ?? message
         commit { state in
             state.voWiFiActionInFlight = true
             Self.clearVoWiFiSnapshotFields(&state)
@@ -1144,6 +1205,8 @@ final class ReaderRuntimeStore: ObservableObject {
     }
 
     private func finishVoWiFiObservation(_ message: String, success: Bool) {
+        if pendingCheckpoint == nil && !checkpointFailure { activeStopTarget = nil; temporaryStopMessage = nil }
+
         voWiFiPollTask = nil
         commit { $0.voWiFiActionInFlight = false }
         toast(message, success, "Wi-Fi Calling")
@@ -1205,6 +1268,7 @@ final class ReaderRuntimeStore: ObservableObject {
     }
 
     private func invalidateVoWiFiOperationForCardTransition() {
+        stopTargetCache = nil
         voWiFiPollTask?.cancel()
         voWiFiPollTask = nil
         voWiFiOwnerOperation = nil
@@ -1222,6 +1286,7 @@ final class ReaderRuntimeStore: ObservableObject {
     }
 
     private func publishVoWiFiStatus(_ status: ReaderVoWiFiStatus) {
+        cacheStopTarget(status.stopTarget)
         invalidatePendingVoWiFiStatusReads()
         consecutiveVoWiFiStatusReadFailures = 0
         commit { state in

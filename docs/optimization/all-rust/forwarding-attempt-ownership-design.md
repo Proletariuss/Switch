@@ -1,5 +1,7 @@
 # 转发尝试归属与同进程人工重试：下一批实施决定
 
+> **历史设计（Iteration695，2026-10-23）：** 下文“尚未实现/后续”指695设计切点，原复现和设计正文保留。696/697及本次G2已实现token、retained drain和磁盘owner，当前契约见[转发README](../../../rust/crates/proletarius-forwarding/README.md#current-persistence-and-attempt-contract)与[当前运行时所有权](README.md#current-runtime-ownership)。G2已获scoped software PASS，同步配置/setup等超出本次证据范围仍开放，`source-not-final-G0B`；本banner不把历史设计提升为G0B/G8/G9或业务验收。
+
 2026-10-23，承接已批准的稳定性目标。工作区仅为 Switch_MAC。
 本文件确定下一批实施边界，尚未修改生产转发库，未授予功能验收通过。
 P0–P6 整体验收仍开放。S07 当前冻结回归期间不混入此修改。

@@ -11,6 +11,8 @@ AIGC:
 
 # Proletarius 读卡器 / eSIM 层 Rust 重构方案
 
+> **历史建议（2026-09-18）：** 下方旧Go/渐进迁移架构、文件计数、估值及“未实施”均属于原审查时期，正文保留；不作为当前执行指令或验收分母。后续方向由[批准的全Rust方案](docs/optimization/2026-10-04-all-rust-backend-plan.md)继任，当前职责与边界见[运行时所有权](docs/optimization/all-rust/README.md#current-runtime-ownership)及[当前进度](docs/optimization/all-rust/progress-current.md)。
+
 - **日期**：2026-09-18
 - **方向**：所有优化基于 Rust 重构，优先使用 Rust
 - **审查方式**：三遍交叉审议（架构迁移路径 / 技术可行性与设计 / 风险与回归）+ 代码结构实勘（Rust 13 crate 68 源文件 / Go 35+ 文件 / Swift 63 文件）

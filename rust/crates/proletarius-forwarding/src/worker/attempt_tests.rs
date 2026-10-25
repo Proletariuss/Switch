@@ -821,3 +821,334 @@ async fn already_true_shutdown_prevents_real_worker_attempt_and_provider_submiss
     server.abort();
     assert!(server.await.unwrap_err().is_cancelled());
 }
+
+// Ordinal commands cover the real transaction path: due, freeze, begin,
+// alternating pre-submit/post-ACK checkpoints, finish, final inspect.
+#[tokio::test(flavor = "current_thread")]
+async fn provider_disk_every_telegram_stage_keeps_timer_alive_and_drains_cancelled_owner() {
+    let body = "x".repeat(9000);
+    let count = telegram_chunks(&ForwardedSms {
+        sender: "synthetic-sender",
+        device: "synthetic-reader",
+        timestamp_local: None,
+        content: &body,
+    })
+    .len();
+    assert!(count > 1);
+    let last = 5 + count * 2;
+    let stages = (0..last)
+        .map(|n| (n, false))
+        .chain([(2, true), (4, true), (last - 2, true)]);
+    for (stage, after) in stages {
+        let mock = Mock::new((0..count).map(|_| Reply::json(OK)).collect()).await;
+        let (root, worker, _, _) = worker_fixture(mock.endpoint.clone(), &body);
+        let (entered, ready) = oneshot::channel();
+        let (release, wait) = std::sync::mpsc::channel();
+        worker.disk.hook(stage, after, move || {
+            entered.send(()).unwrap();
+            wait.recv_timeout(Duration::from_secs(5)).unwrap();
+        });
+        let running = {
+            let worker = worker.clone();
+            tokio::spawn(async move { worker.flush_pending().await })
+        };
+        tokio::time::timeout(Duration::from_secs(3), ready)
+            .await
+            .unwrap()
+            .unwrap();
+        let sent = (stage.saturating_sub(2) / 2).min(count);
+        assert_eq!(mock.count(), sent, "stage={stage} after={after}");
+        assert!(worker.queue.try_lock().is_err());
+        tokio::time::timeout(
+            Duration::from_millis(500),
+            tokio::time::sleep(Duration::from_millis(10)),
+        )
+        .await
+        .unwrap();
+        running.abort();
+        assert!(running.await.unwrap_err().is_cancelled());
+        let mut stop = Box::pin(worker.finish_releases());
+        assert!(poll_fn(|cx| Poll::Ready(stop.as_mut().poll(cx).is_pending())).await);
+        drop(stop);
+        // Cancellation cannot fake a real drain or release the disk guard.
+        assert!(worker.queue.try_lock().is_err());
+        release.send(()).unwrap();
+        let drained = tokio::time::timeout(Duration::from_secs(3), worker.finish_releases())
+            .await
+            .unwrap();
+        // Close-triggered pre-begin refusal is proven by the disk owner to
+        // precede QueueStore invocation; it is a clean shutdown, without send.
+        assert_eq!(drained, Ok(()));
+        assert_eq!(mock.count(), sent);
+        let summary = worker.queue.lock().await.inspect().unwrap();
+        assert!(summary.tasks.iter().all(|task| !task.telegram.in_flight));
+        drop(worker);
+        drop(QueueStore::open(root.path(), key(), StateLimits::default()).unwrap());
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn provider_disk_transaction_faults_keep_real_swf1_unknown_and_no_extra_post() {
+    for stage in 1..=5 {
+        for after_rename in [false, true] {
+            let mock = Mock::new(vec![Reply::json(OK)]).await;
+            let (root, worker, binding, _) = worker_fixture(mock.endpoint.clone(), "fault-body");
+            worker.disk.hook(stage, false, move || {
+                if after_rename {
+                    crate::queue_store::fail_next_replace_after_rename_for_test();
+                } else {
+                    crate::queue_store::fail_next_replace_before_rename_for_test();
+                }
+            });
+            assert!(worker.flush_pending().await.is_err());
+            assert_eq!(mock.count(), usize::from(stage >= 4));
+            let current = worker.queue.lock().await.inspect();
+            if after_rename {
+                assert_eq!(current, Err(StateStoreError::ReopenRequired));
+            }
+            worker.finish_releases().await.unwrap();
+            drop(worker);
+            let queue = QueueStore::open(root.path(), key(), StateLimits::default()).unwrap();
+            let state = queue.inspect().unwrap();
+            assert!(state.tasks.iter().all(|task| !task.telegram.in_flight));
+            // A committed begin or pre-submit boundary never becomes replayable
+            // merely because its blocking result could not be acknowledged.
+            if (stage == 2 && after_rename) || stage == 3 || (stage == 4 && !after_rename) {
+                assert!(state.tasks[0].telegram.result_unknown);
+                assert!(
+                    queue
+                        .due_deliveries(NOW, Some(&binding), None)
+                        .unwrap()
+                        .is_empty()
+                );
+            }
+        }
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn provider_disk_postrename_panic_fences_shared_store_and_retirement() {
+    let mock = Mock::new(vec![Reply::json(OK)]).await;
+    let (root, worker, _, _) = worker_fixture(mock.endpoint.clone(), "panic-body");
+    worker.disk.hook(
+        2,
+        false,
+        crate::queue_store::panic_next_replace_after_rename_for_test,
+    );
+    assert_eq!(
+        worker.flush_pending().await,
+        Err(WorkerError::QueueIoUnconfirmed)
+    );
+    assert_eq!(mock.count(), 0);
+    assert_eq!(
+        worker.queue.lock().await.inspect(),
+        Err(StateStoreError::ReopenRequired)
+    );
+    assert_eq!(
+        worker.finish_releases().await,
+        Err(WorkerError::QueueIoUnconfirmed)
+    );
+    assert_eq!(
+        worker.finish_releases().await,
+        Err(WorkerError::QueueIoUnconfirmed)
+    );
+    drop(worker);
+    let state = QueueStore::open(root.path(), key(), StateLimits::default())
+        .unwrap()
+        .inspect()
+        .unwrap();
+    assert!(state.tasks[0].telegram.result_unknown);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn provider_disk_process_death_after_durable_begin_reopens_unknown_without_send() {
+    const CHILD: &str = "SWITCH_G2_CRASH_ROOT";
+    if let Some(path) = std::env::var_os(CHILD) {
+        let path = PathBuf::from(path);
+        let queue = QueueStore::open(&path, key(), StateLimits::default()).unwrap();
+        let binding = DestinationBinding::telegram(&key(), "synthetic-token", "synthetic-chat");
+        let sender = TelegramSender::with_endpoint(
+            "synthetic-token",
+            "synthetic-chat",
+            ProxyMode::Direct,
+            Url::parse("http://127.0.0.1:9").unwrap(),
+        )
+        .unwrap();
+        let worker =
+            ForwardingWorker::new(queue, Some(sender), Some(binding), None, None, Clock).unwrap();
+        worker.disk.hook(2, true, move || {
+            fs::write(path.with_extension("entered"), b"durable begin, zero send").unwrap();
+            loop {
+                std::thread::park();
+            }
+        });
+        worker.flush_pending().await.unwrap();
+        unreachable!();
+    }
+    let (root, queue, binding, _) = queue_fixture("process-death");
+    drop(queue);
+    let mut child = tokio::process::Command::new(std::env::current_exe().unwrap())
+        .args(["--exact", "worker::attempt_tests::provider_disk_process_death_after_durable_begin_reopens_unknown_without_send", "--nocapture"])
+        .env(CHILD, root.path()).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).spawn().unwrap();
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while !root.path().with_extension("entered").exists() {
+            assert!(child.try_wait().unwrap().is_none());
+            tokio::time::sleep(Duration::from_millis(5)).await;
+        }
+    })
+    .await
+    .unwrap();
+    child.kill().await.unwrap();
+    assert!(!child.wait().await.unwrap().success());
+    let queue = QueueStore::open(root.path(), key(), StateLimits::default()).unwrap();
+    let summary = queue.inspect().unwrap();
+    assert!(summary.tasks[0].telegram.result_unknown);
+    assert!(!summary.tasks[0].telegram.in_flight);
+    assert!(
+        queue
+            .due_deliveries(NOW, Some(&binding), None)
+            .unwrap()
+            .is_empty()
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn provider_disk_bark_and_known_failure_finish_are_real_blocking_commands() {
+    for bark in [false, true] {
+        for failure in [false, true] {
+            let last = if bark {
+                4
+            } else if failure {
+                6
+            } else {
+                7
+            };
+            for stage in 0..last {
+                let reply = match (bark, failure) {
+                    (true, false) => "{\"code\":200}",
+                    (true, true) => "{\"code\":400}",
+                    (false, false) => OK,
+                    (false, true) => "{\"ok\":false,\"error_code\":400}",
+                };
+                let mock = Mock::new(vec![Reply::json(reply)]).await;
+                let (root, worker) = if bark {
+                    let root = Root::new();
+                    let key = key();
+                    let binding =
+                        DestinationBinding::bark(&key, mock.endpoint.as_str(), "synthetic")
+                            .unwrap();
+                    let telegram = DestinationBinding::telegram(&key, "disabled", "disabled");
+                    let mut queue =
+                        QueueStore::open(root.path(), key, StateLimits::default()).unwrap();
+                    let message =
+                        ForwardingMessage::new("bark-disk", "in", "sender", "body", NOW, "reader")
+                            .unwrap();
+                    queue
+                        .enqueue_and_persist(
+                            &[message],
+                            NOW,
+                            &EnqueueOptions::new(false, &telegram, true, &binding),
+                        )
+                        .unwrap();
+                    let sender =
+                        BarkSender::new(mock.endpoint.as_str(), "synthetic", None, None, None)
+                            .unwrap();
+                    (
+                        root,
+                        Arc::new(
+                            ForwardingWorker::new(
+                                queue,
+                                None,
+                                None,
+                                Some(sender),
+                                Some(binding),
+                                Clock,
+                            )
+                            .unwrap(),
+                        ),
+                    )
+                } else {
+                    let (root, worker, _, _) =
+                        worker_fixture(mock.endpoint.clone(), "single chunk");
+                    (root, worker)
+                };
+                let (entered, ready) = oneshot::channel();
+                let (release, wait) = std::sync::mpsc::channel();
+                worker.disk.hook(stage, false, move || {
+                    entered.send(()).unwrap();
+                    wait.recv_timeout(Duration::from_secs(5)).unwrap();
+                });
+                let running = {
+                    let worker = worker.clone();
+                    tokio::spawn(async move { worker.flush_pending().await })
+                };
+                tokio::time::timeout(Duration::from_secs(3), ready)
+                    .await
+                    .unwrap()
+                    .unwrap();
+                let sent = usize::from(stage >= if bark { 2 } else { 4 });
+                assert_eq!(mock.count(), sent);
+                tokio::time::timeout(
+                    Duration::from_millis(500),
+                    tokio::time::sleep(Duration::from_millis(5)),
+                )
+                .await
+                .unwrap();
+                running.abort();
+                assert!(running.await.unwrap_err().is_cancelled());
+                let mut stop = Box::pin(worker.finish_releases());
+                assert!(poll_fn(|cx| Poll::Ready(stop.as_mut().poll(cx).is_pending())).await);
+                drop(stop);
+                release.send(()).unwrap();
+                let drained =
+                    tokio::time::timeout(Duration::from_secs(3), worker.finish_releases())
+                        .await
+                        .unwrap();
+                assert_eq!(drained, Ok(()));
+                assert_eq!(mock.count(), sent);
+                drop(worker);
+                drop(QueueStore::open(root.path(), key(), StateLimits::default()).unwrap());
+            }
+        }
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn provider_disk_lost_postrename_error_ack_blocks_clean_retirement() {
+    let mock = Mock::new(vec![Reply::json(OK)]).await;
+    let (root, worker, _, _) = worker_fixture(mock.endpoint.clone(), "lost-error-ack");
+    worker.disk.hook(
+        2,
+        false,
+        crate::queue_store::fail_next_replace_after_rename_for_test,
+    );
+    let (entered, ready) = oneshot::channel();
+    let (release, wait) = std::sync::mpsc::channel();
+    worker.disk.hook(2, true, move || {
+        entered.send(()).unwrap();
+        wait.recv_timeout(Duration::from_secs(5)).unwrap();
+    });
+    let running = {
+        let worker = worker.clone();
+        tokio::spawn(async move { worker.flush_pending().await })
+    };
+    ready.await.unwrap();
+    running.abort();
+    assert!(running.await.unwrap_err().is_cancelled());
+    let mut stop = Box::pin(worker.finish_releases());
+    assert!(poll_fn(|cx| Poll::Ready(stop.as_mut().poll(cx).is_pending())).await);
+    drop(stop);
+    release.send(()).unwrap();
+    assert_eq!(
+        worker.finish_releases().await,
+        Err(WorkerError::QueueIoUnconfirmed)
+    );
+    assert_eq!(
+        worker.queue.lock().await.inspect(),
+        Err(StateStoreError::ReopenRequired)
+    );
+    assert_eq!(mock.count(), 0);
+    drop(worker);
+    let queue = QueueStore::open(root.path(), key(), StateLimits::default()).unwrap();
+    assert!(queue.inspect().unwrap().tasks[0].telegram.result_unknown);
+}

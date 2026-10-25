@@ -728,3 +728,177 @@ async fn public_enqueue_held_file_lock_keeps_heartbeat_and_cancelled_owner_until
     );
     assert!(result.unwrap_err().is_cancelled());
 }
+
+/// Freeze is a provider command, not a producer command. The real rename path
+/// blocks behind an independent file lock while the one-thread runtime signals
+/// stop, cancels a retirement observer, and retains the old generation.
+#[tokio::test(flavor = "current_thread")]
+async fn provider_freeze_real_disk_block_keeps_stop_and_replacement_bound_to_old_owner() {
+    let (root, service, mut proxy, id, _) = fixture(false).await;
+    let worker = {
+        let state = service.0.state.lock().await;
+        let active = state.active.as_ref().unwrap();
+        let options =
+            EnqueueOptions::new(true, &active.telegram_binding, false, &active.bark_binding);
+        active
+            .worker
+            .queue()
+            .lock()
+            .await
+            .enqueue_and_persist(
+                &[message("provider-blocked-freeze")],
+                "2026-01-01T00:00:01Z",
+                &options,
+            )
+            .unwrap();
+        active.worker.clone()
+    };
+    let lock_path = root.join("provider-slow-disk.lock");
+    let held = fs::OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .read(true)
+        .write(true)
+        .open(&lock_path)
+        .unwrap();
+    held.lock().unwrap();
+    let (entered, entering) = std::sync::mpsc::channel();
+    proletarius_forwarding::test_support::hold_next_replace(
+        service.0.state_path.clone(),
+        lock_path,
+        entered,
+    );
+    service.0.wake.notify_one();
+    tokio::time::timeout(
+        Duration::from_secs(5),
+        tokio::task::spawn_blocking(move || entering.recv_timeout(Duration::from_secs(5)).unwrap()),
+    )
+    .await
+    .unwrap()
+    .unwrap();
+    assert!(worker.queue().try_lock().is_err());
+    tokio::time::timeout(
+        Duration::from_millis(500),
+        tokio::time::sleep(Duration::from_millis(10)),
+    )
+    .await
+    .unwrap();
+    let mut first_stop = Box::pin(service.shutdown());
+    pending(first_stop.as_mut()).await;
+    drop(first_stop);
+    {
+        let state = service.0.state.lock().await;
+        let active = state.active.as_ref().unwrap();
+        assert_eq!(active.id, id);
+        assert!(active.retiring);
+    }
+    assert!(matches!(
+        QueueStore::open(
+            service.0.state_path.clone(),
+            StateKey::from_slice(&[KEY; 32]).unwrap(),
+            StateLimits::default()
+        ),
+        Err(StateStoreError::Busy)
+    ));
+    assert_eq!(proxy.connected.load(Ordering::SeqCst), 0);
+    let replacement = json!({"client_request_id":"provider-disk-successor", "client_sequence":2,
+        "telegram":{"enabled":false}, "bark":{"enabled":false}, "state_key":STANDARD.encode([KEY;32])});
+    let mut replacing =
+        Box::pin(service.handle(request("/api/sms/forwarding/configure", replacement)));
+    pending(replacing.as_mut()).await;
+    // The replacement's observer may leave; its partially retired predecessor
+    // remains in ServiceState and still holds the actual QueueStore/flock.
+    drop(replacing);
+    assert_eq!(service.0.state.lock().await.active.as_ref().unwrap().id, id);
+    drop(held);
+    tokio::time::timeout(Duration::from_secs(5), service.shutdown())
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(service.0.state.lock().await.active.is_none());
+    assert_eq!(proxy.connected.load(Ordering::SeqCst), 0);
+    drop(worker);
+    let queue = reopened(&root);
+    let task = &queue.inspect().unwrap().tasks[0];
+    assert_eq!(task.telegram.attempts, 0);
+    assert!(!task.telegram.in_flight);
+    drop(queue);
+    proxy.join().await;
+    drop(service);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn status_real_identity_read_block_does_not_starve_timer_or_cancelled_shutdown() {
+    let (root, service, mut proxy, _, _) = fixture(false).await;
+    // Park only periodic execution so the next path-scoped verification belongs
+    // deterministically to the real public status handler, not its runner.
+    {
+        let mut state = service.0.state.lock().await;
+        let active = state.active.as_mut().unwrap();
+        let _ = active.shutdown.send(true);
+        active.runner.as_mut().unwrap().await.unwrap();
+        let (shutdown, mut receiver) = watch::channel(false);
+        active.shutdown = shutdown;
+        active.runner = Some(tokio::spawn(async move {
+            let _ = receiver.changed().await;
+        }));
+    }
+    let lock_path = root.join("status-slow-identity.lock");
+    let held = fs::OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .read(true)
+        .write(true)
+        .open(&lock_path)
+        .unwrap();
+    held.lock().unwrap();
+    let (entered, entering) = std::sync::mpsc::channel();
+    proletarius_forwarding::test_support::hold_next_verification(
+        service.0.state_path.clone(),
+        lock_path,
+        entered,
+    );
+    let status = {
+        let service = service.clone();
+        tokio::spawn(async move { service.status().await })
+    };
+    tokio::time::timeout(
+        Duration::from_secs(5),
+        tokio::task::spawn_blocking(move || entering.recv_timeout(Duration::from_secs(5)).unwrap()),
+    )
+    .await
+    .unwrap()
+    .unwrap();
+    tokio::time::timeout(
+        Duration::from_millis(500),
+        tokio::time::sleep(Duration::from_millis(10)),
+    )
+    .await
+    .unwrap();
+    status.abort();
+    assert!(status.await.unwrap_err().is_cancelled());
+    let mut stop = Box::pin(service.shutdown());
+    pending(stop.as_mut()).await;
+    drop(stop);
+    assert!(service.0.state.lock().await.active.is_some());
+    assert!(matches!(
+        QueueStore::open(
+            service.0.state_path.clone(),
+            StateKey::from_slice(&[KEY; 32]).unwrap(),
+            StateLimits::default()
+        ),
+        Err(StateStoreError::Busy)
+    ));
+    drop(held);
+    tokio::time::timeout(Duration::from_secs(5), service.shutdown())
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(service.0.state.lock().await.active.is_none());
+    assert_eq!(proxy.connected.load(Ordering::SeqCst), 0);
+    drop(reopened(&root));
+    proxy.join().await;
+    drop(service);
+    fs::remove_dir_all(root).unwrap();
+}

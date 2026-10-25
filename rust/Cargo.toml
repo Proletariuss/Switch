@@ -44,7 +44,7 @@ base64 = "0.22"
 bytes = "1.10"
 cc = "=1.6.0"
 cbc = { version = "=0.2.1", features = ["zeroize"] }
-crypto-bigint = { version = "0.7.5", features = ["hybrid-array", "zeroize"] }
+crypto-bigint = { version = "0.7.6", features = ["hybrid-array", "zeroize"] }
 getrandom = "0.3"
 hmac = "0.12"
 md-5 = "=0.10.6"

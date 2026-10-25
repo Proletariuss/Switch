@@ -10,6 +10,7 @@ trap 'rm -rf "$SMS_STORE_TMP"' EXIT INT TERM
 ruby "$SMS_STORE_ROOT/app/Tests/SMSStore/prepare.rb" \
   "${SMS_STORE_SOURCE_DIR:-$SMS_STORE_ROOT/app/Sources}" "$SMS_STORE_TMP"
 xcrun swiftc -parse-as-library \
+  "$SMS_STORE_ROOT/app/Sources/AcceptanceContext.swift" \
   "$SMS_STORE_ROOT/app/Tests/SMSStore/Adapters.swift" \
   "$SMS_STORE_ROOT/app/Tests/SMSStore/main.swift" \
   "$SMS_STORE_TMP/SMSStore.swift" "$SMS_STORE_TMP/SMSModels.swift" \

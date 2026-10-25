@@ -603,6 +603,22 @@ impl QueueStore {
     }
 
     fn ensure_usable(&self) -> Result<(), StateStoreError> {
+        #[cfg(feature = "queue-fault-tests")]
+        {
+            let held = {
+                let mut locks = VERIFY_LOCKS.lock().unwrap();
+                locks
+                    .iter()
+                    .position(|(target, _, _)| *target == self.path)
+                    .map(|index| locks.remove(index))
+            };
+            if let Some((_, path, entered)) = held {
+                let lock = File::open(path).map_err(|_| StateStoreError::Io)?;
+                let _ = entered.send(());
+                lock.lock().map_err(|_| StateStoreError::Io)?;
+                drop(lock);
+            }
+        }
         if self.poisoned {
             Err(StateStoreError::ReopenRequired)
         } else {
@@ -782,17 +798,22 @@ enum ReplaceError {
     AfterCommit,
 }
 
+#[cfg(test)]
+pub(crate) fn panic_next_replace_after_rename_for_test() {
+    PANIC_AFTER_QUEUE_RENAME.with(|failure| failure.set(true));
+}
+
 #[cfg(any(test, feature = "queue-fault-tests"))]
 thread_local! {
     static FAIL_AFTER_QUEUE_RENAME: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
-#[cfg(feature = "queue-fault-tests")]
+#[cfg(any(test, feature = "queue-fault-tests"))]
 pub(crate) fn fail_next_replace_after_rename_for_test() {
     FAIL_AFTER_QUEUE_RENAME.with(|failure| failure.set(true));
 }
 
-#[cfg(feature = "queue-fault-tests")]
+#[cfg(any(test, feature = "queue-fault-tests"))]
 pub(crate) fn fail_next_replace_before_rename_for_test() {
     FAIL_BEFORE_QUEUE_RENAME.with(|failure| failure.set(true));
 }
@@ -807,6 +828,19 @@ thread_local! {
 type ReplaceLock = (PathBuf, PathBuf, std::sync::mpsc::Sender<()>);
 #[cfg(feature = "queue-fault-tests")]
 static REPLACE_LOCKS: std::sync::Mutex<Vec<ReplaceLock>> = std::sync::Mutex::new(Vec::new());
+#[cfg(feature = "queue-fault-tests")]
+static VERIFY_LOCKS: std::sync::Mutex<Vec<ReplaceLock>> = std::sync::Mutex::new(Vec::new());
+#[cfg(feature = "queue-fault-tests")]
+pub(crate) fn hold_next_verification(
+    path: PathBuf,
+    lock_path: PathBuf,
+    entered: std::sync::mpsc::Sender<()>,
+) {
+    VERIFY_LOCKS
+        .lock()
+        .unwrap()
+        .push((path, lock_path, entered));
+}
 #[cfg(feature = "queue-fault-tests")]
 static FAIL_AFTER_QUEUE_RENAME_PATHS: std::sync::Mutex<Vec<PathBuf>> =
     std::sync::Mutex::new(Vec::new());

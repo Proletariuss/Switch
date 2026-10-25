@@ -207,11 +207,13 @@ final class UpdateChecker: ObservableObject {
 
     @Published var channel: Channel {
         didSet {
+            guard !AcceptanceBootstrap.isAcceptance else { return }
             UserDefaults.standard.set(channel.rawValue, forKey: Self.channelKey)
         }
     }
     @Published var autoCheck: Bool {
         didSet {
+            guard !AcceptanceBootstrap.isAcceptance else { return }
             UserDefaults.standard.set(autoCheck, forKey: Self.autoCheckKey)
         }
     }
@@ -230,11 +232,19 @@ final class UpdateChecker: ObservableObject {
     /// 用户选择"跳过本次更新"的版本号集合（持久化）
     private var skippedVersions: Set<String> {
         didSet {
+            guard !AcceptanceBootstrap.isAcceptance else { return }
             UserDefaults.standard.set(Array(skippedVersions), forKey: Self.skippedKey)
         }
     }
 
     init() {
+        if AcceptanceBootstrap.isAcceptance {
+            channel = .stable
+            autoCheck = false
+            lastCheckDate = nil
+            skippedVersions = []
+            return
+        }
         let defaults = UserDefaults.standard
         channel = Channel(rawValue: defaults.string(forKey: Self.channelKey) ?? "") ?? .stable
         if defaults.object(forKey: Self.autoCheckKey) == nil {
@@ -306,6 +316,10 @@ final class UpdateChecker: ObservableObject {
 
     /// 启动时自动检查（autoCheck 开启时每次启动都检查）；发现更新时弹窗提醒
     func autoCheckIfNeeded() async {
+        guard !AcceptanceBootstrap.isAcceptance else {
+            lastError = "隔离验收中更新服务不可用"
+            return
+        }
         guard autoCheck, isUpdateServiceConfigured else { return }
         await check(prompt: true)
     }
@@ -313,6 +327,10 @@ final class UpdateChecker: ObservableObject {
     /// 检查更新。prompt 为 true 时（仅启动检查）发现更新会置位 pendingUpdate 触发弹窗；
     /// 手动检查（点击版本行、切换渠道）不弹窗。
     func check(prompt: Bool = false) async {
+        guard !AcceptanceBootstrap.isAcceptance else {
+            lastError = "隔离验收中更新服务不可用"
+            return
+        }
         guard !checking else { return }
         guard let url = Self.configuredUpdateURL else {
             latestRelease = nil
@@ -349,7 +367,9 @@ final class UpdateChecker: ObservableObject {
             let matched = Self.selectLatestRelease(from: releases, for: channel)
             latestRelease = matched
             lastCheckDate = Date()
-            UserDefaults.standard.set(lastCheckDate, forKey: Self.lastCheckKey)
+            if !AcceptanceBootstrap.isAcceptance {
+                UserDefaults.standard.set(lastCheckDate, forKey: Self.lastCheckKey)
+            }
             if updateAvailable && prompt {
                 pendingUpdate = matched
             }
@@ -367,12 +387,14 @@ final class UpdateChecker: ObservableObject {
 
     /// 跳过本次更新：该版本不再提醒
     func skipUpdate(_ release: AppRelease) {
+        guard !AcceptanceBootstrap.isAcceptance else { return }
         skippedVersions.insert(SemanticVersion.normalizedString(release.tagName))
         pendingUpdate = nil
     }
 
     /// 清除最新版本的跳过标记并弹出更新弹窗（点击"最新版本"行时调用）
     func unskipAndPrompt() {
+        guard !AcceptanceBootstrap.isAcceptance else { return }
         guard let latest = latestRelease else { return }
         skippedVersions.remove(SemanticVersion.normalizedString(latest.tagName))
         pendingUpdate = latest
