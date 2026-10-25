@@ -64,7 +64,7 @@ jobs:
                     ;;
                 esac
                 case "$file" in
-                  app/*|third_party/*|Switch.xcodeproj/*|project.yml|VERSION|BUILD_NUMBER|scripts/build.sh|scripts/build-swift-tests.sh|scripts/package-dmg.sh)
+                  app/*|third_party/*|Switch.xcodeproj/*|project.yml|VERSION|BUILD_NUMBER|scripts/build*|scripts/workspace-env.sh|scripts/package-dmg.sh|scripts/audit-release-bundle.py|scripts/prepare-module-supervisor.py)
                     needs_app=true
                     ;;
                 esac
@@ -118,6 +118,15 @@ jobs:
           cargo +1.98.0 fmt --manifest-path rust/Cargo.toml --all -- --check
           cargo +1.98.0 metadata \
             --manifest-path rust/Cargo.toml \
+            --locked \
+            --no-deps \
+            --format-version 1 >/dev/null
+          cargo +1.98.0 fmt \
+            --manifest-path scripts/acceptance/daemon-capsule-fixture/Cargo.toml \
+            --all \
+            -- --check
+          cargo +1.98.0 metadata \
+            --manifest-path scripts/acceptance/daemon-capsule-fixture/Cargo.toml \
             --locked \
             --no-deps \
             --format-version 1 >/dev/null
@@ -206,6 +215,17 @@ jobs:
                   check=True,
               )
           PY
+          cargo +1.98.0 fmt \
+            --manifest-path scripts/acceptance/daemon-capsule-fixture/Cargo.toml \
+            --all \
+            -- --check
+          cargo +1.98.0 clippy \
+            --manifest-path scripts/acceptance/daemon-capsule-fixture/Cargo.toml \
+            --locked \
+            --all-targets
+          cargo +1.98.0 test \
+            --manifest-path scripts/acceptance/daemon-capsule-fixture/Cargo.toml \
+            --locked
       - name: Build Switch.app for app-affecting changes
         if: needs.classify.outputs.needs_app == 'true'
         working-directory: src

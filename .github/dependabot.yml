@@ -30,3 +30,18 @@ updates:
       - dependencies
     commit-message:
       prefix: "chore(ci)"
+
+  - package-ecosystem: cargo
+    directory: /scripts/acceptance/daemon-capsule-fixture
+    schedule:
+      interval: weekly
+      day: monday
+      time: "10:15"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 1
+    cooldown:
+      default-days: 7
+    labels:
+      - dependencies
+    commit-message:
+      prefix: "chore(fixture-deps)"

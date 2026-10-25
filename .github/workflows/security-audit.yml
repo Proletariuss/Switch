@@ -8,6 +8,8 @@ on:
       - 'rust/Cargo.toml'
       - 'rust/Cargo.lock'
       - 'rust/crates/**/Cargo.toml'
+      - 'scripts/acceptance/daemon-capsule-fixture/Cargo.toml'
+      - 'scripts/acceptance/daemon-capsule-fixture/Cargo.lock'
   workflow_dispatch:
   schedule:
     - cron: '17 2 * * 1'
@@ -23,9 +25,15 @@ concurrency:
 
 jobs:
   rustsec:
-    name: RustSec advisory database
+    name: RustSec (${{ matrix.directory }})
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        directory:
+          - rust
+          - scripts/acceptance/daemon-capsule-fixture
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -33,4 +41,4 @@ jobs:
       - uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998 # v2.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          working-directory: rust
+          working-directory: ${{ matrix.directory }}

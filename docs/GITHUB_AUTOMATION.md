@@ -1,6 +1,7 @@
 # GitHub automation policy
 
-Switch uses GitHub-hosted runners for automated review. No workflow depends on
+Switch uses GitHub-hosted runners for automated review. The current annual
+iteration window runs from 2026-10-25 through 2027-10-25. No workflow depends on
 the maintainer's Mac, a self-hosted runner, attached hardware, or locally saved
 credentials.
 
@@ -27,15 +28,18 @@ before changing runner frequency:
 
 ## Automatic iteration
 
-Dependabot checks the Rust workspace and GitHub Actions weekly. It opens no more
-than two Cargo update pull requests and one Actions update pull request at a
-time. Updates wait seven days before selection to reduce newly released version
-risk. Every update remains a reviewable pull request and is never auto-merged.
+Dependabot checks the main Rust workspace, the independent daemon-capsule
+acceptance fixture, and GitHub Actions weekly. It opens no more than two main
+Cargo update pull requests, one fixture update pull request, and one Actions
+update pull request at a time. Updates wait seven days before selection to reduce
+newly released version risk. Every update remains a reviewable pull request and
+is never auto-merged.
 
-The weekly RustSec workflow checks `rust/Cargo.lock` against the advisory
-database. Pull requests that modify Cargo manifests or the lockfile receive the
-same audit. Findings fail the check; scheduled findings may create a GitHub
-issue. No repository or forwarding secret is supplied to the audit.
+The weekly RustSec workflow checks both `rust/Cargo.lock` and
+`scripts/acceptance/daemon-capsule-fixture/Cargo.lock` against the advisory
+database. Pull requests that modify either Cargo workspace receive the same
+audit. Findings fail the check; scheduled findings may create a GitHub issue.
+No repository or forwarding secret is supplied to the audit.
 
 Clippy runs on code-affecting pull requests and reports its findings. The
 existing daemon warning baseline is intentionally not converted into a global
@@ -46,6 +50,10 @@ Without a paid Copilot plan, GitHub does not perform semantic AI rewrites. The
 free automation therefore limits automatic source changes to GitHub-native
 Dependabot pull requests. It does not grant a workflow permission to rewrite
 `main`, approve a pull request, or merge a change.
+
+At the end of the annual window, review Actions usage, unresolved findings and
+the remaining acceptance boundary before renewing the schedule. The end date is
+an operational review point, not an assertion that the product will be complete.
 
 ## Workflow map
 
