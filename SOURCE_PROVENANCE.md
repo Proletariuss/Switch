@@ -21,7 +21,8 @@
 3. 将 README 更新为 3.51 的下载、安装、架构、验证范围和许可证说明；
 4. 增加本来源说明与 `SECURITY.md`；
 5. 扩展 `.gitignore`，避免提交构建产物、DMG、日志、私钥、环境文件和 AppleDouble 元数据。
-6. 将 GitHub Workflow 从依赖宿主机历史台账的完整本地门禁，收敛为可移植源码契约、Rust workspace 非 daemon 测试、daemon 测试编译、共享串口状态组单线程测试与 Release App 构建；本地完整验收入口和证据原样保留。
+6. 将 GitHub Workflow 从依赖宿主机历史台账的完整本地门禁，收敛为可移植源码契约、Rust workspace 非 daemon 测试、daemon 测试编译、共享串口状态测试逐例独立进程执行与 Release App 构建；本地完整验收入口和证据原样保留。
+7. 为合成串口测试增加确定性的启动空闲屏障，替代固定等待时间造成的 Runner 时序竞态；该改动只编译进 `cfg(test)` 测试目标，不进入 Release App 或已发布 DMG。
 
 以上转换会使 GitHub 提交树摘要不同于冻结源码树摘要，但不修改 3.51 业务实现。当前开发目录中冻结之后的局部改动没有并入本仓库的 3.51 首次发布。
 

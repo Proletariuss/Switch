@@ -292,6 +292,30 @@ async fn until(mut predicate: impl FnMut() -> bool) {
     .await
     .expect("serial fixture bounded progress");
 }
+async fn retain_serial_after_startup(
+    f: &Fixture,
+    intent: &crate::module_radio::NativeVoWiFiIntent,
+) -> crate::modem_actor::SerialModuleHold {
+    let binding = intent.serial_binding().unwrap();
+    tokio::time::timeout(Duration::from_secs(12), async {
+        loop {
+            match f
+                .state
+                .modem_actor
+                .retain_serial_module(&binding, intent.usb_inhibit())
+                .await
+            {
+                Ok(hold) => return hold,
+                Err(error) if error.code == "serial_card_busy" => {
+                    tokio::time::sleep(Duration::from_millis(2)).await;
+                }
+                Err(error) => panic!("serial fixture admission failed: {}", error.code),
+            }
+        }
+    })
+    .await
+    .expect("serial fixture startup reached idle admission")
+}
 async fn request(
     state: &crate::ServerState,
     method: &str,
@@ -602,11 +626,17 @@ async fn serial_module_full_card_aka_works_without_pdu_ready_and_failed_restore_
     use crate::native_vowifi_session::card::OnDemandCard;
     use crate::reader_session_lease::ReaderAkaApplication;
     let f = Fixture::new(true).await;
+    // Startup owns the same serial actor while its initial empty-SMS scan is
+    // settling. Acquire the production hold as a deterministic admission
+    // barrier; ModuleSessionCard recovers this exact binding/token below.
+    let intent = f.state.module_radio.native_vowifi_intent().unwrap();
+    let _startup_hold = retain_serial_after_startup(&f, &intent).await;
     let (stop, stopped) = tokio::sync::watch::channel(false);
-    let card = crate::module_vowifi_card::ModuleSessionCard::begin_prepare_with_serial(
+    let card = crate::module_vowifi_card::ModuleSessionCard::begin_prepare_with_serial_intent(
         f.state.usb_at.clone(),
         f.state.module_radio.clone(),
         f.state.modem_actor.clone(),
+        intent,
         stopped,
     );
     card.wait_ready().await.unwrap();
@@ -669,11 +699,14 @@ async fn serial_module_full_card_aka_works_without_pdu_ready_and_failed_restore_
 async fn serial_module_changed_sim_sends_zero_authenticate_and_still_restores_exact_radio() {
     use crate::native_vowifi_session::card::OnDemandCard;
     let f = Fixture::new(false).await;
+    let intent = f.state.module_radio.native_vowifi_intent().unwrap();
+    let _startup_hold = retain_serial_after_startup(&f, &intent).await;
     let (stop, stopped) = tokio::sync::watch::channel(false);
-    let card = crate::module_vowifi_card::ModuleSessionCard::begin_prepare_with_serial(
+    let card = crate::module_vowifi_card::ModuleSessionCard::begin_prepare_with_serial_intent(
         f.state.usb_at.clone(),
         f.state.module_radio.clone(),
         f.state.modem_actor.clone(),
+        intent,
         stopped,
     );
     card.wait_ready().await.unwrap();

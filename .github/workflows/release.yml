@@ -47,7 +47,19 @@ jobs:
           (cd rust && cargo +1.98.0 fmt --all -- --check)
           (cd rust && cargo +1.98.0 test --locked --workspace --exclude proletariusd)
           (cd rust && cargo +1.98.0 test --locked -p proletariusd --bin switchd-rs --no-run)
-          (cd rust && cargo +1.98.0 test --locked -p proletariusd --bin switchd-rs native_serial_module_supervision_tests -- --test-threads=1)
+          # These tests exercise a process-global reader admission gate. Run
+          # each exact case in a fresh test process so one fixture cannot leak
+          # ownership into the next case while still failing on any error.
+          for test in \
+            native_serial_module_supervision_tests::public_serial_module_start_stop_retains_real_identity_and_rf_until_enter_settles \
+            native_serial_module_supervision_tests::module_vowifi_http_request_id_replays_exact_operation_and_rejects_payload_drift \
+            native_serial_module_supervision_tests::claimed_serial_before_radio_configuration_never_falls_back_to_live_usb_module \
+            native_serial_module_supervision_tests::serial_module_full_card_aka_works_without_pdu_ready_and_failed_restore_keeps_hold \
+            native_serial_module_supervision_tests::serial_module_changed_sim_sends_zero_authenticate_and_still_restores_exact_radio \
+            native_serial_module_supervision_tests::captured_serial_intent_retired_before_hold_releases_without_touching_replacement_rf
+          do
+            (cd rust && cargo +1.98.0 test --locked -p proletariusd --bin switchd-rs "$test" -- --exact --test-threads=1)
+          done
       - name: Build app (no disk image)
         working-directory: src
         run: scripts/build.sh
