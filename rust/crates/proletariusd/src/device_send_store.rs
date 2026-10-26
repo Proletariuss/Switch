@@ -670,6 +670,7 @@ mod tests {
                 .unwrap()
                 .into(),
             Default::default(),
+            None,
         );
         assert!(limited.apply("prepare", prepare("x")).is_err());
         assert!(!limited.0.path().exists());
@@ -680,6 +681,7 @@ mod tests {
                 .unwrap()
                 .into(),
             Default::default(),
+            None,
         );
         assert!(
             limit
