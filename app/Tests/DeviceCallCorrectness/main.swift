@@ -397,6 +397,55 @@ private final class FaultingCallCheckpointDefaults: CallCheckpointDefaults {
         api.finishPending()
         await settle()
 
+        // Real NetworkServicesStore with only transport completion controlled.
+        // A cancelled waiter deliberately completes late to prove revision guards.
+        for oldResult in ["success", "failure"] {
+            let network = NetworkServicesStore(backend: BackendProcess())
+            network.load()
+            await settle()
+            api.complete(api.requests.count - 1, json: #"{"services":[{"name":"A"},{"name":"B"}]}"#)
+            await settle()
+            network.saveOrder()
+            await settle()
+            let oldSave = api.requests.count - 1
+            network.reset()
+            network.load()
+            await settle()
+            api.complete(api.requests.count - 1, json: #"{"services":[{"name":"C"},{"name":"D"}]}"#)
+            await settle()
+            network.saveOrder()
+            await settle()
+            let newSave = api.requests.count - 1
+            let beforeOldCompletion = api.requests.count
+            if oldResult == "success" {
+                api.complete(oldSave, json: #"{"message":"obsolete"}"#)
+            } else { api.fail(oldSave) }
+            await settle()
+            precondition(network.isSaving && network.message == nil && network.error == nil,
+                         "old save completion cleared successor busy state or feedback")
+            precondition(api.requests.count == beforeOldCompletion,
+                         "old successful save started a refresh on the successor")
+            network.saveOrder()
+            await settle()
+            precondition(api.requests.count == beforeOldCompletion,
+                         "old defer allowed a duplicate successor save")
+            api.complete(newSave, json: #"{"message":"current"}"#)
+            await settle()
+            precondition(!network.isSaving && network.message == "current")
+            api.complete(api.requests.count - 1, json: #"{"services":[{"name":"C"},{"name":"D"}]}"#)
+            await settle()
+
+            network.saveOrder()
+            await settle()
+            let stoppedSave = api.requests.count - 1
+            network.reset()
+            api.fail(stoppedSave)
+            await settle()
+            precondition(!network.isSaving && network.error == nil && network.services.isEmpty,
+                         "late cancelled save republished feedback after reset")
+        }
+        print("PASS: network priority save success/failure/reset fence both publication and task retirement")
+
         print("PASS production call duplicate fencing/readiness/reject recovery, durable same-ID GUI restart, sticky persistence/non-Data fences, unbound module unknown receipt/next-call fence, history degradation, diagnostic cancellation/partial preservation, network error/manual reboot, allowlisted export")
     }
 }

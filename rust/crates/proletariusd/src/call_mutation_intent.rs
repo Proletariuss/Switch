@@ -451,7 +451,7 @@ pub(crate) fn preflight(
     };
     match store.lookup(client_request_id, action, fingerprint) {
         Ok(Lookup::Missing) => None,
-        Ok(Lookup::Replay(response)) => Some(response_from_stored(&response)),
+        Ok(Lookup::Replay(response)) => Some(response_from_stored(&response, client_request_id)),
         // Only a strongly bound non-module `admitted` may re-evaluate its live
         // owner and atomically claim it. Module admissions are quarantined by
         // lookup: no durable specific-call identity exists for recovery. A
@@ -484,7 +484,7 @@ where
         Err(_) => return unavailable_before_dispatch(),
     };
     match store.admit(&request) {
-        Ok(Admission::Replay(response)) => response_from_stored(&response),
+        Ok(Admission::Replay(response)) => response_from_stored(&response, &request.client_request_id),
         Ok(Admission::Receipt(record)) => receipt_response(&record),
         Ok(Admission::Dispatch) => {
             if store.claim(&request).is_err() {
@@ -497,7 +497,9 @@ where
                     &request.action,
                     &request.raw_payload_fingerprint,
                 ) {
-                    Ok(Lookup::Replay(response)) => response_from_stored(&response),
+                    Ok(Lookup::Replay(response)) => {
+                        response_from_stored(&response, &request.client_request_id)
+                    }
                     Ok(Lookup::Receipt(record)) if record.phase != "admitted" => {
                         receipt_response(&record)
                     }
@@ -525,7 +527,7 @@ where
                     "通话命令已提交，但持久回执未能确认；请使用原请求编号恢复，切勿新建请求",
                 );
             }
-            response_from_stored(&stored)
+            response_from_stored(&stored, &request.client_request_id)
         }
         Err(StoreError::Configuration(code))
             if matches!(
@@ -543,14 +545,21 @@ fn unavailable_before_dispatch() -> Response<Full<Bytes>> {
     rejection(
         StatusCode::SERVICE_UNAVAILABLE,
         "call_mutation_receipt_unavailable",
-        "无法安全记录通话请求，尚未提交物理命令",
+        "无法读取或安全记录原通话回执；本次未提交新的物理命令",
     )
 }
 
-fn response_from_stored(response: &StoredResponse) -> Response<Full<Bytes>> {
+fn response_from_stored(
+    response: &StoredResponse,
+    client_request_id: &str,
+) -> Response<Full<Bytes>> {
+    // Only durable finish/replay reaches this boundary. A preflight failure or
+    // an unknown receipt must not claim that an earlier request is terminal.
     Response::builder()
         .status(response.status)
         .header("content-type", "application/json; charset=utf-8")
+        .header("x-switch-call-terminal", "true")
+        .header("x-switch-call-request-id", client_request_id)
         .body(Full::new(Bytes::copy_from_slice(response.body.as_bytes())))
         .unwrap_or_else(|_| {
             rejection(
@@ -1373,6 +1382,89 @@ mod tests {
         let records = decode_records(&store.archive.load().unwrap()).unwrap();
         assert_eq!(records[0].phase, "unknown");
         assert_eq!(records[0].dispatch_count, 0);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[tokio::test]
+    async fn durable_negative_receipt_marks_original_id_but_unknown_or_unreadable_does_not() {
+        let root = root();
+        let original = request(
+            "terminal-negative-request",
+            "dial",
+            52,
+            OwnerBinding {
+                owner: "reader",
+                generation: 28,
+            },
+        );
+        let result = execute(&root, original.clone(), || async {
+            crate::json_response(
+                StatusCode::CONFLICT,
+                &json!({"error":"call busy","code":"call_owner_busy"}),
+            )
+        })
+        .await;
+        assert_eq!(result.status(), StatusCode::CONFLICT);
+        assert_eq!(result.headers()["x-switch-call-terminal"], "true");
+        assert_eq!(
+            result.headers()["x-switch-call-request-id"],
+            original.client_request_id
+        );
+        let replay = preflight(
+            &root,
+            &original.client_request_id,
+            &original.action,
+            &original.raw_payload_fingerprint,
+        )
+        .unwrap();
+        assert_eq!(replay.status(), StatusCode::CONFLICT);
+        assert_eq!(replay.headers()["x-switch-call-terminal"], "true");
+        assert_eq!(
+            replay.headers()["x-switch-call-request-id"],
+            original.client_request_id
+        );
+
+        let unresolved = request(
+            "unknown-module-request",
+            "dial",
+            53,
+            OwnerBinding {
+                owner: "module",
+                generation: 0,
+            },
+        );
+        Store::new(&root).unwrap().admit(&unresolved).unwrap();
+        let unknown = preflight(
+            &root,
+            &unresolved.client_request_id,
+            &unresolved.action,
+            &unresolved.raw_payload_fingerprint,
+        )
+        .unwrap();
+        assert_eq!(unknown.status(), StatusCode::ACCEPTED);
+        assert!(!unknown.headers().contains_key("x-switch-call-terminal"));
+
+        let invalid_root = root.join("not-a-directory");
+        fs::write(&invalid_root, b"fixture").unwrap();
+        let unreadable = preflight(
+            &invalid_root,
+            &original.client_request_id,
+            &original.action,
+            &original.raw_payload_fingerprint,
+        )
+        .unwrap();
+        assert_eq!(unreadable.status(), StatusCode::SERVICE_UNAVAILABLE);
+        assert!(!unreadable.headers().contains_key("x-switch-call-terminal"));
+
+        let invalid_header = response_from_stored(
+            &StoredResponse {
+                status: 409,
+                body: "{}".into(),
+            },
+            "invalid\nrequest",
+        );
+        assert_eq!(invalid_header.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert!(!invalid_header.headers().contains_key("x-switch-call-terminal"));
         fs::remove_dir_all(root).unwrap();
     }
 }
