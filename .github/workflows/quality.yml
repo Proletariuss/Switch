@@ -130,6 +130,9 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
   checks:
+    permissions:
+      contents: read
+      actions: read
     needs: classify
     uses: ./.github/workflows/software-gates.yml
     with:

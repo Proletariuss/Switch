@@ -39,6 +39,9 @@ jobs:
           fi
           echo "commit=$commit" >> "$GITHUB_OUTPUT"
   candidate:
+    permissions:
+      contents: read
+      actions: read
     needs: identity
     uses: ./.github/workflows/software-gates.yml
     with:
