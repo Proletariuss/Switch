@@ -80,7 +80,7 @@ jobs:
           PACKAGING_ATTEMPT: ${{ inputs.packaging_attempt }}
           PYTHONDONTWRITEBYTECODE: '1'
         run: python3 control/scripts/ci/compact-release.py prepare --version "$APP_VERSION" --app-sha "$APP_SHA" --packaging-run-id "$PACKAGING_RUN" --packaging-attempt "$PACKAGING_ATTEMPT" --directory "$GITHUB_WORKSPACE/audit-snapshot"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: steps.snapshot.outputs.complete != 'true'
         with:
           name: ${{ steps.identity.outputs.artifact_name }}
