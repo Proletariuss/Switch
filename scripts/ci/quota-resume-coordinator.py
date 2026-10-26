@@ -26,6 +26,7 @@ class Coordinator:
             "authorization_blob": AUTH_BLOB, "branch": BRANCH, "phase": "waiting_prepare",
             "prepare_run_id": INITIAL_PREPARE_RUN, "prepared_sha": None, "build_run_id": None,
             "billing_retries": 0, "last_retry_date": None, "build_dispatch_intent": None,
+            "prepare_dispatch_intent": None, "verification_deferred_date": None,
             "proof": None, "message": "Waiting for GitHub-hosted billing availability; no local job is scheduled."
         }
         if matches:
@@ -39,8 +40,8 @@ class Coordinator:
             value = json.loads(match[1])
             for key in ["schema_version", "repository", "pr", "authorization_sha", "authorization_blob", "branch"]:
                 require(value.get(key) == self.state[key], "state authorization pin mismatch")
-            require(value.get("prepare_run_id") == INITIAL_PREPARE_RUN, "state changed fixed preparation run")
-            require(value.get("phase") in {"waiting_prepare", "verify", "dispatching_build", "building", "done", "blocked"},
+            require(isinstance(value.get("prepare_run_id"), int) and value["prepare_run_id"] > 0, "invalid preparation run")
+            require(value.get("phase") in {"waiting_prepare", "dispatching_prepare", "verify", "dispatching_build", "building", "done", "blocked"},
                     "unknown coordinator state")
             self.state = value
             self.comment_id = comment["id"]
@@ -81,8 +82,9 @@ class Coordinator:
         emit(mode="blocked")
         self.disable()
 
-    def billing_only(self, run):
-        jobs = self.api.jobs(run["id"], run["run_attempt"])
+    def billing_only(self, run, jobs=None):
+        if jobs is None:
+            jobs = self.api.jobs(run["id"], run["run_attempt"])
         failed = [j for j in jobs if j["conclusion"] not in ("success", "skipped", None)]
         if not failed or any(j["conclusion"] != "failure" or j.get("steps") for j in failed):
             return False
@@ -100,14 +102,57 @@ class Coordinator:
         if self.state.get("last_retry_date") == today:
             emit(mode="wait")
             return
-        # Persist the one-per-day intent before the API side effect. Unknown API
-        # outcomes are reconciled by run_attempt on the next daily wakeup.
+        # Fresh exact-source dispatch avoids GitHub's 30-day/50-rerun limits.
         self.state["last_retry_date"] = today
         self.state["billing_retries"] = int(self.state.get("billing_retries", 0)) + 1
-        self.state["message"] = "GitHub 尚未允许计费受限的作业启动；已安排本日唯一一次原运行重试，不修改代码。"
+        kind = "prepare" if run["id"] == self.state["prepare_run_id"] else "build"
+        self.dispatch_authorized(kind)
+
+    def dispatch_authorized(self, kind):
+        require(kind in ("prepare", "build"), "invalid dispatch stage")
+        source = AUTH_SHA if kind == "prepare" else self.state["prepared_sha"]
+        require(self.api.pinned_pr()["head"]["sha"] == source, "source moved before exact-source dispatch")
+        if kind == "build":
+            self.stored_proof()
+        self.state[kind + "_dispatch_intent"] = {"created_after": utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}
+        self.state["phase"] = "dispatching_" + kind
+        self.state["message"] = "已保存固定来源的 GitHub " + kind + " 触发意图；实际失败不会自动修复。"
+        if kind == "build":
+            self.state["build_run_id"] = None
         self.store()
-        self.api.write("POST", "/actions/runs/" + str(run["id"]) + "/rerun-failed-jobs", {})
-        emit(mode="wait", action="dispatchprepare" if run["id"] == INITIAL_PREPARE_RUN else "retry-billing-build")
+        result = self.api.write("POST", "/actions/workflows/" + str(QUALITY_ID) + "/dispatches", {
+            "ref": BRANCH, "inputs": {"prepare_reviewed": str(kind == "prepare").lower(),
+            "candidate_sha": source, "build_app": str(kind == "build").lower()}})
+        if result and isinstance(result.get("workflow_run_id"), int):
+            run = self.api.quality_run(result["workflow_run_id"], source)
+            self.state[kind + "_run_id"] = run["id"]
+            self.state["phase"] = "waiting_prepare" if kind == "prepare" else "building"
+            self.store()
+        emit(mode="wait", action="dispatch" + kind)
+
+    def coordinator_run(self, run_id, attempt):
+        run = self.api.get("/actions/runs/" + str(run_id))
+        require(run["repository"]["full_name"] == REPO and run["path"] == ".github/workflows/quota-resume.yml"
+                and run["head_branch"] == "main" and run["event"] in ("schedule", "workflow_run", "workflow_dispatch"),
+                "proof/coordinator workflow identity mismatch")
+        require(1 <= int(attempt) <= run["run_attempt"], "invalid coordinator attempt")
+        return run
+
+    def verification_failed(self):
+        require(START <= utcnow() < STOP, "outside automatic continuation window")
+        self.api.pinned_pr()
+        require(self.state["phase"] == "verify", "no active provenance verification")
+        run_id, attempt = int(os.environ["GITHUB_RUN_ID"]), int(os.environ["GITHUB_RUN_ATTEMPT"])
+        run = self.coordinator_run(run_id, attempt)
+        jobs = [j for j in self.api.jobs(run_id, attempt) if j["name"] == "verify"]
+        require(len(jobs) == 1, "verification job identity missing or ambiguous")
+        if self.billing_only(run, jobs):
+            self.state["verification_deferred_date"] = utcnow().date().isoformat()
+            self.state["message"] = "只读复现 job 因 GitHub 计费限制尚未启动；当日不再重复，下一日重新检查。"
+            self.store()
+            emit(mode="wait")
+            return
+        self.blocked("第二个只读 job 或证据上传实际失败，未触发构建；请检查本次 verify job")
 
     def proof(self, value, require_current=False):
         require(value.get("schema_version") == 1 and value.get("kind") == "pinned-preparation-provenance-reproduction"
@@ -115,11 +160,14 @@ class Coordinator:
                 and value.get("semantic_equivalence_proven") is False
                 and value.get("product_acceptance_complete") is False, "invalid provenance proof scope")
         require(value["authorization_sha"] == AUTH_SHA and value["authorization_blob"] == AUTH_BLOB
-                and value["prepare_run_id"] == INITIAL_PREPARE_RUN, "proof authorization mismatch")
+                and value["prepare_run_id"] == self.state["prepare_run_id"], "proof authorization mismatch")
         candidate = self.api.prepared_commit(value["prepared_sha"])
         require(candidate["tree"]["sha"] == value["prepared_tree"], "proof prepared tree mismatch")
-        run = self.api.quality_run(INITIAL_PREPARE_RUN, AUTH_SHA)
+        run = self.api.quality_run(self.state["prepare_run_id"], AUTH_SHA)
         require(run["conclusion"] == "success" and run["run_attempt"] == value["prepare_attempt"], "proof preparation run changed")
+        self.coordinator_run(value["coordinator_run_id"], value["coordinator_attempt"])
+        verified = [j for j in self.api.jobs(value["coordinator_run_id"], value["coordinator_attempt"]) if j["name"] == "verify"]
+        require(len(verified) == 1 and verified[0]["conclusion"] == "success", "proof verification/upload job did not succeed")
         if require_current:
             require(value["coordinator_run_id"] == int(os.environ["GITHUB_RUN_ID"])
                     and value["coordinator_attempt"] == int(os.environ["GITHUB_RUN_ATTEMPT"]), "proof is not from this coordinator attempt")
@@ -138,18 +186,19 @@ class Coordinator:
                 "stored proof candidate/run mismatch")
         return value
 
-    def discover_build(self):
-        intent = self.state.get("build_dispatch_intent")
+    def discover_dispatch(self, kind):
+        intent = self.state.get(kind + "_dispatch_intent")
+        source = AUTH_SHA if kind == "prepare" else self.state["prepared_sha"]
         require(isinstance(intent, dict), "build dispatch has no durable intent")
         runs = self.api.pages("/actions/workflows/" + str(QUALITY_ID) + "/runs?event=workflow_dispatch&branch="
-                              + urllib.parse.quote(BRANCH, safe="") + "&head_sha=" + self.state["prepared_sha"], "workflow_runs")
+                              + urllib.parse.quote(BRANCH, safe="") + "&head_sha=" + source, "workflow_runs")
         matches = [run for run in runs if run["created_at"] >= intent["created_after"]]
         require(len(matches) <= 1, "ambiguous candidate build dispatch; refusing duplicate or arbitrary selection")
         if matches:
-            run = self.api.quality_run(matches[0]["id"], self.state["prepared_sha"])
-            self.state["build_run_id"] = run["id"]
-            self.state["phase"] = "building"
-            self.state["message"] = "来源复现完成；完整软件门禁和 App 构建已在 [GitHub](" + run["html_url"] + ") 运行。复现不代表语义或产品验收。"
+            run = self.api.quality_run(matches[0]["id"], source)
+            self.state[kind + "_run_id"] = run["id"]
+            self.state["phase"] = "waiting_prepare" if kind == "prepare" else "building"
+            self.state["message"] = "已核对唯一固定来源的 " + kind + " [运行](" + run["html_url"] + ")。尚不代表产品验收。"
             self.store()
             return run
         return None
@@ -190,7 +239,7 @@ class Coordinator:
             for chunk in iter(lambda: stream.read(1024 * 1024), b""):
                 digest.update(chunk)
         require(digest.hexdigest() == manifest["artifact"]["sha256"], "candidate archive SHA-256 mismatch")
-        sums = member(archive, "SHA256SUMS").decode()
+        sums = member(archive, "SHA256SUMS").decode().splitlines()
         require(manifest["artifact"]["sha256"] + "  " + name in sums
                 and sha(manifest_bytes) + "  candidate-manifest.json" in sums, "candidate checksum manifest mismatch")
         required = {"portable", "rust", "device-sms-send", "module-network-recovery", "api-request-policy",
@@ -248,12 +297,15 @@ class Coordinator:
             else:
                 self.blocked("完整门禁/编译/测试失败；仅计费未启动允许自动重试，详见 " + run["html_url"])
             return
-        if self.state["phase"] == "dispatching_build":
-            self.stored_proof()
-            require(pr["head"]["sha"] == self.state["prepared_sha"], "candidate moved during dispatch reconciliation")
-            run = self.discover_build()
+        if self.state["phase"] in ("dispatching_prepare", "dispatching_build"):
+            kind = "prepare" if self.state["phase"] == "dispatching_prepare" else "build"
+            if kind == "build":
+                self.stored_proof()
+            source = AUTH_SHA if kind == "prepare" else self.state["prepared_sha"]
+            require(pr["head"]["sha"] == source, "candidate moved during dispatch reconciliation")
+            run = self.discover_dispatch(kind)
             if run is None:
-                created = dt.datetime.fromisoformat(self.state["build_dispatch_intent"]["created_after"].replace("Z", "+00:00"))
+                created = dt.datetime.fromisoformat(self.state[kind + "_dispatch_intent"]["created_after"].replace("Z", "+00:00"))
                 if now - created > dt.timedelta(hours=24):
                     self.blocked("构建触发结果不明且 24 小时内未找到唯一运行，未盲目重复触发")
                 else:
@@ -261,10 +313,10 @@ class Coordinator:
             else:
                 emit(mode="wait")
             return
-        run = self.api.quality_run(INITIAL_PREPARE_RUN, AUTH_SHA)
+        run = self.api.quality_run(self.state["prepare_run_id"], AUTH_SHA)
         if run["status"] != "completed":
-            require(pr["head"]["sha"] == AUTH_SHA or len(self.api.get("/git/commits/" + pr["head"]["sha"])["parents"]) == 1,
-                    "candidate changed while preparation is active")
+            if pr["head"]["sha"] != AUTH_SHA:
+                self.api.prepared_commit(pr["head"]["sha"])
             emit(mode="wait")
             return
         if run["conclusion"] != "success":
@@ -274,13 +326,16 @@ class Coordinator:
             else:
                 self.blocked("准备步骤出现实际失败，未自动修改或覆盖源码；详见 " + run["html_url"])
             return
+        if self.state.get("verification_deferred_date") == now.date().isoformat():
+            emit(mode="wait")
+            return
         prepared = pr["head"]["sha"]
         self.api.prepared_commit(prepared)
         self.state["prepared_sha"] = prepared
         self.state["phase"] = "verify"
         self.state["message"] = "准备运行成功，开始第二个只读 job 复现固定授权转换；尚未触发 App 构建。"
         self.store()
-        emit(mode="verify", prepared_sha=prepared, prepare_run_id=INITIAL_PREPARE_RUN,
+        emit(mode="verify", prepared_sha=prepared, prepare_run_id=self.state["prepare_run_id"],
              prepare_attempt=run["run_attempt"])
 
     def dispatch_build(self, path):
@@ -295,20 +350,8 @@ class Coordinator:
         archive, _ = self.api.zip(artifact)
         require(member(archive, "provenance-proof.json") == raw, "uploaded current-run proof differs from dispatch input")
         self.state["proof"] = {"run_id": proof["coordinator_run_id"], "artifact_id": artifact["id"], "sha256": sha(raw)}
-        self.state["phase"] = "dispatching_build"
-        # REST dispatch may return 204 on older API versions; reconcile by exact
-        # workflow/branch/SHA/time rather than repeating an ambiguous request.
-        self.state["build_dispatch_intent"] = {"created_after": utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}
-        self.state["message"] = "只读来源复现通过，已保存本次构建触发意图；这不是语义或产品验收。"
-        self.store()
-        result = self.api.write("POST", "/actions/workflows/" + str(QUALITY_ID) + "/dispatches", {
-            "ref": BRANCH, "inputs": {"prepare_reviewed": "false", "candidate_sha": proof["prepared_sha"], "build_app": "true"}})
-        if result and isinstance(result.get("workflow_run_id"), int):
-            run = self.api.quality_run(result["workflow_run_id"], proof["prepared_sha"])
-            self.state["build_run_id"] = run["id"]
-            self.state["phase"] = "building"
-            self.store()
-        emit(mode="wait", action="dispatch-build", prepared_sha=proof["prepared_sha"])
+        self.dispatch_authorized("build")
+
 
 
 def main():
@@ -318,9 +361,7 @@ def main():
         if command == "plan":
             coordinator.plan()
         elif command == "verification-failed":
-            coordinator.api.pinned_pr()
-            require(coordinator.state["phase"] == "verify", "no active provenance verification")
-            coordinator.blocked("第二个只读 job 无法完整复现准备树/授权/格式化证据，未触发构建")
+            coordinator.verification_failed()
         elif command == "dispatch-build":
             require(len(sys.argv) == 4 and sys.argv[2] == "--proof", "usage: dispatch-build --proof work/provenance-proof.json")
             coordinator.dispatch_build(sys.argv[3])

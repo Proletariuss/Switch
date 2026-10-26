@@ -50,7 +50,9 @@ def main():
     environment = os.environ.copy()
     environment.update(EXPECTED_COMMIT=AUTH_SHA, GITHUB_REF="refs/heads/" + BRANCH,
                        PYTHONDONTWRITEBYTECODE="1", GITHUB_OUTPUT=str(work / "reproduction-outputs.txt"))
-    # Only the immutable root-reviewed authorization tree is executed, with a read-only token.
+    for name in ("GH_TOKEN", "GITHUB_TOKEN", "ACTIONS_RUNTIME_TOKEN", "ACTIONS_ID_TOKEN_REQUEST_TOKEN"):
+        environment.pop(name, None)
+    # The immutable reviewed tree runs without API or artifact-service credentials.
     subprocess.run([sys.executable, "scripts/ci/prepare-reviewed.py"], cwd=source, env=environment, check=True, timeout=600)
     reproduced = json.loads((evidence / "reviewed-preparation.json").read_text())
     recreated = git("rev-parse", "HEAD")
