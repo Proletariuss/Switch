@@ -109,7 +109,7 @@ dependencies = [
 
 [[package]]
 name = "proletarius-platform-fs"
-version = "3.52.0"
+version = "3.53.0"
 dependencies = [
  "nix",
 ]

@@ -14,7 +14,7 @@
   <img alt="macOS" src="https://img.shields.io/badge/macOS-27.0%2B-black?logo=apple&logoColor=white">
   <img alt="Architektur" src="https://img.shields.io/badge/Architektur-Apple%20Silicon-blue">
   <img alt="Backend" src="https://img.shields.io/badge/Backend-Rust-black?logo=rust&logoColor=white">
-  <img alt="Version" src="https://img.shields.io/badge/Version-3.52-2f81f7">
+  <img alt="Version" src="https://img.shields.io/badge/Version-3.53-2f81f7">
 </p>
 
 ## Verbindliche Projektrichtlinie: Kein Betrug, kein Missbrauch
@@ -34,7 +34,7 @@ Diese Regeln gelten für alle Nutzer. Sie beschreiben die Verhaltensanforderunge
 
 ## Projekt und Veröffentlichungsstand
 
-Switch bündelt USB/QMI-Module, PC/SC- und BLE-Kartenleser, eSIM-Profile auf physischen Karten, VoWiFi/IMS, SMS und Telefonie in einer macOS-Anwendung. Der aktuelle Softwarestand ist **3.52, Build 352, mit Rust-Backend 3.52.0**. Das Versionsetikett allein bestätigt weder eine abgeschlossene Prüfung noch eine veröffentlichte Binärdatei; maßgeblich sind die Anlagen und Nachweise des zugehörigen GitHub Release.
+Switch bündelt USB/QMI-Module, PC/SC- und BLE-Kartenleser, eSIM-Profile auf physischen Karten, VoWiFi/IMS, SMS und Telefonie in einer macOS-Anwendung. Der aktuelle Quellstand ist **3.53, Build 353, mit Rust-Backend 3.53.0**. Das Versionsetikett allein bestätigt weder eine abgeschlossene Prüfung noch eine veröffentlichte Binärdatei; maßgeblich sind die Anlagen und Nachweise des zugehörigen GitHub Release.
 
 Das Repository ist seit dem **26. Oktober 2026 öffentlich**. Die Veröffentlichung des Quellcodes bestätigt keine vollständige Abnahme aller Geräte, Netzbetreiber oder Dauerbetriebsszenarien.
 
@@ -44,7 +44,7 @@ Der Tag `v3.51` bleibt unverändert dem eingefrorenen Quellstand des historische
 
 [Neueste veröffentlichte Version](https://github.com/Proletariuss/Switch/releases/latest) · [Release 3.52](https://github.com/Proletariuss/Switch/releases/tag/v3.52)
 
-Das Installationspaket heißt `Switch_<version>.dmg`. Für 3.52 stehen [Switch_3.52.dmg](https://github.com/Proletariuss/Switch/releases/download/v3.52/Switch_3.52.dmg) und [Switch_3.52.dmg.sha256](https://github.com/Proletariuss/Switch/releases/download/v3.52/Switch_3.52.dmg.sha256) bereit. Das DMG wurde auf einem GitHub-macOS-Runner aus dem bereits geprüften App-Tarball des Commits `d17eca3305bd2204cc895fc13af8ee0e91173f8b` abgeleitet. App-Dateien, Rechte und symbolische Links wurden abgeglichen; die App wurde weder neu gebaut noch neu signiert.
+Das Installationspaket heißt `Switch_<version>.dmg`; die zugehörige Prüfsumme steht in `Switch_<version>.dmg.sha256`. Freigegebene Pakete sind unter [Releases](https://github.com/Proletariuss/Switch/releases) verfügbar. Ein Versionsetikett im Quellcode ist keine Freigabe. Das DMG wird auf einem GitHub-macOS-Runner aus der bereits geprüften App derselben Version erstellt; App-Dateien, Rechte und symbolische Links müssen unverändert bleiben.
 
 Der vorgesehene Endzustand des Release enthält nur diese beiden hochgeladenen Dateien. Vor der Bereinigung werden die fünf Audit-Anlagen — App-Tarball, `candidate-manifest.json`, `test-reports.tar.gz`, `SHA256SUMS` und `dmg-provenance.json` — unverändert als Actions-Artefakt gesichert und zurückgeprüft. Ihre Aufbewahrungsfrist richtet sich nach den tatsächlichen GitHub-Einstellungen und dem angezeigten Ablaufdatum. Die von GitHub automatisch angebotenen „Source code“-Archive bleiben sichtbar; sie sind keine hochgeladenen Installationspakete.
 
@@ -60,7 +60,7 @@ Die [App-Prüfung](https://github.com/Proletariuss/Switch/actions/runs/403145766
 
 ## Installation
 
-1. `Switch_3.52.dmg` und `Switch_3.52.dmg.sha256` aus demselben Release herunterladen und die DMG-Prüfsumme wie unten beschrieben kontrollieren.
+1. Das zur gewählten Version gehörende DMG und seine `.dmg.sha256`-Datei aus demselben Release herunterladen und die DMG-Prüfsumme wie unten beschrieben kontrollieren.
 2. Das DMG öffnen und `Switch.app` in den Ordner „Programme“ ziehen.
 3. Bei Bedarf die von macOS angeforderten Berechtigungen für Bluetooth, Mitteilungen und Mikrofon erteilen.
 4. Das Paket ist ad hoc signiert und **nicht von Apple notarisiert**. Falls Gatekeeper den Start blockiert, zunächst Herkunft und Prüfsumme kontrollieren und die Freigabe anschließend unter „Systemeinstellungen → Datenschutz & Sicherheit“ vornehmen.
@@ -77,7 +77,23 @@ Bei einer Neuinstallation sind keine Telegram-Bot-, Bark- oder sonstigen Weiterl
 | SMS-Zentrale | Nachrichtenarchiv für Module, Kartenleser und Mehrprofil-Bereitschaft, Sendestatus, Mitteilungen, Suche, Löschung und optionale Weiterleitung an Telegram Bot oder Bark |
 | Mehrprofil-Bereitschaft | Unabhängige SMS-Sitzungen für mehrere Profile, Erneuerung, Wiederverbindung und Statusberichte; ausschließlich SMS, keine Sprache; Gleichzeitigkeit hängt von Karte und Netzbetreiber ab |
 | Telefonie | Wählen, Annehmen, Auflegen, Anrufhinweise, Anrufprotokoll und Mac-Audioanbindung; bevorzugt EVS, alternativ AMR-WB |
-| Diagnose | Netzwerk- und Gerätediagnose, AT-Konsole, strukturierte Zustände und Sicherheitsereignisse |
+| Diagnose | Netzwerk- und Gerätediagnose, AT-Konsole, strukturierte Zustände, begrenzte private Laufzeitprotokolle und JSON-Diagnoseexport |
+
+## Änderungen im Quellstand 3.53
+
+Ein Fehler beim lokalen HTTP-Transport konnte bei VoWiFi-Abgleichanfragen zu `NSURLErrorDomain -1000` führen: URLSession übergab einen endlichen Anfragekörper als Stream. Switch verwendet nun die zuvor gesicherten Originalbytes. Beliebige Eingabestreams werden weiterhin nicht gelesen.
+
+Bei unklaren Anrufergebnissen bleibt die ursprüngliche Anfrage erhalten. Eine negative Wiederherstellungsantwort hebt die Sperre erst mit einem zur Anfrage passenden, dauerhaft bestätigten Abschlussbeleg auf. SMS-Zustellberichte werden vor ihrer Protokollbestätigung dauerhaft erfasst; sie erscheinen nicht als neue Eingangsnachricht und lösen keine Weiterleitung aus. Die Abfrage des SMS-Speicherverbrauchs führt Dateioperationen außerhalb des asynchronen Runtime-Workers aus. Veraltete Netzwerk- und Weiterleitungsantworten dürfen neuere Einstellungen nach einem Backend-Wechsel nicht überschreiben.
+
+Bei der BLE-Brücke berücksichtigt die Berechnung temporärer Socket-Namen nun auch die strikte Pfadlängengrenze. Lange, zulässige Laufzeitverzeichnisse können damit einen Socket binden; die Mindestgröße des zufälligen Namens und die Prüfungen vorhandener Dateien bleiben erhalten. Listener-Deskriptoren werden erst vom tatsächlich beendeten Empfangs-Worker geschlossen. Stop und Neustart können dadurch keine Verbindung eines nachfolgenden Listeners über eine wiederverwendete Deskriptornummer übernehmen; unerwartete Worker-Ausgänge bereinigen den veröffentlichten Zustand ebenfalls.
+
+## Laufzeitdiagnose und Export
+
+Ausgewählte technische Ereignisse werden standardmäßig lokal protokolliert: Anfragestatus, numerische Fehlercodes, Wiederherstellungsphasen sowie Start und Ende des Backends. Private Dateien werden automatisch rotiert und über Neustarts hinweg aufbewahrt, bis ältere Einträge verdrängt werden. Die Obergrenze beträgt **3 MiB für den Client und 8 MiB für das Backend**.
+
+Im Diagnosebereich lässt sich über die Registerkarte für Laufzeitprotokolle ein JSON-Diagnosepaket exportieren. Ist das Backend nicht erreichbar, bleibt der Export verfügbarer Clientdaten möglich. Fehlende, verworfene oder begrenzte Teile sind im Paket gekennzeichnet. Der Export enthält ausschließlich freigegebene technische Felder, keine SMS-Texte, Rufnummern, Teilnehmerkennungen, Zugangsdaten oder HTTP-Nutzdaten.
+
+Die Aufzeichnung ist begrenzt und nicht verlustfrei. Sie ersetzt weder vollständige Paketmitschnitte noch ein lückenloses Archiv. Nicht aufgezeichnete oder bereits rotierte Ereignisse und die Historie älterer Versionen lassen sich nicht nachträglich herstellen. Ein abgebrochener Export darf keinen weiteren Dateizugriff starten, solange der ursprüngliche Hintergrundzugriff noch läuft.
 
 ## Voraussetzungen und Geräte
 
@@ -133,6 +149,8 @@ Die Skripte setzen die im Projekt festgelegte Anordnung mit benachbarten `build/
 
 ## Prüfstand und bekannte Grenzen
 
+Für 3.53 gelten ausschließlich die GitHub-Prüfberichte des endgültigen Release-Commits. Geräte, Netzbetreiberregistrierungen, SMS-Zustellung, Telefonie, Audio, Ruhezustand und Dauerbetrieb benötigen eigene Nachweise mit der jeweiligen Hardware, Karte und Netzwerkumgebung. Erfolgreiche Softwareprüfungen ersetzen diese Nachweise nicht.
+
 Die App für 3.52 stammt aus dem geprüften Commit `d17eca3305bd2204cc895fc13af8ee0e91173f8b` und [GitHub-Lauf 40314576638](https://github.com/Proletariuss/Switch/actions/runs/40314576638). Die [DMG-Prüfung 40325760479](https://github.com/Proletariuss/Switch/actions/runs/40325760479) mit Verpackungssteuerung `0f3e9277071cc942382586b677d0c52fc5413115` bestätigte Dateisystemkontrolle, schreibgeschütztes Einhängen, vollständigen Abgleich des App-Inventars einschließlich Rechten und Links, strenge Signaturprüfung und das Zurücklesen der veröffentlichten Dateien. Die Berichte und Herkunftsdaten werden bei der Bereinigung in Actions gesichert. Diese Verpackungsprüfung erweitert die Geräte- oder Laufzeitabnahme nicht; frühere 3.51-Läufe ersetzen keinen versionsbezogenen Nachweis.
 
 Für die **historischen veröffentlichten 3.51-Artefakte** wurden folgende Prüfungen dokumentiert:
@@ -149,10 +167,10 @@ Die App-Pakete sind ad hoc signiert und nicht notarisiert; es ist kein von Apple
 
 ## Integrität prüfen
 
-Für das bevorzugte DMG die gleichnamige Release-Anlage und `Switch_3.52.dmg.sha256` in denselben Ordner legen:
+Das DMG und seine zugehörige `.dmg.sha256`-Datei aus demselben Release in einen eigenen Ordner legen und dort prüfen:
 
 ```bash
-shasum -a 256 -c Switch_3.52.dmg.sha256
+shasum -a 256 -c ./*.dmg.sha256
 ```
 
 Die Audit-Sicherung in Actions enthält `dmg-provenance.json`, das ursprüngliche App-Manifest, App-Tarball, Testarchiv und `SHA256SUMS`. Der Herkunftsnachweis unterscheidet App-Quellstand und Verpackungslauf; das Manifest bindet Berichte, Version, Build, Quell-SHA, Git-Tree, Quell-Digest und Werkzeugversionen. Diese Dateien sind nach der Bereinigung keine Release-Anlagen mehr. Verfügbarkeit und Aufbewahrung der Actions-Nachweise richten sich nach den tatsächlichen GitHub-Einstellungen; das jeweilige Ablaufdatum ist maßgeblich.

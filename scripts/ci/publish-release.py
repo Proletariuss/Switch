@@ -285,6 +285,8 @@ def verify_dmg_derivative(api, remote, assets, manifest, release):
 def main():
     need(os.environ.get("GITHUB_ACTIONS") == "true" and os.environ["GITHUB_REPOSITORY"] == REPO, "GitHub repository runner required")
     need(os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch", "only explicit release dispatch is allowed")
+    need(os.environ.get("GITHUB_REF") == "refs/heads/main" and os.environ.get("GITHUB_REF_TYPE") == "branch",
+         "release dispatch must select the main branch")
     commit, tree = os.environ["EXPECTED_COMMIT"], os.environ["EXPECTED_TREE"]
     version, build = os.environ["EXPECTED_VERSION"], os.environ["EXPECTED_BUILD"]
     need(re.fullmatch(r"[0-9a-f]{40}", commit) and commit == os.environ["GITHUB_SHA"], "release SHA mismatch")
@@ -295,7 +297,7 @@ def main():
     run_id, current_attempt = int(os.environ["GITHUB_RUN_ID"]), int(os.environ["GITHUB_RUN_ATTEMPT"])
     need(1 <= current_attempt <= 50, "run attempt bound exceeded")
     run = api.api("GET", "/actions/runs/" + str(run_id))
-    need(run["head_sha"] == commit and run["path"] == ".github/workflows/release.yml"
+    need(run["head_sha"] == commit and run.get("head_branch") == "main" and run["path"] == ".github/workflows/release.yml"
          and run["event"] == "workflow_dispatch" and run["repository"]["full_name"] == REPO, "release run mismatch")
     actual_commit = api.api("GET", "/git/commits/" + commit)
     need(actual_commit["tree"]["sha"] == tree, "source tree mismatch")

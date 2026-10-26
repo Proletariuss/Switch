@@ -6,9 +6,11 @@ müssen die lokalen Workspace-Versionen enthalten; externe Abhängigkeiten bleib
 unverändert. Bestehende Tags und App-Quellstände werden weder umgehängt noch ersetzt.
 
 Der manuelle Einstieg für einen neuen Tag ist .github/workflows/release.yml mit
-candidate_sha. Dieser SHA muss dem ausgewählten Branch-Stand entsprechen. Die
-vollständigen gemeinsamen Software-Prüfungen und der App-Build laufen für genau
-diesen Stand erneut. Ein älterer erfolgreicher Lauf ist keine Freigabe für eine
+candidate_sha und ausschließlich dem ausgewählten Branch `main`. Dieser SHA muss
+genau dem Workflow-Stand von main entsprechen. Identity- und Publish-Job prüfen
+den Branch; der Publisher prüft unabhängig GITHUB_REF und head_branch der Run-API
+vor jedem Schreibzugriff. Die vollständigen gemeinsamen Software-Prüfungen und
+der App-Build laufen für genau diesen Stand erneut. Ein älterer erfolgreicher Lauf ist keine Freigabe für eine
 neue Versionsnummer. Der vollständige Ablauf ist: Softwareprüfung und App-Build,
 geprüfte App-Veröffentlichung, DMG-Ableitung, Sicherung der Audit-Anlagen und
 abschließende Reduktion auf genau zwei hochgeladene Installationsdateien.
@@ -131,3 +133,15 @@ Offline-Fixtures und Projektprüfungen laufen ausschließlich auf GitHub-Runnern
 Sie prüfen Versions-/Quellbindung, gescheiterte Gates, Rückleseberichte,
 manipulierte Archive/Rechte, fremde Dateien, Teil-Uploads, Wiederholungen und
 Konflikte. Es gibt keine lokale Projekt-Ausführung.
+
+Die Release-Fixtures prüfen zusätzlich, dass ein anderer Branch, Tag, PR-Ref
+oder fehlender Branch-Kontext vor jeder API-Anfrage abgewiesen wird. Eine
+abweichende head_branch-Angabe der Run-API wird vor jedem Schreibzugriff
+abgewiesen. Ein während des Builds fortgeschrittenes main ändert nicht den
+bereits gebundenen Quell-SHA dieses Runs.
+
+Der einmalige schreibende reviewed-prepare-Workflow ist aus dem aktuellen
+Workflow-Bestand entfernt. Frühere Autorisierung und Skript bleiben nur als
+historische Nachweise erhalten. Alte Branches können weiterhin historische
+Workflow-Versionen enthalten; dieser Vertrag ändert sie nicht rückwirkend.
+Sie sind kein regulärer Veröffentlichungseinstieg.

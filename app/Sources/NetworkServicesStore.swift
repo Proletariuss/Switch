@@ -21,6 +21,7 @@ final class NetworkServicesStore: ObservableObject {
     private var loadTask: Task<Void, Never>?
     private var saveTask: Task<Void, Never>?
     private var revision: UInt64 = 0
+    private var saveRevision: UInt64 = 0
 
     init(backend: BackendProcess) {
         self.backend = backend
@@ -32,6 +33,7 @@ final class NetworkServicesStore: ObservableObject {
     }
 
     func reset() {
+        saveRevision &+= 1
         loadTask?.cancel()
         saveTask?.cancel()
         loadTask = nil
@@ -85,6 +87,8 @@ final class NetworkServicesStore: ObservableObject {
               !services.isEmpty,
               !isSaving else { return }
         saveTask?.cancel()
+        saveRevision &+= 1
+        let expectedSave = saveRevision
         isSaving = true
         message = nil
         error = nil
@@ -92,17 +96,21 @@ final class NetworkServicesStore: ObservableObject {
         saveTask = Task { [weak self] in
             guard let self else { return }
             defer {
-                isSaving = false
-                saveTask = nil
+                if expectedSave == saveRevision {
+                    isSaving = false
+                    saveTask = nil
+                }
             }
             do {
                 let result: MessageResponse = try await APIClient().send(
                     "api/network/services-order",
                     method: "PUT",
                     body: ServicesOrderRequest(services: names))
+                guard !Task.isCancelled, expectedSave == saveRevision else { return }
                 message = result.message
                 load()
             } catch {
+                guard !Task.isCancelled, expectedSave == saveRevision else { return }
                 self.error = error.localizedDescription
             }
         }

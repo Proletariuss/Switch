@@ -6,7 +6,7 @@ SWITCH_SOURCE_ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 "$SWITCH_SOURCE_ROOT/scripts/build-ble-core.sh"
 BLE_PROOF_TMP=$(mktemp -d "${TMPDIR}/ble-proof.XXXXXX")
 trap 'rm -rf "$BLE_PROOF_TMP"' EXIT INT TERM
-xcrun swiftc -parse-as-library \
+xcrun swiftc -parse-as-library -D SWITCH_BLE_BRIDGE_TESTING \
   "$SWITCH_SOURCE_ROOT/app/Sources/ReaderBLEOperationLedger.swift" \
   "$SWITCH_SOURCE_ROOT/app/Sources/ReaderBLEBridge.swift" \
   "$SWITCH_SOURCE_ROOT/app/Tests/ReaderBLEOperationProof/Adapters.swift" \

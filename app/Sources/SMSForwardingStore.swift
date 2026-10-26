@@ -946,6 +946,8 @@ final class SMSForwardingStore: ObservableObject {
     private let handoffAuthority: SMSForwardingRustAuthority
     private var cancellables = Set<AnyCancellable>()
     private var isRefreshingStatus = false
+    private var statusRequestRevision: UInt64 = 0
+    private var backendGeneration: UInt64 = 0
     // Presentation generation only: it suppresses a stale response from
     // overwriting newer form feedback. It never retries or admits work.
     private var uiSnapshotGeneration: UInt64 = 0
@@ -1134,16 +1136,30 @@ final class SMSForwardingStore: ObservableObject {
         BackendProcess.shared.$state
             .receive(on: RunLoop.main)
             .sink { [weak self] state in
-                guard let self else { return }
-                guard state == .running else {
-                    self.confirmedConfigurationID = nil
-                    return
-                }
-                Task { @MainActor [weak self] in
-                    await self?.synchronizeAppliedConfiguration()
-                }
+                self?.backendStateChanged(state)
             }
             .store(in: &cancellables)
+    }
+
+    private func invalidateStatusRead() {
+        statusRequestRevision &+= 1
+        isRefreshingStatus = false
+    }
+
+    private func backendStateChanged(_ state: BackendProcess.State) {
+        backendGeneration &+= 1
+        invalidateStatusRead()
+        guard state == .running else {
+            confirmedConfigurationID = nil
+            status = nil
+            return
+        }
+        let lifecycle = backendGeneration
+        Task { @MainActor [weak self] in
+            guard let self, self.backendGeneration == lifecycle,
+                  BackendProcess.shared.state == .running else { return }
+            await self.synchronizeAppliedConfiguration()
+        }
     }
 
     private func synchronizeAppliedConfiguration() async {
@@ -1201,17 +1217,29 @@ final class SMSForwardingStore: ObservableObject {
 
     func refreshStatus() async {
         guard !isRefreshingStatus, BackendProcess.shared.state == .running else { return }
+        statusRequestRevision &+= 1
+        let requestRevision = statusRequestRevision
+        let configurationGeneration = uiSnapshotGeneration
+        let lifecycle = backendGeneration
         isRefreshingStatus = true
-        defer { isRefreshingStatus = false }
+        defer {
+            if requestRevision == statusRequestRevision { isRefreshingStatus = false }
+        }
+        let current = {
+            !Task.isCancelled && requestRevision == self.statusRequestRevision
+                && configurationGeneration == self.uiSnapshotGeneration
+                && lifecycle == self.backendGeneration
+                && BackendProcess.shared.state == .running
+        }
         do {
             try verifyRuntimeRoot()
             let response: SMSForwardingStatus = try await APIClient().get("api/sms/forwarding/status")
             try verifyRuntimeRoot()
-            guard !Task.isCancelled else { return }
+            guard current() else { return }
             status = response
             await submitCurrentAdmissionHandoff()
         } catch {
-            guard !Task.isCancelled else { return }
+            guard current() else { return }
             errorMessage = userFacingErrorMessage(error)
         }
     }
@@ -1829,6 +1857,7 @@ final class SMSForwardingStore: ObservableObject {
         intent: SMSForwardingConfigurationIntent,
         presentationGeneration: UInt64
     ) async -> ConfigurationSyncResult {
+        let lifecycle = backendGeneration
         if let credentialLoadFailure { return .failed(credentialLoadFailure) }
         do {
             try verifyCurrentCredentialSelection()
@@ -1837,7 +1866,8 @@ final class SMSForwardingStore: ObservableObject {
                 body: SMSForwardingConfigureRequest(configuration: configuration, intent: intent),
                 as: SMSForwardingConfiguredResponse.self)
             try verifyCurrentCredentialSelection()
-            guard presentationGeneration == uiSnapshotGeneration,
+            guard lifecycle == backendGeneration, BackendProcess.shared.state == .running,
+                  presentationGeneration == uiSnapshotGeneration,
                   intent == configurationIntent else { return .stale }
             guard configured.clientRequestID == intent.clientRequestID,
                   configured.clientSequence == intent.clientSequence,
@@ -1848,7 +1878,8 @@ final class SMSForwardingStore: ObservableObject {
             let observed: SMSForwardingStatus = try await APIClient().get(
                 "api/sms/forwarding/status", as: SMSForwardingStatus.self)
             try verifyRuntimeRoot()
-            guard presentationGeneration == uiSnapshotGeneration,
+            guard lifecycle == backendGeneration, BackendProcess.shared.state == .running,
+                  presentationGeneration == uiSnapshotGeneration,
                   intent == configurationIntent else { return .stale }
             guard observed.configurationID == configured.configurationID else {
                 return .failed("本机转发配置已发生变化，请刷新后重试。")
@@ -1857,12 +1888,19 @@ final class SMSForwardingStore: ObservableObject {
             if isEnabled && confirmedConfigurationID?.isEmpty != false {
                 return .failed("本机转发服务未确认配置版本，请重新启动新构建的 Switch。")
             }
+            // Retire ordinary reads begun before or during this configuration
+            // sync before publishing its verified snapshot.
+            invalidateStatusRead()
             status = observed
             await submitCurrentAdmissionHandoff()
             try verifyRuntimeRoot()
+            guard lifecycle == backendGeneration, BackendProcess.shared.state == .running,
+                  presentationGeneration == uiSnapshotGeneration,
+                  intent == configurationIntent else { return .stale }
             return .confirmed(observed.configurationID)
         } catch {
-            guard presentationGeneration == uiSnapshotGeneration,
+            guard lifecycle == backendGeneration, BackendProcess.shared.state == .running,
+                  presentationGeneration == uiSnapshotGeneration,
                   intent == configurationIntent else { return .stale }
             return .failed(userFacingErrorMessage(error))
         }

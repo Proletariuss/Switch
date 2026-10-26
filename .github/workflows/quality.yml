@@ -9,13 +9,9 @@ on:
       - synchronize
       - reopened
       - ready_for_review
+      - converted_to_draft
   workflow_dispatch:
     inputs:
-      prepare_reviewed:
-        description: Only prepare the explicit reviewed allowlist on automation/cloud-four-batches
-        required: false
-        default: false
-        type: boolean
       candidate_sha:
         description: Optional exact 40-character commit for a candidate (empty uses dispatch SHA)
         required: false
@@ -37,27 +33,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  prepare-inputs:
-    if: github.event_name == 'workflow_dispatch' && inputs.prepare_reviewed
-    runs-on: ubuntu-24.04
-    timeout-minutes: 3
-    steps:
-      - env:
-          EXPECTED_COMMIT: ${{ inputs.candidate_sha }}
-        run: |
-          [[ "$GITHUB_REF" == refs/heads/automation/cloud-four-batches ]]
-          [[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]]
-          [[ "$EXPECTED_COMMIT" == "$GITHUB_SHA" ]]
-  prepare-reviewed:
-    needs: prepare-inputs
-    if: github.event_name == 'workflow_dispatch' && inputs.prepare_reviewed && github.ref == 'refs/heads/automation/cloud-four-batches'
-    permissions:
-      contents: write
-    uses: ./.github/workflows/reviewed-prepare.yml
-    with:
-      expected_commit: ${{ inputs.candidate_sha }}
   classify:
-    if: github.event_name != 'workflow_dispatch' || !inputs.prepare_reviewed
     name: Classify changed paths
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -90,7 +66,7 @@ jobs:
               mapfile -t files < <(git -C src diff --name-only "$BASE_SHA" "$HEAD_SHA")
               for file in "${files[@]}"; do
                 case "$file" in
-                  rust/*|app/*|scripts/*|third_party/*|data/*|licenses/*|Switch.xcodeproj/*|project.yml|VERSION|BUILD_NUMBER|mise.toml|.github/*)
+                  rust/*|app/*|scripts/*|third_party/*|data/*|licenses/*|Switch.xcodeproj/*|project.yml|VERSION|BUILD_NUMBER|mise.toml|.github/workflows/*)
                     needs_macos=true
                     ;;
                 esac
@@ -140,16 +116,24 @@ jobs:
       native: ${{ needs.classify.outputs.needs_macos == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
       build_app: ${{ needs.classify.outputs.needs_app == 'true' }}
   review-result:
-    name: Review result
-    if: always() && (github.event_name != 'workflow_dispatch' || !inputs.prepare_reviewed)
+    name: ${{ github.event_name == 'pull_request' && 'Review result' || 'Maintenance result' }}
+    if: always()
     needs: [classify, checks]
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     env:
       CLASSIFY_RESULT: ${{ needs.classify.result }}
       CHECKS_RESULT: ${{ needs.checks.result }}
+      EVENT_NAME: ${{ github.event_name }}
+      IS_DRAFT: ${{ github.event.pull_request.draft }}
     steps:
       - name: Reject failed or unexpectedly skipped checks
+        shell: bash
         run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "pull_request" && "$IS_DRAFT" == "true" ]]; then
+            echo "::error::Draft PR: review is incomplete. Mark ready for review to run the required gates."
+            exit 1
+          fi
           [[ "$CLASSIFY_RESULT" == "success" ]]
           [[ "$CHECKS_RESULT" == "success" ]]

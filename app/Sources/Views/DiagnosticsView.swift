@@ -11,6 +11,7 @@ struct DiagnosticsView: View {
         case at = "AT 调试"
         case notify = "通知调试"
         case events = "操作事件"
+        case support = "运行日志"
 
         var id: String { rawValue }
     }
@@ -47,6 +48,7 @@ struct DiagnosticsView: View {
                 case .at: DiagnosticATView()
                 case .notify: DiagnosticNotifyView()
                 case .events: DiagnosticEventsView()
+                case .support: SupportDiagnosticsView()
                 }
             }
             .id(tab)

@@ -22,15 +22,33 @@ final class ReaderBLEBridge {
     private let staleProbeTimeout: TimeInterval
     private let beforeStaleUnlink: (() -> Void)?
     private let afterBindBeforePublish: ((String, Int32) -> Void)?
+    private let afterStartupAttempt: (() -> Void)?
+    private let beforeAcceptWorker: ((Int32) -> Void)?
+    private let afterAcceptRetired: ((Int32, Int32) -> Void)?
+    #if SWITCH_BLE_BRIDGE_TESTING
+    private var failNextAcceptPoll = false
+
+    func failNextAcceptPollForTesting() {
+        lifecycleLock.lock()
+        failNextAcceptPoll = true
+        lifecycleLock.unlock()
+    }
+    #endif
 
     init(standardRequestTimeout: TimeInterval = 35, cardOperationTimeout: TimeInterval = 130,
          staleProbeTimeout: TimeInterval = 0.2, beforeStaleUnlink: (() -> Void)? = nil,
-         afterBindBeforePublish: ((String, Int32) -> Void)? = nil) {
+         afterBindBeforePublish: ((String, Int32) -> Void)? = nil,
+         afterStartupAttempt: (() -> Void)? = nil,
+         beforeAcceptWorker: ((Int32) -> Void)? = nil,
+         afterAcceptRetired: ((Int32, Int32) -> Void)? = nil) {
         self.standardRequestTimeout = standardRequestTimeout
         self.cardOperationTimeout = cardOperationTimeout
         self.staleProbeTimeout = max(0.01, min(staleProbeTimeout, 1))
         self.beforeStaleUnlink = beforeStaleUnlink
         self.afterBindBeforePublish = afterBindBeforePublish
+        self.afterStartupAttempt = afterStartupAttempt
+        self.beforeAcceptWorker = beforeAcceptWorker
+        self.afterAcceptRetired = afterAcceptRetired
     }
 
     func start(socketPath: String) {
@@ -52,7 +70,11 @@ final class ReaderBLEBridge {
     }
 
     private func startOnStartupQueue(socketPath: String, generation: UInt64) {
-        defer { clearPendingStart(generation) }
+        defer {
+            clearPendingStart(generation)
+            // Observation only, after pending state and lifecycle locks retire.
+            afterStartupAttempt?()
+        }
         guard socketPath.utf8.count < MemoryLayout<sockaddr_un>.size - 4 else {
             NSLog("BLE bridge socket path too long")
             return
@@ -102,6 +124,11 @@ final class ReaderBLEBridge {
               listenerGeneration == generation else { return }
         let fd = Darwin.socket(AF_UNIX, SOCK_STREAM, 0)
         guard fd >= 0 else { return }
+        let flags = Darwin.fcntl(fd, F_GETFL, 0)
+        guard flags >= 0, Darwin.fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0 else {
+            Darwin.close(fd)
+            return
+        }
         // Accepted sockets inherit this option. Setting it only in handle()
         // can be too late if the client closes immediately after submission.
         var noSignal: Int32 = 1
@@ -158,8 +185,22 @@ final class ReaderBLEBridge {
         listener = fd
         boundSocketPath = socketPath
         boundSocketIdentity = identity
+        let beforeWorker = beforeAcceptWorker
+        let retired = afterAcceptRetired
+        // The queued worker owns this descriptor until it actually retires.
+        // stop() may revoke it, but cannot make its number reusable meanwhile.
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            self?.acceptLoop(fd, generation: generation)
+            beforeWorker?(fd)
+            if let self {
+                defer {
+                    let result = self.retireListener(fd, generation: generation)
+                    retired?(fd, result)
+                }
+                self.acceptLoop(fd, generation: generation)
+            } else {
+                let result = Darwin.close(fd)
+                retired?(fd, result)
+            }
         }
     }
 
@@ -172,7 +213,6 @@ final class ReaderBLEBridge {
         let fd = listener
         listener = -1
         _ = Darwin.shutdown(fd, SHUT_RDWR)
-        Darwin.close(fd)
         if let path = boundSocketPath, let identity = boundSocketIdentity {
             unlinkSocketIfOwned(path, identity: identity)
         }
@@ -313,7 +353,8 @@ final class ReaderBLEBridge {
     private func bindTemporarySocket(_ descriptor: Int32, for socketPath: String) -> String? {
         let directory = (socketPath as NSString).deletingLastPathComponent
         let maximumPathBytes = MemoryLayout<sockaddr_un>.size - 4
-        let nameBudget = maximumPathBytes - directory.utf8.count - 1
+        // Leave room for the separator and the strict candidate-length bound.
+        let nameBudget = maximumPathBytes - directory.utf8.count - 2
         // Retain at least 48 random bits; use up to the full UUID when the
         // sockaddr path budget permits it. bind(2) itself is the collision
         // arbiter and every EADDRINUSE attempt receives a fresh suffix.
@@ -348,14 +389,68 @@ final class ReaderBLEBridge {
         _ = Darwin.unlink(path)
     }
 
+    private func retireListener(_ fd: Int32, generation: UInt64) -> Int32 {
+        lifecycleLock.lock()
+        defer { lifecycleLock.unlock() }
+        // Unexpected poll/accept failures must also clear the published number
+        // before closing it; a later stop must never shut down a reused fd.
+        if listener == fd && listenerGeneration == generation {
+            listener = -1
+            listenerGeneration &+= 1
+            if let path = boundSocketPath, let identity = boundSocketIdentity {
+                unlinkSocketIfOwned(path, identity: identity)
+            }
+            boundSocketPath = nil
+            boundSocketIdentity = nil
+        }
+        return Darwin.close(fd)
+    }
+
     private func acceptLoop(_ fd: Int32, generation: UInt64) {
         while true {
+            lifecycleLock.lock()
+            let active = listener == fd && listenerGeneration == generation
+            lifecycleLock.unlock()
+            guard active else { return }
+            var item = pollfd(fd: fd, events: Int16(POLLIN), revents: 0)
+            #if SWITCH_BLE_BRIDGE_TESTING
+            lifecycleLock.lock()
+            let injectFailure = failNextAcceptPoll
+            failNextAcceptPoll = false
+            lifecycleLock.unlock()
+            let ready: Int32
+            if injectFailure {
+                errno = EIO
+                ready = -1
+            } else {
+                ready = Darwin.poll(&item, 1, 100)
+            }
+            #else
+            let ready = Darwin.poll(&item, 1, 100)
+            #endif
+            if ready < 0 {
+                if errno == EINTR { continue }
+                return
+            }
+            if ready == 0 { continue }
+            if item.revents & Int16(POLLERR | POLLHUP | POLLNVAL) != 0 { return }
+            guard item.revents & Int16(POLLIN) != 0 else { return }
             let client = Darwin.accept(fd, nil, nil)
-            if client < 0 { break }
+            if client < 0 {
+                if errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK { continue }
+                return
+            }
             lifecycleLock.lock()
             let current = listener == fd && listenerGeneration == generation
             lifecycleLock.unlock()
-            guard current else { Darwin.close(client); break }
+            guard current else { Darwin.close(client); return }
+            // Darwin can inherit listener flags. Preserve the handler's existing
+            // blocking read/write plus five-second socket timeout semantics.
+            let flags = Darwin.fcntl(client, F_GETFL, 0)
+            guard flags >= 0, Darwin.fcntl(client, F_SETFL, flags & ~O_NONBLOCK) == 0 else {
+                Darwin.close(client)
+                continue
+            }
             guard connectionSlots.wait(timeout: .now()) == .success else {
                 Darwin.close(client)
                 continue

@@ -8,6 +8,7 @@ ruby "$SWITCH_SOURCE_ROOT/app/Tests/DeviceCallCorrectness/prepare.rb" "$SWITCH_S
 xcrun swiftc -parse-as-library -swift-version 5 \
   "$SWITCH_SOURCE_ROOT/app/Sources/CallModels.swift" \
   "$SWITCH_SOURCE_ROOT/app/Sources/CallRuntimeStore.swift" \
+  "$SWITCH_SOURCE_ROOT/app/Sources/NetworkServicesStore.swift" \
   "$SWITCH_SOURCE_ROOT/app/Sources/ModuleNetworkStore.swift" \
   "$SWITCH_SOURCE_ROOT/app/Sources/NetworkModels.swift" \
   "$SWITCH_SOURCE_ROOT/app/Sources/SafeDiagnosticSummary.swift" \

@@ -13,6 +13,9 @@ private final class LocalTestServer: @unchecked Sendable {
     private let fd: Int32
     private let directory: String
     private let finished = DispatchSemaphore(value: 0)
+    private let captureLock = NSLock()
+    private var captured = Data()
+    func requestBytes() -> Data { captureLock.lock(); defer { captureLock.unlock() }; return captured }
 
     init(responseDelay: useconds_t) throws {
         directory = "/tmp/proletarius-unix-" + UUID().uuidString.prefix(8)
@@ -38,8 +41,23 @@ private final class LocalTestServer: @unchecked Sendable {
             defer { Darwin.close(client) }
             var noSignal: Int32 = 1
             setsockopt(client, SOL_SOCKET, SO_NOSIGPIPE, &noSignal, socklen_t(MemoryLayout<Int32>.size))
+            var receiveTimeout = timeval(tv_sec: 2, tv_usec: 0)
+            _ = setsockopt(client, SOL_SOCKET, SO_RCVTIMEO, &receiveTimeout, socklen_t(MemoryLayout<timeval>.size))
             var buffer = [UInt8](repeating: 0, count: 4096)
-            guard recv(client, &buffer, buffer.count, 0) > 0 else { return }
+            var request = Data()
+            while request.count < 128 * 1024 {
+                let count = recv(client, &buffer, buffer.count, 0)
+                guard count > 0 else { return }
+                request.append(contentsOf: buffer.prefix(count))
+                if let boundary = request.range(of: Data("\r\n\r\n".utf8)) {
+                    let header = String(decoding: request[..<boundary.lowerBound], as: UTF8.self)
+                    let length = header.components(separatedBy: "\r\n").first {
+                        $0.lowercased().hasPrefix("content-length:")
+                    }.flatMap { Int($0.split(separator: ":", maxSplits: 1)[1].trimmingCharacters(in: .whitespaces)) } ?? 0
+                    if request.count >= boundary.upperBound + length { break }
+                }
+            }
+            captureLock.lock(); captured = request; captureLock.unlock()
             usleep(responseDelay)
             let response = Data("HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}".utf8)
             _ = response.withUnsafeBytes { Darwin.send(client, $0.baseAddress!, $0.count, 0) }
@@ -80,5 +98,29 @@ private final class LocalTestServer: @unchecked Sendable {
         // itself must not alter this budget or infer a business deadline.
         let _: EmptyResponse = try await APIClient(timeoutInterval: 1.0).send("api/future/mutation")
         print("PASS: explicit uniform waiter budget succeeds without a route policy on the actual Unix bridge")
+
+        // Real URLSession (not direct URLProtocol construction) may represent
+        // an original finite Data body as httpBodyStream before startLoading.
+        // Exercise the original checkpoint bytes through the production stack.
+        for route in ["api/reader/vowifi/reconcile", "api/vowifi/reconcile", "api/test/upload"] {
+            let bodyServer = try LocalTestServer(responseDelay: 0)
+            UnixSocketURLProtocol.socketPath = bodyServer.path
+            let payload = Data(#"{"client_request_id":"fixture-original-id","enable":true,"note":"原始载荷"}"#.utf8)
+            do {
+                let _: EmptyResponse = try await APIClient(timeoutInterval: 2).upload(route, data: payload)
+                let captured = bodyServer.requestBytes()
+                guard let split = captured.range(of: Data("\r\n\r\n".utf8)),
+                      Data(captured[split.upperBound...]) == payload else {
+                    throw CheckFailure(message: "URLSession changed or lost original checkpoint bytes")
+                }
+                let header = String(decoding: captured[..<split.lowerBound], as: UTF8.self)
+                guard header.hasPrefix("POST /" + route + " HTTP/1.1"),
+                      header.lowercased().contains("content-length: " + String(payload.count)) else {
+                    throw CheckFailure(message: "mutation request line or Content-Length mismatch")
+                }
+            } catch { bodyServer.close(); throw error }
+            bodyServer.close()
+        }
+        print("PASS: real URLSession uploads preserve exact original body bytes for reader/module reconcile")
     }
 }

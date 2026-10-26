@@ -180,6 +180,8 @@ class FakeGitHub:
         self.asset_bytes = {}
         self.next_id = 10
         self.writes = []
+        self.api_calls = []
+        self.run_head_branch = "main"
         self.upload_failure_after = None
         self.bad_readback = False
         self.extra_final_asset = False
@@ -194,10 +196,11 @@ class FakeGitHub:
     def api(self, method, suffix, value=None, **kwargs):
         import base64
         from urllib.parse import parse_qs, urlsplit
+        self.api_calls.append((method, suffix))
         if method != "GET":
             self.writes.append((method, suffix))
         if method == "GET" and suffix == "/actions/runs/" + str(RUN):
-            return {"head_sha": COMMIT, "path": ".github/workflows/release.yml",
+            return {"head_sha": COMMIT, "head_branch": self.run_head_branch, "path": ".github/workflows/release.yml",
                     "event": "workflow_dispatch", "repository": {"full_name": publisher.REPO},
                     "status": "in_progress", "conclusion": None, "html_url": "https://example.invalid/run"}
         if method == "GET" and suffix == "/git/commits/" + COMMIT:
@@ -266,15 +269,43 @@ class FakeGitHub:
         raise AssertionError("wrong original artifact selected: " + name)
 
 class PublicationStateFixtures(unittest.TestCase):
-    def invoke(self, api, attempt=1):
+    def invoke(self, api, attempt=1, environment_overrides=None):
         from unittest import mock
         environment = {"GITHUB_ACTIONS": "true", "GITHUB_REPOSITORY": publisher.REPO,
-            "GITHUB_EVENT_NAME": "workflow_dispatch", "EXPECTED_COMMIT": COMMIT, "EXPECTED_TREE": TREE,
+            "GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_REF": "refs/heads/main", "GITHUB_REF_TYPE": "branch",
+            "EXPECTED_COMMIT": COMMIT, "EXPECTED_TREE": TREE,
             "EXPECTED_VERSION": VERSION, "EXPECTED_BUILD": BUILD, "GITHUB_SHA": COMMIT,
             "GITHUB_RUN_ID": str(RUN), "GITHUB_RUN_ATTEMPT": str(attempt), "GITHUB_STEP_SUMMARY": "synthetic-summary"}
+        environment.update(environment_overrides or {})
         with mock.patch.dict(publisher.os.environ, environment), mock.patch.object(publisher, "GitHub", return_value=api), \
                 mock.patch("builtins.open", mock.mock_open()), mock.patch("sys.stdout", new_callable=io.StringIO):
             publisher.main()
+
+    def test_non_main_dispatch_rejected_before_any_api_call(self):
+        for change in (
+            {"GITHUB_REF": "refs/heads/automation/cloud-four-batches"},
+            {"GITHUB_REF": "refs/tags/v3.52", "GITHUB_REF_TYPE": "tag"},
+            {"GITHUB_REF": "refs/pull/7/merge"},
+            {"GITHUB_REF": ""},
+            {"GITHUB_REF_TYPE": "tag"},
+            {"GITHUB_REF_TYPE": ""},
+        ):
+            with self.subTest(change=change):
+                api = FakeGitHub()
+                with self.assertRaisesRegex(RuntimeError, "must select the main branch"):
+                    self.invoke(api, environment_overrides=change)
+                self.assertEqual(api.api_calls, [])
+                self.assertEqual(api.writes, [])
+
+    def test_api_run_must_independently_identify_main_before_any_write(self):
+        for branch in ("automation/cloud-four-batches", "refs/heads/main", "", None):
+            with self.subTest(branch=branch):
+                api = FakeGitHub()
+                api.run_head_branch = branch
+                with self.assertRaisesRegex(RuntimeError, "release run mismatch"):
+                    self.invoke(api)
+                self.assertEqual(api.api_calls, [("GET", "/actions/runs/" + str(RUN))])
+                self.assertEqual(api.writes, [])
 
     def test_fresh_publication_and_published_idempotent_readonly_retry(self):
         api = FakeGitHub()

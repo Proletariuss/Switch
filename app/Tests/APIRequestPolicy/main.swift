@@ -1,4 +1,10 @@
+import Combine
 import Foundation
+
+@MainActor final class BackendProcess: ObservableObject {
+    enum State { case running, stopped }
+    @Published var state: State = .running
+}
 
 enum LocalBackendAuthentication {
     static let appToken = "isolated-test-token"
@@ -10,13 +16,15 @@ final class UnixSocketURLProtocol: URLProtocol, @unchecked Sendable {
     private static var failure: URLError.Code?
     private static var httpStatus = 200
     private static var responseBody = "{}"
-    static func configure(error: URLError.Code? = nil, status: Int = 200, body: String = "{}") {
+    private static var responseHeaders: [String: String] = [:]
+    static func configure(error: URLError.Code? = nil, status: Int = 200, body: String = "{}", headers: [String: String] = [:]) {
         lock.lock()
         defer { lock.unlock() }
         recorded = []
         failure = error
         httpStatus = status
         responseBody = body
+        responseHeaders = headers
     }
     static var requests: [URLRequest] {
         lock.lock()
@@ -36,14 +44,16 @@ final class UnixSocketURLProtocol: URLProtocol, @unchecked Sendable {
         }
         Self.lock.lock()
         Self.recorded.append(observed)
-        let failure = Self.failure
-        let status = Self.httpStatus
-        let body = Self.responseBody
+        let isCallStatus = request.url?.path == "/api/call/status"
+        let failure = isCallStatus ? nil : Self.failure
+        let status = isCallStatus ? 200 : Self.httpStatus
+        let body = isCallStatus ? #"{"state":"idle"}"# : Self.responseBody
+        let headers = Self.responseHeaders
         Self.lock.unlock()
         if let failure {
             client?.urlProtocol(self, didFailWithError: URLError(failure))
         } else {
-            let response = HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: "HTTP/1.1", headerFields: nil)!
+            let response = HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: "HTTP/1.1", headerFields: headers)!
             client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
             client?.urlProtocol(self, didLoad: Data(body.utf8))
             client?.urlProtocolDidFinishLoading(self)
@@ -76,8 +86,161 @@ private struct AcceptedESIMOperation: Decodable {
 private struct RadioATInput: Encodable { let command:String }
 private struct RequiredRadioResult:Decodable {let started:Bool}
 
+
+private final class SafeDiagnosticRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var values: [[String: Any]] = []
+    func append(_ value: [AnyHashable: Any]) {
+        let row = Dictionary(uniqueKeysWithValues: value.compactMap { key, value in
+            (key as? String).map { ($0, value) }
+        })
+        lock.lock(); values.append(row); lock.unlock()
+    }
+    func take() -> [[String: Any]] {
+        lock.lock(); defer { lock.unlock() }
+        let result = values; values = []; return result
+    }
+}
+
 @main enum APIRequestPolicyTests {
-    static func main() async throws {
+
+    private static func observedRequestPrivacy() async throws {
+        let captured = SafeDiagnosticRecorder()
+        let observer = NotificationCenter.default.addObserver(
+            forName: Notification.Name("Switch.SafeAPIDiagnostic.v1"), object: nil, queue: nil
+        ) { notice in if let fields = notice.userInfo { captured.append(fields) } }
+        defer { NotificationCenter.default.removeObserver(observer) }
+        let secret = "PRIVATE_FIXTURE_phone_15550009876_password_body_token"
+        let id = UUID().uuidString.lowercased()
+        let payload = try JSONSerialization.data(withJSONObject: [
+            "client_request_id": id, "number": secret, "text": secret, "token": secret
+        ])
+        UnixSocketURLProtocol.configure(status: 503, body: "{\"error\":\"\(secret)\",\"code\":\"\(secret)\"}")
+        do {
+            let _: EmptyResponse = try await APIClient().upload("api/sms/send?password=\(secret)", data: payload)
+            throw CheckFailure(description: "private HTTP error fixture succeeded")
+        } catch is APIError {}
+        let response = captured.take()
+        let allowed: Set<String> = ["schema_version", "time_ms", "correlation_id", "request_id", "route",
+            "method", "stage", "status", "error_domain", "error_code", "duration_ms"]
+        try expect(response.count == 2, "API observer did not record exactly start/response")
+        try expect(response.allSatisfy { Set($0.keys).isSubset(of: allowed) }, "API observer emitted a free-form field")
+        try expect(response.map { $0["stage"] as? String } == ["started", "response"], "API stages changed")
+        try expect(response.allSatisfy { $0["route"] as? String == "/api/sms/send" && $0["request_id"] as? String == id },
+                   "API route/query or request identity sanitization changed")
+        let correlation = response[0]["correlation_id"] as! String
+        try expect(correlation.utf8.count == 32 && correlation.utf8.allSatisfy { (48...57).contains($0) || (97...102).contains($0) },
+                   "correlation is not bounded hexadecimal")
+        try expect(response[1]["correlation_id"] as? String == correlation
+            && UnixSocketURLProtocol.requests[0].value(forHTTPHeaderField: "X-Switch-Diagnostic-ID") == correlation,
+                   "API diagnostic correlation did not match the actual request")
+        try expect(response[1]["status"] as? Int == 503, "HTTP status was lost")
+        let responseJSON = try JSONSerialization.data(withJSONObject: response)
+        try expect(!String(decoding: responseJSON, as: UTF8.self).contains(secret),
+                   "API diagnostics leaked query, body, credentials or server error")
+
+        UnixSocketURLProtocol.configure(error: .cannotConnectToHost)
+        do {
+            let _: EmptyResponse = try await APIClient().get("api/unknown/\(secret)?token=\(secret)")
+            throw CheckFailure(description: "transport failure fixture succeeded")
+        } catch is URLError {}
+        let failed = captured.take()
+        try expect(failed.count == 2 && failed[1]["stage"] as? String == "transport_failed"
+                   && failed[1]["error_domain"] as? String == "url"
+                   && failed[1]["error_code"] as? Int == URLError.cannotConnectToHost.rawValue,
+                   "transport observation omitted numeric error classification")
+        try expect(failed.allSatisfy { $0["route"] as? String == "/api/other" && $0["request_id"] == nil },
+                   "unknown route copied arbitrary path or request identity")
+        let failedJSON = try JSONSerialization.data(withJSONObject: failed)
+        try expect(!String(decoding: failedJSON, as: UTF8.self).contains(secret),
+                   "transport observation leaked private path/query")
+
+        UnixSocketURLProtocol.configure()
+        let invalidID = try JSONSerialization.data(withJSONObject: ["client_request_id": secret])
+        let _: EmptyResponse = try await APIClient().upload("api/sms/send", data: invalidID)
+        try expect(captured.take().allSatisfy { $0["request_id"] == nil }, "arbitrary request ID entered diagnostics")
+        _ = try await APIClient().getData("api/diagnostics/support")
+        try expect(captured.take().isEmpty, "support export recursively logged its own request")
+        print("PASS production API observations: bounded correlation, safe routes/IDs/numeric errors, no bodies/query/credentials and no export recursion")
+    }
+
+
+    @MainActor private static func waitUntil(_ predicate: () -> Bool) async throws {
+        for _ in 0..<500 {
+            if predicate() { return }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        throw CheckFailure(description: "call recovery fixture did not settle")
+    }
+
+    @MainActor private static func callRecoveryUsesProductionErrorClassification() async throws {
+        let suite = "switch-call-api-recovery-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        // A genuinely first, unconnected request is still an ordinary failure.
+        UnixSocketURLProtocol.configure(error: .cannotConnectToHost)
+        let initial = CallRuntimeStore(backend: BackendProcess(), defaults: defaults)
+        initial.dial("15550001001")
+        try await waitUntil { initial.error != nil }
+        try expect(!initial.commandInFlight, "first connect failure retained an unknown fence")
+        try expect(defaults.object(forKey: "switch.call.pendingMutation.v1") == nil,
+                   "first unsubmitted call retained its checkpoint")
+
+        UnixSocketURLProtocol.configure(error: .timedOut)
+        let original = CallRuntimeStore(backend: BackendProcess(), defaults: defaults)
+        original.dial("15550001002")
+        try await waitUntil { original.error != nil }
+        let originalPayload = UnixSocketURLProtocol.requests.first { $0.url?.path == "/api/call/dial" }!.httpBody!
+        let body = try JSONSerialization.jsonObject(with: originalPayload) as! [String: Any]
+        let requestID = body["client_request_id"] as! String
+        let checkpoint = defaults.data(forKey: "switch.call.pendingMutation.v1")
+        try expect(original.commandInFlight && checkpoint != nil, "lost initial reply cleared the call fence")
+
+        // Exercise the actual APIClient classifications, not the old adapter's
+        // replacement unknown predicate. Each GUI reopen reuses exact bytes.
+        for failure in ["connect", "receipt-unavailable", "ordinary-http", "wrong-id", "terminal-unknown"] {
+            if failure == "connect" {
+                UnixSocketURLProtocol.configure(error: .cannotConnectToHost)
+            } else {
+                let code = failure == "receipt-unavailable" ? "call_mutation_receipt_unavailable"
+                    : failure == "terminal-unknown" ? "call_mutation_receipt_outcome_unknown" : "call_owner_busy"
+                let headers = ["wrong-id", "terminal-unknown"].contains(failure)
+                    ? ["X-Switch-Call-Terminal": "true",
+                       "X-Switch-Call-Request-ID": failure == "wrong-id" ? "another-request" : requestID] : [:]
+                UnixSocketURLProtocol.configure(status: 503,
+                    body: "{\"error\":\"fixture rejection\",\"code\":\"\(code)\"}", headers: headers)
+            }
+            let reopened = CallRuntimeStore(backend: BackendProcess(), defaults: defaults)
+            reopened.poll()
+            try await waitUntil { reopened.error != nil }
+            try expect(reopened.commandInFlight, "recovery failure cleared original fence: \(failure)")
+            try expect(defaults.data(forKey: "switch.call.pendingMutation.v1") == checkpoint,
+                       "recovery failure changed durable bytes: \(failure)")
+            let submits = UnixSocketURLProtocol.requests.filter { $0.url?.path == "/api/call/dial" }
+            try expect(submits.count == 1 && submits[0].httpBody == originalPayload,
+                       "recovery re-encoded or replaced the original payload")
+            let count = UnixSocketURLProtocol.requests.count
+            reopened.dial("15550009999")
+            reopened.answer()
+            reopened.hangup()
+            try expect(UnixSocketURLProtocol.requests.count == count,
+                       "recovery failure permitted a new call command")
+        }
+
+        UnixSocketURLProtocol.configure(status: 409,
+            body: #"{"error":"terminal fixture rejection","code":"call_owner_busy"}"#,
+            headers: ["X-Switch-Call-Terminal": "true", "X-Switch-Call-Request-ID": requestID])
+        let terminal = CallRuntimeStore(backend: BackendProcess(), defaults: defaults)
+        terminal.poll()
+        try await waitUntil { terminal.error != nil }
+        try expect(!terminal.commandInFlight && defaults.object(forKey: "switch.call.pendingMutation.v1") == nil,
+                   "matching durable negative receipt did not settle original fence")
+        print("PASS: production API + CallRuntime preserve recovery failures and accept only matching durable negative receipts")
+    }
+    @MainActor static func main() async throws {
+        try await observedRequestPrivacy()
+        try await callRecoveryUsesProductionErrorClassification()
         let radioSuite="switch-radio-api-policy-"+UUID().uuidString
         PublicRadioMutationCheckpoint.defaults=UserDefaults(suiteName:radioSuite)!
         defer {PublicRadioMutationCheckpoint.defaults.removePersistentDomain(forName:radioSuite)}

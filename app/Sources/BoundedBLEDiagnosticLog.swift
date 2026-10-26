@@ -15,6 +15,9 @@ final class BoundedBLEDiagnosticLog: @unchecked Sendable {
     private let writer = DispatchQueue(label: "com.proletarius.ble-diagnostics", qos: .utility)
     private let slots = DispatchSemaphore(value: capacity)
     private let directory: () -> URL
+    private let fileByteLimit: Int
+    private let names: [String]
+    private let onWriteFailure: (@Sendable () -> Void)?
     // A device-free sink seam; it replaces only the final IO effect. Admission,
     // queue ownership, timestamp/UTF-8 bounds and slot release stay production.
     private let sink: ((Data) throws -> Void)?
@@ -24,11 +27,29 @@ final class BoundedBLEDiagnosticLog: @unchecked Sendable {
         formatter.formatOptions = [.withInternetDateTime]
         return formatter
     }()
-    private lazy var destination = directory()
+    private let destinationLock = NSLock()
+    private var resolvedDestination: URL?
+    private func destinationURL() -> URL {
+        destinationLock.lock()
+        defer { destinationLock.unlock() }
+        if let resolvedDestination { return resolvedDestination }
+        let resolved = directory()
+        resolvedDestination = resolved
+        return resolved
+    }
 
-    init(directory: @escaping () -> URL, sink: ((Data) throws -> Void)? = nil) {
+    init(directory: @escaping () -> URL, sink: ((Data) throws -> Void)? = nil,
+         maximumFileBytes: Int = BoundedBLEDiagnosticLog.maximumFileBytes,
+         fileNames: [String] = BoundedBLEDiagnosticLog.fileNames,
+         onWriteFailure: (@Sendable () -> Void)? = nil) {
+        precondition(maximumFileBytes >= Self.maximumEventBytes && maximumFileBytes <= 2 * 1024 * 1024)
+        precondition(fileNames.count == 3 && Set(fileNames).count == 3
+            && fileNames.allSatisfy { !$0.isEmpty && !$0.contains("/") && !$0.contains("..") })
         self.directory = directory
         self.sink = sink
+        self.fileByteLimit = maximumFileBytes
+        self.names = fileNames
+        self.onWriteFailure = onWriteFailure
     }
 
     @discardableResult
@@ -51,6 +72,7 @@ final class BoundedBLEDiagnosticLog: @unchecked Sendable {
                 if let sink { try sink(event) }
                 else { try append(event) }
             } catch {
+                onWriteFailure?()
                 // Disk, permissions, lock contention and rotation failures
                 // discard only diagnostics. Never retry on a BLE callback.
             }
@@ -69,6 +91,7 @@ final class BoundedBLEDiagnosticLog: @unchecked Sendable {
     }
 
     private func openDirectory() throws -> Int32 {
+        let destination = destinationURL()
         guard destination.isFileURL, destination.path.hasPrefix("/") else { throw Failure.unsafePath }
         let components = destination.standardizedFileURL.path.split(separator: "/")
         guard !components.isEmpty else { throw Failure.unsafePath }
@@ -133,40 +156,40 @@ final class BoundedBLEDiagnosticLog: @unchecked Sendable {
             throw Failure.unsafePath
         }
         defer { _ = flock(lock, LOCK_UN) }
-        var files = try Self.fileNames.map { try safeFile(directory, $0) }
-        guard files.allSatisfy({ $0 == nil || ($0!.st_size >= 0 && $0!.st_size <= Self.maximumFileBytes) }) else {
+        var files = try names.map { try safeFile(directory, $0) }
+        guard files.allSatisfy({ $0 == nil || ($0!.st_size >= 0 && $0!.st_size <= fileByteLimit) }) else {
             // Preserve pre-existing oversized/unsafe files for explicit repair.
             throw Failure.unsafePath
         }
-        if let current = files[0], current.st_size + Int64(event.count) > Self.maximumFileBytes {
+        if let current = files[0], current.st_size + Int64(event.count) > fileByteLimit {
             if files[2] != nil {
-                guard try matches(directory, Self.fileNames[2], files[2]),
-                      unlinkat(directory, Self.fileNames[2], 0) == 0 else { throw Failure.unavailable }
+                guard try matches(directory, names[2], files[2]),
+                      unlinkat(directory, names[2], 0) == 0 else { throw Failure.unavailable }
             }
             if files[1] != nil {
-                guard try matches(directory, Self.fileNames[1], files[1]),
-                      try matches(directory, Self.fileNames[2], nil),
-                      renameat(directory, Self.fileNames[1], directory, Self.fileNames[2]) == 0 else {
+                guard try matches(directory, names[1], files[1]),
+                      try matches(directory, names[2], nil),
+                      renameat(directory, names[1], directory, names[2]) == 0 else {
                     throw Failure.unavailable
                 }
             }
-            guard try matches(directory, Self.fileNames[0], files[0]),
-                  try matches(directory, Self.fileNames[1], nil),
-                  renameat(directory, Self.fileNames[0], directory, Self.fileNames[1]) == 0 else {
+            guard try matches(directory, names[0], files[0]),
+                  try matches(directory, names[1], nil),
+                  renameat(directory, names[0], directory, names[1]) == 0 else {
                 throw Failure.unavailable
             }
             files[0] = nil
         }
         let flags = O_WRONLY | O_APPEND | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC
             | (files[0] == nil ? O_CREAT | O_EXCL : 0)
-        let descriptor = openat(directory, Self.fileNames[0], flags, 0o600)
+        let descriptor = openat(directory, names[0], flags, 0o600)
         guard descriptor >= 0 else { throw Failure.unsafePath }
         defer { close(descriptor) }
         var metadata = stat()
         guard fstat(descriptor, &metadata) == 0, Self.isPrivateRegularFile(metadata),
-              try matches(directory, Self.fileNames[0], metadata),
-              metadata.st_size >= 0, metadata.st_size <= Self.maximumFileBytes,
-              metadata.st_size + Int64(event.count) <= Self.maximumFileBytes else {
+              try matches(directory, names[0], metadata),
+              metadata.st_size >= 0, metadata.st_size <= fileByteLimit,
+              metadata.st_size + Int64(event.count) <= fileByteLimit else {
             throw Failure.unsafePath
         }
         if let expected = files[0] {
@@ -181,6 +204,37 @@ final class BoundedBLEDiagnosticLog: @unchecked Sendable {
                 offset += count
             }
         }
+    }
+
+
+    /// Call only on a background reader. No flush, retry, or writer join: a
+    /// partial newest line is discarded by the typed export decoder.
+    func snapshotSegments() throws -> [Data] {
+        let directory = try openDirectory()
+        defer { close(directory) }
+        var result: [Data] = []
+        for name in names.reversed() {
+            guard let expected = try safeFile(directory, name) else { continue }
+            guard expected.st_size >= 0, expected.st_size <= fileByteLimit else { throw Failure.unsafePath }
+            let fd = openat(directory, name, O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC)
+            guard fd >= 0 else { throw Failure.unavailable }
+            defer { close(fd) }
+            var actual = stat()
+            guard fstat(fd, &actual) == 0, Self.isPrivateRegularFile(actual),
+                  actual.st_dev == expected.st_dev, actual.st_ino == expected.st_ino else { throw Failure.unsafePath }
+            var data = Data()
+            var buffer = [UInt8](repeating: 0, count: 8192)
+            while data.count <= fileByteLimit {
+                let count = Darwin.read(fd, &buffer, min(buffer.count, fileByteLimit + 1 - data.count))
+                if count < 0 && errno == EINTR { continue }
+                guard count >= 0 else { throw Failure.unavailable }
+                if count == 0 { break }
+                data.append(contentsOf: buffer.prefix(count))
+            }
+            guard data.count <= fileByteLimit else { throw Failure.unsafePath }
+            result.append(data)
+        }
+        return result
     }
 
     #if SWITCH_BLE_DIAGNOSTIC_TESTING

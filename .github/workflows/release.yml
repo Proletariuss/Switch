@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       candidate_sha:
-        description: Exact reviewed commit SHA; must match the selected workflow ref
+        description: Exact reviewed main commit SHA; select main as the workflow ref
         required: true
         type: string
 permissions:
@@ -34,6 +34,7 @@ jobs:
           set -euo pipefail
           [[ "$GITHUB_REPOSITORY" == Proletariuss/Switch ]]
           [[ "$GITHUB_REF_TYPE" == branch ]]
+          [[ "$GITHUB_REF" == refs/heads/main ]]
           [[ "$REQUESTED_SHA" =~ ^[0-9a-f]{40}$ ]]
           [[ "$REQUESTED_SHA" == "$GITHUB_SHA" ]]
           [[ "$(git rev-parse HEAD)" == "$REQUESTED_SHA" ]]
@@ -58,7 +59,7 @@ jobs:
       build_app: true
   publish:
     needs: [identity, candidate]
-    if: github.event_name == 'workflow_dispatch' && needs.candidate.result == 'success'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && needs.candidate.result == 'success'
     permissions:
       contents: write
       actions: read

@@ -52,6 +52,7 @@ const ROUTES: &[(&str, &str)] = &[
     ("/api/calls/clear", "POST"),
     ("/api/calls/delete", "POST"),
     ("/api/diagnostics/events", "GET, HEAD"),
+    ("/api/diagnostics/support", "GET, HEAD"),
     ("/api/esim/notes", "GET, HEAD, PUT"),
     ("/api/esim/module-notes", "GET, HEAD, PUT"),
     ("/api/esim", "GET, HEAD"),
@@ -272,6 +273,10 @@ const LEGACY_METHOD_PATHS: &[&str] = &[
     "/api/sms/storage",
 ];
 
+// Native additions define explicit method rejection without claiming membership
+// in the independently frozen Go compatibility corpus.
+const NATIVE_METHOD_PATHS: &[&str] = &["/api/diagnostics/support"];
+
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum Admission {
     Allowed,
@@ -288,6 +293,19 @@ fn legacy_method_path(path: &str) -> bool {
         } else {
             path == *pattern
         }
+    })
+}
+
+/// Return only a reviewed static route template; never an actual dynamic ID.
+pub(crate) fn diagnostic_route(path: &str) -> Option<&'static str> {
+    ROUTES.iter().find_map(|(pattern, _)| {
+        let matched = if let Some((prefix, _)) = pattern.split_once('{') {
+            path.strip_prefix(prefix)
+                .is_some_and(|tail| !tail.is_empty() && !tail.contains('/'))
+        } else {
+            path == *pattern
+        };
+        matched.then_some(*pattern)
     })
 }
 
@@ -311,7 +329,7 @@ pub(crate) fn admission(method: &Method, path: &str) -> Admission {
         .split(", ")
         .any(|candidate| candidate == method.as_str())
     {
-        return if legacy_method_path(path) {
+        return if legacy_method_path(path) || NATIVE_METHOD_PATHS.contains(&path) {
             Admission::MethodNotAllowed(allowed)
         } else {
             Admission::Unknown

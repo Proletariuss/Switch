@@ -33,16 +33,29 @@ private final class AppDependencies: ObservableObject {
     let multiStandbyStore: MultiStandbyStore
     let attentionStore: AttentionStore
     let updateChecker: UpdateChecker
+    private var diagnosticLifecycle: AnyCancellable?
 
     init(context: AcceptanceContext?) {
         let backend = BackendProcess.shared
         self.backend = backend
+        ClientDiagnostics.shared.start(root: SwitchRuntimePaths.dataDirectory())
         if context == nil { ReaderBLEBridge.shared.start(socketPath: backend.bleSocketPath) }
         store = DashboardStore(backend: backend)
         smsStore = .shared
         multiStandbyStore = .shared
         attentionStore = .shared
         updateChecker = .shared
+        diagnosticLifecycle = backend.$state.sink { state in
+            let stage: String
+            switch state {
+            case .stopped: stage = "stopped"
+            case .starting: stage = "starting"
+            case .running: stage = "running"
+            case .stopping: stage = "stopping"
+            case .failed: stage = "failed"
+            }
+            ClientDiagnostics.shared.lifecycle(component: "backend", stage: stage)
+        }
     }
 }
 

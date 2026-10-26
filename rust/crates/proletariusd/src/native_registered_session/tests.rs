@@ -176,6 +176,23 @@ impl Harness {
             &proletarius_vowifi::registration_coordinator::RegisteredImsSession,
         ),
     ) -> Self {
+        Self::new_with_options(
+            registered_hook,
+            crate::ims_sms_transactions::NativeSmsArchive::Ordinary,
+        )
+        .await
+    }
+
+    async fn new_with_sms_archive(archive: crate::ims_sms_transactions::NativeSmsArchive) -> Self {
+        Self::new_with_options(|_| {}, archive).await
+    }
+
+    async fn new_with_options(
+        registered_hook: impl FnOnce(
+            &proletarius_vowifi::registration_coordinator::RegisteredImsSession,
+        ),
+        sms_archive: crate::ims_sms_transactions::NativeSmsArchive,
+    ) -> Self {
         let mut supervisor = NativeVoWiFiSupervisor::default();
         let key = ReaderSessionKey::new("combined-reader", "8901234567890123456").unwrap();
         let permit = supervisor.reserve(key.clone()).unwrap();
@@ -234,7 +251,8 @@ impl Harness {
                 permit.stop_signal(),
                 lost.clone(),
                 transactions,
-            ),
+            )
+            .with_archive(sms_archive),
             incoming_snapshot,
             None,
             74,
@@ -1229,3 +1247,6 @@ async fn profile_switch_rejects_stale_generation_without_closing_live_owner() {
     );
     h.finish().await;
 }
+
+#[path = "status_report_tests.rs"]
+mod status_report_tests;

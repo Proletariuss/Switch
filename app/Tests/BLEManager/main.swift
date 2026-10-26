@@ -1772,7 +1772,9 @@ private enum BLEManagerTests {
                             return characteristics.firstIndex(where: { $0 === value }).map(String.init) ?? "foreign"
                         }
                         cases += 1
-                        for (callback, service) in (reverse ? [secondary,primary] : [primary,secondary]).enumerated() {
+                        let discoveryOrder: [CBService] = reverse ? [secondary,primary] : [primary,secondary]
+                        for callback in discoveryOrder.indices {
+                            let service = discoveryOrder[callback]
                             fixture.manager.peripheral(fixture.reader.peripheral, didDiscoverCharacteristicsFor: service, error: nil)
                             let m = fixture.manager
                             let row = [name,String(patternIndex),String(split),String(reverse),String(callback),

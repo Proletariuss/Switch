@@ -433,7 +433,12 @@ final class CallRuntimeStore: ObservableObject {
             poll()
         } catch {
             guard pendingMutation?.clientRequestID == mutation.clientRequestID else { return }
-            if mutationFailureRequiresStatusReconciliation(error) {
+            // A failed recovery attempt says nothing about the original submit.
+            // Only a durable negative receipt bound to this ID can settle it;
+            // first-attempt pre-connect failures keep their ordinary semantics.
+            let terminalFailure = (error as? APICallTerminalError)?.clientRequestID
+                == mutation.clientRequestID
+            if mutationFailureRequiresStatusReconciliation(error) || (recovery && !terminalFailure) {
                 self.error = "\(actionName(mutation))结果待确认；正在使用原请求编号恢复，确认前不会再次提交。"
                 restorePendingFence()
                 return

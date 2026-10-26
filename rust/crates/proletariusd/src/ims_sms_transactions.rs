@@ -26,6 +26,8 @@ use proletarius_vowifi::sms_transaction::{
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
+mod delivery_reports;
+
 const BODY_LIMIT: usize = 128 * 1024;
 const MAX_SESSIONS: usize = 256;
 const MAX_BATCHES_PER_SESSION: usize = 128;
@@ -950,7 +952,10 @@ pub(crate) async fn archive_native_sms_event_to(
             )
             .await
             .map_err(|(_, code)| code)?;
-            if archived["store_state"] != "archived" {
+            if !matches!(
+                archived["store_state"].as_str(),
+                Some("archived" | "status_report_archived")
+            ) {
                 return Ok(None);
             }
             archived
@@ -1004,10 +1009,6 @@ async fn decode_and_archive_incoming_delivery(
 ) -> Result<serde_json::Value, (StatusCode, &'static str)> {
     let mut event =
         decode_incoming_delivery(sip_call_id, sip_cseq, received_at_unix_ms, rpdu_base64)?;
-    if event["status_report"].as_bool() == Some(true) {
-        event["store_state"] = json!("status_report");
-        return Ok(event);
-    }
     if event["decoded"].as_bool() != Some(true) {
         return Ok(event);
     }
@@ -1019,6 +1020,13 @@ async fn decode_and_archive_incoming_delivery(
     let subscription_id = subscription_id.trim();
     if !subscription_id.is_empty() && !valid_subscription_id(subscription_id) {
         return Err((StatusCode::UNPROCESSABLE_ENTITY, "invalid_subscription_id"));
+    }
+    if event["status_report"].as_bool() == Some(true) {
+        delivery_reports::persist(data_root, archive_device, subscription_id, &event)
+            .await
+            .map_err(|_| (StatusCode::SERVICE_UNAVAILABLE, "sms_archive_unavailable"))?;
+        event["store_state"] = json!("status_report_archived");
+        return Ok(event);
     }
     let sender = event["sender"]
         .as_str()
@@ -3284,7 +3292,7 @@ mod tests {
         .await
         .unwrap();
         assert_eq!(report["status_report"], true);
-        assert_eq!(report["store_state"], "status_report");
+        assert_eq!(report["store_state"], "status_report_archived");
         let archive = proletarius_store::ArchiveStore::new(fixture.root.join("sms-archive.json"));
         assert!(archive.load().unwrap().is_empty());
     }

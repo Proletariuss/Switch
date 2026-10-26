@@ -160,6 +160,7 @@ mod sms_store_health;
 mod snapshot;
 mod socket_lifetime;
 mod startup_recovery;
+mod support_diagnostics;
 mod system_proxy;
 mod transport_selection;
 mod unified_call_control;
@@ -493,10 +494,12 @@ async fn main() -> std::process::ExitCode {
         return std::process::ExitCode::SUCCESS;
     }
     if let Err(error) = run(startup_arguments).await {
+        support_diagnostics::lifecycle("shutdown_failed");
         crate::diagnostics::write_line(format_args!("switchd-rs: {error}"));
         crate::diagnostics::flush(Duration::from_millis(100));
         return std::process::ExitCode::FAILURE;
     }
+    support_diagnostics::lifecycle("shutdown_complete");
     crate::diagnostics::write_line(format_args!("switchd-rs: native shutdown complete"));
     crate::diagnostics::flush(Duration::from_millis(100));
     std::process::ExitCode::SUCCESS
@@ -526,6 +529,7 @@ async fn run(arguments: Vec<std::ffi::OsString>) -> Result<(), BackendFailure> {
         .validate()
         .map_err(|error| BackendFailure::Io(error.to_string()))?;
     let data_root = lifetime.root().to_path_buf();
+    support_diagnostics::initialize(&data_root);
     native_vowifi_session::configuration::initialize_config_path(&arguments, &data_root)
         .map_err(|_| BackendFailure::Io("native_carrier_overrides_invalid".into()))?;
     let (multistandby_store, device_send_store, forwarding_handoff_store) =
@@ -1163,6 +1167,7 @@ async fn run_with_sms_stores(
         }
     }
 
+    support_diagnostics::lifecycle("shutdown_started");
     // Close coordinator producers before request observers can be aborted.
     state.device_send_store.send_owner().begin_shutdown();
     let network_owners = state.network_traffic.recovery.begin_shutdown();
@@ -2010,7 +2015,29 @@ async fn handle_request(
         request.uri().path().trim_end_matches('/'),
         "/api/reader/vowifi/stop-control" | "/api/vowifi/stop-control"
     );
+    let diagnostic_span = if token_matches(&request, state.app_token.as_deref()) {
+        support_diagnostics::api_span(
+            request.method().as_str(),
+            request.uri().path(),
+            request
+                .headers()
+                .get("x-switch-diagnostic-id")
+                .and_then(|value| value.to_str().ok()),
+        )
+    } else {
+        None
+    };
+    let support_snapshot = request.uri().path() == support_diagnostics::PATH;
     let mut response = handle_request_inner(request, state).await?;
+    if let Some(span) = diagnostic_span {
+        span.finish(response.status().as_u16());
+    }
+    if support_snapshot {
+        response.headers_mut().insert(
+            hyper::header::CACHE_CONTROL,
+            hyper::header::HeaderValue::from_static("no-store"),
+        );
+    }
     if stop_control {
         // Includes authentication, method, admission and no-retained rejections.
         response.headers_mut().insert(
@@ -2111,6 +2138,13 @@ async fn handle_request_inner(
     }
 
     match (request.method(), request.uri().path()) {
+        (&Method::GET, "/api/diagnostics/support") => {
+            debug_assert_eq!(
+                ownership::route_owner(request.method().as_str(), request.uri().path()),
+                ownership::RouteOwner::Rust
+            );
+            return Ok(support_diagnostics::handle().await);
+        }
         (&Method::GET, "/api/diagnostics/events") => {
             debug_assert_eq!(
                 ownership::route_owner(request.method().as_str(), request.uri().path()),

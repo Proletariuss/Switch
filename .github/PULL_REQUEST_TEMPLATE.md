@@ -1,22 +1,35 @@
-## Change summary
+## Änderung
 
-Describe the problem, the intended behavior, and the smallest change that solves it.
+Welches konkrete Problem wird behoben und wie verhält sich die Software danach?
+Beschreibe den kleinsten notwendigen Eingriff und die betroffenen Grenzen.
 
-## Validation
+## Nachweise
 
-- [ ] The GitHub `Source contracts and formatting` check passed.
-- [ ] The macOS Rust gate ran when this change affects production code.
-- [ ] App-affecting changes completed the GitHub-hosted `Switch.app` build.
-- [ ] No DMG, cache, runtime database, log, subscriber identity, or forwarding secret is included.
-- [ ] Existing Rust backend ownership and version contracts remain intact.
+- [ ] Der PR ist bereit zur Prüfung; Draft gilt nicht als Freigabe.
+- [ ] `Review result` ist für den aktuellen PR-Stand erfolgreich.
+- [ ] `RustSec PR (rust)` und `RustSec PR (scripts/acceptance/daemon-capsule-fixture)` sind erfolgreich.
+- [ ] `Review policy regression fixtures` ist erfolgreich.
+- [ ] Die ausgewählten gemeinsamen Rust-/Swift-Prüfungen und gegebenenfalls der App-Build sind erfolgreich.
+- [ ] Die Tests liefen auf GitHub; lokale Nachweise wurden nicht als Cloud-PASS übernommen.
+- [ ] Keine Zugangsdaten, Teilnehmerkennungen, Laufzeitdatenbanken, privaten Logs, Caches oder nicht angeforderten DMGs sind enthalten.
+- [ ] Rust-Backend-Zuständigkeit, gesperrte Abhängigkeiten und Versionsverträge bleiben erhalten.
 
-## Acceptance boundary
+Läufe und getesteten Commit verlinken. Nicht ausgeführte oder noch offene Prüfungen
+ausdrücklich nennen.
 
-- [ ] Software-only evidence is not described as physical-device, carrier-network, SMS, call-audio, or long-running acceptance.
-- [ ] Hardware or live-network behavior that was not exercised is listed explicitly as unverified.
+## Abnahmegrenze
 
-## Risk and rollback
+Softwaretests und Offline-Fixtures belegen keine reale Karte, Mobilfunkverbindung,
+SMS-Zustellung, Audiofunktion, macOS-27-Laufzeit oder Langzeitstabilität.
+Welche dieser Eigenschaften bleiben ungeprüft?
 
-State the affected lifecycle or protocol boundary, expected failure mode, and rollback commit or configuration.
+## Risiko und Rücknahme
 
-> Automated dependency and maintenance pull requests must not be auto-merged. Review the diff and require all applicable checks to pass first.
+Betroffene Lebenszyklus-/Protokollgrenze, erwartetes Fehlerverhalten und eine
+gezielte Rücknahme nennen. Bereits veröffentlichte Tags und Anlagen bleiben
+unverändert.
+
+> Nach erfolgreicher Prüfung wird manuell zusammengeführt. Abhängigkeits- und
+> Wartungs-PRs werden nicht automatisch gemerged. CODEOWNERS ist keine zusätzliche
+> unabhängige Freigabe; eine erforderliche menschliche Bestätigung muss tatsächlich
+> vorliegen.

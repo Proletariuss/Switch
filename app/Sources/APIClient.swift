@@ -163,25 +163,32 @@ struct APIClient {
         let timeout = Self.readTimeout(path: request.url?.path ?? "", defaultTimeout: timeoutInterval)
         request.timeoutInterval = timeout
         guard timeout > session.configuration.timeoutIntervalForResource else {
-            return try await session.data(for: request)
+            return try await observedData(for: request, using: session)
         }
         let configuration = session.configuration
         configuration.timeoutIntervalForRequest = timeout
         configuration.timeoutIntervalForResource = timeout
         let readSession = URLSession(configuration: configuration)
         defer { readSession.finishTasksAndInvalidate() }
-        return try await readSession.data(for: request)
+        return try await observedData(for: request, using: readSession)
     }
 
     private func performMutation(_ original: URLRequest) async throws -> (Data, URLResponse) {
         var request = original
         _ = try PublicRadioMutationCheckpoint.prepare(&request)
+        // URLSession can replace finite Data with httpBodyStream. Preserve the
+        // exact post-checkpoint bytes; the transport never reads an arbitrary stream.
+        if let body = request.httpBody {
+            let preserved = (request as NSURLRequest).mutableCopy() as! NSMutableURLRequest
+            URLProtocol.setProperty(body, forKey: "Switch.FiniteHTTPBody.v1", in: preserved)
+            request = preserved as URLRequest
+        }
         // This is a transport waiter budget only. Business deadlines, retry
         // admission, and terminal outcomes belong to the durable Rust owner and
         // must never be inferred from a Swift route-name table.
         request.timeoutInterval = timeoutInterval
         do {
-            let result = try await session.data(for: request)
+            let result = try await observedData(for: request, using: session)
             if let http=result.1 as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
                 // A durable terminal admission error (for example busy) settles
                 // this caller ID too. Unknown receipts retain their checkpoint.
@@ -225,28 +232,77 @@ struct APIClient {
     }
 
     private static func validate(_ response: URLResponse, data: Data) throws {
-        guard let http = response as? HTTPURLResponse else { return }
-        guard (200..<300).contains(http.statusCode) else {
-            if let payload = try? JSONDecoder().decode(APIErrorPayload.self, from: data),
-               !payload.error.isEmpty {
-                if let refresh = payload.refresh {
-                    throw APIError.esimRefresh(http.statusCode, code: payload.code,
-                                              message: payload.error, outcome: refresh)
-                }
-                throw APIError.server(
-                    http.statusCode,
-                    code: payload.code,
-                    message: payload.error,
-                    recoverable: payload.recoverable ?? false)
+        guard let http = response as? HTTPURLResponse,
+              !(200..<300).contains(http.statusCode) else { return }
+        let failure: APIError
+        if let payload = try? JSONDecoder().decode(APIErrorPayload.self, from: data),
+           !payload.error.isEmpty {
+            if let refresh = payload.refresh {
+                failure = .esimRefresh(http.statusCode, code: payload.code,
+                                       message: payload.error, outcome: refresh)
+            } else {
+                failure = .server(http.statusCode, code: payload.code,
+                                  message: payload.error, recoverable: payload.recoverable ?? false)
             }
-            throw APIError.httpStatus(http.statusCode)
+        } else { failure = .httpStatus(http.statusCode) }
+        // Only a durable Rust finish/replay emits these headers. A recovery
+        // caller must still match the original request ID and preserve unknowns.
+        if http.value(forHTTPHeaderField: "X-Switch-Call-Terminal") == "true",
+           let id = http.value(forHTTPHeaderField: "X-Switch-Call-Request-ID"),
+           !id.isEmpty, id.utf8.count <= 128,
+           id.utf8.allSatisfy({ (48...57).contains($0) || (65...90).contains($0)
+               || (97...122).contains($0) || $0 == 45 || $0 == 95 }) {
+            throw APICallTerminalError(clientRequestID: id, underlying: failure)
         }
+        throw failure
     }
 
     private static func authorize(_ request: inout URLRequest) {
         request.setValue(
             LocalBackendAuthentication.appToken,
             forHTTPHeaderField: LocalBackendAuthentication.headerName)
+    }
+
+
+    private func observedData(for original: URLRequest, using session: URLSession) async throws -> (Data, URLResponse) {
+        var request = original
+        let correlation = UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
+        request.setValue(correlation, forHTTPHeaderField: "X-Switch-Diagnostic-ID")
+        let start = ProcessInfo.processInfo.systemUptime
+        let route = request.url?.path ?? ""
+        let excluded = route.hasPrefix("/api/diagnostics/")
+        let safeRoutes: Set<String> = ["/api/reader/vowifi", "/api/reader/vowifi/reconcile", "/api/reader/vowifi/stop-control", "/api/vowifi", "/api/vowifi/result", "/api/vowifi/reconcile", "/api/vowifi/stop-control", "/api/call/dial", "/api/call/answer", "/api/call/hangup", "/api/call/status", "/api/reader/vowifi/calls/dial", "/api/reader/vowifi/calls/answer", "/api/reader/vowifi/calls/hangup", "/api/reader/vowifi/calls/reject", "/api/reader/vowifi/calls/status", "/api/vowifi/calls/dial", "/api/vowifi/calls/answer", "/api/vowifi/calls/hangup", "/api/vowifi/calls/reject", "/api/vowifi/calls/status", "/api/sms/send", "/api/sms/storage", "/api/sms/forwarding/status", "/api/sms/forwarding/configure", "/api/sms/forwarding/test", "/api/network/services", "/api/network/services-order", "/api/network/usbnet", "/api/status", "/api/reader/status", "/api/multistandby/status"]
+        let safeRoute = safeRoutes.contains(route) ? route : "/api/other"
+        let method = ["GET","POST","PUT","PATCH","DELETE","HEAD"].contains(request.httpMethod ?? "") ? request.httpMethod! : "OTHER"
+        var originalID: String?
+        if let data = request.httpBody, data.count <= 32768,
+           let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let id = object["client_request_id"] as? String, let uuid = UUID(uuidString: id) {
+            originalID = uuid.uuidString.lowercased()
+        }
+        func record(_ stage: String, status: Int = 0, error: Error? = nil) {
+            guard !excluded else { return }
+            let failure = error as? URLError
+            var values: [String: Any] = [
+                "schema_version": 1, "time_ms": Int64(Date().timeIntervalSince1970 * 1000),
+                "correlation_id": correlation, "route": safeRoute, "method": method,
+                "stage": stage, "status": status, "error_domain": failure == nil ? "none" : "url",
+                "error_code": failure?.errorCode ?? 0,
+                "duration_ms": Int64(max(0, ProcessInfo.processInfo.systemUptime - start) * 1000)
+            ]
+            if let originalID { values["request_id"] = originalID }
+            NotificationCenter.default.post(name: Notification.Name("Switch.SafeAPIDiagnostic.v1"),
+                                            object: nil, userInfo: values)
+        }
+        record("started")
+        do {
+            let result = try await session.data(for: request)
+            record("response", status: (result.1 as? HTTPURLResponse)?.statusCode ?? 0)
+            return result
+        } catch {
+            record("transport_failed", error: error)
+            throw error
+        }
     }
 
     private static func makeURL(_ path: String) -> URL {
@@ -288,6 +344,12 @@ private struct ESIMAcceptedDownloadOperation: Decodable {
     }
 }
 
+struct APICallTerminalError: LocalizedError {
+    let clientRequestID: String
+    let underlying: APIError
+    var errorDescription: String? { underlying.localizedDescription }
+}
+
 struct APIOperationOutcomeUnknownError: LocalizedError {
     var reason = "等待本机服务响应时超时或连接中断"
     var errorDescription: String? {
@@ -296,6 +358,7 @@ struct APIOperationOutcomeUnknownError: LocalizedError {
 }
 
 func operationOutcomeIsUnknown(_ error: any Error) -> Bool {
+    if let terminal = error as? APICallTerminalError { return operationOutcomeIsUnknown(terminal.underlying) }
     if error is APIOperationOutcomeUnknownError { return true }
     if let apiError = error as? APIError,
        apiError.code?.hasSuffix("outcome_unknown") == true
@@ -383,6 +446,8 @@ func userFacingErrorMessage(_ error: any Error) -> String {
     }
     if let urlError = error as? URLError {
         switch urlError.code {
+        case .badURL:
+            return "本机请求格式无法处理，请导出诊断包；原操作是否完成仍需核对"
         case .timedOut:
             return "请求超时，请检查设备连接后重试"
         case .cannotConnectToHost, .networkConnectionLost, .notConnectedToInternet:

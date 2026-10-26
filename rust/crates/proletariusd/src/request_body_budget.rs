@@ -794,6 +794,13 @@ mod tests {
     }
 
     #[test]
+    fn support_snapshot_never_reserves_a_request_body_collector() {
+        for method in [Method::GET, Method::HEAD, Method::POST] {
+            assert_eq!(body_limit(&method, "/api/diagnostics/support"), None);
+        }
+    }
+
+    #[test]
     fn routes_reserve_their_existing_maximum_and_reads_do_not() {
         assert_eq!(
             body_limit(&Method::POST, crate::ims_sms_transactions::INTERNAL_PATH),
