@@ -383,22 +383,50 @@ fn unavailable() -> Response<Full<Bytes>> {
         "code":"support_snapshot_unavailable","error":"Support snapshot unavailable","retryable":true
     }))
 }
+type ExportWork = Box<dyn FnOnce() + Send + 'static>;
+
+fn spawn_export(work: ExportWork) -> io::Result<()> {
+    std::thread::Builder::new()
+        .name("support-export".into())
+        .spawn(work)
+        .map(|_| ())
+}
+
 /// A single detached reader survives request cancellation without admitting a
 /// second reader. Its bounded response wait never joins a stalled filesystem.
 pub(crate) async fn handle() -> Response<Full<Bytes>> {
     let Some(recorder) = RECORDER.get() else { return unavailable(); };
-    if recorder.shared.exporting.compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire).is_err() {
+    export_snapshot(
+        recorder.shared.clone(),
+        Duration::from_secs(3),
+        |shared| serde_json::to_vec(&snapshot(shared)).ok(),
+        spawn_export,
+    ).await
+}
+
+// Injectable effects keep admission, thread ownership, timeout, response limits
+// and permit retirement identical in the production path and deterministic tests.
+async fn export_snapshot<ReadSnapshot, Spawn>(
+    shared: Arc<Shared>,
+    wait: Duration,
+    read_snapshot: ReadSnapshot,
+    spawn: Spawn,
+) -> Response<Full<Bytes>>
+where
+    ReadSnapshot: FnOnce(&Shared) -> Option<Vec<u8>> + Send + 'static,
+    Spawn: FnOnce(ExportWork) -> io::Result<()>,
+{
+    if shared.exporting.compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire).is_err() {
         return unavailable();
     }
-    let permit = ExportPermit(recorder.shared.clone());
+    let permit = ExportPermit(shared);
     let (send, receive) = tokio::sync::oneshot::channel();
-    if std::thread::Builder::new().name("support-export".into()).spawn(move || {
-        let value = snapshot(&permit.0);
-        let bytes = serde_json::to_vec(&value).ok().filter(|bytes| bytes.len() <= EXPORT_BYTES);
+    if spawn(Box::new(move || {
+        let bytes = read_snapshot(&permit.0).filter(|bytes| bytes.len() <= EXPORT_BYTES);
         let _ = send.send(bytes);
         drop(permit);
-    }).is_err() { return unavailable(); }
-    match tokio::time::timeout(Duration::from_secs(3), receive).await {
+    })).is_err() { return unavailable(); }
+    match tokio::time::timeout(wait, receive).await {
         Ok(Ok(Some(bytes))) => Response::builder().status(StatusCode::OK)
             .header(hyper::header::CONTENT_TYPE, "application/json")
             .header(hyper::header::CACHE_CONTROL, "no-store")
@@ -556,4 +584,96 @@ mod tests {
         // A fresh bounded export cannot leak any malformed payload.
         assert!(!snapshot(&shared(&root)).to_string().contains("xxxx"));
     }
+    async fn wait_for_export_retirement(shared: &Shared) {
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while shared.exporting.load(Ordering::Acquire) {
+                tokio::task::yield_now().await;
+            }
+        }).await.expect("released reader must retire its permit");
+    }
+
+    async fn assert_export_available(shared: Arc<Shared>) {
+        let response = export_snapshot(
+            shared.clone(), Duration::from_secs(1), |_| Some(b"{}".to_vec()), spawn_export,
+        ).await;
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.headers()[hyper::header::CACHE_CONTROL], "no-store");
+        wait_for_export_retirement(&shared).await;
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn stalled_export_timeout_or_cancellation_keeps_singleflight_until_reader_retires() {
+        for cancel in [false, true] {
+            let root = Root::new();
+            let shared = shared(&root);
+            let (started_send, started_receive) = tokio::sync::oneshot::channel();
+            let (release_send, release_receive) = mpsc::channel::<()>();
+            let waiter = tokio::spawn(export_snapshot(
+                shared.clone(),
+                if cancel { Duration::from_secs(30) } else { Duration::from_millis(25) },
+                move |_| {
+                    let _ = started_send.send(());
+                    // A finite emergency bound prevents a broken test from
+                    // retaining an OS thread forever; normal release is explicit.
+                    release_receive.recv_timeout(Duration::from_secs(5)).unwrap();
+                    Some(b"{}".to_vec())
+                },
+                spawn_export,
+            ));
+            tokio::time::timeout(Duration::from_secs(2), started_receive)
+                .await.unwrap().unwrap();
+            assert!(shared.exporting.load(Ordering::Acquire));
+            if cancel {
+                waiter.abort();
+                assert!(waiter.await.unwrap_err().is_cancelled());
+            } else {
+                let response = tokio::time::timeout(Duration::from_secs(2), waiter)
+                    .await.unwrap().unwrap();
+                assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+            }
+            // The HTTP waiter is gone, while the actual reader is still held.
+            assert!(shared.exporting.load(Ordering::Acquire));
+            let second = export_snapshot(
+                shared.clone(), Duration::from_secs(1),
+                |_| panic!("singleflight admitted a second read"),
+                |_| panic!("singleflight spawned a second reader"),
+            ).await;
+            assert_eq!(second.status(), StatusCode::SERVICE_UNAVAILABLE);
+            release_send.send(()).unwrap();
+            wait_for_export_retirement(&shared).await;
+            assert_export_available(shared).await;
+        }
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn export_spawn_failure_releases_singleflight_without_running_reader() {
+        let root = Root::new();
+        let shared = shared(&root);
+        let response = export_snapshot(
+            shared.clone(), Duration::from_secs(1),
+            |_| panic!("failed spawn must not run a reader"),
+            |work| {
+                drop(work);
+                Err(io::Error::other("isolated thread creation failure"))
+            },
+        ).await;
+        assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+        assert!(!shared.exporting.load(Ordering::Acquire));
+        assert_export_available(shared).await;
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn invalid_or_oversized_export_releases_singleflight() {
+        let root = Root::new();
+        let shared = shared(&root);
+        for payload in [None, Some(vec![b'x'; EXPORT_BYTES + 1])] {
+            let response = export_snapshot(
+                shared.clone(), Duration::from_secs(1), move |_| payload, spawn_export,
+            ).await;
+            assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+            wait_for_export_retirement(&shared).await;
+        }
+        assert_export_available(shared).await;
+    }
+
 }
