@@ -1,6 +1,9 @@
 #!/bin/bash
 # Shared by review and candidate builds; keep process-global tests isolated.
 set -euo pipefail
+printf 'Runner logical CPUs: '
+sysctl -n hw.logicalcpu
+printf 'RUST_TEST_THREADS=%s\n' "${RUST_TEST_THREADS:-libtest default (available parallelism)}"
 export SWITCH_SOURCE_ROOT="$PWD"
 export SWITCH_TEST_TMPDIR="$RUNNER_TEMP/switch-tests/"
 umask 077

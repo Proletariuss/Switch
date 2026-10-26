@@ -21,7 +21,9 @@ try:
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         for line in process.stdout:
             sys.stdout.write(line)
+            sys.stdout.flush()
             log.write(line)
+            log.flush()
         status = process.wait()
 finally:
     (root / (name + ".json")).write_text(json.dumps({

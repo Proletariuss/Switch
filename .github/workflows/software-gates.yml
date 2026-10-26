@@ -50,8 +50,9 @@ jobs:
     needs: portable
     if: inputs.native
     runs-on: macos-26
-    # Prior complete Rust gate took ~25 minutes before cold runner variability.
-    timeout-minutes: 50
+    # Run 40282033673 spent 31m 02s cold-compiling the daemon test binary.
+    # Allow the complete suites, isolated tests, and fixture gate to finish.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
