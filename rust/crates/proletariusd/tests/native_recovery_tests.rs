@@ -250,7 +250,47 @@ async fn assert_recovered(daemon: &Daemon, deleted: bool) {
     assert_eq!(confirmed["content"], "confirmed archive body");
     assert_eq!(confirmed["future_field"], json!({"keep":"旧格式 😀"}));
     assert_eq!(confirmed["send_request_id"], "accepted-old");
-    let ledger_before = read_json(&daemon.root, "device-send-ledger.json");
+    let ledger_bytes_before = fs::read(daemon.root.join("device-send-ledger.json")).unwrap();
+    let ledger_before: Value = serde_json::from_slice(&ledger_bytes_before).unwrap();
+    assert_eq!(ledger_before.as_array().unwrap().len(), 1);
+    let authority = &ledger_before[0];
+    assert_eq!(authority["schema_version"], 2);
+    assert_eq!(authority["family"], "device_sms");
+    assert_eq!(authority["issued_high_water"], "0");
+    assert_eq!(authority["legacy_new_admission"], false);
+    assert_eq!(
+        authority["legacy"]["path"],
+        "device-send-ledger.legacy-v1.json"
+    );
+    assert!(authority["live_slots"].as_array().unwrap().is_empty());
+    assert!(authority["terminal_cache"].as_array().unwrap().is_empty());
+    let overlay = authority["legacy_overlay"].as_array().unwrap();
+    assert_eq!(overlay.len(), 2);
+    for expected in [
+        json!({
+            "client_request_id": "accepted-old",
+            "original_state": "accepted",
+            "original_attempt": "old-accepted-attempt",
+            "segments": 2,
+            "archive_confirmed": true
+        }),
+        json!({
+            "client_request_id": "interrupted-old",
+            "original_state": "unknown",
+            "original_attempt": "old-interrupted-attempt",
+            "segments": 0,
+            "archive_confirmed": false
+        }),
+    ] {
+        let matches: Vec<_> = overlay
+            .iter()
+            .filter(|fence| fence["client_request_id"] == expected["client_request_id"])
+            .collect();
+        assert_eq!(matches, vec![&expected]);
+    }
+    let frozen_path = daemon.root.join("device-send-ledger.legacy-v1.json");
+    let frozen_before = fs::read(&frozen_path).unwrap();
+    assert_eq!(frozen_before.as_slice(), LEDGER.as_bytes());
     for (id, state, phone, message) in [
         (
             "accepted-old",
@@ -307,13 +347,10 @@ async fn assert_recovered(daemon: &Daemon, deleted: bool) {
         ledger_before
     );
     assert_eq!(
-        ledger_before[0]["records"]["interrupted-old"]["state"],
-        "unknown"
+        fs::read(daemon.root.join("device-send-ledger.json")).unwrap(),
+        ledger_bytes_before
     );
-    assert_eq!(
-        ledger_before[0]["records"]["interrupted-old"]["attempt"],
-        "old-interrupted-attempt"
-    );
+    assert_eq!(fs::read(&frozen_path).unwrap(), frozen_before);
     let messages = daemon
         .ok(
             Method::GET,
