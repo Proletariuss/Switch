@@ -213,6 +213,23 @@ pub(crate) trait Transport: Send {
         timeout: Duration,
         max_bytes: usize,
     ) -> Result<String, TransportError>;
+    /// A status plan must not continue after an unfinished command. This
+    /// default validates the normalized response contract used by adapters;
+    /// NativeTransport overrides it to retain actual wire-terminal evidence.
+    fn status_command(
+        &mut self,
+        command: &str,
+        timeout: Duration,
+        max_bytes: usize,
+    ) -> Result<String, TransportError> {
+        let response = self.command(command, None, timeout, max_bytes)?;
+        if response.lines().map(str::trim).filter(|line| !line.is_empty())
+            .next_back().and_then(|line| terminal_line(line.as_bytes())).is_none()
+        {
+            return Err(incomplete_status_response(response.as_bytes()));
+        }
+        Ok(response)
+    }
     fn description(&self) -> String;
 }
 
@@ -502,11 +519,87 @@ impl NativeTransport {
         }
     }
 
+    fn execute_command(
+        &mut self,
+        command: &str,
+        follow_up: Option<&[u8]>,
+        timeout: Duration,
+        max_bytes: usize,
+        require_terminal: bool,
+    ) -> Result<String, TransportError> {
+        let command = command.trim();
+        if !command
+            .get(..2)
+            .is_some_and(|prefix| prefix.eq_ignore_ascii_case("AT"))
+            || command.len() >= MAX_BYTES
+        {
+            return Err(TransportError::new(
+                "usb_at_invalid_command",
+                "USB AT command must start with AT and fit within its byte limit",
+                &[],
+                false,
+            ));
+        }
+        if follow_up.is_some_and(|bytes| bytes.is_empty() || bytes.len() > MAX_BYTES) {
+            return Err(TransportError::new(
+                "usb_at_invalid_payload",
+                "USB AT follow-up must be nonempty and fit within its byte limit",
+                &[],
+                false,
+            ));
+        }
+        let max_bytes = if max_bytes == 0 { MAX_BYTES } else { max_bytes };
+        if max_bytes > MAX_BYTES {
+            return Err(TransportError::new(
+                "usb_at_invalid_limit",
+                "USB AT response limit exceeds the hard maximum",
+                &[],
+                false,
+            ));
+        }
+        let timeout = if timeout.is_zero() {
+            Duration::from_secs(if follow_up.is_some() { 30 } else { 3 })
+        } else {
+            timeout
+        };
+        if timeout < MIN_TIMEOUT {
+            return Err(TransportError::new(
+                "usb_at_invalid_timeout",
+                "USB AT timeout must be at least one millisecond",
+                &[],
+                false,
+            ));
+        }
+        let deadline = self.io.now().checked_add(timeout).ok_or_else(|| {
+            TransportError::new(
+                "usb_at_invalid_timeout",
+                "USB AT timeout exceeds the monotonic clock range",
+                &[],
+                false,
+            )
+        })?;
+        self.drain(deadline, max_bytes)?;
+        let mut payload = Zeroizing::new(Vec::with_capacity(command.len() + 1));
+        payload.extend_from_slice(command.as_bytes());
+        payload.push(b'\r');
+        let result = self
+            .write_once(&payload, deadline, &[], false)
+            .and_then(|()| self.collect(follow_up, deadline, max_bytes, require_terminal));
+        if follow_up.is_some() && result.as_ref().is_err_and(|error| error.uncertain) {
+            // Even if the prompt itself was lost, the editor may already be
+            // active. Make exactly one best-effort ESC transfer, never replay
+            // the AT command or message body. Cleanup adds at most 300 ms to
+            // the requested deadline; failure cannot make the outcome certain.
+            let _ = self.io.write(&[0x1b], ESC_TIMEOUT);
+        }
+        result
+    }
     fn collect(
         &mut self,
         follow_up: Option<&[u8]>,
         deadline: Instant,
         max_bytes: usize,
+        require_terminal: bool,
     ) -> Result<String, TransportError> {
         let mut response = Vec::new();
         let mut buffer = [0u8; READ_BYTES];
@@ -553,12 +646,13 @@ impl NativeTransport {
             }
             self.capture_input(&buffer[..length]);
             response.extend_from_slice(&buffer[..length]);
+            let terminal = response_terminal(&response);
             if let Some(payload) = follow_up {
                 if !prompted {
                     // A confirmed modem rejection is a complete response, not
                     // transport failure; never send a payload after rejection.
-                    if response_is_error(&response) {
-                        return Ok(normalize_response(&response));
+                    if let Some((end, false)) = terminal {
+                        return Ok(normalize_response(&response[..end]));
                     }
                     if !response_has_prompt(&response) {
                         continue;
@@ -568,9 +662,14 @@ impl NativeTransport {
                     continue;
                 }
             }
-            if response_complete(&response) {
-                return Ok(normalize_response(&response));
+            if let Some((end, _)) = terminal {
+                // The entire transfer already reached capture_input, including
+                // trailing URCs. Only this command's framed reply is returned.
+                return Ok(normalize_response(&response[..end]));
             }
+        }
+        if require_terminal && !response.is_empty() {
+            return Err(incomplete_status_response(&response));
         }
         if follow_up.is_none() && !response.is_empty() {
             // Compatibility: a normal command may return partial data at its
@@ -645,81 +744,57 @@ impl Transport for NativeTransport {
         timeout: Duration,
         max_bytes: usize,
     ) -> Result<String, TransportError> {
-        let command = command.trim();
-        if !command
-            .get(..2)
-            .is_some_and(|prefix| prefix.eq_ignore_ascii_case("AT"))
-            || command.len() >= MAX_BYTES
-        {
-            return Err(TransportError::new(
-                "usb_at_invalid_command",
-                "USB AT command must start with AT and fit within its byte limit",
-                &[],
-                false,
-            ));
-        }
-        if follow_up.is_some_and(|bytes| bytes.is_empty() || bytes.len() > MAX_BYTES) {
-            return Err(TransportError::new(
-                "usb_at_invalid_payload",
-                "USB AT follow-up must be nonempty and fit within its byte limit",
-                &[],
-                false,
-            ));
-        }
-        let max_bytes = if max_bytes == 0 { MAX_BYTES } else { max_bytes };
-        if max_bytes > MAX_BYTES {
-            return Err(TransportError::new(
-                "usb_at_invalid_limit",
-                "USB AT response limit exceeds the hard maximum",
-                &[],
-                false,
-            ));
-        }
-        let timeout = if timeout.is_zero() {
-            Duration::from_secs(if follow_up.is_some() { 30 } else { 3 })
-        } else {
-            timeout
-        };
-        if timeout < MIN_TIMEOUT {
-            return Err(TransportError::new(
-                "usb_at_invalid_timeout",
-                "USB AT timeout must be at least one millisecond",
-                &[],
-                false,
-            ));
-        }
-        let deadline = self.io.now().checked_add(timeout).ok_or_else(|| {
-            TransportError::new(
-                "usb_at_invalid_timeout",
-                "USB AT timeout exceeds the monotonic clock range",
-                &[],
-                false,
-            )
-        })?;
-        self.drain(deadline, max_bytes)?;
-        let mut payload = Zeroizing::new(Vec::with_capacity(command.len() + 1));
-        payload.extend_from_slice(command.as_bytes());
-        payload.push(b'\r');
-        let result = self
-            .write_once(&payload, deadline, &[], false)
-            .and_then(|()| self.collect(follow_up, deadline, max_bytes));
-        if follow_up.is_some() && result.as_ref().is_err_and(|error| error.uncertain) {
-            // Even if the prompt itself was lost, the editor may already be
-            // active. Make exactly one best-effort ESC transfer, never replay
-            // the AT command or message body. Cleanup adds at most 300 ms to
-            // the requested deadline; failure cannot make the outcome certain.
-            let _ = self.io.write(&[0x1b], ESC_TIMEOUT);
-        }
-        result
+        self.execute_command(command, follow_up, timeout, max_bytes, false)
+    }
+    fn status_command(
+        &mut self,
+        command: &str,
+        timeout: Duration,
+        max_bytes: usize,
+    ) -> Result<String, TransportError> {
+        self.execute_command(command, None, timeout, max_bytes, true)
     }
     fn description(&self) -> String {
         self.description.clone()
     }
 }
 
-fn response_complete(response: &[u8]) -> bool {
-    let normalized = String::from_utf8_lossy(response).replace("\r\n", "\n");
-    normalized.contains("\nOK\n") || normalized.ends_with("\nOK") || response_is_error(response)
+fn terminal_line(line: &[u8]) -> Option<bool> {
+    let line = std::str::from_utf8(line).ok()?.trim();
+    if line == "OK" {
+        return Some(true);
+    }
+    let upper = line.to_ascii_uppercase();
+    if upper == "ERROR" || ["+CME ERROR:", "+CMS ERROR:"].iter().any(|prefix| {
+        upper.strip_prefix(prefix).is_some_and(|detail| !detail.trim().is_empty())
+    }) {
+        return Some(false);
+    }
+    None
+}
+
+fn response_terminal(response: &[u8]) -> Option<(usize, bool)> {
+    let mut end = 0;
+    for line in response.split_inclusive(|byte| *byte == b'\n') {
+        end += line.len();
+        // USB frame boundaries are not AT line boundaries. In particular a
+        // fragment such as "+CME ERROR:" cannot complete the command.
+        if line.last() == Some(&b'\n') {
+            if let Some(ok) = terminal_line(line) {
+                return Some((end, ok));
+            }
+        }
+    }
+    None
+}
+
+fn incomplete_status_response(response: &[u8]) -> TransportError {
+    TransportError::new(
+        "usb_at_status_incomplete_response",
+        "USB AT status response has no complete terminal line",
+        response,
+        true,
+    )
 }
 fn response_is_error(response: &[u8]) -> bool {
     let normalized = String::from_utf8_lossy(response)

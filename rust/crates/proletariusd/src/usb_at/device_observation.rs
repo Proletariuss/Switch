@@ -98,9 +98,8 @@ impl Owner {
                 crate::usb_at_status::collect(captured.suppressed, |command, timeout, maximum| {
                     fence()?;
                     check_cellular_command(inner, command)?;
-                    let result = port.as_mut().ok_or_else(Failure::stale)?.command(
+                    let result = port.as_mut().ok_or_else(Failure::stale)?.status_command(
                         command,
-                        None,
                         remaining(deadline)?.min(timeout),
                         maximum.min(MAX_BYTES),
                     );
