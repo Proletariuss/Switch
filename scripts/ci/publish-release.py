@@ -209,6 +209,79 @@ def same_asset(existing, expected):
     need(existing is not None and digest(existing) == digest(expected) and len(existing) == len(expected),
          "existing/uploaded release asset differs; replacement is forbidden")
 
+def verify_dmg_derivative(api, remote, assets, manifest, release):
+    """Permit only a complete derivative bound to the trusted packaging run's bytes."""
+    extra = {item["name"] for item in remote} - set(assets)
+    if not extra:
+        return {}
+    name = "Switch_" + manifest["version"] + ".dmg"
+    names = {name, name + ".sha256", "dmg-provenance.json"}
+    need(extra == names and not release["draft"], "unexpected or incomplete DMG derivative assets")
+    raw = {}
+    identities = {}
+    for item in remote:
+        if item["name"] not in names:
+            continue
+        need(item["state"] == "uploaded" and 0 < item["size"] <= LIMIT, "DMG asset size/state mismatch")
+        data = api.api("GET", "/releases/assets/" + str(item["id"]), binary=True)
+        need(data is not None and len(data) == item["size"], "DMG asset readback mismatch")
+        raw[item["name"]] = data
+        identities[item["name"]] = item["id"]
+    proof = json.loads(raw["dmg-provenance.json"])
+    need(proof["schema_version"] == 1 and proof["kind"] == "release-dmg-derivative", "DMG provenance schema mismatch")
+    need(proof["source"] == {
+        "commit": manifest["commit"], "tree": manifest["tree"], "version": manifest["version"],
+        "build": manifest["build"], "source_digest": manifest["source_digest"],
+        "manifest_sha256": digest(assets["candidate-manifest.json"]),
+        "app_archive_sha256": manifest["artifact"]["sha256"],
+        "app_tree_sha256": manifest["app_tree_sha256"], "release_id": release["id"],
+        "tag": release["tag_name"]}, "DMG source binding mismatch")
+    need(proof["dmg"] == {"name": name, "sha256": digest(raw[name]), "size": len(raw[name])},
+         "DMG hash/size mismatch")
+    need(raw[name + ".sha256"] == (digest(raw[name]) + "  " + name + "\n").encode(), "DMG checksum mismatch")
+    need(proof["validation"] == {"input_archive": True, "mounted_inventory": True, "signature": True,
+         "readonly_mount": True, "app_recompiled": False}, "DMG validation scope mismatch")
+    need(proof["acceptance"] == {"signature": "ad-hoc", "notarized": False,
+         "macos27_runtime": "UNVERIFIED", "device_acceptance": "UNVERIFIED"}, "DMG acceptance mismatch")
+    packaging = proof["packaging"]
+    controller = packaging["commit"]
+    need(re.fullmatch(r"[0-9a-f]{40}", controller), "invalid DMG controller commit")
+    run_id, attempt = int(packaging["run_id"]), int(packaging["run_attempt"])
+    need(run_id > 0 and 1 <= attempt <= 50, "invalid DMG run/attempt")
+    workflow = packaging["workflow"]
+    need(workflow in {".github/workflows/package-dmg.yml", ".github/workflows/release.yml"}
+         and packaging["reusable_workflow"] == ".github/workflows/package-dmg.yml", "DMG workflow mismatch")
+    run = api.api("GET", "/actions/runs/" + str(run_id))
+    need(run is not None and run["head_sha"] == controller and run["path"] == workflow
+         and run["event"] == "workflow_dispatch" and run["repository"]["full_name"] == REPO
+         and packaging["run_url"] == run["html_url"], "DMG run provenance mismatch")
+    # A separate packaging controller may wrap an older accepted App. Its validator
+    # and workflow must be identical to this reviewed publisher's source revision.
+    if controller != os.environ["GITHUB_SHA"]:
+        for path in (".github/workflows/package-dmg.yml", "scripts/ci/package-dmg.py",
+                     "scripts/ci/publish-release.py"):
+            revisions = [api.api("GET", "/contents/" + path + "?ref=" + ref)
+                         for ref in (controller, os.environ["GITHUB_SHA"])]
+            need(all(item is not None and item["type"] == "file" for item in revisions)
+                 and revisions[0]["sha"] == revisions[1]["sha"], "DMG controller validation code differs")
+    jobs = api.pages("/actions/runs/" + str(run_id) + "/attempts/" + str(attempt) + "/jobs", "jobs")
+    prefix = "dmg / " if workflow == ".github/workflows/release.yml" else ""
+    for job_name, step_name in (("DMG verify", "Verify mounted DMG against accepted App"),
+                                ("DMG publish", "Publish verified DMG derivative")):
+        selected = [job for job in jobs if job["name"] == prefix + job_name]
+        need(len(selected) == 1 and selected[0]["conclusion"] == "success", "DMG verification job incomplete")
+        steps = [step for step in selected[0].get("steps", []) if step["name"] == step_name]
+        need(len(steps) == 1 and steps[0]["conclusion"] == "success", "DMG verification step incomplete")
+    # Release-side JSON and checksums alone could be replaced together. Bind all
+    # three bytes to the immutable Actions artifact emitted by the verified run.
+    artifacts = api.pages("/actions/runs/" + str(run_id) + "/artifacts", "artifacts")
+    evidence = api.artifact(artifacts, "Switch-dmg-" + manifest["version"] + "-" + manifest["commit"] + "-attempt-" + str(attempt), run_id, controller)
+    need(set(evidence) == names, "DMG evidence file whitelist mismatch")
+    for filename in names:
+        same_asset(evidence[filename], raw[filename])
+    return identities
+
+
 def main():
     need(os.environ.get("GITHUB_ACTIONS") == "true" and os.environ["GITHUB_REPOSITORY"] == REPO, "GitHub repository runner required")
     need(os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch", "only explicit release dispatch is allowed")
@@ -263,15 +336,16 @@ def main():
             + "Alle Software-Prüfungen, Bundle-Prüfung und der Upload-Rücklesetest gehören zum selben GitHub-Lauf: "
             + run["html_url"] + ". Die veröffentlichten App-Bytes wurden unverändert übernommen.\n\n"
             + "Das App-Archiv erhält Dateirechte und symbolische Links. SHA256SUMS bindet App und Manifest; "
-            + "test-reports.tar.gz enthält die Testberichte und den Rücklesebericht. Kein DMG.\n\n"
+            + "test-reports.tar.gz enthält die Testberichte und den Rücklesebericht. "
+            + "Das separat verifizierte DMG wird anschließend mit eigener Prüfsumme und Herkunftsnachweis ergänzt.\n\n"
             + "Ad-hoc signiert, nicht von Apple notarisiert. Hardware, Mobilfunkanbieter, reale Ausführung unter macOS 27 "
             + "und Langzeitstabilität sind nicht abgenommen. Dies ist keine vollständige Produktabnahme.\n\n"
             + "GitHub-Actions-Zwischenartefakte bleiben 7 Tage verfügbar; diese Release-Anlagen werden nicht automatisch nach 7 Tagen gelöscht.")
         release = api.api("POST", "/releases", {"tag_name": tag, "target_commitish": commit, "name": "Switch " + version + " — Softwarestand",
                                               "body": body, "draft": True, "prerelease": False})
     remote = api.pages("/releases/" + str(release["id"]) + "/assets")
-    need(len({item["name"] for item in remote}) == len(remote) and {item["name"] for item in remote} <= set(assets), "unexpected release assets")
-    checked_ids = {}
+    need(len({item["name"] for item in remote}) == len(remote), "duplicate release assets")
+    checked_ids = verify_dmg_derivative(api, remote, assets, manifest, release)
     for name, raw in assets.items():
         found = next((item for item in remote if item["name"] == name), None)
         if found is None:
@@ -281,7 +355,7 @@ def main():
         same_asset(api.api("GET", "/releases/assets/" + str(found["id"]), binary=True), raw)
         checked_ids[name] = found["id"]
     final_assets = api.pages("/releases/" + str(release["id"]) + "/assets")
-    need(len(final_assets) == len(assets) == 4
+    need(len(final_assets) == len(checked_ids) and len(assets) == 4
          and {item["name"]: item["id"] for item in final_assets} == checked_ids,
          "final release asset whitelist/identity changed")
     if release["draft"]:
