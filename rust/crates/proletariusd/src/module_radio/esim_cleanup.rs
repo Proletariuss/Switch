@@ -44,6 +44,20 @@ impl Service {
         &self,
         captured: AcquireBinding,
     ) -> Result<EsimReservation, Failure> {
+        self.reserve_esim_kind(captured, false).await
+    }
+
+    /// Only finite native metadata and startup overview reads may opt into
+    /// USB-net waiting. Ordinary eSIM operations keep immediate busy admission.
+    pub(crate) async fn reserve_esim_read(&self) -> Result<EsimReservation, Failure> {
+        self.reserve_esim_kind(self.capture_esim_acquire_binding(), true).await
+    }
+
+    async fn reserve_esim_kind(
+        &self,
+        captured: AcquireBinding,
+        waitable_read: bool,
+    ) -> Result<EsimReservation, Failure> {
         let sequence = NEXT_NATIVE_ESIM_RESERVATION.fetch_add(1, Ordering::Relaxed);
         if sequence == 0 || sequence == u64::MAX {
             return Err(Failure::new(
@@ -53,16 +67,19 @@ impl Service {
             ));
         }
         let token = format!("rust-esim-{sequence}");
-        self.submit_bound(
-            Job::Reservation(ReservationRequest {
-                producer_id: captured.producer_id.clone(),
-                action: "acquire".into(),
-                purpose: Purpose::Esim,
-                token: token.clone(),
-                sequence,
-            }),
-            &captured.binding,
-        )
+        let request = ReservationRequest {
+            producer_id: captured.producer_id.clone(),
+            action: "acquire".into(),
+            purpose: Purpose::Esim,
+            token: token.clone(),
+            sequence,
+        };
+        let job = if waitable_read {
+            Job::NativeEsimReadReservation(request)
+        } else {
+            Job::Reservation(request)
+        };
+        self.submit_bound(job, &captured.binding)
         .await?;
         Ok(EsimReservation {
             producer_id: captured.producer_id,
@@ -236,3 +253,6 @@ impl Service {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod read_wait_tests;

@@ -72,7 +72,7 @@ async fn read(state: &ServerState) -> Observation {
     let Some(session) = state.module_radio.usb_transport_session() else {
         return fallback(state).await;
     };
-    let reservation = match state.module_radio.reserve_esim().await {
+    let reservation = match state.module_radio.reserve_esim_read().await {
         Ok(reservation) => reservation,
         Err(_) => return fallback(state).await,
     };

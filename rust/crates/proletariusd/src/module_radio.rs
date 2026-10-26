@@ -111,6 +111,8 @@ struct Reservation {
     identity: Identity,
     attempts: BTreeMap<String, Attempt>,
     unknown: bool,
+    // Minted only by the typed native metadata/warmup acquire job.
+    waitable_read: bool,
     operation_lock: Option<Arc<crate::call_mode_backups::OperationFileLock>>,
     active_voice_pins: usize,
     active_reconnect_pins: usize,
@@ -464,6 +466,7 @@ enum Job {
     },
     Refresh(Producer),
     Reservation(ReservationRequest),
+    NativeEsimReadReservation(ReservationRequest),
     RestoreReservation(ReservationRequest),
     Intent(IntentRequest),
     NativeIntent(native_vowifi::Request),
@@ -506,7 +509,8 @@ impl Job {
             Self::Configure(v) => Some(&v.producer_id),
             Self::ConfigureNativeSerial { input, .. } => Some(&input.producer_id),
             Self::BootstrapNativeSerial { input, .. } => Some(&input.producer_id),
-            Self::Reservation(v) | Self::RestoreReservation(v) => Some(&v.producer_id),
+            Self::Reservation(v) | Self::NativeEsimReadReservation(v)
+            | Self::RestoreReservation(v) => Some(&v.producer_id),
             Self::Intent(v) => Some(&v.producer_id),
             Self::NativeIntent(v) => Some(&v.input.producer_id),
             Self::NativeIdleObserve(v) => Some(&v.producer),
@@ -2217,6 +2221,10 @@ impl Service {
                 }
                 self.reservation(input)
             }
+            Job::NativeEsimReadReservation(input) => {
+                self.load_preferences(epoch).await?;
+                self.reservation_with_read_kind(input, false, true)
+            }
             Job::RestoreReservation(input) => {
                 self.load_preferences(epoch).await?;
                 self.reservation_with_restore(input, true)
@@ -3335,6 +3343,17 @@ impl Service {
         input: ReservationRequest,
         restore_required: bool,
     ) -> Result<Value, Failure> {
+        self.reservation_with_read_kind(input, restore_required, false)
+    }
+    fn reservation_with_read_kind(
+        &self,
+        input: ReservationRequest,
+        restore_required: bool,
+        waitable_read: bool,
+    ) -> Result<Value, Failure> {
+        if waitable_read && (input.purpose != Purpose::Esim || input.action != "acquire" || restore_required) {
+            return Err(Failure::invalid());
+        }
         let id = identity(&input.token, input.sequence)?;
         let mut state = self.0.state.lock().unwrap();
         match input.action.as_str() {
@@ -3372,6 +3391,7 @@ impl Service {
                         && current.identity == id
                         && current.operation_lock.is_some() == operation
                         && current.restore_journal_required == restore_required
+                        && current.waitable_read == waitable_read
                     {
                         Ok(json!({"token":id.token,"sequence":id.sequence,"released":false}))
                     } else {
@@ -3423,6 +3443,7 @@ impl Service {
                     identity: id.clone(),
                     attempts: BTreeMap::new(),
                     unknown: false,
+                    waitable_read,
                     operation_lock,
                     active_voice_pins: 0,
                     active_reconnect_pins: 0,
@@ -4137,18 +4158,9 @@ fn usbnet_temporary_read_owner(state: &State) -> bool {
         && !state.mutating_in_flight
         && state.active_shared_voice_pins == 0
         && state.reservation.as_ref().is_some_and(|owner| {
-            owner.purpose == Purpose::CallMode
-                && owner.operation_lock.is_none()
-                && !owner.restore_journal_required
-                && owner.restore_journal.is_none()
-                && owner.restore_reboot.is_none()
-                && !owner.restore_reboot_verified
-                && !owner.unknown
-                && owner.active_voice_pins == 0
-                && owner.active_reconnect_pins == 0
-                && owner.reconnect.is_none()
-                && owner.reconnect_reboot.is_none()
-                && owner.attempts.values().all(|attempt| {
+            let read_only = match owner.purpose {
+                Purpose::Esim => owner.waitable_read && owner.attempts.is_empty(),
+                Purpose::CallMode => owner.attempts.values().all(|attempt| {
                     matches!(
                         attempt.input.kind.as_str(),
                         "call_mode_idle_read"
@@ -4160,7 +4172,20 @@ fn usbnet_temporary_read_owner(state: &State) -> bool {
                         Ok(outcome) => !outcome.uncertain && !outcome.submitted,
                         Err(error) => !error.uncertain && !error.submitted,
                     })
-                })
+                }),
+                _ => false,
+            };
+            read_only
+                && owner.operation_lock.is_none()
+                && !owner.restore_journal_required
+                && owner.restore_journal.is_none()
+                && owner.restore_reboot.is_none()
+                && !owner.restore_reboot_verified
+                && !owner.unknown
+                && owner.active_voice_pins == 0
+                && owner.active_reconnect_pins == 0
+                && owner.reconnect.is_none()
+                && owner.reconnect_reboot.is_none()
         })
 }
 

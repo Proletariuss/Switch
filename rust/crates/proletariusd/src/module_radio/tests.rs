@@ -2107,6 +2107,7 @@ pub(crate) mod tests {
             },
             attempts: BTreeMap::new(),
             unknown: false,
+            waitable_read: false,
             operation_lock: None,
             active_voice_pins: 0,
             active_reconnect_pins: 0,

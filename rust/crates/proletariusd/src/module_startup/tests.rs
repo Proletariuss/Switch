@@ -764,3 +764,61 @@ async fn warm_cleanup_contention_recovers_sms_metadata_and_usbnet_http_after_act
         .expect("final modem close acknowledgement");
     assert_eq!(fixture.physical.drops.load(Ordering::SeqCst), 1);
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn usbnet_http_waits_for_real_startup_warm_channel_cleanup_before_one_write() {
+    use crate::support_diagnostics::module::{Code, Owner, ResultKind, Stage};
+    let fixture = Fixture::new();
+    let gate = fixture.warm_close_gate();
+    let mut evidence = fixture.radio.module_diagnostics_for_test();
+    fixture.usb.claim_native_management().unwrap();
+    let (_stop, stopped) = watch::channel(false);
+    let usb = fixture.usb.clone();
+    let radio = fixture.radio.clone();
+    let bootstrap = tokio::spawn(async move { bootstrap_usb(&usb, &radio, &stopped).await });
+    entered(&gate).await;
+    assert!(!fixture.usb.native_sms_ready());
+    assert_eq!(fixture.physical.channels_closed.load(Ordering::SeqCst), 0);
+
+    let radio = fixture.radio.clone();
+    let request = tokio::spawn(async move {
+        crate::module_radio::tests::tests::request_public_route(
+            radio, "POST", "/api/network/usbnet",
+            r#"{"client_request_id":"warm-read-wait-usbnet","mode":1}"#,
+        ).await
+    });
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            let event = evidence.recv().await.unwrap();
+            if event.stage == Stage::Physical && event.result == ResultKind::Failed
+                && event.code == Code::Busy && event.owner.owner == Owner::Esim {
+                break;
+            }
+        }
+    }).await.unwrap();
+    assert!(!request.is_finished());
+    assert!(!bootstrap.is_finished());
+    assert!(!fixture.usb.native_sms_ready());
+    assert!(!fixture.physical.commands.lock().unwrap().iter()
+        .any(|command| command == r#"AT+QCFG="usbnet",1"#));
+    gate.release();
+    tokio::time::timeout(Duration::from_secs(5), bootstrap)
+        .await.unwrap().unwrap().unwrap();
+    let (status, receipt) = tokio::time::timeout(Duration::from_secs(5), request)
+        .await.unwrap().unwrap();
+    assert_eq!(status, 200);
+    assert_eq!(receipt["mode"], 1);
+    assert_eq!(receipt["needs_reboot"], true);
+    assert!(fixture.usb.native_sms_ready());
+    assert!(fixture.usb.sms_poll_binding(PRODUCER).unwrap().is_some());
+    let commands = fixture.physical.commands.lock().unwrap().clone();
+    let close = commands.iter().rposition(|command| command == "AT+CCHC=1").unwrap();
+    let write = commands.iter().position(|command| command == r#"AT+QCFG="usbnet",1"#).unwrap();
+    assert!(close < write);
+    assert_eq!(commands.iter().filter(|command| command.as_str() == r#"AT+QCFG="usbnet",1"#).count(), 1);
+    assert_eq!(fixture.physical.channels_opened.load(Ordering::SeqCst),
+        fixture.physical.channels_closed.load(Ordering::SeqCst));
+    fixture.radio.finish_shutdown().await.unwrap();
+    fixture.usb.shutdown().await.unwrap();
+    fixture.modem.shutdown().expect("final modem close acknowledgement");
+}
