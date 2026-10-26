@@ -1113,33 +1113,7 @@ impl Service {
     }
 
     pub(crate) async fn reserve_esim(&self) -> Result<EsimReservation, Failure> {
-        let sequence = NEXT_NATIVE_ESIM_RESERVATION.fetch_add(1, Ordering::Relaxed);
-        if sequence == 0 || sequence == u64::MAX {
-            return Err(Failure::new(
-                StatusCode::SERVICE_UNAVAILABLE,
-                "module_esim_reservation_exhausted",
-                "eSIM 模块事务序号不可用",
-            ));
-        }
-        let (producer_id, epoch) = {
-            let state = self.0.state.lock().unwrap();
-            (state.producer.clone(), state.epoch)
-        };
-        let token = format!("rust-esim-{sequence}");
-        self.submit(Job::Reservation(ReservationRequest {
-            producer_id: producer_id.clone(),
-            action: "acquire".into(),
-            purpose: Purpose::Esim,
-            token: token.clone(),
-            sequence,
-        }))
-        .await?;
-        Ok(EsimReservation {
-            producer_id,
-            epoch,
-            token,
-            sequence,
-        })
+        self.reserve_esim_bound(self.capture_esim_acquire_binding()).await
     }
 
     /// Reads USB and IMS/VoLTE call-mode facts under one physical radio

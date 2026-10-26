@@ -1,6 +1,12 @@
 //! Retain eSIM release until the exact physical owner has stopped borrowing it.
 use super::*;
 
+pub(super) struct AcquireBinding {
+    producer_id: String,
+    epoch: u64,
+    binding: String,
+}
+
 struct ReleaseObligation {
     inner: Arc<Inner>,
     epoch: u64,
@@ -23,6 +29,44 @@ impl Drop for ReleaseObligation {
 }
 
 impl Service {
+    pub(super) fn capture_esim_acquire_binding(&self) -> AcquireBinding {
+        let state = self.0.state.lock().unwrap_or_else(|e| e.into_inner());
+        AcquireBinding {
+            producer_id: state.producer.clone(),
+            epoch: state.epoch,
+            binding: self.public_binding(&state),
+        }
+    }
+
+    pub(super) async fn reserve_esim_bound(&self, captured: AcquireBinding) -> Result<EsimReservation, Failure> {
+        let sequence = NEXT_NATIVE_ESIM_RESERVATION.fetch_add(1, Ordering::Relaxed);
+        if sequence == 0 || sequence == u64::MAX {
+            return Err(Failure::new(
+                StatusCode::SERVICE_UNAVAILABLE,
+                "module_esim_reservation_exhausted",
+                "eSIM 模块事务序号不可用",
+            ));
+        }
+        let token = format!("rust-esim-{sequence}");
+        self.submit_bound(
+            Job::Reservation(ReservationRequest {
+                producer_id: captured.producer_id.clone(),
+                action: "acquire".into(),
+                purpose: Purpose::Esim,
+                token: token.clone(),
+                sequence,
+            }),
+            &captured.binding,
+        )
+        .await?;
+        Ok(EsimReservation {
+            producer_id: captured.producer_id,
+            epoch: captured.epoch,
+            token,
+            sequence,
+        })
+    }
+
     /// Call only after the real AT/APDU worker and its logical-channel cleanup
     /// have returned. This retains the release obligation, never the HTTP waiter.
     pub(crate) async fn release_esim(&self, reservation: EsimReservation) -> Result<(), Failure> {

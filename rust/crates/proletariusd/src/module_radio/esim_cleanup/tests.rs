@@ -179,3 +179,46 @@ async fn retired_cleanup_cannot_release_successor_reservation() {
     fixture.service.release_esim(successor).await.unwrap();
     fixture.service.finish_shutdown_receipt().await.unwrap();
 }
+
+#[tokio::test]
+async fn captured_esim_acquire_cannot_cross_same_producer_retirement() {
+    let fixture = Fixture::new();
+    fixture.configure().await;
+    let captured = fixture.service.capture_esim_acquire_binding();
+    fixture.service.retire_producer("producer-1".into()).await.unwrap();
+    fixture.configure().await;
+    assert_eq!(
+        fixture.service.reserve_esim_bound(captured).await.err().unwrap().code,
+        "radio_stale_generation"
+    );
+    assert!(!fixture.service.sim_channel_busy());
+    assert!(fixture.service.0.state.lock().unwrap().reservation.is_none());
+    let current = fixture.service.reserve_esim().await.unwrap();
+    assert_eq!(current.epoch, fixture.service.0.state.lock().unwrap().epoch);
+    fixture.service.release_esim(current).await.unwrap();
+    fixture.service.finish_shutdown_receipt().await.unwrap();
+}
+
+#[tokio::test]
+async fn ordinary_status_still_borrows_existing_call_mode_read_reservation() {
+    let fixture = Fixture::new();
+    fixture.configure().await;
+    fixture.service.submit(Job::Reservation(ReservationRequest {
+        producer_id: "producer-1".into(),
+        action: "acquire".into(),
+        purpose: Purpose::CallMode,
+        token: "call-mode-read".into(),
+        sequence: 1,
+    })).await.unwrap();
+    let status = fixture.service.borrow_shared_voice_operation("producer-1", false).unwrap();
+    assert!(fixture.service.sim_channel_busy());
+    drop(status);
+    fixture.service.submit(Job::Reservation(ReservationRequest {
+        producer_id: "producer-1".into(),
+        action: "release".into(),
+        purpose: Purpose::CallMode,
+        token: "call-mode-read".into(),
+        sequence: 1,
+    })).await.unwrap();
+    fixture.service.finish_shutdown_receipt().await.unwrap();
+}
