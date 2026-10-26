@@ -77,7 +77,7 @@ impl Hub {
         if state.events.len() == CAPACITY {
             state.events.pop_front();
         }
-        state.events.push_back(Event {
+        let persisted = Event {
             sequence,
             time_ms: event.time_ms,
             operation: event.operation,
@@ -87,7 +87,10 @@ impl Hub {
             code: event.code,
             duration_ms: event.duration_ms,
             result: event.result,
-        });
+        };
+        state.events.push_back(persisted.clone());
+        drop(state);
+        crate::support_diagnostics::safe_event(persisted);
         Ok(sequence)
     }
 
@@ -285,6 +288,19 @@ where
             &serde_json::json!({"code":"invalid_diagnostic_event","error":"invalid diagnostic event"}),
         ),
     }
+}
+
+pub(crate) fn valid_persisted_event(event: &Event) -> bool {
+    valid_event(&AppendEvent {
+        time_ms: event.time_ms,
+        operation: event.operation.clone(),
+        correlation_id: event.correlation_id.clone(),
+        generation: event.generation,
+        stage: event.stage.clone(),
+        code: event.code.clone(),
+        duration_ms: event.duration_ms,
+        result: event.result.clone(),
+    })
 }
 
 fn valid_event(event: &AppendEvent) -> bool {
