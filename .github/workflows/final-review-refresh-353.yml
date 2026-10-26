@@ -1,0 +1,30 @@
+name: Refresh final reviewed BLE metadata 353
+on:
+  push:
+    branches: [automation/stability-final-refresh-353]
+permissions:
+  contents: write
+jobs:
+  refresh:
+    name: Final review metadata preparation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          path: src
+          persist-credentials: false
+      - name: Refresh only the approved fingerprint and derived inventory
+        working-directory: src
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 scripts/ci/final-review-refresh-353.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: final-review-refresh-evidence
+          path: final-refresh-evidence/
+          if-no-files-found: error
+          retention-days: 7
