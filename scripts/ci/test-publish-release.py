@@ -153,5 +153,205 @@ class ReleaseFixtures(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 publisher.checked_zip(output.getvalue())
 
+
+class FakeGitHub:
+    """Only the GitHub boundary is mocked; main and payload validation run unchanged."""
+    def __init__(self):
+        import base64
+        self.files, self.manifest, self.reports = fixture()
+        self.release = None
+        self.tag = None
+        self.published = [{"id": 351, "tag_name": "v3.51", "draft": False}]
+        self.builds = {"v3.51": "351"}
+        self.remote = {}
+        self.asset_bytes = {}
+        self.next_id = 10
+        self.writes = []
+        self.upload_failure_after = None
+        self.bad_readback = False
+        self.extra_final_asset = False
+        self.asset_lists = 0
+
+    def install_draft(self):
+        self.release = {"id": 352, "tag_name": "v3.52", "draft": True,
+            "html_url": "https://github.com/Proletariuss/Switch/releases/tag/v3.52",
+            "body": "<!-- switch-release:v1 source=" + COMMIT + " manifest=" +
+                    publisher.digest(self.files["candidate-manifest.json"]) + " -->"}
+
+    def api(self, method, suffix, value=None, **kwargs):
+        import base64
+        from urllib.parse import parse_qs, urlsplit
+        if method != "GET":
+            self.writes.append((method, suffix))
+        if method == "GET" and suffix == "/actions/runs/" + str(RUN):
+            return {"head_sha": COMMIT, "path": ".github/workflows/release.yml",
+                    "event": "workflow_dispatch", "repository": {"full_name": publisher.REPO},
+                    "status": "in_progress", "conclusion": None, "html_url": "https://example.invalid/run"}
+        if method == "GET" and suffix == "/git/commits/" + COMMIT:
+            return {"tree": {"sha": TREE}}
+        if method == "GET" and suffix == "/git/ref/tags/v3.52":
+            return copy.deepcopy(self.tag)
+        if method == "GET" and suffix == "/releases/tags/v3.52":
+            return copy.deepcopy(self.release)
+        if method == "GET" and suffix.startswith("/contents/BUILD_NUMBER?ref="):
+            tag = parse_qs(urlsplit(suffix).query)["ref"][0]
+            raw = (self.builds[tag] + "\n").encode()
+            return {"encoding": "base64", "size": len(raw), "content": base64.b64encode(raw).decode()}
+        if method == "POST" and suffix == "/releases":
+            self.release = dict(value, id=352, html_url="https://github.com/Proletariuss/Switch/releases/tag/v3.52")
+            return copy.deepcopy(self.release)
+        if method == "POST" and suffix.startswith("/releases/352/assets?name="):
+            if self.upload_failure_after is not None and len(self.remote) >= self.upload_failure_after:
+                self.upload_failure_after = None
+                raise RuntimeError("synthetic interrupted upload")
+            name = parse_qs(urlsplit(suffix).query)["name"][0]
+            if name in self.remote:
+                raise AssertionError("duplicate upload must not replace an existing asset")
+            item = {"id": self.next_id, "name": name, "size": len(value), "state": "uploaded"}
+            self.next_id += 1
+            self.remote[name] = item
+            self.asset_bytes[item["id"]] = value
+            return copy.deepcopy(item)
+        if method == "GET" and suffix.startswith("/releases/assets/"):
+            raw = self.asset_bytes[int(suffix.rsplit("/", 1)[1])]
+            return raw + b"corrupted" if self.bad_readback else raw
+        if method == "POST" and suffix == "/git/refs":
+            if self.tag is not None:
+                raise AssertionError("retagging is forbidden")
+            self.tag = {"object": {"type": "commit", "sha": value["sha"]}}
+            return copy.deepcopy(self.tag)
+        if method == "PATCH" and suffix == "/releases/352":
+            self.release.update(value)
+            return copy.deepcopy(self.release)
+        raise AssertionError("unexpected mocked API call: " + method + " " + suffix)
+
+    def pages(self, suffix, key=None):
+        if suffix == "/releases":
+            return copy.deepcopy(self.published + ([self.release] if self.release else []))
+        if suffix == "/releases/352/assets":
+            self.asset_lists += 1
+            rows = copy.deepcopy(list(self.remote.values()))
+            if self.extra_final_asset and len(rows) == 4:
+                rows.append({"id": 999, "name": "unexpected.txt", "size": 1, "state": "uploaded"})
+            return rows
+        if suffix == "/actions/runs/" + str(RUN) + "/artifacts":
+            return []
+        if suffix.endswith("/attempts/2/jobs"):
+            return []  # Publish-only rerun; the successful candidate is from attempt 1.
+        if suffix.endswith("/attempts/1/jobs"):
+            return [{"name": "candidate / candidate", "conclusion": "success", "steps": [{
+                "name": "Verify uploaded bytes and executable permissions", "conclusion": "success"}]}]
+        raise AssertionError("unexpected mocked pages: " + suffix)
+
+    def artifact(self, artifacts, name, run_id, commit):
+        if run_id != RUN or commit != COMMIT:
+            raise AssertionError("wrong source/run requested")
+        if name == "Switch-candidate-" + COMMIT + "-attempt-1":
+            return copy.deepcopy(self.files)
+        if name == "software-report-1-candidate-and-upload":
+            return copy.deepcopy(self.reports)
+        raise AssertionError("wrong original artifact selected: " + name)
+
+class PublicationStateFixtures(unittest.TestCase):
+    def invoke(self, api, attempt=1):
+        from unittest import mock
+        environment = {"GITHUB_ACTIONS": "true", "GITHUB_REPOSITORY": publisher.REPO,
+            "GITHUB_EVENT_NAME": "workflow_dispatch", "EXPECTED_COMMIT": COMMIT, "EXPECTED_TREE": TREE,
+            "EXPECTED_VERSION": VERSION, "EXPECTED_BUILD": BUILD, "GITHUB_SHA": COMMIT,
+            "GITHUB_RUN_ID": str(RUN), "GITHUB_RUN_ATTEMPT": str(attempt), "GITHUB_STEP_SUMMARY": "synthetic-summary"}
+        with mock.patch.dict(publisher.os.environ, environment), mock.patch.object(publisher, "GitHub", return_value=api), \
+                mock.patch("builtins.open", mock.mock_open()):
+            publisher.main()
+
+    def test_fresh_publication_and_published_idempotent_readonly_retry(self):
+        api = FakeGitHub()
+        self.invoke(api)
+        self.assertFalse(api.release["draft"])
+        self.assertEqual(api.tag["object"]["sha"], COMMIT)
+        self.assertEqual(len(api.remote), 4)
+        api.published.append({"id": 353, "tag_name": "v3.53", "draft": False})
+        api.builds["v3.53"] = "353"
+        api.writes.clear()
+        self.invoke(api, attempt=2)
+        self.assertEqual(api.writes, [])  # Already public: verify bytes, never mutate or reset latest.
+
+    def test_old_draft_after_newer_publication_is_rejected_without_writes(self):
+        api = FakeGitHub()
+        api.install_draft()
+        api.published.append({"id": 353, "tag_name": "v3.53", "draft": False})
+        api.builds["v3.53"] = "353"
+        with self.assertRaisesRegex(RuntimeError, "version must increase"):
+            self.invoke(api, attempt=2)
+        self.assertTrue(api.release["draft"])
+        self.assertEqual(api.writes, [])
+
+    def test_new_marketing_version_cannot_reuse_published_build(self):
+        api = FakeGitHub()
+        api.builds["v3.51"] = BUILD
+        with self.assertRaisesRegex(RuntimeError, "build number must increase"):
+            self.invoke(api)
+        self.assertEqual(api.writes, [])
+
+    def test_partial_upload_retry_reuses_identical_assets_and_original_attempt(self):
+        api = FakeGitHub()
+        api.upload_failure_after = 2
+        with self.assertRaisesRegex(RuntimeError, "interrupted upload"):
+            self.invoke(api)
+        self.assertTrue(api.release["draft"])
+        self.assertIsNone(api.tag)
+        prior_ids = {name: item["id"] for name, item in api.remote.items()}
+        self.invoke(api, attempt=2)
+        self.assertFalse(api.release["draft"])
+        self.assertEqual(len(api.remote), 4)
+        self.assertTrue(all(api.remote[name]["id"] == identity for name, identity in prior_ids.items()))
+
+    def test_tag_or_marker_conflict_never_mutates_release(self):
+        for kind in ("tag", "marker"):
+            with self.subTest(kind=kind):
+                api = FakeGitHub()
+                if kind == "tag":
+                    api.tag = {"object": {"type": "commit", "sha": "e" * 40}}
+                else:
+                    api.install_draft()
+                    api.release["body"] = "unrelated release"
+                with self.assertRaisesRegex(RuntimeError, "conflict"):
+                    self.invoke(api)
+                self.assertEqual(api.writes, [])
+
+    def test_failed_asset_readback_keeps_draft_and_creates_no_tag(self):
+        api = FakeGitHub()
+        api.bad_readback = True
+        with self.assertRaisesRegex(RuntimeError, "asset differs"):
+            self.invoke(api)
+        self.assertTrue(api.release["draft"])
+        self.assertIsNone(api.tag)
+        self.assertFalse(any(method == "PATCH" for method, _ in api.writes))
+
+    def test_final_asset_relist_rejects_unexpected_added_asset(self):
+        api = FakeGitHub()
+        api.extra_final_asset = True
+        with self.assertRaisesRegex(RuntimeError, "final release asset"):
+            self.invoke(api)
+        self.assertTrue(api.release["draft"])
+        self.assertIsNone(api.tag)
+
+    def test_newer_release_appearing_during_upload_blocks_publication(self):
+        api = FakeGitHub()
+        original_pages = api.pages
+        def pages(suffix, key=None):
+            if suffix == "/releases" and len(api.remote) == 4:
+                api.published = [{"id": 353, "tag_name": "v3.53", "draft": False}]
+                api.builds["v3.53"] = "353"
+            return original_pages(suffix, key)
+        api.pages = pages
+        with self.assertRaisesRegex(RuntimeError, "version must increase"):
+            self.invoke(api)
+        self.assertTrue(api.release["draft"])
+        self.assertFalse(any(method == "PATCH" for method, _ in api.writes))
+
+    def test_backend_semver_normalizes_two_digit_marketing_minor(self):
+        for marketing, backend in [("3.52", "3.52.0"), ("4.00", "4.0.0"), ("4.09", "4.9.0")]:
+            self.assertEqual(publisher.backend_version(marketing), backend)
+
 if __name__ == "__main__":
     unittest.main()

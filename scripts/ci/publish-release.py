@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Publish only the exact, successful, round-tripped App; never retag or replace assets."""
+import base64
 import gzip
 import hashlib
 import io
@@ -11,6 +12,7 @@ import tarfile
 import urllib.error
 import urllib.request
 import zipfile
+from urllib.parse import quote
 
 REPO = "Proletariuss/Switch"
 GATES = {"portable", "rust", "device-sms-send", "module-network-recovery", "api-request-policy",
@@ -23,6 +25,26 @@ def need(condition, reason):
 
 def digest(data):
     return hashlib.sha256(data).hexdigest()
+
+def backend_version(version):
+    need(re.fullmatch(r"[1-9][0-9]*\.[0-9]{2}", version), "invalid marketing version")
+    return ".".join(str(int(part)) for part in version.split(".")) + ".0"
+
+def require_release_advance(api, version, build):
+    published = [item for item in api.pages("/releases")
+                 if re.fullmatch(r"v[1-9][0-9]*\.[0-9]{2}", item["tag_name"]) and not item["draft"]]
+    if not published:
+        return
+    latest = max(published, key=lambda item: tuple(map(int, item["tag_name"][1:].split("."))))
+    need(tuple(map(int, version.split("."))) > tuple(map(int, latest["tag_name"][1:].split("."))),
+         "release version must increase")
+    # Read source metadata from the highest published tag, not a release asset name.
+    metadata = api.api("GET", "/contents/BUILD_NUMBER?ref=" + quote(latest["tag_name"], safe=""))
+    need(metadata is not None and metadata.get("encoding") == "base64"
+         and 0 < metadata.get("size", 0) <= 64, "published build metadata unavailable")
+    previous = base64.b64decode(metadata["content"]).decode("ascii").strip()
+    need(re.fullmatch(r"[1-9][0-9]*", previous), "invalid published build metadata")
+    need(int(build) > int(previous), "release build number must increase")
 
 def checked_zip(raw):
     result = {}
@@ -55,7 +77,7 @@ def validate_payload(files, reports, commit, tree, version, build, run_id, attem
     need(str(manifest["run"]["id"]) == str(run_id) and int(manifest["run"]["attempt"]) == attempt, "manifest run mismatch")
     need(re.fullmatch(r"[0-9a-f]{64}", manifest["source_digest"]), "missing source digest")
     identity = manifest["identity_validation"]
-    need(identity == {"app_version": version, "build_number": build, "backend_version": version + ".0",
+    need(identity == {"app_version": version, "build_number": build, "backend_version": backend_version(version),
                       "source_digest": manifest["source_digest"], "scope": "plist-and-embedded-identity"}, "App identity mismatch")
     acceptance = manifest["acceptance"]
     need(acceptance["product_acceptance_complete"] is False and acceptance["device_acceptance"] == "UNVERIFIED"
@@ -140,7 +162,7 @@ class GitHub:
         try:
             response = self.opener.open(request, timeout=120)
         except urllib.error.HTTPError as error:
-            if error.code == 404:
+            if method == "GET" and error.code == 404:
                 return None
             if method != "GET" or not binary or error.code != 302:
                 raise
@@ -229,10 +251,9 @@ def main():
         release = drafts[0] if drafts else None
     if release:
         need(marker in release.get("body", "") and release["tag_name"] == tag, "existing release identity conflict")
-    else:
-        versions = [tuple(map(int, item["tag_name"][1:].split("."))) for item in api.pages("/releases")
-                    if re.fullmatch(r"v[1-9][0-9]*\.[0-9]{2}", item["tag_name"]) and not item["draft"]]
-        need(not versions or tuple(map(int, version.split("."))) > max(versions), "release version must increase")
+    if release is None or release["draft"]:
+        require_release_advance(api, version, build)
+    if release is None:
         body = (marker + "\n## Switch " + version + "\n\n"
             + "Softwarestand aus Commit `" + commit + "`, Build " + build + ".\n\n"
             + "Alle Software-Prüfungen, Bundle-Prüfung und der Upload-Rücklesetest gehören zum selben GitHub-Lauf: "
@@ -246,7 +267,7 @@ def main():
                                               "body": body, "draft": True, "prerelease": False})
     remote = api.pages("/releases/" + str(release["id"]) + "/assets")
     need(len({item["name"] for item in remote}) == len(remote) and {item["name"] for item in remote} <= set(assets), "unexpected release assets")
-    from urllib.parse import quote
+    checked_ids = {}
     for name, raw in assets.items():
         found = next((item for item in remote if item["name"] == name), None)
         if found is None:
@@ -254,13 +275,22 @@ def main():
             found = api.api("POST", "/releases/" + str(release["id"]) + "/assets?name=" + quote(name, safe=""), raw, binary=True, upload=True)
         need(found["size"] == len(raw) and found["state"] == "uploaded", "release asset size/state mismatch")
         same_asset(api.api("GET", "/releases/assets/" + str(found["id"]), binary=True), raw)
+        checked_ids[name] = found["id"]
+    final_assets = api.pages("/releases/" + str(release["id"]) + "/assets")
+    need(len(final_assets) == len(assets) == 4
+         and {item["name"]: item["id"] for item in final_assets} == checked_ids,
+         "final release asset whitelist/identity changed")
+    if release["draft"]:
+        require_release_advance(api, version, build)
     # Tag creation is delayed until the entire verified draft is present.
     existing_tag = api.api("GET", "/git/ref/tags/" + tag)
     if existing_tag is None:
+        need(release["draft"], "published release tag missing; mutation refused")
         api.api("POST", "/git/refs", {"ref": "refs/tags/" + tag, "sha": commit})
     final_tag = api.api("GET", "/git/ref/tags/" + tag)
     need(final_tag["object"]["type"] == "commit" and final_tag["object"]["sha"] == commit, "tag changed before publication")
     if release["draft"]:
+        require_release_advance(api, version, build)
         release = api.api("PATCH", "/releases/" + str(release["id"]), {"draft": False})
     need(release["draft"] is False, "release did not become public")
     print("Published verified release: " + release["html_url"])

@@ -32,7 +32,8 @@ if re.findall(r'^\s+CURRENT_PROJECT_VERSION:\s+"([^"]+)"$', project, re.MULTILIN
 cargo = (ROOT / "rust/Cargo.toml").read_text()
 workspace = re.search(r"(?ms)^\[workspace\.package\]\s*(.*?)(?=^\[|\Z)", cargo)
 rust_version = re.search(r'^version\s*=\s*"([^"]+)"\s*$', workspace.group(1), re.MULTILINE) if workspace else None
-if rust_version is None or rust_version.group(1) != version + ".0":
+expected_rust_version = ".".join(str(int(part)) for part in version.split(".")) + ".0"
+if rust_version is None or rust_version.group(1) != expected_rust_version:
     fail("Rust workspace package version differs from VERSION")
 
 print(f"Version contract: PASS (app={version}, build={build}, Rust={rust_version.group(1)})")

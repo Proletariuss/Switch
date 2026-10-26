@@ -42,3 +42,13 @@ Byte-identische Wiederholung. Es gibt keine lokale Projekt-Ausführung.
 Das veröffentlichte SHA256SUMS ist eine separate Freigabe-Prüfsumme für die drei
 flachen Release-Anlagen (App, Originalmanifest, test-reports.tar.gz). Die ursprüngliche
 Candidate-Prüfsummendatei bleibt als test-reports/candidate-SHA256SUMS erhalten.
+
+Auch ein vorhandener Entwurf muss unmittelbar vor der Veröffentlichung erneut
+eine höhere Versionsnummer und eine höhere BUILD_NUMBER als das höchste bereits
+veröffentlichte Release nachweisen. BUILD_NUMBER wird aus dessen Quell-Tag gelesen.
+Ein älterer Entwurf darf nach einer neueren Veröffentlichung nicht mehr öffentlich
+werden. Bereits öffentliche, byte-identische Releases werden nur lesend geprüft.
+Die finale Anlagenliste muss genau den vier zuvor zurückgelesenen Asset-IDs
+entsprechen. API-Zustandsfixtures decken Teil-Upload, Publish-only-Wiederholung,
+veraltete Entwürfe, Build-Wiederverwendung, Konflikte und fehlerhafte Rücklesedaten ab.
+Marketing-Minor 00/09 wird für Rust normalisiert (4.00 → 4.0.0; 4.09 → 4.9.0).

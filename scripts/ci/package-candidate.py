@@ -90,7 +90,8 @@ for name in required:
 app = WORKSPACE / "dist/Switch.app"
 version = (SOURCE / "VERSION").read_text().strip()
 build = (SOURCE / "BUILD_NUMBER").read_text().strip()
-subprocess.run(["python3", "scripts/verify-app-identity.py", str(app), version, build, version + ".0", source_digest], cwd=SOURCE, check=True)
+backend_version = ".".join(str(int(part)) for part in version.split(".")) + ".0"
+subprocess.run(["python3", "scripts/verify-app-identity.py", str(app), version, build, backend_version, source_digest], cwd=SOURCE, check=True)
 records = inventory(app)
 delivery = WORKSPACE / "candidate"
 delivery.mkdir(exist_ok=False)
@@ -105,7 +106,7 @@ manifest = {
     "commit": commit, "tree": output("git", "rev-parse", "HEAD^{tree}"), "source_digest": source_digest,
     "run": {"id": os.environ["GITHUB_RUN_ID"], "attempt": os.environ["GITHUB_RUN_ATTEMPT"], "url": os.environ["GITHUB_SERVER_URL"] + "/" + os.environ["GITHUB_REPOSITORY"] + "/actions/runs/" + os.environ["GITHUB_RUN_ID"]},
     "toolchain": {"rust": output("rustc", "+1.98.0", "--version", "--verbose"), "xcode": output("xcodebuild", "-version"), "swift": output("xcrun", "swiftc", "--version"), "sdk": output("xcrun", "--show-sdk-version"), "host": output("sw_vers"), "architecture": output("uname", "-m")},
-    "identity_validation": {"app_version": version, "build_number": build, "backend_version": version + ".0", "source_digest": source_digest, "scope": "plist-and-embedded-identity"},
+    "identity_validation": {"app_version": version, "build_number": build, "backend_version": backend_version, "source_digest": source_digest, "scope": "plist-and-embedded-identity"},
     "acceptance": {"scope": "github-hosted-offline-software-gates-and-bundle-audit", "product_acceptance_complete": False, "device_acceptance": "UNVERIFIED", "macos27_runtime": "UNVERIFIED", "signature": "ad-hoc", "notarized": False, "original_v3_51_release": False},
     "artifact": {"name": archive.name, "sha256": sha(archive), "size": archive.stat().st_size},
     "app_inventory": records,
