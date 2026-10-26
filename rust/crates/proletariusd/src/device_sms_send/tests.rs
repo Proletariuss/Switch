@@ -1257,3 +1257,89 @@ async fn late_claim_and_lost_ack_retain_same_owner_until_actual_release_reply() 
     assert_eq!(pinned.state, "submitting");
     assert_eq!(pinned.attempt, "late-attempt");
 }
+
+#[tokio::test]
+async fn archive_failure_recovery_keeps_one_physical_send_and_original_timestamp() {
+    let f = Fixture::new().await;
+    f.prepare("repair-archive").await;
+    fs::create_dir(f.root.join("sms-archive.json")).unwrap();
+    assert_eq!(code(f.service.post(request("repair-archive"), false, &AtomicBool::new(false)).await),
+        "sms_send_archive_outcome_unknown");
+    let original: Record = f.service.ledger("get", json!({"client_request_id":"repair-archive"}))
+        .await.unwrap_or_else(|_| panic!());
+    assert_eq!(original.state, "accepted");
+    assert!(!original.archive_confirmed);
+    fs::remove_dir(f.root.join("sms-archive.json")).unwrap();
+    f.hardware.valid.store(false, Ordering::SeqCst);
+    let mut wrong = request("repair-archive");
+    wrong.message.push_str("-changed");
+    assert_eq!(code(f.service.post(wrong, false, &AtomicBool::new(false)).await), "sms_intent_conflict");
+    for _ in 0..3 {
+        assert!(f.service.post(request("repair-archive"), false, &AtomicBool::new(false)).await.is_ok());
+    }
+    assert_eq!(f.hardware.sends.load(Ordering::SeqCst), 1);
+    assert_eq!(f.hardware.captures.load(Ordering::SeqCst), 1);
+    let rows = f.service.archive.load().unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0]["timestamp"], archive_item(&original).unwrap()["timestamp"]);
+    let confirmed: Record = f.service.ledger("get", json!({"client_request_id":"repair-archive"}))
+        .await.unwrap_or_else(|_| panic!());
+    assert!(confirmed.archive_confirmed);
+    assert_eq!(confirmed.attempt, original.attempt);
+}
+
+async fn accepted_unarchived(f: &Fixture, id: &str) -> Record {
+    f.prepare(id).await;
+    let prepared: Record = f.service.ledger("get", json!({"client_request_id":id}))
+        .await.unwrap_or_else(|_| panic!());
+    let _: Record = f.service.ledger("claim", json!({"client_request_id":id,
+        "binding":prepared.binding,"attempt":"archive-only-attempt"})).await.unwrap_or_else(|_| panic!());
+    f.service.ledger("finish", json!({"client_request_id":id,"attempt":"archive-only-attempt",
+        "state":"accepted","segments":1,"archive_confirmed":false})).await.unwrap_or_else(|_| panic!())
+}
+
+#[tokio::test]
+async fn deleted_archive_receipt_suppresses_a_stale_reconcile_and_survives_reopen() {
+    let f = Fixture::new().await;
+    let original = accepted_unarchived(&f, "deleted-original").await;
+    let item = archive_item(&original).unwrap();
+    crate::message_archive::ingest_messages_to(f.service.archive.clone(), vec![item.clone()]).await.unwrap();
+    let id = crate::message_archive::cache_digest(&item);
+    assert_eq!(crate::message_archive::delete_ids_from_store(f.service.archive.clone(), vec![id]).await.unwrap(), 1);
+    assert!(f.service.archive.load().unwrap().is_empty());
+    // Deliberately retain the stale false observation across deletion.
+    assert!(f.service.reconcile_archive(original).await.is_ok());
+    let mut reopened = f.service.clone();
+    reopened.store = crate::device_send_store::Store::open(&f.root).unwrap();
+    assert!(reopened.post(request("deleted-original"), false, &AtomicBool::new(false)).await.is_ok());
+    assert!(f.service.archive.load().unwrap().is_empty());
+    assert_eq!(f.hardware.sends.load(Ordering::SeqCst), 0);
+}
+
+#[tokio::test]
+async fn archive_reconciliation_rejects_changed_attempt_payload_and_concurrent_replay() {
+    let f = Fixture::new().await;
+    let original = accepted_unarchived(&f, "proof").await;
+    let item = archive_item(&original).unwrap();
+    assert!(f.service.store.archive_receipt(&item, Some("wrong-attempt"), true).is_err());
+    for key in ["sender", "content", "device", "subscription_id", "timestamp"] {
+        let mut changed = item.clone();
+        changed[key] = json!("changed");
+        assert!(f.service.store.archive_receipt(&changed, Some(&original.attempt), true).is_err());
+    }
+    assert!(f.service.store.archive_receipt(&item, Some(&original.attempt), false).unwrap());
+    let mut jobs = Vec::new();
+    for _ in 0..12 {
+        let service = f.service.clone();
+        jobs.push(tokio::spawn(async move {
+            service.post(request("proof"), false, &AtomicBool::new(false)).await
+        }));
+    }
+    for job in jobs { assert!(job.await.unwrap().is_ok()); }
+    assert_eq!(f.service.archive.load().unwrap().len(), 1);
+    assert_eq!(f.hardware.sends.load(Ordering::SeqCst), 0);
+    let claim: Record = f.service.ledger("claim", json!({"client_request_id":"proof",
+        "binding":original.binding,"attempt":"another-attempt"})).await.unwrap_or_else(|_| panic!());
+    assert!(!claim.can_submit);
+    assert_eq!(claim.attempt, original.attempt);
+}

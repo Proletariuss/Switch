@@ -49,6 +49,8 @@ final class FixtureAPI: DeviceSMSSendAPI {
     var rows: [String: DeviceSMSIntent] = [:]
     var prepareCalls: [DeviceSMSIntentRequest] = []
     var submitCalls: [DeviceSMSIntentRequest] = []
+    var reconcileCalls: [DeviceSMSIntentRequest] = []
+    var reconcileHook: ((DeviceSMSIntentRequest) async throws -> Void)?
     var getCalls: [String] = []
     var listCalls: [String?] = []
     var prepareHook: ((DeviceSMSIntentRequest) async throws -> DeviceSMSIntent)?
@@ -78,6 +80,12 @@ final class FixtureAPI: DeviceSMSSendAPI {
         let row = record(request)
         rows[row.id] = row
         return row
+    }
+    func reconcileArchive(_ request: DeviceSMSIntentRequest) async throws {
+        reconcileCalls.append(request)
+        if let reconcileHook { return try await reconcileHook(request) }
+        guard rows[request.clientRequestID]?.state == .accepted else { throw URLError(.badServerResponse) }
+        rows[request.clientRequestID] = record(request, state: .accepted, canSubmit: false, archived: true)
     }
     func submit(_ request: DeviceSMSIntentRequest) async throws {
         submitCalls.append(request)
@@ -180,8 +188,14 @@ struct DeviceSMSSendTests {
             api.rows[row.id] = row
             let store = makeStore(api)
             try await pending { try await send(store) }
-            try await pending { try await store.resume(row) }
-            try expect(api.prepareCalls.isEmpty && api.submitCalls.isEmpty && api.getCalls.count == 2, "archive-unknown or expired binding was resubmitted")
+            if state == .accepted {
+                let restored = try await store.resume(row)
+                try expect(restored.archiveConfirmed && api.reconcileCalls == [row.request], "archive recovery changed identity")
+            } else {
+                try await pending { try await store.resume(row) }
+                try expect(api.reconcileCalls.isEmpty, "expired prepared record entered archive recovery")
+            }
+            try expect(api.prepareCalls.isEmpty && api.submitCalls.isEmpty, "archive-unknown or expired binding was resubmitted")
         }
     }
 
@@ -333,8 +347,46 @@ struct DeviceSMSSendTests {
         try expect(restarted.intents.isEmpty, "clear-all did not persist")
     }
 
+    static func testArchiveRecoveryLostACKAndRestartKeepOriginalIdentity() async throws {
+        let api = FixtureAPI()
+        let row = record(request("archive-recovery"), state: .accepted, canSubmit: false)
+        api.rows[row.id] = row
+        api.reconcileHook = { request in
+            api.rows[request.clientRequestID] = record(request, state: .accepted, canSubmit: false, archived: true)
+            throw URLError(.networkConnectionLost)
+        }
+        let store = makeStore(api)
+        await store.refresh()
+        let result = try await store.resume(row)
+        try expect(result.archiveConfirmed && store.intents.isEmpty, "lost archive ACK did not query same receipt")
+        try expect(api.reconcileCalls == [row.request] && api.submitCalls.isEmpty && api.prepareCalls.isEmpty,
+                   "archive recovery acquired a physical send")
+        let restarted = makeStore(api)
+        await restarted.refresh()
+        try expect(restarted.intents.isEmpty, "confirmed archive returned as unresolved after restart")
+    }
+
+    static func testArchiveRecoveryFailureAndMismatchNeverReissue() async throws {
+        let api = FixtureAPI()
+        let row = record(request("archive-failed"), state: .accepted, canSubmit: false)
+        api.rows[row.id] = row
+        api.reconcileHook = { _ in throw URLError(.timedOut) }
+        let store = makeStore(api)
+        await store.refresh()
+        try await pending { try await store.resume(row) }
+        try expect(store.intents.first?.id == row.id, "failed archive recovery lost original request")
+        let changed = DeviceSMSIntentRequest(clientRequestID: row.id, phone: phone,
+            message: "different", device: "reader", expectedSubscriptionID: subscription)
+        api.rows[row.id] = record(changed, state: .accepted, canSubmit: false)
+        try await pending { try await store.resume(row) }
+        try expect(api.reconcileCalls.count == 1 && api.submitCalls.isEmpty && api.prepareCalls.isEmpty,
+                   "mismatched archive observation granted a mutation")
+    }
+
     static func main() async throws {
         let tests: [(String, () async throws -> Void)] = [
+            ("archive recovery lost ACK and restart", testArchiveRecoveryLostACKAndRestartKeepOriginalIdentity),
+            ("archive recovery failure and mismatch", testArchiveRecoveryFailureAndMismatchNeverReissue),
             ("clear preserves durable dispatch safety", testClearPersistsWithoutGrantingResend),
             ("prepare failure keeps ID", testPrepareFailureRetainsRequestID),
             ("prepare lost ACK needs explicit resume", testPrepareLostACKNeedsExplicitResume),

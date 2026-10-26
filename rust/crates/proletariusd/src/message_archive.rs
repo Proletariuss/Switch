@@ -708,7 +708,18 @@ fn ready_for_forwarding(items: Vec<Value>) -> Vec<Value> {
 }
 
 fn ingest(store: &ArchiveStore, incoming: Vec<Value>) -> Result<usize, StoreError> {
+    ingest_guarded(store, incoming, || Ok(true))
+}
+
+fn ingest_guarded(
+    store: &ArchiveStore,
+    incoming: Vec<Value>,
+    needed: impl FnOnce() -> Result<bool, StoreError>,
+) -> Result<usize, StoreError> {
     let added = store.mutate_if_changed(|items| {
+        if !needed()? {
+            return Ok((0, false));
+        }
         let mut identities: std::collections::HashSet<String> =
             items.iter().map(cache_digest).collect();
         let mut incoming_identities = std::collections::HashSet::new();
@@ -912,6 +923,47 @@ pub(crate) fn ingest_messages_to_retained<G: Send + 'static>(
     async move { job.await? }
 }
 
+/// Archive-only recovery checks the immutable accepted attempt under the same
+/// archive lock as deletion. A deleted/confirmed receipt suppresses insertion.
+pub(crate) fn reconcile_device_send_retained<G: Send + 'static>(
+    store: ArchiveStore,
+    ledger: crate::device_send_store::Store,
+    item: Value,
+    attempt: String,
+    retained: G,
+) -> impl std::future::Future<Output = Result<usize, StoreError>> + Send + 'static {
+    let job = crate::archive_io::run_durable(
+        move || {
+            let proof = item.clone();
+            let result = ingest_guarded(&store, vec![item], || {
+                ledger.archive_receipt(&proof, Some(&attempt), false)
+            }).and_then(|added| {
+                ledger.archive_receipt(&proof, Some(&attempt), true)?;
+                Ok(added)
+            });
+            retained_ingest_result(result)
+        },
+        retained,
+    );
+    async move { job.await? }
+}
+
+/// Persist the historical receipt before removing its only archive evidence.
+/// If this fails, deletion fails closed. The lock order is archive -> ledger;
+/// send/finish never hold the ledger lock while acquiring the archive lock.
+fn confirm_deleted_device_sends<'a>(
+    store: &ArchiveStore,
+    items: impl Iterator<Item = &'a Value>,
+) -> Result<(), StoreError> {
+    for item in items {
+        if item["direction"] == "out" && item["send_request_id"].as_str().is_some_and(|id| !id.is_empty()) {
+            let root = store.path().parent().ok_or_else(|| StoreError::Configuration("archive root missing".into()))?;
+            crate::device_send_store::Store::open(root)?.archive_receipt(item, None, true)?;
+        }
+    }
+    Ok(())
+}
+
 fn retained_ingest_result(
     result: Result<usize, StoreError>,
 ) -> Result<Result<usize, StoreError>, StoreError> {
@@ -1082,6 +1134,11 @@ fn delete_id(store: &ArchiveStore, id: &str) -> Result<usize, StoreError> {
         let group_source_ids = multipart_source_ids(&projected, group_id.as_deref());
         // GET /api/sms intentionally recomputes the Go-compatible ID even for
         // older archive rows that still carry a legacy stored ID.
+        confirm_deleted_device_sends(store, items.iter().filter(|item| {
+            stable_id(item) == id || cache_digest(item) == id
+                || group_source_ids.contains(&stable_id(item))
+                || group_source_ids.contains(&cache_digest(item))
+        }))?;
         items.retain(|item| {
             stable_id(item) != id
                 && cache_digest(item) != id
@@ -1110,6 +1167,11 @@ fn delete_ids(store: &ArchiveStore, ids: &[String]) -> Result<usize, StoreError>
             .collect();
         let projected = project_multipart(items.clone());
         let group_source_ids = multipart_source_ids_for_groups(&projected, &group_ids);
+        confirm_deleted_device_sends(store, items.iter().filter(|item| {
+            selected.contains(&stable_id(item)) || selected.contains(&cache_digest(item))
+                || group_source_ids.contains(&stable_id(item))
+                || group_source_ids.contains(&cache_digest(item))
+        }))?;
         items.retain(|item| {
             !selected.contains(&stable_id(item))
                 && !selected.contains(&cache_digest(item))
@@ -1153,6 +1215,7 @@ fn multipart_source_ids_for_groups(
 fn delete_sender(store: &ArchiveStore, sender: &str) -> Result<usize, StoreError> {
     store.mutate(|items| {
         let before = items.len();
+        confirm_deleted_device_sends(store, items.iter().filter(|item| string_field(item, "sender").trim() == sender))?;
         items.retain(|item| string_field(item, "sender").trim() != sender);
         Ok(before - items.len())
     })

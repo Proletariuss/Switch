@@ -65,6 +65,7 @@ struct DeviceSMSIntentPage: Decodable {
     func get(id: String) async throws -> DeviceSMSIntent
     func prepare(_ request: DeviceSMSIntentRequest) async throws -> DeviceSMSIntent
     func submit(_ request: DeviceSMSIntentRequest) async throws
+    func reconcileArchive(_ request: DeviceSMSIntentRequest) async throws
 }
 
 struct DeviceSMSPendingError: LocalizedError {
@@ -206,11 +207,56 @@ struct DeviceSMSPendingError: LocalizedError {
     }
 
     func resume(_ intent: DeviceSMSIntent) async throws -> DeviceSMSIntent {
+        if intent.state == .accepted && !intent.archiveConfirmed {
+            return try await reconcileArchive(intent)
+        }
         guard intent.state == .prepared && intent.canSubmit else {
             if let record = await query(intent), record.state == .accepted && record.archiveConfirmed { return record }
             throw DeviceSMSPendingError(reason: "原请求只能查询，未再次提交。")
         }
         return try await submit(intent.request)
+    }
+
+    /// An explicit recovery action keeps the original identity and payload.
+    /// It never prepares another request, chooses a new line, or retries send.
+    private func reconcileArchive(_ intent: DeviceSMSIntent) async throws -> DeviceSMSIntent {
+        guard available, !sending else { throw DeviceSMSPendingError(reason: "本机服务尚未就绪或已有发送操作。") }
+        let generation = epoch
+        sending = true
+        error = nil
+        defer { if generation == epoch { sending = false } }
+        do {
+            let original = try await api.get(id: intent.id)
+            guard current(generation) else { throw CancellationError() }
+            guard original.matches(intent.request), original.state == .accepted else {
+                throw DeviceSMSPendingError(reason: "原请求状态不符，未补归档。")
+            }
+            if !original.archiveConfirmed {
+                try await api.reconcileArchive(original.request)
+            }
+            guard current(generation) else { throw CancellationError() }
+            let result = try await api.get(id: intent.id)
+            guard current(generation) else { throw CancellationError() }
+            guard result.matches(intent.request) else { throw CocoaError(.fileReadCorruptFile) }
+            recordResult(result)
+            guard result.state == .accepted && result.archiveConfirmed else {
+                throw DeviceSMSPendingError(reason: "本机归档仍待确认，原请求已保留。")
+            }
+            notice = "本机归档已确认；未再次发送短信。"
+            return result
+        } catch {
+            guard current(generation) else { throw CancellationError() }
+            if let result = try? await api.get(id: intent.id),
+               current(generation), result.matches(intent.request),
+               result.state == .accepted && result.archiveConfirmed {
+                recordResult(result)
+                notice = "本机归档已确认；未再次发送短信。"
+                return result
+            }
+            guard current(generation) else { throw CancellationError() }
+            self.error = "补归档尚未确认，保留原请求；未再次发送短信。"
+            throw DeviceSMSPendingError(reason: self.error!)
+        }
     }
 
     private func submit(_ request: DeviceSMSIntentRequest) async throws -> DeviceSMSIntent {
