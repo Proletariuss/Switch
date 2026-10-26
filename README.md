@@ -34,7 +34,7 @@ Diese Regeln gelten für alle Nutzer. Sie beschreiben die Verhaltensanforderunge
 
 ## Projekt und Veröffentlichungsstand
 
-Switch bündelt USB/QMI-Module, PC/SC- und BLE-Kartenleser, physische eSIM-Profile, VoWiFi/IMS, SMS und Telefonie in einer macOS-Anwendung. Die veröffentlichte Version ist **3.51, Build 351, mit Rust-Backend 3.51.0**.
+Switch bündelt USB/QMI-Module, PC/SC- und BLE-Kartenleser, eSIM-Profile auf physischen Karten, VoWiFi/IMS, SMS und Telefonie in einer macOS-Anwendung. Die veröffentlichte Version ist **3.51, Build 351, mit Rust-Backend 3.51.0**.
 
 Das Repository ist seit dem **26. Oktober 2026 öffentlich**. Die Veröffentlichung des Quellcodes bestätigt keine vollständige Abnahme aller Geräte, Netzbetreiber oder Dauerbetriebsszenarien.
 
@@ -107,7 +107,7 @@ scripts/quit.sh                  # Beendet Anwendung und zugehöriges Backend
 scripts/preflight-source.sh      # Prüft Versionen und Quellcodeverträge
 ```
 
-Die laufende Projektprüfung und Kompilierung erfolgen auf GitHub-gehosteten Runnern. Die Workflows prüfen Quellcodeverträge, Rust-Arbeitsbereiche und Softwaretests; empfindliche Tests für gemeinsam genutzte serielle Zustände, Abnahmekapseln und prozessweite Dateideskriptoren laufen isoliert. App-bezogene Änderungen werden zusätzlich kompiliert. Ein erfolgreicher Lauf auf `macos-26` belegt jedoch keinen Test unter macOS 27 und keinen automatisch vorhandenen macOS-27-SDK.
+Die laufende Projektprüfung und Kompilierung erfolgen auf GitHub-gehosteten Runnern. Die Workflows prüfen Quellcodeverträge, Rust-Arbeitsbereiche und Softwaretests; empfindliche Tests für gemeinsam genutzte serielle Zustände, Abnahmekapseln und prozessweite Dateideskriptoren laufen isoliert. App-bezogene Änderungen werden zusätzlich kompiliert. Ein erfolgreicher Lauf auf `macos-26` belegt jedoch keinen Test unter macOS 27 und auch nicht die Verfügbarkeit eines macOS-27-SDKs.
 
 Die [GitHub-Automatisierungsrichtlinie](docs/GITHUB_AUTOMATION.md) beschreibt Prüfungen, Abhängigkeitsaktualisierungen und Berechtigungsgrenzen. `scripts/test-migration-gates.sh` enthält außerdem historische, hostbezogene Nachweise: Fehlen diese in einem normalen Klon, ist eine fehlgeschlagene Herkunftsprüfung nicht automatisch ein Fehler des Anwendungscodes oder des DMG.
 
@@ -133,7 +133,7 @@ Für die veröffentlichten 3.51-Artefakte wurden folgende Prüfungen dokumentier
 
 **Nicht als vollständig abgenommen gelten:** alle USB/PCSC/BLE-Gerätekombinationen, sämtliche VoWiFi/IMS-Netzbetreiberregistrierungen, reale SMS-Zustellung, ausgehende und eingehende Anrufe, Audioqualität, Wiederherstellung nach Netzverlust oder Ruhezustand sowie Langzeitstabilität. Maßgeblich sind getrennte Nachweise für die jeweilige Version, Karte, Hardware und Netzwerkumgebung.
 
-Das DMG ist ad hoc signiert und nicht notarisiert; es ist kein von Apple notarisiertes Developer-ID-Paket. Switch ersetzt keinen Notrufdienst oder garantierte Kommunikationsverfügbarkeit.
+Das DMG ist ad hoc signiert und nicht notarisiert; es ist kein von Apple notarisiertes Developer-ID-Paket. Switch ersetzt keinen Notrufdienst und garantiert keine jederzeitige Kommunikationsverfügbarkeit.
 
 ## Integrität prüfen
 
