@@ -67,52 +67,85 @@ jobs:
                   )
               return result
 
+          # Select only a recognized production env/script contract. A mixed
+          # or unknown layout must fail instead of silently reducing coverage.
+          import re
+          review = workflow.split("  review-result:\n", 1)[1]
+          environment = review.split("    env:\n", 1)[1].split("    steps:\n", 1)[0]
+          declared = set(re.findall(r"^      ([A-Z_]+):", environment, re.MULTILINE))
+          common = {"EVENT_NAME", "IS_DRAFT", "CLASSIFY_RESULT"}
+          native = {"SOURCE_RESULT", "MACOS_RESULT", "NEEDS_MACOS"}
+          shared = {"CHECKS_RESULT"}
+          if common <= declared and native <= declared and not shared & declared:
+              mode = "monolithic"
+              expected_variables = common | native
+          elif common <= declared and shared <= declared and not native & declared:
+              mode = "shared"
+              expected_variables = common | shared
+          else:
+              raise SystemExit(f"unrecognized review-result environment: {sorted(declared)}")
+          referenced = set(re.findall(r"\$\{?([A-Z_]+)", script))
+          if not expected_variables <= referenced:
+              raise SystemExit(f"{mode}: production policy ignores required inputs")
+
           statuses = ("success", "failure", "skipped", "cancelled")
           count = 0
-          for draft, native, classify, source, macos in itertools.product(
-              ("true", "false"), ("true", "false"), statuses, statuses, statuses
-          ):
-              expected = (
-                  draft == "false" and classify == source == "success"
-                  and (macos == "success" or (native == "false" and macos == "skipped"))
-              )
-              check(
-                  f"draft={draft} native={native} classify={classify} source={source} macos={macos}",
-                  expected, EVENT_NAME="pull_request", IS_DRAFT=draft,
-                  NEEDS_MACOS=native, CLASSIFY_RESULT=classify,
-                  SOURCE_RESULT=source, MACOS_RESULT=macos,
-              )
-              count += 1
-
           baseline = dict(
-              EVENT_NAME="pull_request", IS_DRAFT="false", NEEDS_MACOS="true",
-              CLASSIFY_RESULT="success", SOURCE_RESULT="success", MACOS_RESULT="success",
+              EVENT_NAME="pull_request", IS_DRAFT="false", CLASSIFY_RESULT="success",
           )
-          for native in ("", "unknown"):
-              check("missing/invalid classification", False, **{**baseline, "NEEDS_MACOS": native})
-              count += 1
+          if mode == "monolithic":
+              baseline.update(NEEDS_MACOS="true", SOURCE_RESULT="success", MACOS_RESULT="success")
+              terminal_result = "MACOS_RESULT"
+              for draft, native, classify, source, macos in itertools.product(
+                  ("true", "false"), ("true", "false"), statuses, statuses, statuses
+              ):
+                  expected = (
+                      draft == "false" and classify == source == "success"
+                      and (macos == "success" or (native == "false" and macos == "skipped"))
+                  )
+                  check(
+                      f"draft={draft} native={native} classify={classify} source={source} macos={macos}",
+                      expected, EVENT_NAME="pull_request", IS_DRAFT=draft,
+                      NEEDS_MACOS=native, CLASSIFY_RESULT=classify,
+                      SOURCE_RESULT=source, MACOS_RESULT=macos,
+                  )
+                  count += 1
+              for native in ("", "unknown"):
+                  check("missing/invalid classification", False, **{**baseline, "NEEDS_MACOS": native})
+                  count += 1
+          else:
+              baseline.update(CHECKS_RESULT="success")
+              terminal_result = "CHECKS_RESULT"
+              for draft, classify, checks in itertools.product(("true", "false"), statuses, statuses):
+                  expected = draft == "false" and classify == checks == "success"
+                  check(
+                      f"draft={draft} classify={classify} checks={checks}", expected,
+                      EVENT_NAME="pull_request", IS_DRAFT=draft,
+                      CLASSIFY_RESULT=classify, CHECKS_RESULT=checks,
+                  )
+                  count += 1
 
-          # The same required-native PR cannot pass merely by becoming Ready:
-          # Ready with skipped native work stays blocked until native succeeds.
-          for draft, macos, expected in (
+          # Ready with skipped required work stays blocked until it succeeds.
+          # Returning to Draft must also revoke an otherwise successful result.
+          for draft, result, expected in (
               ("true", "skipped", False),
               ("false", "skipped", False),
               ("false", "success", True),
               ("true", "success", False),
           ):
-              result = check(
+              outcome = check(
                   "draft-to-ready-to-draft", expected,
-                  **{**baseline, "IS_DRAFT": draft, "MACOS_RESULT": macos},
+                  **{**baseline, "IS_DRAFT": draft, terminal_result: result},
               )
-              if draft == "true" and "Mark ready for review" not in result.stdout:
+              if draft == "true" and "Mark ready for review" not in outcome.stdout:
                   raise SystemExit("Draft rejection lost its actionable diagnostic")
               count += 1
 
           for event in ("workflow_dispatch", "schedule"):
-              for macos in statuses:
+              for result in statuses:
                   check(
-                      f"{event} native={macos}", macos == "success",
-                      **{**baseline, "EVENT_NAME": event, "IS_DRAFT": "", "MACOS_RESULT": macos},
+                      f"{event} {terminal_result}={result}", result == "success",
+                      **{**baseline, "EVENT_NAME": event, "IS_DRAFT": "", terminal_result: result},
                   )
                   count += 1
 
@@ -125,5 +158,5 @@ jobs:
                       raise SystemExit(f"{path}: missing PR event {event}")
               if "    paths:" in pr or "    paths-ignore:" in pr:
                   raise SystemExit(f"{path}: PR checks must not disappear behind path filters")
-          print(f"PASS: {count} production-policy fixtures and PR event coverage")
+          print(f"PASS: {mode}: {count} production-policy fixtures and PR event coverage")
           PY
