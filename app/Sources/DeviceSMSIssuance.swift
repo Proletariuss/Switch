@@ -148,11 +148,25 @@ struct DeviceSMSIssuanceCheckpoint: Codable, Equatable {
     }
 }
 
-/// The stable lock file is never replaced or removed. Every snapshot operation
-/// is under flock; replacement uses a private same-directory file plus file and
-/// directory fsync. The exact bytes are read back before any caller may POST.
+/// The parent-held anchor binds this directory and both stable locks to the
+/// snapshot. Missing historical paths are never silently recreated. Every lock
+/// is nonblocking; a second GUI reports busy without freezing its main actor.
 final class DeviceSMSIssuanceJournal {
-    private struct Envelope: Codable { var version = 1; var checkpoints: [DeviceSMSIssuanceCheckpoint] = [] }
+    private struct Anchor: Codable {
+        var version = 1
+        let identity: String
+        let directoryDevice: Int64
+        let directoryInode: UInt64
+    }
+    private struct Envelope: Codable {
+        var version = 1
+        let authority: String
+        let anchorDevice: Int64
+        let anchorInode: UInt64
+        let lockDevice: Int64
+        let lockInode: UInt64
+        var checkpoints: [DeviceSMSIssuanceCheckpoint] = []
+    }
     let directory: URL
     private var unhealthy = false
     private let localLock = NSLock()
@@ -163,40 +177,28 @@ final class DeviceSMSIssuanceJournal {
     private func checked(_ result: Int32) throws {
         guard result == 0 else { throw DeviceSMSJournalError.unavailable }
     }
-    private func validateFD(_ fd: Int32, directory: Bool = false) throws {
+    private func inspect(_ fd: Int32, directory: Bool = false) throws -> stat {
         var info = stat()
         try checked(fstat(fd, &info))
         guard info.st_uid == getuid(), info.st_mode & 0o077 == 0,
               directory ? (info.st_mode & S_IFMT == S_IFDIR) : (info.st_mode & S_IFMT == S_IFREG && info.st_nlink == 1)
         else { throw DeviceSMSJournalError.unavailable }
+        return info
     }
-    private func readSnapshot(_ dir: Int32) throws -> Data {
-        let fd = openat(dir, "issuance.json", O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
-        guard fd >= 0 else { throw DeviceSMSJournalError.unavailable }
-        defer { close(fd) }
-        try validateFD(fd)
-        var info = stat()
-        try checked(fstat(fd, &info))
-        guard info.st_size >= 0 && info.st_size <= 8 * 1024 * 1024 else { throw DeviceSMSJournalError.capacity }
-        var data = Data()
-        var buffer = [UInt8](repeating: 0, count: 16_384)
-        while true {
-            let count = Darwin.read(fd, &buffer, buffer.count)
-            if count < 0 && errno == EINTR { continue }
-            guard count >= 0 else { throw DeviceSMSJournalError.unavailable }
-            if count == 0 { break }
-            data.append(contentsOf: buffer.prefix(count))
-            guard data.count <= 8 * 1024 * 1024 else { throw DeviceSMSJournalError.capacity }
+    private func namedIdentity(_ fd: Int32, parent: Int32, name: String, directory: Bool = false) throws {
+        let held = try inspect(fd, directory: directory)
+        var named = stat()
+        try checked(fstatat(parent, name, &named, AT_SYMLINK_NOFOLLOW))
+        guard named.st_dev == held.st_dev, named.st_ino == held.st_ino,
+              named.st_mode & S_IFMT == held.st_mode & S_IFMT else { throw DeviceSMSJournalError.unavailable }
+    }
+    private func lockNow(_ fd: Int32) throws {
+        guard flock(fd, LOCK_EX | LOCK_NB) == 0 else {
+            if errno == EWOULDBLOCK || errno == EAGAIN { throw DeviceSMSJournalError.conflict }
+            throw DeviceSMSJournalError.unavailable
         }
-        return data
     }
-    private func writeSnapshot(_ data: Data, directory dir: Int32) throws {
-        guard data.count <= 8 * 1024 * 1024 else { throw DeviceSMSJournalError.capacity }
-        let name = ".issuance-" + UUID().uuidString
-        let fd = openat(dir, name, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o600)
-        guard fd >= 0 else { throw DeviceSMSJournalError.unavailable }
-        defer { close(fd); unlinkat(dir, name, 0) }
-        try validateFD(fd)
+    private func writeAll(_ data: Data, to fd: Int32) throws {
         try data.withUnsafeBytes { raw in
             var offset = 0
             while offset < raw.count {
@@ -207,52 +209,137 @@ final class DeviceSMSIssuanceJournal {
             }
         }
         try checked(fsync(fd))
+    }
+    private func readFile(_ fd: Int32, limit: Int) throws -> Data {
+        let info = try inspect(fd)
+        // Existing over-sized/truncated files are corruption, not a new-message quota refusal.
+        guard info.st_size > 0 && info.st_size <= limit else { throw DeviceSMSJournalError.invalid }
+        var data = Data()
+        var buffer = [UInt8](repeating: 0, count: 16_384)
+        while true {
+            let count = Darwin.read(fd, &buffer, buffer.count)
+            if count < 0 && errno == EINTR { continue }
+            guard count >= 0 else { throw DeviceSMSJournalError.unavailable }
+            if count == 0 { break }
+            data.append(contentsOf: buffer.prefix(count))
+            guard data.count <= limit else { throw DeviceSMSJournalError.invalid }
+        }
+        guard data.count == Int(info.st_size) else { throw DeviceSMSJournalError.invalid }
+        return data
+    }
+    private func readSnapshot(_ dir: Int32) throws -> Data {
+        let fd = openat(dir, "issuance.json", O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
+        guard fd >= 0 else { throw DeviceSMSJournalError.unavailable }
+        defer { close(fd) }
+        return try readFile(fd, limit: 8 * 1024 * 1024)
+    }
+    private func writeSnapshot(_ data: Data, directory dir: Int32, verify: () throws -> Void) throws {
+        guard data.count <= 8 * 1024 * 1024 else { throw DeviceSMSJournalError.capacity }
+        try verify()
+        let name = ".issuance-" + UUID().uuidString
+        let fd = openat(dir, name, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o600)
+        guard fd >= 0 else { throw DeviceSMSJournalError.unavailable }
+        defer { close(fd); unlinkat(dir, name, 0) }
+        _ = try inspect(fd)
+        try writeAll(data, to: fd)
         #if SWITCH_DEVICE_SMS_TESTS
         try fault?("before-rename")
         #endif
+        try verify()
         try checked(renameat(dir, name, dir, "issuance.json"))
         #if SWITCH_DEVICE_SMS_TESTS
         try fault?("after-rename")
         #endif
+        try verify()
         try checked(fsync(dir))
         guard try readSnapshot(dir) == data else { throw DeviceSMSJournalError.unavailable }
+        try verify()
     }
     private func transaction<T>(_ body: (inout [DeviceSMSIssuanceCheckpoint]) throws -> T) throws -> T {
-        localLock.lock()
+        guard localLock.try() else { throw DeviceSMSJournalError.conflict }
         defer { localLock.unlock() }
         guard !unhealthy else { throw DeviceSMSJournalError.unavailable }
         do {
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
+            let parentURL = directory.deletingLastPathComponent()
+            let name = directory.lastPathComponent
+            guard !name.isEmpty && name != "." && name != ".." else { throw DeviceSMSJournalError.invalid }
+            try FileManager.default.createDirectory(at: parentURL, withIntermediateDirectories: true,
                 attributes: [.posixPermissions: 0o700])
-            let dir = open(directory.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
-            guard dir >= 0 else { throw DeviceSMSJournalError.unavailable }
-            defer { close(dir) }
-            try validateFD(dir, directory: true)
-            let parent = open(directory.deletingLastPathComponent().path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+            let parent = open(parentURL.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
             guard parent >= 0 else { throw DeviceSMSJournalError.unavailable }
             defer { close(parent) }
-            try checked(fsync(parent)) // Persist the newly created journal directory itself.
-            var newLock = false
-            var lock = openat(dir, "issuance.lock", O_RDWR | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o600)
-            if lock >= 0 { newLock = true }
-            else if errno == EEXIST { lock = openat(dir, "issuance.lock", O_RDWR | O_NOFOLLOW | O_CLOEXEC) }
+            var parentInfo = stat()
+            try checked(fstat(parent, &parentInfo))
+            let anchorName = "." + name + ".issuance-anchor"
+            var virgin = false
+            var anchorFD = openat(parent, anchorName, O_RDWR | O_NOFOLLOW | O_CLOEXEC)
+            if anchorFD < 0 && errno == ENOENT {
+                var existing = stat()
+                // Existing journal directories cannot enroll a replacement anchor.
+                guard fstatat(parent, name, &existing, AT_SYMLINK_NOFOLLOW) != 0 && errno == ENOENT
+                else { throw DeviceSMSJournalError.unavailable }
+                anchorFD = openat(parent, anchorName, O_RDWR | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o600)
+                if anchorFD >= 0 { virgin = true }
+                else if errno == EEXIST { anchorFD = openat(parent, anchorName, O_RDWR | O_NOFOLLOW | O_CLOEXEC) }
+            }
+            guard anchorFD >= 0 else { throw DeviceSMSJournalError.unavailable }
+            defer { close(anchorFD) }
+            _ = try inspect(anchorFD)
+            try lockNow(anchorFD)
+            defer { flock(anchorFD, LOCK_UN) }
+            try namedIdentity(anchorFD, parent: parent, name: anchorName)
+            if virgin { try checked(mkdirat(parent, name, 0o700)) }
+            let dir = openat(parent, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+            guard dir >= 0 else { throw DeviceSMSJournalError.unavailable }
+            defer { close(dir) }
+            let directoryInfo = try inspect(dir, directory: true)
+            let anchor: Anchor
+            if virgin {
+                anchor = Anchor(identity: UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased(),
+                    directoryDevice: Int64(directoryInfo.st_dev), directoryInode: directoryInfo.st_ino)
+                try writeAll(JSONEncoder().encode(anchor), to: anchorFD)
+                try checked(fsync(parent))
+            } else {
+                anchor = try JSONDecoder().decode(Anchor.self, from: readFile(anchorFD, limit: 2048))
+            }
+            guard anchor.version == 1, DeviceSMSAuthorityStatus.hex32(anchor.identity),
+                  anchor.directoryDevice == Int64(directoryInfo.st_dev), anchor.directoryInode == directoryInfo.st_ino
+            else { throw DeviceSMSJournalError.invalid }
+            // Only the one virgin enrollment can create the inner lock.
+            let flags = O_RDWR | O_NOFOLLOW | O_CLOEXEC | (virgin ? O_CREAT | O_EXCL : 0)
+            let lock = openat(dir, "issuance.lock", flags, 0o600)
             guard lock >= 0 else { throw DeviceSMSJournalError.unavailable }
             defer { close(lock) }
-            try validateFD(lock)
-            while flock(lock, LOCK_EX) != 0 {
-                guard errno == EINTR else { throw DeviceSMSJournalError.unavailable }
-            }
+            let lockInfo = try inspect(lock)
+            try lockNow(lock)
             defer { flock(lock, LOCK_UN) }
-            if newLock {
-                var info = stat()
-                guard fstatat(dir, "issuance.json", &info, AT_SYMLINK_NOFOLLOW) != 0 && errno == ENOENT
-                else { throw DeviceSMSJournalError.unavailable }
-                try checked(fsync(lock))
-                try writeSnapshot(JSONEncoder().encode(Envelope()), directory: dir)
+            if virgin { try writeAll(Data((anchor.identity + "\n").utf8), to: lock) }
+            else {
+                guard try readFile(lock, limit: 33) == Data((anchor.identity + "\n").utf8)
+                else { throw DeviceSMSJournalError.invalid }
+            }
+            let anchorInfo = try inspect(anchorFD)
+            let verify = {
+                var namedParent = stat()
+                try self.checked(lstat(parentURL.path, &namedParent))
+                guard namedParent.st_dev == parentInfo.st_dev, namedParent.st_ino == parentInfo.st_ino,
+                      namedParent.st_mode & S_IFMT == S_IFDIR else { throw DeviceSMSJournalError.unavailable }
+                try self.namedIdentity(dir, parent: parent, name: name, directory: true)
+                try self.namedIdentity(anchorFD, parent: parent, name: anchorName)
+                try self.namedIdentity(lock, parent: dir, name: "issuance.lock")
+            }
+            try verify()
+            if virgin {
+                let envelope = Envelope(authority: anchor.identity, anchorDevice: Int64(anchorInfo.st_dev),
+                    anchorInode: anchorInfo.st_ino, lockDevice: Int64(lockInfo.st_dev), lockInode: lockInfo.st_ino)
+                try writeSnapshot(JSONEncoder().encode(envelope), directory: dir, verify: verify)
             }
             let old = try readSnapshot(dir)
             var envelope = try JSONDecoder().decode(Envelope.self, from: old)
-            guard envelope.version == 1, envelope.checkpoints.count <= 64 else { throw DeviceSMSJournalError.invalid }
+            guard envelope.version == 1, envelope.authority == anchor.identity,
+                  envelope.anchorDevice == Int64(anchorInfo.st_dev), envelope.anchorInode == anchorInfo.st_ino,
+                  envelope.lockDevice == Int64(lockInfo.st_dev), envelope.lockInode == lockInfo.st_ino,
+                  envelope.checkpoints.count <= 64 else { throw DeviceSMSJournalError.invalid }
             var ids = Set<String>()
             for checkpoint in envelope.checkpoints {
                 try checkpoint.validate()
@@ -264,8 +351,9 @@ final class DeviceSMSIssuanceJournal {
             if previous != envelope.checkpoints {
                 let encoder = JSONEncoder()
                 encoder.outputFormatting = [.sortedKeys]
-                try writeSnapshot(encoder.encode(envelope), directory: dir)
+                try writeSnapshot(encoder.encode(envelope), directory: dir, verify: verify)
             }
+            try verify()
             return result
         } catch DeviceSMSJournalError.conflict { throw DeviceSMSJournalError.conflict }
         catch DeviceSMSJournalError.capacity { throw DeviceSMSJournalError.capacity }
@@ -311,7 +399,6 @@ final class DeviceSMSIssuanceJournal {
         try transaction { rows in
             guard let index = try rows.firstIndex(where: { try $0.request.clientRequestID == record.id }) else { return }
             let checkpoint = rows[index]
-            // A same-sequence CAS winner is not proof about the loser's nonce.
             guard try record.matches(checkpoint.request),
                   try record.intentNonce == checkpoint.reserve.intentNonce else { return }
             rows.remove(at: index)
