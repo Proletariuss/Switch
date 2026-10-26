@@ -33,6 +33,17 @@ struct DeviceSMSRecoveryView: View {
                                         }
                                     }.help("只恢复本机归档，不再次发送短信")
                                 }
+                                if store.canResume(intent) {
+                                    Button("继续原请求") { Task { _ = try? await store.resume(intent) } }
+                                        .help("使用原签发身份和原业务内容，不创建新请求")
+                                }
+                                if intent.version == 2 && intent.state == .reserved {
+                                    Button("取消未提交") { Task { _ = try? await store.cancelReservation(intent) } }
+                                        .help("仅取消服务端确认尚未绑定提交的原候选；未知结果不能取消")
+                                }
+                                Button { Task { _ = await store.query(intent) } } label: {
+                                    Image(systemName: "magnifyingglass")
+                                }.help("查询原请求")
                                 Button { newSend = intent } label: {
                                     Image(systemName: "arrow.clockwise").frame(width: 16, height: 16)
                                 }.help("重新发送").accessibilityLabel("重新发送")
