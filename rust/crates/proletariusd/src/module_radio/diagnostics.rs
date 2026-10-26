@@ -38,8 +38,18 @@ impl Snapshot {
             owner: OwnerFacts {
                 owner,
                 shared_voice_pins: count(state.active_shared_voice_pins),
-                voice_pins: count(state.reservation.as_ref().map_or(0, |r| r.active_voice_pins)),
-                reconnect_pins: count(state.reservation.as_ref().map_or(0, |r| r.active_reconnect_pins)),
+                voice_pins: count(
+                    state
+                        .reservation
+                        .as_ref()
+                        .map_or(0, |r| r.active_voice_pins),
+                ),
+                reconnect_pins: count(
+                    state
+                        .reservation
+                        .as_ref()
+                        .map_or(0, |r| r.active_reconnect_pins),
+                ),
                 queued_jobs: count(state.jobs),
                 outcome_unknown: state.observed.uncertain
                     || state.reservation.as_ref().is_some_and(|r| r.unknown),
@@ -71,7 +81,14 @@ impl Service {
         snapshot: Snapshot,
         elapsed: Duration,
     ) {
-        evidence::record(stage, result, code, snapshot.transport, snapshot.owner, elapsed);
+        evidence::record(
+            stage,
+            result,
+            code,
+            snapshot.transport,
+            snapshot.owner,
+            elapsed,
+        );
         #[cfg(test)]
         if let Some(sender) = self.0.module_diagnostic_fixture.lock().unwrap().as_ref() {
             let _ = sender.try_send(evidence::Event {
@@ -93,8 +110,11 @@ impl Service {
     ) -> Result<Value, Failure> {
         let started = Instant::now();
         self.record_module_snapshot(
-            Stage::Admission, ResultKind::Started, Code::None,
-            self.module_diagnostic_snapshot(), Duration::ZERO,
+            Stage::Admission,
+            ResultKind::Started,
+            Code::None,
+            self.module_diagnostic_snapshot(),
+            Duration::ZERO,
         );
         let result = self.submit_with_binding(job, Some(binding)).await;
         let (stage, outcome, code) = match &result {
@@ -103,13 +123,21 @@ impl Service {
                 // This records actor admission, not proof of a physical write.
                 // The error code is the returned failure; owner facts below
                 // are a later observation, never a fabricated atomic cause.
-                if error.admitted { Stage::Physical } else { Stage::Admission },
+                if error.admitted {
+                    Stage::Physical
+                } else {
+                    Stage::Admission
+                },
                 ResultKind::Failed,
                 Code::from_error(error.failure.code),
             ),
         };
         self.record_module_snapshot(
-            stage, outcome, code, self.module_diagnostic_snapshot(), started.elapsed(),
+            stage,
+            outcome,
+            code,
+            self.module_diagnostic_snapshot(),
+            started.elapsed(),
         );
         result.map_err(|error| error.failure)
     }

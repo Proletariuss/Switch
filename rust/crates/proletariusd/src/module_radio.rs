@@ -63,7 +63,8 @@ struct Inner {
     #[cfg(test)]
     usbnet_waiters: std::sync::atomic::AtomicUsize,
     #[cfg(test)]
-    module_diagnostic_fixture: Mutex<Option<tokio::sync::mpsc::Sender<crate::support_diagnostics::module::Event>>>,
+    module_diagnostic_fixture:
+        Mutex<Option<tokio::sync::mpsc::Sender<crate::support_diagnostics::module::Event>>>,
 }
 struct State {
     producer: String,
@@ -1118,7 +1119,8 @@ impl Service {
     }
 
     pub(crate) async fn reserve_esim(&self) -> Result<EsimReservation, Failure> {
-        self.reserve_esim_bound(self.capture_esim_acquire_binding()).await
+        self.reserve_esim_bound(self.capture_esim_acquire_binding())
+            .await
     }
 
     /// Reads USB and IMS/VoLTE call-mode facts under one physical radio

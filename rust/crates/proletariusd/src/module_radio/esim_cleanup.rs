@@ -1,6 +1,6 @@
 //! Retain eSIM release until the exact physical owner has stopped borrowing it.
-use super::*;
 use super::diagnostics::Snapshot;
+use super::*;
 use crate::support_diagnostics::module::{Code, ResultKind, Stage};
 
 pub(super) struct AcquireBinding {
@@ -40,7 +40,10 @@ impl Service {
         }
     }
 
-    pub(super) async fn reserve_esim_bound(&self, captured: AcquireBinding) -> Result<EsimReservation, Failure> {
+    pub(super) async fn reserve_esim_bound(
+        &self,
+        captured: AcquireBinding,
+    ) -> Result<EsimReservation, Failure> {
         let sequence = NEXT_NATIVE_ESIM_RESERVATION.fetch_add(1, Ordering::Relaxed);
         if sequence == 0 || sequence == u64::MAX {
             return Err(Failure::new(
@@ -79,7 +82,8 @@ impl Service {
         };
         let (registration, snapshot) = {
             let mut state = self.0.state.lock().unwrap_or_else(|e| e.into_inner());
-            let result = self.validate_esim_release(&state, &reservation, &identity)
+            let result = self
+                .validate_esim_release(&state, &reservation, &identity)
                 .and_then(|()| {
                     if state.esim_release_pending.is_some() {
                         return Err(Failure::busy());
@@ -94,8 +98,11 @@ impl Service {
         };
         if let Err(error) = registration {
             self.record_module_snapshot(
-                Stage::ReservationRelease, ResultKind::Failed, Code::from_error(error.code),
-                snapshot, started.elapsed(),
+                Stage::ReservationRelease,
+                ResultKind::Failed,
+                Code::from_error(error.code),
+                snapshot,
+                started.elapsed(),
             );
             return Err(error);
         }
@@ -108,17 +115,25 @@ impl Service {
         tokio::spawn(async move {
             let _obligation = obligation;
             service.record_module_snapshot(
-                Stage::ReservationRelease, ResultKind::Started, Code::None,
-                snapshot, started.elapsed(),
+                Stage::ReservationRelease,
+                ResultKind::Started,
+                Code::None,
+                snapshot,
+                started.elapsed(),
             );
-            let result = service.finish_esim_release(reservation, identity, started).await;
+            let result = service
+                .finish_esim_release(reservation, identity, started)
+                .await;
             let (outcome, code) = match &result {
                 Ok(()) => (ResultKind::Succeeded, Code::None),
                 Err(error) => (ResultKind::Failed, Code::from_error(error.code)),
             };
             service.record_module_snapshot(
-                Stage::ReservationRelease, outcome, code,
-                service.module_diagnostic_snapshot(), started.elapsed(),
+                Stage::ReservationRelease,
+                outcome,
+                code,
+                service.module_diagnostic_snapshot(),
+                started.elapsed(),
             );
             result
         })
@@ -203,8 +218,11 @@ impl Service {
             };
             drop(gate);
             self.record_module_snapshot(
-                Stage::ReservationRelease, ResultKind::Deferred, reason,
-                snapshot, started.elapsed(),
+                Stage::ReservationRelease,
+                ResultKind::Deferred,
+                reason,
+                snapshot,
+                started.elapsed(),
             );
             finished.await;
         }

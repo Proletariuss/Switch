@@ -223,8 +223,13 @@ pub(crate) trait Transport: Send {
         max_bytes: usize,
     ) -> Result<String, TransportError> {
         let response = self.command(command, None, timeout, max_bytes)?;
-        if response.lines().map(str::trim).filter(|line| !line.is_empty())
-            .next_back().and_then(|line| terminal_line(line.as_bytes())).is_none()
+        if response
+            .lines()
+            .map(str::trim)
+            .filter(|line| !line.is_empty())
+            .next_back()
+            .and_then(|line| terminal_line(line.as_bytes()))
+            .is_none()
         {
             return Err(incomplete_status_response(response.as_bytes()));
         }
@@ -765,9 +770,13 @@ fn terminal_line(line: &[u8]) -> Option<bool> {
         return Some(true);
     }
     let upper = line.to_ascii_uppercase();
-    if upper == "ERROR" || ["+CME ERROR:", "+CMS ERROR:"].iter().any(|prefix| {
-        upper.strip_prefix(*prefix).is_some_and(|detail| !detail.trim().is_empty())
-    }) {
+    if upper == "ERROR"
+        || ["+CME ERROR:", "+CMS ERROR:"].iter().any(|prefix| {
+            upper
+                .strip_prefix(*prefix)
+                .is_some_and(|detail| !detail.trim().is_empty())
+        })
+    {
         return Some(false);
     }
     None
