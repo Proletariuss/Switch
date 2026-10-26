@@ -21,6 +21,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ inputs.commit }}
+          fetch-depth: 0
           path: src
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
@@ -31,6 +32,8 @@ jobs:
         working-directory: src
         env:
           EXPECTED_COMMIT: ${{ inputs.commit }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
           [[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]]
@@ -39,7 +42,7 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: software-report-portable
+          name: software-report-${{ github.run_attempt }}-portable
           path: reports/
           if-no-files-found: error
           retention-days: 7
@@ -76,7 +79,7 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: software-report-rust
+          name: software-report-${{ github.run_attempt }}-rust
           path: reports/
           if-no-files-found: error
           retention-days: 7
@@ -107,7 +110,7 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: software-report-swift-${{ matrix.suite }}
+          name: software-report-${{ github.run_attempt }}-swift-${{ matrix.suite }}
           path: reports/
           if-no-files-found: error
           retention-days: 7
@@ -129,7 +132,7 @@ jobs:
         run: brew install libusb xcodegen
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          pattern: software-report-*
+          pattern: software-report-${{ github.run_attempt }}-*
           path: reports
           merge-multiple: true
       - name: Record source identity before build
@@ -152,7 +155,7 @@ jobs:
           set -euo pipefail
           python3 scripts/ci/run-report.py app-build scripts/build.sh
           python3 scripts/ci/run-report.py bundle-audit python3 scripts/audit-release-bundle.py ../dist/Switch.app
-          python3 scripts/ci/run-report.py signature codesign --verify --deep --strict ../dist/Switch.app
+          python3 scripts/ci/run-report.py signature bash scripts/ci/verify-candidate-signature.sh ../dist/Switch.app
       - name: Package the same audited app with provenance
         working-directory: src
         env:
@@ -162,22 +165,26 @@ jobs:
           python3 scripts/ci/package-candidate.py verify ../candidate
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: Switch-candidate-${{ inputs.commit }}
+          name: Switch-candidate-${{ inputs.commit }}-attempt-${{ github.run_attempt }}
           path: candidate/
           if-no-files-found: error
           retention-days: 7
       - name: Download the actual uploaded candidate for the roundtrip smoke check
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          name: Switch-candidate-${{ inputs.commit }}
+          name: Switch-candidate-${{ inputs.commit }}-attempt-${{ github.run_attempt }}
           path: uploaded-candidate
       - name: Verify uploaded bytes and executable permissions
         working-directory: src
-        run: python3 scripts/ci/run-report.py upload-roundtrip python3 scripts/ci/package-candidate.py verify ../uploaded-candidate
+        run: |
+          set -euo pipefail
+          cmp ../candidate/SHA256SUMS ../uploaded-candidate/SHA256SUMS
+          (cd ../uploaded-candidate && shasum -a 256 -c SHA256SUMS)
+          python3 scripts/ci/run-report.py upload-roundtrip python3 scripts/ci/package-candidate.py verify ../uploaded-candidate
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: software-report-candidate-and-upload
+          name: software-report-${{ github.run_attempt }}-candidate-and-upload
           path: reports/
           if-no-files-found: error
           retention-days: 7

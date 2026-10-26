@@ -106,6 +106,7 @@ manifest = {
     "acceptance": {"scope": "github-hosted-offline-software-gates-and-bundle-audit", "product_acceptance_complete": False, "device_acceptance": "UNVERIFIED", "macos27_runtime": "UNVERIFIED", "signature": "ad-hoc", "notarized": False, "original_v3_51_release": False},
     "artifact": {"name": archive.name, "sha256": sha(archive), "size": archive.stat().st_size},
     "app_inventory": records,
+    "app_tree_sha256": hashlib.sha256(json.dumps(records, sort_keys=True, separators=(",", ":")).encode()).hexdigest(),
     "reports_sha256": {p.name: sha(p) for p in sorted(reports.iterdir()) if p.is_file()},
 }
 (delivery / "candidate-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")

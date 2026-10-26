@@ -33,9 +33,9 @@ jobs:
             [[ "$REQUESTED_SHA" =~ ^[0-9a-f]{40}$ ]]
             [[ "$REQUESTED_SHA" == "$commit" ]]
           fi
-          set -- $(scripts/version.sh)
+          version="$(scripts/version.sh | cut -d ' ' -f 1)"
           if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
-            [[ "$GITHUB_REF_NAME" == "v$1" ]]
+            [[ "$GITHUB_REF_NAME" == "v$version" ]]
           fi
           echo "commit=$commit" >> "$GITHUB_OUTPUT"
   candidate:
