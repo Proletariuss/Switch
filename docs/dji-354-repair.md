@@ -97,6 +97,16 @@ begrenzte, versionskonsistente Cloud-Vorbereitung korrigiert.
 Die anschließende Lesewarte-Erweiterung in `22aad7fa` wurde separat auf
 Fristen, Gerätebindung, Abbruch, Konfliktschutz und HTTP-Einmaligkeit kreuzgeprüft.
 
+Eine erste Cloud-Prüfung deckte außerdem eine bestehende Race Condition der
+Swift-Test-Fixture auf: feste Scheduler-Yields konnten denselben Request zweimal
+abschließen. Die beiden betroffenen Testdateien warten nun kausal auf einen neuen,
+pfadgenauen Request und das Ende der tatsächlichen Store-Tasks; die strengen
+Einmaligkeits- und Negativassertionen bleiben erhalten. Nur Tests wurden geändert.
+Die unabhängig geprüfte Änderung in `23ee8748` bestand
+[fünf gezielte Wiederholungen und die vollständige Swift-Models-Suite](https://github.com/Proletariuss/Switch/actions/runs/40420848246).
+Testseitige Reflection bindet die Barrieren an die aktuellen privaten Lifecycle-Felder;
+eine Änderung dieser Felder muss ausdrücklich auch die Fixture aktualisieren.
+
 Die verbindlichen Testergebnisse, der endgültige Commit und das App-Artefakt
 werden im zugehörigen PR und seinen GitHub-Läufen festgehalten.
 Erforderlich bleiben die unveränderten gemeinsamen Rust-/Swift-/App-Gates,
