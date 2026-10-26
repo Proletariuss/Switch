@@ -260,7 +260,7 @@ class PublicationStateFixtures(unittest.TestCase):
             "EXPECTED_VERSION": VERSION, "EXPECTED_BUILD": BUILD, "GITHUB_SHA": COMMIT,
             "GITHUB_RUN_ID": str(RUN), "GITHUB_RUN_ATTEMPT": str(attempt), "GITHUB_STEP_SUMMARY": "synthetic-summary"}
         with mock.patch.dict(publisher.os.environ, environment), mock.patch.object(publisher, "GitHub", return_value=api), \
-                mock.patch("builtins.open", mock.mock_open()):
+                mock.patch("builtins.open", mock.mock_open()), mock.patch("sys.stdout", new_callable=io.StringIO):
             publisher.main()
 
     def test_fresh_publication_and_published_idempotent_readonly_retry(self):

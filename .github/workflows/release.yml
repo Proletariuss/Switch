@@ -42,7 +42,7 @@ jobs:
           python3 scripts/check-version-contract.py
           {
             echo "commit=$REQUESTED_SHA"
-            echo "tree=$(git rev-parse HEAD^{tree})"
+            echo "tree=$(git rev-parse 'HEAD^{tree}')"
             echo "version=$version"
             echo "build=$build"
           } >> "$GITHUB_OUTPUT"
