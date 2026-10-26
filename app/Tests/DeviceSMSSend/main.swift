@@ -256,7 +256,8 @@ struct DeviceSMSSendTests {
             let bound = DeviceSMSIntentRequest(clientRequestID: request.clientRequestID,
                                                phone: request.phone, message: request.message,
                                                device: request.device, expectedSubscriptionID: subscription, identityVersion: request.identityVersion, intentNonce: request.intentNonce)
-            let row = record(bound)
+            var row = record(bound)
+            row.expectedSubscriptionID = request.expectedSubscriptionID
             api.rows[row.id] = row
             return row
         }
@@ -585,6 +586,128 @@ struct DeviceSMSSendTests {
         let rows = try journal.entries()
         try expect(rows.count == 1 && rows[0].phase == .dispatched, "cross-process claim not durable")
     }
+    static func expectJournalRefused(_ journal: DeviceSMSIssuanceJournal, _ message: String) throws {
+        do { _ = try journal.entries(); throw FixtureFailure(description: message) }
+        catch is DeviceSMSJournalError {}
+    }
+    static func testMissingAndReplacedLocksCannotReenroll() async throws {
+        for replacement in ["inner-missing", "inner-replaced", "anchor-missing", "anchor-replaced", "directory-replaced"] {
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent("sms-lock-" + UUID().uuidString)
+            let moved = directory.appendingPathExtension("old")
+            defer { try? FileManager.default.removeItem(at: directory); try? FileManager.default.removeItem(at: moved) }
+            let original = DeviceSMSIssuanceJournal(directory: directory)
+            _ = try original.insert(checkpoint(), explicitNew: false)
+            let anchor = directory.deletingLastPathComponent().appendingPathComponent("." + directory.lastPathComponent + ".issuance-anchor")
+            let lock = replacement.hasPrefix("anchor") ? anchor : directory.appendingPathComponent("issuance.lock")
+            if replacement == "directory-replaced" {
+                try FileManager.default.moveItem(at: directory, to: moved)
+                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
+            } else if replacement.hasSuffix("missing") {
+                try FileManager.default.removeItem(at: lock)
+            } else {
+                let bytes = try Data(contentsOf: lock)
+                try FileManager.default.moveItem(at: lock, to: lock.appendingPathExtension("old"))
+                try bytes.write(to: lock)
+                try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: lock.path)
+            }
+            try expectJournalRefused(original, "existing object accepted replaced journal authority")
+            try expectJournalRefused(DeviceSMSIssuanceJournal(directory: directory), "new object repaired historical lock loss/replacement")
+            if replacement.hasSuffix("missing") {
+                try expect(!FileManager.default.fileExists(atPath: lock.path), "refusal created a replacement historical lock")
+            }
+        }
+    }
+    static func testDirectorySwapDuringCommitCannotAuthorizeNetwork() async throws {
+        let api = FixtureAPI()
+        let moved = api.journalDirectory.appendingPathExtension("old")
+        defer { try? FileManager.default.removeItem(at: api.journalDirectory); try? FileManager.default.removeItem(at: moved) }
+        let journal = DeviceSMSIssuanceJournal(directory: api.journalDirectory)
+        _ = try journal.entries()
+        journal.fault = { boundary in
+            if boundary == "before-rename" {
+                try FileManager.default.moveItem(at: api.journalDirectory, to: moved)
+                try FileManager.default.createDirectory(at: api.journalDirectory, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
+            }
+        }
+        let store = DeviceSMSSendStore(api: api, journal: journal)
+        store.setAvailable(true)
+        try await pending { try await send(store) }
+        try expect(api.reserveBytes.isEmpty && api.submitCalls.isEmpty, "directory swap returned a durable candidate to network")
+        try expectJournalRefused(DeviceSMSIssuanceJournal(directory: api.journalDirectory), "new directory reset journal authority")
+    }
+    static func testOtherProcessLockDoesNotBlockMainActor() async throws {
+        let api = FixtureAPI()
+        defer { try? FileManager.default.removeItem(at: api.journalDirectory) }
+        let store = makeStore(api)
+        await store.refresh()
+        let child = Process()
+        child.executableURL = URL(fileURLWithPath: CommandLine.arguments[0])
+        child.arguments = ["--journal-hold", api.journalDirectory.path]
+        try child.run()
+        let ready = api.journalDirectory.appendingPathComponent("held.ready")
+        for _ in 0..<500 {
+            if FileManager.default.fileExists(atPath: ready.path) { break }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        guard FileManager.default.fileExists(atPath: ready.path) else { child.terminate(); throw FixtureFailure(description: "child never held lock") }
+        let start = Date.timeIntervalSinceReferenceDate
+        try await pending { try await send(store) }
+        let elapsed = Date.timeIntervalSinceReferenceDate - start
+        try expect(elapsed < 1 && child.isRunning && api.reserveBytes.isEmpty && api.authorityCalls == 0,
+                   "busy journal blocked UI or allowed a mutation")
+        try Data("release".utf8).write(to: api.journalDirectory.appendingPathComponent("held.release"))
+        child.waitUntilExit()
+        let result = try await send(store)
+        try expect(result.archiveConfirmed, "temporary lock contention permanently poisoned journal")
+    }
+    static func testStoredOversizeIsStickyCorruption() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("sms-oversize-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let journal = DeviceSMSIssuanceJournal(directory: directory)
+        _ = try journal.entries()
+        let path = directory.appendingPathComponent("issuance.json")
+        let original = try Data(contentsOf: path)
+        try Data(repeating: 0, count: 8 * 1024 * 1024 + 1).write(to: path)
+        try expectJournalRefused(journal, "oversize stored file accepted")
+        try original.write(to: path)
+        try expectJournalRefused(journal, "same lifetime forgot stored corruption after replacement")
+    }
+    static func testOriginalExpectedSubscriptionDriftCannotClearOrClaim() async throws {
+        let api = FixtureAPI()
+        defer { try? FileManager.default.removeItem(at: api.journalDirectory) }
+        api.prepareHook = { request in
+            var response = record(request)
+            response.expectedSubscriptionID = "changed-original-expectation"
+            return response
+        }
+        let store = makeStore(api)
+        try await pending { try await send(store) }
+        try expect(api.submitCalls.isEmpty, "changed original expected subscription allowed claim")
+        let journal = DeviceSMSIssuanceJournal(directory: api.journalDirectory)
+        let saved = try journal.entries()[0]
+        var terminal = record(try saved.request, state: .accepted, canSubmit: false, archived: true)
+        terminal.expectedSubscriptionID = "changed-original-expectation"
+        try journal.confirmTerminal(terminal)
+        let rows = try journal.entries()
+        try expect(rows.count == 1 && rows[0].sameBytes(saved), "mismatched original payload cleared journal")
+        terminal.expectedSubscriptionID = try saved.request.expectedSubscriptionID
+        terminal.intentNonce = nil
+        try journal.confirmTerminal(terminal)
+        let retained = try journal.entries()
+        try expect(retained.count == 1, "missing v2 nonce cleared journal")
+    }
+    static func journalHoldWorker() throws {
+        let directory = URL(fileURLWithPath: CommandLine.arguments[2])
+        let fd = open(directory.appendingPathComponent("issuance.lock").path, O_RDWR | O_NOFOLLOW)
+        guard fd >= 0 && flock(fd, LOCK_EX) == 0 else { throw FixtureFailure(description: "hold worker cannot lock") }
+        defer { flock(fd, LOCK_UN); close(fd) }
+        try Data("ready".utf8).write(to: directory.appendingPathComponent("held.ready"))
+        for _ in 0..<500 {
+            if FileManager.default.fileExists(atPath: directory.appendingPathComponent("held.release").path) { return }
+            usleep(10_000)
+        }
+        throw FixtureFailure(description: "hold worker timed out")
+    }
     static func journalWorker() throws {
         let journal = DeviceSMSIssuanceJournal(directory: URL(fileURLWithPath: CommandLine.arguments[2]))
         do {
@@ -594,11 +717,20 @@ struct DeviceSMSSendTests {
         } catch DeviceSMSJournalError.conflict { exit(10) }
     }
     static func main() async throws {
+        if CommandLine.arguments.count == 3 && CommandLine.arguments[1] == "--journal-hold" {
+            try journalHoldWorker()
+            return
+        }
         if CommandLine.arguments.count == 3 && CommandLine.arguments[1] == "--journal-claim" {
             try journalWorker()
             return
         }
         let tests: [(String, () async throws -> Void)] = [
+            ("missing/replaced lock and directory authority", testMissingAndReplacedLocksCannotReenroll),
+            ("directory swap cannot authorize network", testDirectorySwapDuringCommitCannotAuthorizeNetwork),
+            ("live child lock quickly rejects UI mutation", testOtherProcessLockDoesNotBlockMainActor),
+            ("stored oversize is sticky corruption", testStoredOversizeIsStickyCorruption),
+            ("original expected subscription and nonce", testOriginalExpectedSubscriptionDriftCannotClearOrClaim),
             ("reserve ACK loss reopens exact bytes", testReserveACKLossReopensExactBytes),
             ("journal durability faults precede network", testJournalDurabilityFailurePrecedesNetwork),
             ("journal corruption/missing/permissions", testCorruptionPermissionsAndMissingSnapshotFailClosed),
