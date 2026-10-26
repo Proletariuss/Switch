@@ -34,17 +34,19 @@ Diese Regeln gelten für alle Nutzer. Sie beschreiben die Verhaltensanforderunge
 
 ## Projekt und Veröffentlichungsstand
 
-Switch bündelt USB/QMI-Module, PC/SC- und BLE-Kartenleser, eSIM-Profile auf physischen Karten, VoWiFi/IMS, SMS und Telefonie in einer macOS-Anwendung. Der aktuelle Quellstand bereitet **3.52, Build 352, mit Rust-Backend 3.52.0** vor. Das Versionsetikett allein bestätigt weder eine abgeschlossene Prüfung noch eine veröffentlichte Binärdatei; maßgeblich sind die Anlagen und Nachweise des zugehörigen GitHub Release.
+Switch bündelt USB/QMI-Module, PC/SC- und BLE-Kartenleser, eSIM-Profile auf physischen Karten, VoWiFi/IMS, SMS und Telefonie in einer macOS-Anwendung. Der aktuelle Softwarestand ist **3.52, Build 352, mit Rust-Backend 3.52.0**. Das Versionsetikett allein bestätigt weder eine abgeschlossene Prüfung noch eine veröffentlichte Binärdatei; maßgeblich sind die Anlagen und Nachweise des zugehörigen GitHub Release.
 
 Das Repository ist seit dem **26. Oktober 2026 öffentlich**. Die Veröffentlichung des Quellcodes bestätigt keine vollständige Abnahme aller Geräte, Netzbetreiber oder Dauerbetriebsszenarien.
 
-Der Tag `v3.51` bleibt unverändert dem eingefrorenen Quellstand des historischen DMG zugeordnet. Neue Versionen erhalten einen eigenen höheren Versionsstand, einen neuen vollständigen Cloud-Prüflauf und ein GitHub Release für genau denselben Quell-SHA. Das 3.51-DMG wird weder umbenannt noch als 3.52 ausgeliefert. Der [Cloud-Veröffentlichungsvertrag](docs/CLOUD_RELEASE_CONTRACT.md) beschreibt den einzigen manuellen Einstieg über `release.yml`; historische Herkunftsnachweise stehen in [SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md).
+Der Tag `v3.51` bleibt unverändert dem eingefrorenen Quellstand des historischen DMG zugeordnet. Neue Versionen erhalten einen eigenen höheren Versionsstand, einen neuen vollständigen Cloud-Prüflauf und ein GitHub Release für genau denselben Quell-SHA. Das 3.51-DMG wird weder umbenannt noch als 3.52 ausgeliefert. Der [Cloud-Veröffentlichungsvertrag](docs/CLOUD_RELEASE_CONTRACT.md) beschreibt den Einstieg für neue Versionen über `release.yml` und die gesonderte DMG-Ableitung aus bereits geprüften App-Bytes; historische Herkunftsnachweise stehen in [SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md).
 
 ## Download
 
-[Neueste veröffentlichte Version](https://github.com/Proletariuss/Switch/releases/latest) · [Release 3.52 nach seiner Freigabe](https://github.com/Proletariuss/Switch/releases/tag/v3.52)
+[Neueste veröffentlichte Version](https://github.com/Proletariuss/Switch/releases/latest) · [Release 3.52](https://github.com/Proletariuss/Switch/releases/tag/v3.52)
 
-Neue Releases liefern einen `Switch-<Version>-candidate-<Commit-SHA>-macOS27-arm64.app.tar.gz`, das unveränderte `candidate-manifest.json`, `test-reports.tar.gz` und eine veröffentlichungsbezogene `SHA256SUMS`. Der SHA im Dateinamen bindet die App an ihren geprüften Quellstand. Ein noch nicht vorhandenes Release ist nicht als abgeschlossen anzusehen; bis zur Freigabe kann „Neueste Version“ weiterhin auf 3.51 zeigen. Für 3.52 wird kein neues DMG erzeugt.
+Das bevorzugte Installationspaket heißt `Switch_<version>.dmg`, für diese Version `Switch_3.52.dmg`. Es wird auf einem GitHub-macOS-Runner aus dem bereits geprüften App-Tarball des Commits `d17eca3305bd2204cc895fc13af8ee0e91173f8b` abgeleitet. Die enthaltenen App-Dateien, Rechte und symbolischen Links müssen unverändert bleiben; die App wird dabei weder neu gebaut noch neu signiert. Die DMG-Ergänzung ist erst verfügbar, wenn ihre geprüften Anlagen im Release erscheinen; diese Beschreibung bestätigt noch keine erfolgte DMG-Veröffentlichung.
+
+Die vier bisherigen Audit-Anlagen bleiben erhalten: `Switch-<Version>-candidate-<Commit-SHA>-macOS27-arm64.app.tar.gz`, `candidate-manifest.json`, `test-reports.tar.gz` und `SHA256SUMS`. Hinzu kommen das DMG, `DMG.sha256` und `dmg-provenance.json`. Der Herkunftsnachweis unterscheidet den ursprünglichen App-Quellstand vom Commit und GitHub-Lauf der Verpackungssteuerung. Künftige Releases sollen diesen DMG-Schritt automatisch an die erfolgreiche App-Veröffentlichung anschließen.
 
 ### Historisches Installationspaket 3.51
 
@@ -56,8 +58,8 @@ Neue Releases liefern einen `Switch-<Version>-candidate-<Commit-SHA>-macOS27-arm
 
 ## Installation
 
-1. Für neue Releases App-Tarball, Manifest, Testarchiv und `SHA256SUMS` aus derselben Veröffentlichung in einen gemeinsamen Ordner herunterladen und die Prüfsummen wie unten beschrieben kontrollieren.
-2. Das App-Archiv mit dem Archivierungsprogramm oder `tar -xzf <App-Dateiname>.app.tar.gz` entpacken und `Switch.app` in den Ordner „Programme“ ziehen. Nur beim historischen 3.51-DMG stattdessen das DMG öffnen und die enthaltene App kopieren.
+1. Sobald angeboten, `Switch_3.52.dmg`, `DMG.sha256` und `dmg-provenance.json` aus demselben Release herunterladen und die DMG-Prüfsumme wie unten beschrieben kontrollieren.
+2. Das DMG öffnen und `Switch.app` in den Ordner „Programme“ ziehen. Bis die DMG-Ergänzung veröffentlicht ist, bleibt der geprüfte App-Tarball verfügbar: zusammen mit den drei Audit-Begleitdateien herunterladen, `SHA256SUMS` prüfen, entpacken und die App nach „Programme“ kopieren.
 3. Bei Bedarf die von macOS angeforderten Berechtigungen für Bluetooth, Mitteilungen und Mikrofon erteilen.
 4. Das Paket ist ad hoc signiert und **nicht von Apple notarisiert**. Falls Gatekeeper den Start blockiert, zunächst Herkunft und Prüfsumme kontrollieren und die Freigabe anschließend unter „Systemeinstellungen → Datenschutz & Sicherheit“ vornehmen.
 
@@ -129,7 +131,7 @@ Die Skripte setzen die im Projekt festgelegte Anordnung mit benachbarten `build/
 
 ## Prüfstand und bekannte Grenzen
 
-Für 3.52 wird die vollständige Softwareprüfung einschließlich Rust, Swift, App-Build, Bundle-Identität und tatsächlichem Upload-Rücklesen erneut auf GitHub ausgeführt. Diese README behauptet keinen vorweggenommenen Erfolg. Die zugehörigen Release-Anlagen und ihr exakter SHA/Run bestimmen den nachgewiesenen Stand. Frühere 3.51-Läufe ersetzen diesen Nachweis nicht.
+Die veröffentlichten App-Anlagen für 3.52 stammen aus dem geprüften Commit `d17eca3305bd2204cc895fc13af8ee0e91173f8b` und [GitHub-Lauf 40314576638](https://github.com/Proletariuss/Switch/actions/runs/40314576638). Die DMG-Ableitung erhält eine eigene Prüfung: Dateisystemkontrolle, schreibgeschütztes Einhängen, vollständiger Abgleich des App-Inventars einschließlich Rechten und Links sowie strenge Signaturprüfung. Erst die zugehörigen Berichte und zurückgelesenen Release-Anlagen bestätigen deren Erfolg. Eine neue Verpackung erweitert die Geräte- oder Laufzeitabnahme nicht; frühere 3.51-Läufe ersetzen keinen versionsbezogenen Nachweis.
 
 Für die **historischen veröffentlichten 3.51-Artefakte** wurden folgende Prüfungen dokumentiert:
 
@@ -145,7 +147,13 @@ Die App-Pakete sind ad hoc signiert und nicht notarisiert; es ist kein von Apple
 
 ## Integrität prüfen
 
-Für neue Releases alle drei Nutzdaten-Anlagen und `SHA256SUMS` in denselben Ordner legen:
+Für das bevorzugte DMG die gleichnamige Release-Anlage und `DMG.sha256` in denselben Ordner legen:
+
+```bash
+shasum -a 256 -c DMG.sha256
+```
+
+`dmg-provenance.json` bindet die DMG-Prüfung an das ursprüngliche App-Manifest und den gesonderten Verpackungslauf. Für die unveränderten Audit-Anlagen App-Tarball, Originalmanifest, Testarchiv und `SHA256SUMS` gemeinsam herunterladen:
 
 ```bash
 shasum -a 256 -c SHA256SUMS
