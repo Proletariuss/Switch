@@ -86,7 +86,84 @@ private struct AcceptedESIMOperation: Decodable {
 private struct RadioATInput: Encodable { let command:String }
 private struct RequiredRadioResult:Decodable {let started:Bool}
 
+
+private final class SafeDiagnosticRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var values: [[String: Any]] = []
+    func append(_ value: [AnyHashable: Any]) {
+        let row = Dictionary(uniqueKeysWithValues: value.compactMap { key, value in
+            (key as? String).map { ($0, value) }
+        })
+        lock.lock(); values.append(row); lock.unlock()
+    }
+    func take() -> [[String: Any]] {
+        lock.lock(); defer { lock.unlock() }
+        let result = values; values = []; return result
+    }
+}
+
 @main enum APIRequestPolicyTests {
+
+    private static func observedRequestPrivacy() async throws {
+        let captured = SafeDiagnosticRecorder()
+        let observer = NotificationCenter.default.addObserver(
+            forName: Notification.Name("Switch.SafeAPIDiagnostic.v1"), object: nil, queue: nil
+        ) { notice in if let fields = notice.userInfo { captured.append(fields) } }
+        defer { NotificationCenter.default.removeObserver(observer) }
+        let secret = "PRIVATE_FIXTURE_phone_15550009876_password_body_token"
+        let id = UUID().uuidString.lowercased()
+        let payload = try JSONSerialization.data(withJSONObject: [
+            "client_request_id": id, "number": secret, "text": secret, "token": secret
+        ])
+        UnixSocketURLProtocol.configure(status: 503, body: "{\"error\":\"\(secret)\",\"code\":\"\(secret)\"}")
+        do {
+            let _: EmptyResponse = try await APIClient().upload("api/sms/send?password=\(secret)", data: payload)
+            throw CheckFailure(description: "private HTTP error fixture succeeded")
+        } catch is APIError {}
+        let response = captured.take()
+        let allowed: Set<String> = ["schema_version", "time_ms", "correlation_id", "request_id", "route",
+            "method", "stage", "status", "error_domain", "error_code", "duration_ms"]
+        try expect(response.count == 2, "API observer did not record exactly start/response")
+        try expect(response.allSatisfy { Set($0.keys).isSubset(of: allowed) }, "API observer emitted a free-form field")
+        try expect(response.map { $0["stage"] as? String } == ["started", "response"], "API stages changed")
+        try expect(response.allSatisfy { $0["route"] as? String == "/api/sms/send" && $0["request_id"] as? String == id },
+                   "API route/query or request identity sanitization changed")
+        let correlation = response[0]["correlation_id"] as! String
+        try expect(correlation.utf8.count == 32 && correlation.utf8.allSatisfy { (48...57).contains($0) || (97...102).contains($0) },
+                   "correlation is not bounded hexadecimal")
+        try expect(response[1]["correlation_id"] as? String == correlation
+            && UnixSocketURLProtocol.requests[0].value(forHTTPHeaderField: "X-Switch-Diagnostic-ID") == correlation,
+                   "API diagnostic correlation did not match the actual request")
+        try expect(response[1]["status"] as? Int == 503, "HTTP status was lost")
+        let responseJSON = try JSONSerialization.data(withJSONObject: response)
+        try expect(!String(decoding: responseJSON, as: UTF8.self).contains(secret),
+                   "API diagnostics leaked query, body, credentials or server error")
+
+        UnixSocketURLProtocol.configure(error: .cannotConnectToHost)
+        do {
+            let _: EmptyResponse = try await APIClient().get("api/unknown/\(secret)?token=\(secret)")
+            throw CheckFailure(description: "transport failure fixture succeeded")
+        } catch is URLError {}
+        let failed = captured.take()
+        try expect(failed.count == 2 && failed[1]["stage"] as? String == "transport_failed"
+                   && failed[1]["error_domain"] as? String == "url"
+                   && failed[1]["error_code"] as? Int == URLError.cannotConnectToHost.rawValue,
+                   "transport observation omitted numeric error classification")
+        try expect(failed.allSatisfy { $0["route"] as? String == "/api/other" && $0["request_id"] == nil },
+                   "unknown route copied arbitrary path or request identity")
+        let failedJSON = try JSONSerialization.data(withJSONObject: failed)
+        try expect(!String(decoding: failedJSON, as: UTF8.self).contains(secret),
+                   "transport observation leaked private path/query")
+
+        UnixSocketURLProtocol.configure()
+        let invalidID = try JSONSerialization.data(withJSONObject: ["client_request_id": secret])
+        let _: EmptyResponse = try await APIClient().upload("api/sms/send", data: invalidID)
+        try expect(captured.take().allSatisfy { $0["request_id"] == nil }, "arbitrary request ID entered diagnostics")
+        _ = try await APIClient().getData("api/diagnostics/support")
+        try expect(captured.take().isEmpty, "support export recursively logged its own request")
+        print("PASS production API observations: bounded correlation, safe routes/IDs/numeric errors, no bodies/query/credentials and no export recursion")
+    }
+
 
     @MainActor private static func waitUntil(_ predicate: () -> Bool) async throws {
         for _ in 0..<500 {
@@ -162,6 +239,7 @@ private struct RequiredRadioResult:Decodable {let started:Bool}
         print("PASS: production API + CallRuntime preserve recovery failures and accept only matching durable negative receipts")
     }
     @MainActor static func main() async throws {
+        try await observedRequestPrivacy()
         try await callRecoveryUsesProductionErrorClassification()
         let radioSuite="switch-radio-api-policy-"+UUID().uuidString
         PublicRadioMutationCheckpoint.defaults=UserDefaults(suiteName:radioSuite)!
