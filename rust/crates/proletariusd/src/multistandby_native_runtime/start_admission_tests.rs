@@ -106,6 +106,7 @@ impl Fixture {
                 maintenance_pending: false,
                 registration_pending: false,
                 retry: None,
+                installing_retry: None,
             },
         );
         (done, received)

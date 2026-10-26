@@ -216,6 +216,7 @@ struct RebootFailure {
 struct OwnerBinding {
     identity: String,
     generation: u64,
+    radio_binding: String,
 }
 
 trait Runtime: Send + Sync + 'static {
@@ -225,7 +226,8 @@ trait Runtime: Send + Sync + 'static {
     fn sample(&self) -> impl Future<Output = Observation> + Send;
     /// This is the authoritative radio reservation/USB-mode/call-safe commit,
     /// not a client-side status check followed by a separate mutation.
-    fn reboot(&self, direct: bool) -> impl Future<Output = Result<(), RebootFailure>> + Send;
+    fn reboot(&self, direct: bool, binding: &OwnerBinding)
+        -> impl Future<Output = Result<(), RebootFailure>> + Send;
 }
 
 struct Admission {
@@ -448,6 +450,7 @@ impl Service {
             let now = runtime.now_ms();
             let admission = crate::archive_io::run({
                 let owner = owner.clone();
+                let binding = binding.clone();
                 move || owner.admit(&request_id, trigger, &binding, now)
             }).await;
             match admission {
@@ -456,7 +459,7 @@ impl Service {
                     let id = operation.operation_id.clone();
                     let _ = send.send(Ok(operation));
                     if admission.dispatch {
-                        match owner.run(id, trigger, runtime).await {
+                        match owner.run(id, trigger, runtime, binding).await {
                             Ok(()) => OwnerFinish::Clean,
                             Err(_) => OwnerFinish::Uncertain,
                         }
@@ -640,6 +643,7 @@ impl Service {
         id: String,
         trigger: Trigger,
         runtime: R,
+        admitted_binding: OwnerBinding,
     ) -> Result<(), StoreError> {
         if trigger == Trigger::Wake {
             runtime.sleep(WAKE_DELAY).await;
@@ -691,7 +695,11 @@ impl Service {
             }
             Err(error) => return Err(error),
         }
-        let reboot = runtime.reboot(trigger == Trigger::Reboot).await;
+        // The durable arm may yield while A is replaced by B. Submit only
+        // against the radio identity captured by the original admission.
+        let reboot = runtime
+            .reboot(trigger == Trigger::Reboot, &admitted_binding)
+            .await;
         match self.reboot_result(&id, reboot, runtime.now_ms()).await {
             Ok(true) => {}
             Ok(false) => {
@@ -746,6 +754,7 @@ impl Runtime for NativeRuntime {
         OwnerBinding {
             identity: stable_digest_hex(format!("network-owner-v1\0{description}").as_bytes()),
             generation: self.0.availability.snapshot().generation,
+            radio_binding: self.0.module_radio.public_mutation_binding(),
         }
     }
 
@@ -772,11 +781,11 @@ impl Runtime for NativeRuntime {
         }
     }
 
-    async fn reboot(&self, direct: bool) -> Result<(), RebootFailure> {
+    async fn reboot(&self, direct: bool, binding: &OwnerBinding) -> Result<(), RebootFailure> {
         let result = if direct {
-            self.0.module_radio.reboot_module().await
+            self.0.module_radio.reboot_module(&binding.radio_binding).await
         } else {
-            self.0.module_radio.recover_network_reboot().await
+            self.0.module_radio.recover_network_reboot(&binding.radio_binding).await
         };
         result.map_err(|error| RebootFailure {
             reason: error.code.to_owned(),

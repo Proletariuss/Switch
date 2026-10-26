@@ -25,6 +25,7 @@ impl Manager {
                 e.attempt_stop = Some(attempt_stop.clone());
                 e.retry_requested = false;
                 e.retry = None;
+                e.installing_retry = None;
                 e.registration_pending = false;
                 e.auth = "queued";
                 e.health = "starting";
@@ -270,6 +271,12 @@ impl Manager {
             let owner = self.boot_id.clone();
             let attempt = retry_attempt()?;
             let scheduled_attempt = attempt.clone();
+            {
+                let mut state = self.state.lock().unwrap();
+                let e = state.entries.get_mut(&spec.profile_id)
+                    .ok_or("native_multi_profile_retired")?;
+                e.installing_retry = Some(attempt.clone());
+            }
             let planned = tokio::task::spawn_blocking(move || {
                 let mut journal = journal.lock().map_err(|_| "runtime_journal_unavailable")?;
                 let plan = journal.recovery_native(id.clone(), why, now())?;
@@ -288,6 +295,11 @@ impl Manager {
             let (plan, schedule) = match planned {
                 Ok(value) => value,
                 Err(error) => {
+                    if let Some(e) = self.state.lock().unwrap().entries.get_mut(&spec.profile_id) {
+                        if e.installing_retry.as_deref() == Some(attempt.as_str()) {
+                            e.installing_retry = None;
+                        }
+                    }
                     self.update_error(&spec.profile_id, error);
                     self.set_phase(
                         &spec.profile_id,
@@ -313,6 +325,7 @@ impl Manager {
                 e.reason = plan.reason;
                 e.failures = plan.failures;
                 e.retry = Some((attempt, schedule.generation, schedule.due_at_ms));
+                e.installing_retry = None;
             }
             if plan.delay_ms == 0 {
                 continue;
