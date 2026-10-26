@@ -81,6 +81,16 @@ def source_identity(manifest, release, manifest_raw):
             "app_tree_sha256": manifest["app_tree_sha256"], "release_id": release["id"],
             "tag": release["tag_name"]}
 
+def bind_original_release(api, manifest, original):
+    run_id, attempt = int(manifest["run"]["id"]), int(manifest["run"]["attempt"])
+    commit = manifest["commit"]
+    artifacts = api.pages("/actions/runs/" + str(run_id) + "/artifacts", "artifacts")
+    candidate = api.artifact(artifacts, "Switch-candidate-" + commit + "-attempt-" + str(attempt), run_id, commit)
+    reports = api.artifact(artifacts, "software-report-" + str(attempt) + "-candidate-and-upload", run_id, commit)
+    accepted, _ = transport.validate_payload(candidate, reports, commit, manifest["tree"], manifest["version"],
+                                              manifest["build"], run_id, attempt)
+    need(accepted == original, "Release assets differ from original successful App run artifacts")
+
 def source(api, version, commit):
     need(re.fullmatch(r"[1-9][0-9]*\.[0-9]{2}", version) and version != "3.51", "invalid/protected version")
     need(re.fullmatch(r"[0-9a-f]{40}", commit), "invalid App source")
@@ -134,6 +144,7 @@ def source(api, version, commit):
     jobs = api.pages("/actions/runs/" + str(run["id"]) + "/jobs", "jobs")
     need(any(job["name"] == "publish" and job["conclusion"] == "success" for job in jobs),
          "original App publication did not succeed")
+    bind_original_release(api, manifest, original)
     check_inventory(manifest["app_inventory"])
     need(set(assets) <= set(original) | names(version), "unexpected Release assets")
     return release, manifest, original, assets, source_identity(manifest, release, manifest_raw)

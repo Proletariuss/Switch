@@ -111,13 +111,37 @@ class DMGFixtures(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             dmg.validate_derivative(files, source)
 
+    def test_release_matches_original_workflow_artifacts(self):
+        manifest = {"run": {"id": "123", "attempt": "1"}, "commit": "a" * 40,
+                    "tree": "b" * 40, "version": "3.52", "build": "352"}
+        original = {"asset": b"accepted"}
+        class API:
+            def pages(self, path, key=None):
+                return []
+            def artifact(self, artifacts, name, run_id, commit):
+                return {}
+        with patch.object(dmg.transport, "validate_payload", return_value=(original, manifest)):
+            dmg.bind_original_release(API(), manifest, original)
+
+    def test_self_consistent_rewritten_release_rejected(self):
+        manifest = {"run": {"id": "123", "attempt": "1"}, "commit": "a" * 40,
+                    "tree": "b" * 40, "version": "3.52", "build": "352"}
+        class API:
+            def pages(self, path, key=None):
+                return []
+            def artifact(self, artifacts, name, run_id, commit):
+                return {}
+        with patch.object(dmg.transport, "validate_payload", return_value=({"asset": b"original"}, manifest)):
+            with self.assertRaises(RuntimeError):
+                dmg.bind_original_release(API(), manifest, {"asset": b"rewritten"})
+
     def test_success_booleans_without_job_evidence_rejected(self):
         _, files, proof = self.files()
         class API:
             def api(self, method, path):
                 return {"head_sha": "1" * 40, "path": ".github/workflows/package-dmg.yml",
                         "repository": {"full_name": dmg.REPO}, "event": "workflow_dispatch", "run_attempt": 1}
-            def pages(self, path, key):
+            def pages(self, path, key=None):
                 return []
             def artifact(self, artifacts, name, run_id, commit):
                 return files
