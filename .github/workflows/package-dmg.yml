@@ -1,0 +1,97 @@
+name: Package accepted Switch App as DMG
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published App version, for example 3.52
+        required: true
+        type: string
+      app_sha:
+        description: Exact accepted App source SHA pointed to by the published version tag
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      app_sha:
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+# The release caller already holds switch-release-publication. A distinct
+# called group avoids waiting on our own parent lock; standalone holds it here.
+concurrency:
+  group: ${{ github.workflow == 'Package accepted Switch App as DMG' && 'switch-release-publication' || format('switch-dmg-called-{0}', github.run_id) }}
+  cancel-in-progress: false
+jobs:
+  build:
+    name: DMG verify
+    runs-on: macos-26
+    timeout-minutes: 20
+    outputs:
+      artifact_name: ${{ steps.identity.outputs.artifact_name }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          path: control
+          persist-credentials: false
+      - name: Validate packaging controller and fixtures
+        id: identity
+        env:
+          APP_VERSION: ${{ inputs.version }}
+          APP_SHA: ${{ inputs.app_sha }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REPOSITORY" == Proletariuss/Switch ]]
+          [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]
+          [[ "$APP_VERSION" =~ ^[1-9][0-9]*\.[0-9]{2}$ ]]
+          [[ "$APP_VERSION" != 3.51 ]]
+          [[ "$APP_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$(git -C control rev-parse HEAD)" == "$GITHUB_SHA" ]]
+          python3 control/scripts/ci/test-publish-release.py
+          python3 control/scripts/ci/test-package-dmg.py
+          echo "artifact_name=Switch-dmg-$APP_VERSION-$APP_SHA-attempt-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+      - name: Verify mounted DMG against accepted App
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APP_VERSION: ${{ inputs.version }}
+          APP_SHA: ${{ inputs.app_sha }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          python3 control/scripts/ci/package-dmg.py build --version "$APP_VERSION" --app-sha "$APP_SHA" --directory "$GITHUB_WORKSPACE/dmg" --workspace "$RUNNER_TEMP/switch-dmg-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ steps.identity.outputs.artifact_name }}
+          path: dmg/
+          if-no-files-found: error
+          retention-days: 90
+  publish:
+    name: DMG publish
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          path: control
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ${{ needs.build.outputs.artifact_name }}
+          path: dmg
+      - name: Publish verified DMG derivative
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APP_VERSION: ${{ inputs.version }}
+          APP_SHA: ${{ inputs.app_sha }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 control/scripts/ci/package-dmg.py publish --version "$APP_VERSION" --app-sha "$APP_SHA" --directory "$GITHUB_WORKSPACE/dmg"
