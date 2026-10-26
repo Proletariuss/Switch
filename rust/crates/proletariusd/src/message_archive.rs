@@ -937,7 +937,8 @@ pub(crate) fn reconcile_device_send_retained<G: Send + 'static>(
             let proof = item.clone();
             let result = ingest_guarded(&store, vec![item], || {
                 ledger.archive_receipt(&proof, Some(&attempt), false)
-            }).and_then(|added| {
+            })
+            .and_then(|added| {
                 ledger.archive_receipt(&proof, Some(&attempt), true)?;
                 Ok(added)
             });
@@ -956,15 +957,27 @@ fn confirm_deleted_device_sends<'a>(
     items: impl Iterator<Item = &'a Value>,
 ) -> Result<(), StoreError> {
     for item in items {
-        if item["direction"] == "out" && item["send_request_id"].as_str().is_some_and(|id| !id.is_empty()) {
-            let root = store.path().parent().ok_or_else(|| StoreError::Configuration("archive root missing".into()))?;
+        if item["direction"] == "out"
+            && item["send_request_id"]
+                .as_str()
+                .is_some_and(|id| !id.is_empty())
+        {
+            let root = store
+                .path()
+                .parent()
+                .ok_or_else(|| StoreError::Configuration("archive root missing".into()))?;
             match crate::device_send_store::Store::open(root)?.archive_receipt(item, None, true) {
                 Ok(_) => {}
                 // Imported/non-issued and retired identities cannot authorize
                 // archive repair. Deleting them needs no new ledger record.
-                Err(StoreError::Configuration(code)) if matches!(code.as_str(),
-                    "send_intent_not_found" | "mutation_identity_retired"
-                    | "mutation_identity_not_issued" | "mutation_authority_mismatch") => {}
+                Err(StoreError::Configuration(code))
+                    if matches!(
+                        code.as_str(),
+                        "send_intent_not_found"
+                            | "mutation_identity_retired"
+                            | "mutation_identity_not_issued"
+                            | "mutation_authority_mismatch"
+                    ) => {}
                 Err(error) => return Err(error),
             }
         }
@@ -1142,11 +1155,15 @@ fn delete_id(store: &ArchiveStore, id: &str) -> Result<usize, StoreError> {
         let group_source_ids = multipart_source_ids(&projected, group_id.as_deref());
         // GET /api/sms intentionally recomputes the Go-compatible ID even for
         // older archive rows that still carry a legacy stored ID.
-        confirm_deleted_device_sends(store, items.iter().filter(|item| {
-            stable_id(item) == id || cache_digest(item) == id
-                || group_source_ids.contains(&stable_id(item))
-                || group_source_ids.contains(&cache_digest(item))
-        }))?;
+        confirm_deleted_device_sends(
+            store,
+            items.iter().filter(|item| {
+                stable_id(item) == id
+                    || cache_digest(item) == id
+                    || group_source_ids.contains(&stable_id(item))
+                    || group_source_ids.contains(&cache_digest(item))
+            }),
+        )?;
         items.retain(|item| {
             stable_id(item) != id
                 && cache_digest(item) != id
@@ -1175,11 +1192,15 @@ fn delete_ids(store: &ArchiveStore, ids: &[String]) -> Result<usize, StoreError>
             .collect();
         let projected = project_multipart(items.clone());
         let group_source_ids = multipart_source_ids_for_groups(&projected, &group_ids);
-        confirm_deleted_device_sends(store, items.iter().filter(|item| {
-            selected.contains(&stable_id(item)) || selected.contains(&cache_digest(item))
-                || group_source_ids.contains(&stable_id(item))
-                || group_source_ids.contains(&cache_digest(item))
-        }))?;
+        confirm_deleted_device_sends(
+            store,
+            items.iter().filter(|item| {
+                selected.contains(&stable_id(item))
+                    || selected.contains(&cache_digest(item))
+                    || group_source_ids.contains(&stable_id(item))
+                    || group_source_ids.contains(&cache_digest(item))
+            }),
+        )?;
         items.retain(|item| {
             !selected.contains(&stable_id(item))
                 && !selected.contains(&cache_digest(item))
@@ -1223,7 +1244,12 @@ fn multipart_source_ids_for_groups(
 fn delete_sender(store: &ArchiveStore, sender: &str) -> Result<usize, StoreError> {
     store.mutate(|items| {
         let before = items.len();
-        confirm_deleted_device_sends(store, items.iter().filter(|item| string_field(item, "sender").trim() == sender))?;
+        confirm_deleted_device_sends(
+            store,
+            items
+                .iter()
+                .filter(|item| string_field(item, "sender").trim() == sender),
+        )?;
         items.retain(|item| string_field(item, "sender").trim() != sender);
         Ok(before - items.len())
     })

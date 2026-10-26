@@ -638,7 +638,6 @@ fn foreign_authority_journal_at_every_v1_preparation_step_is_rejected_and_latche
     }
 }
 
-
 fn startup(f: &Fixture) -> super::super::super::StartupMigration {
     super::super::super::StartupMigration { proof: f.proof() }
 }
@@ -659,16 +658,23 @@ fn production_startup_migrates_full_v1_without_dropping_tombstones_or_raw_bytes(
     let original = serde_json::to_vec_pretty(&v).unwrap();
     fs::write(f.active(), &original).unwrap();
     let adapter = Adapter::open_or_migrate(&f.root, f.proof(), startup(&f)).unwrap();
-    adapter.transact(|bytes, frozen| {
-        assert_eq!(frozen, original);
-        let snapshot = decode_snapshot_bytes(bytes)?;
-        assert_eq!(snapshot.legacy_overlay.len(), 10_000);
-        assert_eq!(snapshot.issued_high_water.0, 0);
-        Ok((None, ()))
-    }).unwrap();
-    assert_eq!(fs::read(f.root.join("device-send-ledger.legacy-v1.json")).unwrap(), original);
-    let legacy_writer = proletarius_store::ArchiveStore::with_limits(f.active(), SNAPSHOT_BYTES as u64, 1)
-        .unwrap().track_durable_presence();
+    adapter
+        .transact(|bytes, frozen| {
+            assert_eq!(frozen, original);
+            let snapshot = decode_snapshot_bytes(bytes)?;
+            assert_eq!(snapshot.legacy_overlay.len(), 10_000);
+            assert_eq!(snapshot.issued_high_water.0, 0);
+            Ok((None, ()))
+        })
+        .unwrap();
+    assert_eq!(
+        fs::read(f.root.join("device-send-ledger.legacy-v1.json")).unwrap(),
+        original
+    );
+    let legacy_writer =
+        proletarius_store::ArchiveStore::with_limits(f.active(), SNAPSHOT_BYTES as u64, 1)
+            .unwrap()
+            .track_durable_presence();
     assert!(legacy_writer.mutate(|_| Ok(())).is_err());
     let active_items: Vec<Value> = serde_json::from_slice(&fs::read(f.active()).unwrap()).unwrap();
     assert!(super::super::super::read(&active_items, true).is_err());
@@ -680,7 +686,10 @@ fn migration_startup_requires_the_same_real_unpublished_owner_proof() {
     let f = Fixture::new();
     let other = Fixture::new();
     assert!(Adapter::open_or_migrate(&f.root, f.proof(), startup(&other)).is_err());
-    assert_eq!(serde_json::from_slice::<Value>(&fs::read(f.active()).unwrap()).unwrap()[0]["schema_version"], 1);
+    assert_eq!(
+        serde_json::from_slice::<Value>(&fs::read(f.active()).unwrap()).unwrap()[0]["schema_version"],
+        1
+    );
     let adapter = Adapter::open_or_migrate(&f.root, f.proof(), startup(&f)).unwrap();
     assert!(!adapter.restart_required());
 }
@@ -690,8 +699,10 @@ fn live_business_refusal_does_not_latch_but_missing_prepared_provenance_does() {
     let f = Fixture::new();
     let adapter = Adapter::open_or_migrate(&f.root, f.proof(), startup(&f)).unwrap();
     adapter.0.state.lock().unwrap().last = None;
-    assert!(matches!(adapter.transact::<()>(|_, _| Err(CodecError::AuthorityMismatch)),
-        Err(Error::Rejected(CodecError::AuthorityMismatch))));
+    assert!(matches!(
+        adapter.transact::<()>(|_, _| Err(CodecError::AuthorityMismatch)),
+        Err(Error::Rejected(CodecError::AuthorityMismatch))
+    ));
     assert!(adapter.0.state.lock().unwrap().last.is_some());
     assert!(!adapter.restart_required());
     let prepared = f.root.join("device-send-ledger.v2-prepared.json");
@@ -708,13 +719,20 @@ fn live_business_refusal_does_not_latch_but_missing_prepared_provenance_does() {
 fn failed_sealed_write_is_sticky_until_a_new_real_lifetime_recovers_the_exact_target() {
     use proletarius_store::device_sms_seal::Point;
     for point in Point::ALL.into_iter().chain([
-        Point::WalCommitted, Point::ActiveCommitted, Point::WalRemoved, Point::WalDirectorySynced,
+        Point::WalCommitted,
+        Point::ActiveCommitted,
+        Point::WalRemoved,
+        Point::WalDirectorySynced,
     ]) {
         let mut f = Fixture::new();
         let healthy = Adapter::open_or_migrate(&f.root, f.proof(), startup(&f)).unwrap();
         let faulty = Adapter(Arc::new(Inner {
-            root: f.root.clone(), proof: f.proof(), identity: healthy.0.identity.clone(),
-            kernel: f.kernel().with_hook_for_test(Arc::new(move |at| at == point)),
+            root: f.root.clone(),
+            proof: f.proof(),
+            identity: healthy.0.identity.clone(),
+            kernel: f
+                .kernel()
+                .with_hook_for_test(Arc::new(move |at| at == point)),
             state: Mutex::new(State::default()),
         }));
         faulty.inspect().unwrap();
@@ -731,14 +749,15 @@ fn failed_sealed_write_is_sticky_until_a_new_real_lifetime_recovers_the_exact_ta
         f.lease.take();
         f.lease = Some(Lease::acquire(&f.root).unwrap());
         let recovered = Adapter::open_or_migrate(&f.root, f.proof(), startup(&f)).unwrap();
-        recovered.transact(|bytes, _| {
-            assert_eq!(decode_snapshot_bytes(bytes)?.issued_high_water.0, 7);
-            Ok((None, ()))
-        }).unwrap();
+        recovered
+            .transact(|bytes, _| {
+                assert_eq!(decode_snapshot_bytes(bytes)?.issued_high_water.0, 7);
+                Ok((None, ()))
+            })
+            .unwrap();
         assert!(!recovered.restart_required());
     }
 }
-
 
 #[test]
 fn historical_v1_enrolls_only_after_full_schema_and_never_recreates_a_missing_witness_lock() {
@@ -747,17 +766,32 @@ fn historical_v1_enrolls_only_after_full_schema_and_never_recreates_a_missing_wi
     fs::remove_file(f.marker()).unwrap();
     fs::remove_file(f.lock()).unwrap();
     let migrated = Adapter::open_or_migrate(&f.root, f.proof(), startup(&f)).unwrap();
-    migrated.transact(|_, frozen| { assert_eq!(frozen, original); Ok((None, ())) }).unwrap();
+    migrated
+        .transact(|_, frozen| {
+            assert_eq!(frozen, original);
+            Ok((None, ()))
+        })
+        .unwrap();
 
     let f = Fixture::new();
     fs::remove_file(f.marker()).unwrap();
     fs::remove_file(f.lock()).unwrap();
-    fs::write(f.active(), br#"[{"schema_version":1,"records":{"corrupt":{}}}]"#).unwrap();
+    fs::write(
+        f.active(),
+        br#"[{"schema_version":1,"records":{"corrupt":{}}}]"#,
+    )
+    .unwrap();
     assert!(Adapter::open_or_migrate(&f.root, f.proof(), startup(&f)).is_err());
-    assert!(!f.marker().exists(), "invalid legacy schema enrolled a presence witness");
+    assert!(
+        !f.marker().exists(),
+        "invalid legacy schema enrolled a presence witness"
+    );
 
     let f = Fixture::new();
     fs::remove_file(f.lock()).unwrap();
     assert!(Adapter::open_or_migrate(&f.root, f.proof(), startup(&f)).is_err());
-    assert!(!f.lock().exists(), "existing witness silently recreated its original lock");
+    assert!(
+        !f.lock().exists(),
+        "existing witness silently recreated its original lock"
+    );
 }

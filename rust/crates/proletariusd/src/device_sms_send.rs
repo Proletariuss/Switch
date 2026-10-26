@@ -135,7 +135,9 @@ impl<'de> Deserialize<'de> for SendRequest {
                     if key.eq_ignore_ascii_case("identity_version") {
                         let version = map.next_value::<u8>()?;
                         if !matches!(version, 1 | 2) {
-                            return Err(serde::de::Error::custom("unsupported SMS identity version"));
+                            return Err(serde::de::Error::custom(
+                                "unsupported SMS identity version",
+                            ));
                         }
                         request.identity_version = version;
                         continue;
@@ -184,7 +186,9 @@ struct Record {
     attempt: String,
 }
 
-fn legacy_identity_version() -> u8 { 1 }
+fn legacy_identity_version() -> u8 {
+    1
+}
 
 #[derive(Deserialize)]
 struct Page {
@@ -248,14 +252,28 @@ fn ledger_result<T: serde::de::DeserializeOwned>(
             "未找到短信发送记录，请确认后重新准备",
         ),
         StoreError::Configuration(code) if code == "send_intent_conflict" => conflict(),
-        StoreError::Configuration(code) if matches!(code.as_str(),
-            "mutation_identity_retired" | "mutation_identity_not_issued"
-            | "mutation_identity_upgrade_required" | "mutation_authority_mismatch"
-            | "mutation_sequence_exhausted" | "ledger_full" | "invalid_request") => {
-            Failure(if code == "mutation_identity_retired" { StatusCode::GONE }
-                else if code == "invalid_request" { StatusCode::BAD_REQUEST }
-                else { StatusCode::CONFLICT },
-                json!({"code":code,"error":code,"retryable":false,"request_dispatched":false}))
+        StoreError::Configuration(code)
+            if matches!(
+                code.as_str(),
+                "mutation_identity_retired"
+                    | "mutation_identity_not_issued"
+                    | "mutation_identity_upgrade_required"
+                    | "mutation_authority_mismatch"
+                    | "mutation_sequence_exhausted"
+                    | "ledger_full"
+                    | "invalid_request"
+            ) =>
+        {
+            Failure(
+                if code == "mutation_identity_retired" {
+                    StatusCode::GONE
+                } else if code == "invalid_request" {
+                    StatusCode::BAD_REQUEST
+                } else {
+                    StatusCode::CONFLICT
+                },
+                json!({"code":code,"error":code,"retryable":false,"request_dispatched":false}),
+            )
         }
         _ => unavailable(),
     })?;
@@ -275,16 +293,20 @@ impl SendRequest {
     }
     fn matches(&self, r: &Record) -> bool {
         if self.identity_version.max(1) != r.identity_version
-            || self.phone != r.phone || self.message != r.message {
+            || self.phone != r.phone
+            || self.message != r.message
+        {
             return false;
         }
         if r.identity_version == 2 {
             self.device == r.device
                 && r.intent_nonce.as_deref() == Some(self.intent_nonce.as_str())
-                && r.expected_subscription_id.as_deref() == Some(self.expected_subscription_id.as_str())
+                && r.expected_subscription_id.as_deref()
+                    == Some(self.expected_subscription_id.as_str())
         } else {
             (self.device.is_empty() || self.device == r.device)
-                && (self.expected_subscription_id.is_empty() || self.expected_subscription_id == r.subscription_id)
+                && (self.expected_subscription_id.is_empty()
+                    || self.expected_subscription_id == r.subscription_id)
         }
     }
 }
@@ -732,7 +754,9 @@ impl Service {
         match existing {
             Ok(record) if record.state == "reserved" => {
                 if !body.matches(&record) {
-                    if let Some(binding) = captured { self.release(&binding.binding).await; }
+                    if let Some(binding) = captured {
+                        self.release(&binding.binding).await;
+                    }
                     return Err(conflict());
                 }
             }
@@ -754,11 +778,16 @@ impl Service {
             }
             Err(_) => {
                 if self.store.is_v2() {
-                    if let Some(binding) = captured { self.release(&binding.binding).await; }
-                    return Err(Failure(StatusCode::CONFLICT, json!({
-                        "code":if body.identity_version == 2 { "mutation_identity_not_issued" } else { "mutation_identity_upgrade_required" },"error":"新请求需要持久签发身份",
-                        "retryable":false,"request_dispatched":false
-                    })));
+                    if let Some(binding) = captured {
+                        self.release(&binding.binding).await;
+                    }
+                    return Err(Failure(
+                        StatusCode::CONFLICT,
+                        json!({
+                            "code":if body.identity_version == 2 { "mutation_identity_not_issued" } else { "mutation_identity_upgrade_required" },"error":"新请求需要持久签发身份",
+                            "retryable":false,"request_dispatched":false
+                        }),
+                    ));
                 }
             }
         }
@@ -857,7 +886,11 @@ impl Service {
     async fn project(&self, records: Vec<Record>) -> Vec<Value> {
         let bindings = records
             .iter()
-            .filter(|r| r.state == "prepared" && (r.identity_version == 2 || !self.store.is_v2()) && !self.superseded_binding(r))
+            .filter(|r| {
+                r.state == "prepared"
+                    && (r.identity_version == 2 || !self.store.is_v2())
+                    && !self.superseded_binding(r)
+            })
             .map(|r| r.binding.clone())
             .collect::<Vec<_>>();
         let valid = if bindings.is_empty() {
@@ -890,14 +923,20 @@ impl Service {
         let restored = tokio::time::timeout(
             self.io_timeout,
             crate::message_archive::reconcile_device_send_retained(
-                self.archive.clone(), self.store.clone(), item,
-                record.attempt.clone(), self.job.clone(),
+                self.archive.clone(),
+                self.store.clone(),
+                item,
+                record.attempt.clone(),
+                self.job.clone(),
             ),
-        ).await;
+        )
+        .await;
         if !matches!(restored, Ok(Ok(_))) {
             return outcome(record);
         }
-        let confirmed = self.ledger("get", json!({"client_request_id":record.client_request_id})).await?;
+        let confirmed = self
+            .ledger("get", json!({"client_request_id":record.client_request_id}))
+            .await?;
         outcome(confirmed)
     }
 
@@ -1111,13 +1150,20 @@ impl Service {
                     tokio::time::timeout(
                         self.io_timeout,
                         crate::message_archive::ingest_messages_to_retained(
-                            self.archive.clone(), vec![item], self.job.clone(),
+                            self.archive.clone(),
+                            vec![item],
+                            self.job.clone(),
                         ),
-                    ).await,
+                    )
+                    .await,
                     Ok(Ok(_))
                 )
-            } else { false }
-        } else { false };
+            } else {
+                false
+            }
+        } else {
+            false
+        };
         // This supervisor survives the HTTP waiter. Finishing only writes a
         // result; it does not grant another send after lost network/archive ACKs.
         let finished = self.ledger("finish",json!({"client_request_id":record.client_request_id,"attempt":attempt,"state":if accepted {"accepted"} else {"unknown"},"segments":segments,"archive_confirmed":archived})).await;
@@ -1263,7 +1309,10 @@ fn matching_usb_transport_binding(
 fn archive_item(record: &Record) -> Option<Value> {
     let timestamp = time::OffsetDateTime::from_unix_timestamp_nanos(
         i128::from(record.created_at_ms) * 1_000_000,
-    ).ok()?.format(&time::format_description::well_known::Rfc3339).ok()?;
+    )
+    .ok()?
+    .format(&time::format_description::well_known::Rfc3339)
+    .ok()?;
     let mut item = json!({"sender":record.phone,"content":record.message,"timestamp":timestamp,
         "direction":"out","device":record.device,"send_request_id":record.client_request_id});
     if !record.subscription_id.is_empty() {
@@ -1389,7 +1438,11 @@ where
         }
     } else {
         if !query.is_empty() && query != "cancel=2" {
-            return respond(Err(coded(StatusCode::BAD_REQUEST, "invalid_request", "查询参数无效")));
+            return respond(Err(coded(
+                StatusCode::BAD_REQUEST,
+                "invalid_request",
+                "查询参数无效",
+            )));
         }
         let prepare_only = request.uri().path() == "/api/sms/send-intents";
         let bytes = match crate::http_server::collect_body(request.into_body(), MAX_BODY).await {
@@ -1406,20 +1459,40 @@ where
         };
         let inspected: Value = match serde_json::from_slice(&bytes) {
             Ok(value) => value,
-            Err(_) => return respond(Err(coded(StatusCode::BAD_REQUEST, "invalid_request", "请求格式无效"))),
+            Err(_) => {
+                return respond(Err(coded(
+                    StatusCode::BAD_REQUEST,
+                    "invalid_request",
+                    "请求格式无效",
+                )));
+            }
         };
         if inspected["identity_version"] == 2 {
             if crate::device_send_store::Store::strict_v2_body(&bytes).is_err() {
-                return respond(Err(coded(StatusCode::BAD_REQUEST, "invalid_request", "请求字段重复或无效")));
+                return respond(Err(coded(
+                    StatusCode::BAD_REQUEST,
+                    "invalid_request",
+                    "请求字段重复或无效",
+                )));
             }
         }
         if query == "cancel=2" || inspected.get("payload").is_some() {
             if !prepare_only {
-                return respond(Err(coded(StatusCode::BAD_REQUEST, "invalid_request", "签发必须使用准备接口")));
+                return respond(Err(coded(
+                    StatusCode::BAD_REQUEST,
+                    "invalid_request",
+                    "签发必须使用准备接口",
+                )));
             }
             let body = match crate::device_send_store::Store::reserve_body(&bytes) {
                 Ok(body) => body,
-                Err(_) => return respond(Err(coded(StatusCode::BAD_REQUEST, "invalid_request", "签发请求无效"))),
+                Err(_) => {
+                    return respond(Err(coded(
+                        StatusCode::BAD_REQUEST,
+                        "invalid_request",
+                        "签发请求无效",
+                    )));
+                }
             };
             return respond(supervise_reservation(service, body, query == "cancel=2").await);
         }
@@ -1435,13 +1508,31 @@ where
         };
         if body.identity_version == 2 {
             let strict = crate::device_send_store::Store::strict_v2_body(&bytes);
-            let exact = strict.as_ref().ok().and_then(Value::as_object).is_some_and(|fields| {
-                fields.get("identity_version") == Some(&json!(2))
-                    && fields.keys().all(|key| matches!(key.as_str(), "identity_version" | "intent_nonce"
-                        | "client_request_id" | "phone" | "message" | "device" | "expected_subscription_id"))
-            });
+            let exact = strict
+                .as_ref()
+                .ok()
+                .and_then(Value::as_object)
+                .is_some_and(|fields| {
+                    fields.get("identity_version") == Some(&json!(2))
+                        && fields.keys().all(|key| {
+                            matches!(
+                                key.as_str(),
+                                "identity_version"
+                                    | "intent_nonce"
+                                    | "client_request_id"
+                                    | "phone"
+                                    | "message"
+                                    | "device"
+                                    | "expected_subscription_id"
+                            )
+                        })
+                });
             if !exact {
-                return respond(Err(coded(StatusCode::BAD_REQUEST, "invalid_request", "v2请求字段重复或大小写无效")));
+                return respond(Err(coded(
+                    StatusCode::BAD_REQUEST,
+                    "invalid_request",
+                    "v2请求字段重复或大小写无效",
+                )));
             }
         }
         if decoder.end().is_err() {
@@ -1508,9 +1599,14 @@ async fn supervise_reservation(mut service: Service, body: Value, cancel: bool) 
     let job = service.store.send_owner().admit().map_err(owner_failure)?;
     service.job = Some(job.clone());
     job.spawn(async move {
-        let record: Record = service.ledger(if cancel { "cancel" } else { "reserve" }, body).await?;
+        let record: Record = service
+            .ledger(if cancel { "cancel" } else { "reserve" }, body)
+            .await?;
         Ok(service.project(vec![record]).await.remove(0))
-    }).await.map(|output| output.into_inner()).unwrap_or_else(|_| Err(unavailable()))
+    })
+    .await
+    .map(|output| output.into_inner())
+    .unwrap_or_else(|_| Err(unavailable()))
 }
 
 fn respond(result: Result<Value>) -> Response<Full<Bytes>> {

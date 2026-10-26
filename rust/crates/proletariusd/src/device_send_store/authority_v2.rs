@@ -420,7 +420,9 @@ pub(super) struct AuthoritySnapshot {
 }
 
 impl AuthoritySnapshot {
-    pub(super) fn issued_high_water(&self) -> u64 { self.issued_high_water.0 }
+    pub(super) fn issued_high_water(&self) -> u64 {
+        self.issued_high_water.0
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -697,7 +699,9 @@ fn retire_with_quotas(
         .position(|slot| slot.sequence == request.identity.sequence)
         .ok_or(CodecError::InvalidSnapshot)?;
     let slot = next.live_slots.remove(index);
-    if slot.execution.is_some() { return Err(CodecError::Conflict); }
+    if slot.execution.is_some() {
+        return Err(CodecError::Conflict);
+    }
     next.terminal_cache.push(TerminalRecord {
         sequence: slot.sequence,
         nonce: slot.nonce,
@@ -732,10 +736,9 @@ fn plan_with_quotas(
 ) -> Result<ReservePlan> {
     encode_with_quotas(current, quotas)?;
     if current.legacy.sha256 != legacy.digest
-        || current
-            .legacy_overlay
-            .iter()
-            .any(|fence| !production::valid_overlay(fence, legacy.fences.get(&fence.client_request_id)))
+        || current.legacy_overlay.iter().any(|fence| {
+            !production::valid_overlay(fence, legacy.fences.get(&fence.client_request_id))
+        })
     {
         return Err(CodecError::LegacyUnavailable);
     }
@@ -925,5 +928,5 @@ mod tests;
 #[cfg(test)]
 mod seal_tests;
 
-pub(super) mod seal_adapter;
 pub(super) mod production;
+pub(super) mod seal_adapter;

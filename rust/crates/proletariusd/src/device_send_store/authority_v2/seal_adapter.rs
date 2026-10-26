@@ -64,37 +64,47 @@ impl Adapter {
         }
         proof.claim_device_sms_adapter(root).map_err(Error::Owner)?;
         let kernel = Kernel::existing(root).map_err(|e| Error::Seal(SealError::Storage(e)))?;
-        let identity = proof.with_root(root, |_| {
-            kernel.bootstrap_legacy(|active, siblings| {
-                let inspected = family::inspect_bytes(active, siblings)?;
-                if inspected.next_step() != family::RecoveryStep::ProposeMigration {
-                    return Err(CodecError::InvalidSnapshot);
-                }
-                Ok(())
-            })?;
-            kernel.open_or_migrate(
-                |legacy| {
-                    // Entropy is requested only after a complete virgin v1
-                    // family is validated under the original writer lock.
-                    CompleteLegacyIndex::from_snapshot(legacy, &digest(legacy).0)?;
-                    let authority = crate::multistandby_store::random_token()
-                        .map_err(|_| CodecError::InvalidIdentity)?;
-                    let generation = crate::multistandby_store::random_token()
-                        .map_err(|_| CodecError::InvalidIdentity)?;
-                    Identity::parse(&authority[..32], &generation[..32])
-                        .map_err(|_| CodecError::InvalidIdentity)
-                },
-                |active, siblings, identity| {
-                    family::inspect_bytes_for_authority(active, siblings, identity.authority_id())
+        let identity = proof
+            .with_root(root, |_| {
+                kernel.bootstrap_legacy(|active, siblings| {
+                    let inspected = family::inspect_bytes(active, siblings)?;
+                    if inspected.next_step() != family::RecoveryStep::ProposeMigration {
+                        return Err(CodecError::InvalidSnapshot);
+                    }
+                    Ok(())
+                })?;
+                kernel.open_or_migrate(
+                    |legacy| {
+                        // Entropy is requested only after a complete virgin v1
+                        // family is validated under the original writer lock.
+                        CompleteLegacyIndex::from_snapshot(legacy, &digest(legacy).0)?;
+                        let authority = crate::multistandby_store::random_token()
+                            .map_err(|_| CodecError::InvalidIdentity)?;
+                        let generation = crate::multistandby_store::random_token()
+                            .map_err(|_| CodecError::InvalidIdentity)?;
+                        Identity::parse(&authority[..32], &generation[..32])
+                            .map_err(|_| CodecError::InvalidIdentity)
+                    },
+                    |active, siblings, identity| {
+                        family::inspect_bytes_for_authority(
+                            active,
+                            siblings,
+                            identity.authority_id(),
+                        )
                         .map(|_| ())
-                },
-                |active, siblings, identity| {
-                    family::migration_step(active, siblings, identity.authority_id())
-                },
-            )
-        }).map_err(Error::Owner)?.map_err(Error::Seal)?;
+                    },
+                    |active, siblings, identity| {
+                        family::migration_step(active, siblings, identity.authority_id())
+                    },
+                )
+            })
+            .map_err(Error::Owner)?
+            .map_err(Error::Seal)?;
         let owner = Self(Arc::new(Inner {
-            root: root.to_path_buf(), proof, identity, kernel,
+            root: root.to_path_buf(),
+            proof,
+            identity,
+            kernel,
             state: Mutex::new(State::default()),
         }));
         owner.inspect()?;
@@ -108,45 +118,75 @@ impl Adapter {
         plan: impl FnOnce(&[u8], &[u8]) -> Result<(Option<Vec<u8>>, T)>,
     ) -> std::result::Result<T, Error> {
         let mut state = self.0.state.lock().map_err(|_| Error::Unavailable)?;
-        if state.failed { return Err(Error::Unavailable); }
-        let operation = self.0.proof.with_root(&self.0.root, |_| {
-            let (before, _) = self.0.kernel.inspect_family(&self.0.identity, |active, siblings| {
-                diagnose(active, siblings, self.0.identity.authority_id())
-            }).map_err(Error::Seal)?;
-            check_observation(state.last.as_ref(), &before)?;
-            // A business refusal cannot erase a newer successfully observed
-            // revision/floor, even though it does not write archive bytes.
-            state.last = Some(before.clone());
-            let result = self.0.kernel.transact_family(
-                &self.0.identity, before.seal(),
-                |active, siblings, identity| {
-                    let inspected = family::inspect_bytes_for_authority(
-                        active, siblings, identity.authority_id(),
-                    )?;
-                    if inspected.next_step() != family::RecoveryStep::V2Present {
-                        return Err(CodecError::InvalidSnapshot);
-                    }
-                    Ok(())
-                },
-                |active, siblings| {
-                    let planned = plan(active, siblings[0].as_deref().ok_or(CodecError::LegacyUnavailable)?)?;
-                    if let Some(next) = &planned.0 {
-                        family::validate_transition(active, next)?;
-                    }
-                    Ok(planned)
-                },
-            ).map_err(|error| match error {
-                SealError::Rejected(code) => Error::Rejected(code),
-                other => Error::Seal(other),
-            })?;
-            let (after, _) = self.0.kernel.inspect_family(&self.0.identity, |active, siblings| {
-                diagnose(active, siblings, self.0.identity.authority_id())
-            }).map_err(Error::Seal)?;
-            check_observation(Some(&before), &after)?;
-            Ok((result, after))
-        }).map_err(Error::Owner).and_then(|value| value);
+        if state.failed {
+            return Err(Error::Unavailable);
+        }
+        let operation = self
+            .0
+            .proof
+            .with_root(&self.0.root, |_| {
+                let (before, _) = self
+                    .0
+                    .kernel
+                    .inspect_family(&self.0.identity, |active, siblings| {
+                        diagnose(active, siblings, self.0.identity.authority_id())
+                    })
+                    .map_err(Error::Seal)?;
+                check_observation(state.last.as_ref(), &before)?;
+                // A business refusal cannot erase a newer successfully observed
+                // revision/floor, even though it does not write archive bytes.
+                state.last = Some(before.clone());
+                let result = self
+                    .0
+                    .kernel
+                    .transact_family(
+                        &self.0.identity,
+                        before.seal(),
+                        |active, siblings, identity| {
+                            let inspected = family::inspect_bytes_for_authority(
+                                active,
+                                siblings,
+                                identity.authority_id(),
+                            )?;
+                            if inspected.next_step() != family::RecoveryStep::V2Present {
+                                return Err(CodecError::InvalidSnapshot);
+                            }
+                            Ok(())
+                        },
+                        |active, siblings| {
+                            let planned = plan(
+                                active,
+                                siblings[0]
+                                    .as_deref()
+                                    .ok_or(CodecError::LegacyUnavailable)?,
+                            )?;
+                            if let Some(next) = &planned.0 {
+                                family::validate_transition(active, next)?;
+                            }
+                            Ok(planned)
+                        },
+                    )
+                    .map_err(|error| match error {
+                        SealError::Rejected(code) => Error::Rejected(code),
+                        other => Error::Seal(other),
+                    })?;
+                let (after, _) = self
+                    .0
+                    .kernel
+                    .inspect_family(&self.0.identity, |active, siblings| {
+                        diagnose(active, siblings, self.0.identity.authority_id())
+                    })
+                    .map_err(Error::Seal)?;
+                check_observation(Some(&before), &after)?;
+                Ok((result, after))
+            })
+            .map_err(Error::Owner)
+            .and_then(|value| value);
         match operation {
-            Ok((result, after)) => { state.last = Some(after); Ok(result) }
+            Ok((result, after)) => {
+                state.last = Some(after);
+                Ok(result)
+            }
             Err(error) => {
                 if !matches!(error, Error::Rejected(code) if !matches!(code,
                     CodecError::InvalidJson | CodecError::InvalidSnapshot | CodecError::LegacyUnavailable))
@@ -228,12 +268,16 @@ impl Adapter {
         result
     }
 }
-fn check_observation(prior: Option<&FamilyView>, current: &FamilyView) -> std::result::Result<(), Error> {
+fn check_observation(
+    prior: Option<&FamilyView>,
+    current: &FamilyView,
+) -> std::result::Result<(), Error> {
     if prior.is_some_and(|prior| {
         !current.preserves_observed_files(prior)
             || current.seal().revision() < prior.seal().revision()
             || current.seal().issued_floor() < prior.seal().issued_floor()
-            || current.seal().revision() == prior.seal().revision() && current.seal() != prior.seal()
+            || current.seal().revision() == prior.seal().revision()
+                && current.seal() != prior.seal()
     }) {
         return Err(Error::Seal(SealError::Guard(GuardError::Rollback)));
     }

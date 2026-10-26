@@ -81,7 +81,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2225
+          "line": 2253
         }
       ],
       "consumers": [
@@ -135,7 +135,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2602
+          "line": 2630
         }
       ],
       "consumers": [
@@ -161,7 +161,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2107
+          "line": 2135
         }
       ],
       "consumers": [],
@@ -208,7 +208,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2346
+          "line": 2374
         }
       ],
       "consumers": [
@@ -234,7 +234,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2361
+          "line": 2389
         }
       ],
       "consumers": [
@@ -260,7 +260,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2887
+          "line": 2915
         }
       ],
       "consumers": [
@@ -286,7 +286,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2883
+          "line": 2911
         }
       ],
       "consumers": [
@@ -312,7 +312,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2991
+          "line": 3019
         }
       ],
       "consumers": [
@@ -338,7 +338,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2086
+          "line": 2114
         }
       ],
       "consumers": [
@@ -364,7 +364,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 3091
+          "line": 3119
         }
       ],
       "consumers": [
@@ -390,7 +390,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 3084
+          "line": 3112
         }
       ],
       "consumers": [],
@@ -409,7 +409,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2186
+          "line": 2214
         }
       ],
       "consumers": [],
@@ -428,7 +428,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2569
+          "line": 2597
         }
       ],
       "consumers": [
@@ -454,7 +454,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2146
+          "line": 2174
         }
       ],
       "consumers": [
@@ -486,7 +486,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2566
+          "line": 2594
         }
       ],
       "consumers": [
@@ -518,7 +518,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 3064
+          "line": 3092
         }
       ],
       "consumers": [
@@ -565,7 +565,7 @@
         {
           "kind": "reviewed_dynamic_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 1709,
+          "line": 1737,
           "function": "handle_internal_request",
           "note": "Iteration503: Authenticated compatibility declaration remains; native-managed USB rejects this physical prefix on both normal/shutdown ingress. Serial/nonmanaged callers retain the existing route contract. Exact private GET after internal-token admission; verifies all six canonical runtime files and returns only bounded readiness/count metadata. ADB deployment reads the verified files in-process on its separate POST route. Iteration679: admitted only on the authenticated .in listener; public and .rs return route_not_found before credential handling."
         }
@@ -607,7 +607,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2181
+          "line": 2209
         }
       ],
       "consumers": [
@@ -633,7 +633,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2656
+          "line": 2684
         }
       ],
       "consumers": [
@@ -799,7 +799,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2675
+          "line": 2703
         }
       ],
       "consumers": [
@@ -825,7 +825,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2093
+          "line": 2121
         }
       ],
       "consumers": [
@@ -885,7 +885,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2239
+          "line": 2267
         }
       ],
       "consumers": [
@@ -917,7 +917,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 3030
+          "line": 3058
         }
       ],
       "consumers": [
@@ -943,7 +943,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 3033
+          "line": 3061
         }
       ],
       "consumers": [
@@ -969,7 +969,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 3039
+          "line": 3067
         }
       ],
       "consumers": [
@@ -995,7 +995,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2118
+          "line": 2146
         }
       ],
       "consumers": [],
@@ -1014,7 +1014,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2554
+          "line": 2582
         }
       ],
       "consumers": [
@@ -1040,7 +1040,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2578
+          "line": 2606
         }
       ],
       "consumers": [],
@@ -1059,7 +1059,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2560
+          "line": 2588
         }
       ],
       "consumers": [
@@ -1085,7 +1085,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2608
+          "line": 2636
         }
       ],
       "consumers": [
@@ -1111,7 +1111,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2557
+          "line": 2585
         }
       ],
       "consumers": [
@@ -1137,7 +1137,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2105
+          "line": 2133
         }
       ],
       "consumers": [],
@@ -1156,7 +1156,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2538
+          "line": 2566
         }
       ],
       "consumers": [
@@ -1200,7 +1200,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2940
+          "line": 2968
         }
       ],
       "consumers": [
@@ -1320,7 +1320,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2703
+          "line": 2731
         }
       ],
       "consumers": [
@@ -1346,7 +1346,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2248
+          "line": 2276
         }
       ],
       "consumers": [
@@ -1372,7 +1372,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2157
+          "line": 2185
         }
       ],
       "consumers": [
@@ -1398,7 +1398,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2297
+          "line": 2325
         }
       ],
       "consumers": [
@@ -1424,7 +1424,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2515
+          "line": 2543
         }
       ],
       "consumers": [
@@ -1456,7 +1456,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2641
+          "line": 2669
         }
       ],
       "consumers": [
@@ -1469,6 +1469,12 @@
         {
           "file": "app/Sources/DeviceSMSSendLive.swift",
           "line": 11,
+          "kind": "swift_api_client",
+          "resolution": "literal_or_interpolated"
+        },
+        {
+          "file": "app/Sources/DeviceSMSSendLive.swift",
+          "line": 25,
           "kind": "swift_api_client",
           "resolution": "literal_or_interpolated"
         }
@@ -1488,7 +1494,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2407
+          "line": 2435
         }
       ],
       "consumers": [
@@ -1514,7 +1520,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2419
+          "line": 2447
         }
       ],
       "consumers": [
@@ -1540,7 +1546,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 3098
+          "line": 3126
         }
       ],
       "consumers": [
@@ -1566,7 +1572,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 3051
+          "line": 3079
         }
       ],
       "consumers": [
@@ -1592,7 +1598,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2855
+          "line": 2883
         }
       ],
       "consumers": [],
@@ -1611,7 +1617,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2814
+          "line": 2842
         }
       ],
       "consumers": [
@@ -1643,7 +1649,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2997
+          "line": 3025
         }
       ],
       "consumers": [],
@@ -1690,7 +1696,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2982
+          "line": 3010
         }
       ],
       "consumers": [
@@ -1716,7 +1722,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2503
+          "line": 2531
         }
       ],
       "consumers": [],
@@ -1825,7 +1831,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2718
+          "line": 2746
         }
       ],
       "consumers": [
@@ -3149,7 +3155,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2204
+          "line": 2232
         }
       ],
       "consumers": [],
@@ -3168,7 +3174,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2599
+          "line": 2627
         }
       ],
       "consumers": [
@@ -3194,7 +3200,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2169
+          "line": 2197
         }
       ],
       "consumers": [
@@ -3220,7 +3226,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2376
+          "line": 2404
         }
       ],
       "consumers": [
@@ -3246,7 +3252,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2392
+          "line": 2420
         }
       ],
       "consumers": [
@@ -3272,7 +3278,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2304
+          "line": 2332
         }
       ],
       "consumers": [
@@ -3298,7 +3304,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2311
+          "line": 2339
         }
       ],
       "consumers": [
@@ -3324,7 +3330,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2318
+          "line": 2346
         }
       ],
       "consumers": [
@@ -3350,7 +3356,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2325
+          "line": 2353
         }
       ],
       "consumers": [
@@ -3376,7 +3382,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2895
+          "line": 2923
         }
       ],
       "consumers": [
@@ -3408,7 +3414,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2332
+          "line": 2360
         }
       ],
       "consumers": [
@@ -3434,7 +3440,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2332
+          "line": 2360
         }
       ],
       "consumers": [
@@ -3460,7 +3466,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2891
+          "line": 2919
         }
       ],
       "consumers": [
@@ -3492,7 +3498,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2879
+          "line": 2907
         }
       ],
       "consumers": [
@@ -3524,7 +3530,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2899
+          "line": 2927
         }
       ],
       "consumers": [
@@ -3556,7 +3562,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2992
+          "line": 3020
         }
       ],
       "consumers": [
@@ -3582,7 +3588,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2993
+          "line": 3021
         }
       ],
       "consumers": [
@@ -3608,7 +3614,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2218
+          "line": 2246
         }
       ],
       "consumers": [
@@ -3634,7 +3640,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2587
+          "line": 2615
         }
       ],
       "consumers": [
@@ -3660,7 +3666,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2575
+          "line": 2603
         }
       ],
       "consumers": [
@@ -3686,7 +3692,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2195
+          "line": 2223
         }
       ],
       "consumers": [],
@@ -3705,7 +3711,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2211
+          "line": 2239
         }
       ],
       "consumers": [
@@ -3794,7 +3800,7 @@
         {
           "kind": "reviewed_dynamic_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 1709,
+          "line": 1737,
           "function": "handle_internal_request",
           "note": "Iteration503: Authenticated compatibility declaration remains; native-managed USB rejects this physical prefix on both normal/shutdown ingress. Serial/nonmanaged callers retain the existing route contract. Iteration477: exact authenticated POST requires current producer, Rust-issued runtime generation and real call-mode token/sequence. Rust owns one verified deployment, D4/UAC start/status and stop/status reconciliation with confirmed mixer rollback, same-boot validation, detached USB cleanup and final prepared commit. Caller cancellation does not release physical ownership or replay work. Iteration479: the whole lifecycle/status coordinator is native; no hardware acceptance or complete Go exit is claimed. Iteration679: admitted only on the authenticated .in listener; public and .rs return route_not_found before credential handling."
         }
@@ -3815,7 +3821,7 @@
         {
           "kind": "reviewed_dynamic_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 1709,
+          "line": 1737,
           "function": "handle_internal_request",
           "note": "Iteration503: Authenticated compatibility declaration remains; native-managed USB rejects this physical prefix on both normal/shutdown ingress. Serial/nonmanaged callers retain the existing route contract. Iteration131: exact internal-token-authenticated read-only POST bound to the current Go producer. Rust performs bounded root-shell id -u over libusb under the shared ADB lock; it makes no device changes and does not authorize call-mode deployment by itself. Iteration679: admitted only on the authenticated .in listener; public and .rs return route_not_found before credential handling."
         }
@@ -4067,7 +4073,7 @@
         {
           "kind": "reviewed_dynamic_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 1709,
+          "line": 1737,
           "function": "handle_internal_request",
           "note": "Iteration503: Authenticated compatibility declaration remains; native-managed USB rejects this physical prefix on both normal/shutdown ingress. Serial/nonmanaged callers retain the existing route contract. Iteration479: exact internal-token-only bounded compatibility projection endpoint remains. The public status worker now gathers physical observations natively and calls the same projection in-process; the Go status adapter/cache/projection client are deleted."
         }
@@ -4088,7 +4094,7 @@
         {
           "kind": "reviewed_dynamic_dispatch",
           "file": "rust/crates/proletariusd/src/device_send_store.rs",
-          "line": 349,
+          "line": 505,
           "function": "handle",
           "note": "Internal credential required; method and action whitelist enforced before body parsing."
         }
@@ -4109,7 +4115,7 @@
         {
           "kind": "reviewed_dynamic_dispatch",
           "file": "rust/crates/proletariusd/src/device_send_store.rs",
-          "line": 349,
+          "line": 505,
           "function": "handle",
           "note": "Internal credential required; method and action whitelist enforced before body parsing."
         }
@@ -4130,7 +4136,7 @@
         {
           "kind": "reviewed_dynamic_dispatch",
           "file": "rust/crates/proletariusd/src/device_send_store.rs",
-          "line": 349,
+          "line": 505,
           "function": "handle",
           "note": "Internal credential required; method and action whitelist enforced before body parsing."
         }
@@ -4151,7 +4157,7 @@
         {
           "kind": "reviewed_dynamic_dispatch",
           "file": "rust/crates/proletariusd/src/device_send_store.rs",
-          "line": 349,
+          "line": 505,
           "function": "handle",
           "note": "Internal credential required; method and action whitelist enforced before body parsing."
         }
@@ -4172,7 +4178,7 @@
         {
           "kind": "reviewed_dynamic_dispatch",
           "file": "rust/crates/proletariusd/src/device_send_store.rs",
-          "line": 349,
+          "line": 505,
           "function": "handle",
           "note": "Internal credential required; method and action whitelist enforced before body parsing."
         }
@@ -4676,7 +4682,7 @@
         {
           "kind": "reviewed_dynamic_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 1709,
+          "line": 1737,
           "function": "handle_internal_request",
           "note": "Iteration496: strict private-token-only read-only inventory with retained native parent and actual joined physical cleanup. Selected reader and generation are mandatory. Go public inventory/runtime routing is not changed; adding this capability is not Go exit credit."
         }
@@ -4697,7 +4703,7 @@
         {
           "kind": "reviewed_dynamic_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 1709,
+          "line": 1737,
           "function": "handle_internal_request",
           "note": "Iteration486: exact private-listener/internal-token-only acquire/status/release for one ordinary intent, fenced by current Go producer/source/token/sequence. Release requires actual completed-worker assertion and can reconcile a lost acquire ACK without physical work. Public UDS always returns 404, including authenticated callers. Five-second/4 KiB body limits and shutdown cleanup admission do not authorize fresh calls/SIM/network actions. Native and Go process-wide ordinary claims share one owner; default Go runtime remains. Iteration500: No public Go module or reader startup registration remains. This strict compatibility endpoint remains for genuinely captured old claims and matching cleanup; the native module has its separate native admission key. Iteration501 supersedes the historical Go-caller descriptions above: the Go IMS/session and call-fact producer adapters have been deleted. This authenticated compatibility HTTP contract remains, but it has no current Go IMS production consumer; public reader/module/Nwait execution uses retained native typed owners. Unknown legacy capabilities remain fenced until actual retirement; retained wire compatibility is not active Go execution or full Go-exit proof."
         }
@@ -5390,7 +5396,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2181
+          "line": 2209
         }
       ],
       "consumers": [
@@ -5472,7 +5478,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2621
+          "line": 2649
         }
       ],
       "consumers": [
@@ -5638,7 +5644,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2489
+          "line": 2517
         }
       ],
       "consumers": [
@@ -5664,7 +5670,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2232
+          "line": 2260
         }
       ],
       "consumers": [
@@ -5690,7 +5696,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 3030
+          "line": 3058
         }
       ],
       "consumers": [
@@ -5716,7 +5722,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2239
+          "line": 2267
         }
       ],
       "consumers": [
@@ -5742,7 +5748,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2544
+          "line": 2572
         }
       ],
       "consumers": [],
@@ -5761,7 +5767,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2131
+          "line": 2159
         }
       ],
       "consumers": [],
@@ -5780,7 +5786,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2132
+          "line": 2160
         }
       ],
       "consumers": [],
@@ -5799,7 +5805,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2130
+          "line": 2158
         }
       ],
       "consumers": [],
@@ -5818,7 +5824,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2539
+          "line": 2567
         }
       ],
       "consumers": [
@@ -5844,7 +5850,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2540
+          "line": 2568
         }
       ],
       "consumers": [
@@ -5870,7 +5876,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2593
+          "line": 2621
         }
       ],
       "consumers": [
@@ -5896,7 +5902,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2584
+          "line": 2612
         }
       ],
       "consumers": [
@@ -5922,7 +5928,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2611
+          "line": 2639
         }
       ],
       "consumers": [
@@ -5948,7 +5954,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2605
+          "line": 2633
         }
       ],
       "consumers": [
@@ -5974,7 +5980,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2541
+          "line": 2569
         }
       ],
       "consumers": [
@@ -6145,7 +6151,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2531
+          "line": 2559
         }
       ],
       "consumers": [
@@ -6199,7 +6205,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2704
+          "line": 2732
         }
       ],
       "consumers": [
@@ -6246,7 +6252,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2157
+          "line": 2185
         }
       ],
       "consumers": [
@@ -6272,7 +6278,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2255
+          "line": 2283
         }
       ],
       "consumers": [
@@ -6298,7 +6304,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2269
+          "line": 2297
         }
       ],
       "consumers": [
@@ -6324,7 +6330,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2283
+          "line": 2311
         }
       ],
       "consumers": [
@@ -6350,7 +6356,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2516
+          "line": 2544
         }
       ],
       "consumers": [
@@ -6376,7 +6382,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2518
+          "line": 2546
         }
       ],
       "consumers": [],
@@ -6395,7 +6401,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2517
+          "line": 2545
         }
       ],
       "consumers": [],
@@ -6414,7 +6420,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2520
+          "line": 2548
         }
       ],
       "consumers": [
@@ -6440,7 +6446,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2519
+          "line": 2547
         }
       ],
       "consumers": [
@@ -6472,7 +6478,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2429
+          "line": 2457
         }
       ],
       "consumers": [
@@ -6498,7 +6504,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2643
+          "line": 2671
         }
       ],
       "consumers": [
@@ -6511,6 +6517,18 @@
         {
           "file": "app/Sources/DeviceSMSSendLive.swift",
           "line": 22,
+          "kind": "swift_api_client",
+          "resolution": "literal_or_interpolated"
+        },
+        {
+          "file": "app/Sources/DeviceSMSSendLive.swift",
+          "line": 37,
+          "kind": "swift_api_client",
+          "resolution": "literal_or_interpolated"
+        },
+        {
+          "file": "app/Sources/DeviceSMSSendLive.swift",
+          "line": 41,
           "kind": "swift_api_client",
           "resolution": "literal_or_interpolated"
         }
@@ -6530,13 +6548,31 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2642
+          "line": 2670
         }
       ],
       "consumers": [
         {
           "file": "app/Sources/DeviceSMSSendLive.swift",
           "line": 14,
+          "kind": "swift_api_client",
+          "resolution": "literal_or_interpolated"
+        },
+        {
+          "file": "app/Sources/DeviceSMSSendLive.swift",
+          "line": 28,
+          "kind": "swift_api_client",
+          "resolution": "literal_or_interpolated"
+        },
+        {
+          "file": "app/Sources/DeviceSMSSendLive.swift",
+          "line": 32,
+          "kind": "swift_api_client",
+          "resolution": "literal_or_interpolated"
+        },
+        {
+          "file": "app/Sources/DeviceSMSSendLive.swift",
+          "line": 44,
           "kind": "swift_api_client",
           "resolution": "literal_or_interpolated"
         }
@@ -6556,7 +6592,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2871
+          "line": 2899
         }
       ],
       "consumers": [],
@@ -6575,7 +6611,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2863
+          "line": 2891
         }
       ],
       "consumers": [],
@@ -6594,7 +6630,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2875
+          "line": 2903
         }
       ],
       "consumers": [],
@@ -6613,7 +6649,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2867
+          "line": 2895
         }
       ],
       "consumers": [],
@@ -6632,7 +6668,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2859
+          "line": 2887
         }
       ],
       "consumers": [],
@@ -6651,7 +6687,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2903
+          "line": 2931
         }
       ],
       "consumers": [],
@@ -6670,7 +6706,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2907
+          "line": 2935
         }
       ],
       "consumers": [],
@@ -6689,7 +6725,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2916
+          "line": 2944
         }
       ],
       "consumers": [],
@@ -6708,7 +6744,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2931
+          "line": 2959
         }
       ],
       "consumers": [],
@@ -6727,7 +6763,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2998
+          "line": 3026
         }
       ],
       "consumers": [],
@@ -6746,7 +6782,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2999
+          "line": 3027
         }
       ],
       "consumers": [],
@@ -6765,7 +6801,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 3000
+          "line": 3028
         }
       ],
       "consumers": [],
@@ -6812,7 +6848,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2976
+          "line": 3004
         }
       ],
       "consumers": [],
@@ -6831,7 +6867,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2974
+          "line": 3002
         }
       ],
       "consumers": [],
@@ -6850,7 +6886,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2977
+          "line": 3005
         }
       ],
       "consumers": [],
@@ -6869,7 +6905,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2973
+          "line": 3001
         }
       ],
       "consumers": [],
@@ -6888,7 +6924,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2983
+          "line": 3011
         }
       ],
       "consumers": [
@@ -6914,7 +6950,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2975
+          "line": 3003
         }
       ],
       "consumers": [],
@@ -6933,7 +6969,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2927
+          "line": 2955
         }
       ],
       "consumers": [],
@@ -6952,7 +6988,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2926
+          "line": 2954
         }
       ],
       "consumers": [],
@@ -6971,7 +7007,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2960
+          "line": 2988
         }
       ],
       "consumers": [],
@@ -6990,7 +7026,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2944
+          "line": 2972
         }
       ],
       "consumers": [],
@@ -7009,7 +7045,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2948
+          "line": 2976
         }
       ],
       "consumers": [
@@ -7035,7 +7071,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2952
+          "line": 2980
         }
       ],
       "consumers": [],
@@ -7054,7 +7090,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2956
+          "line": 2984
         }
       ],
       "consumers": [],
@@ -7073,7 +7109,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2503
+          "line": 2531
         }
       ],
       "consumers": [],
@@ -7253,7 +7289,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2719
+          "line": 2747
         }
       ],
       "consumers": [
@@ -7279,7 +7315,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2186
+          "line": 2214
         }
       ],
       "consumers": [],
@@ -7298,7 +7334,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2146
+          "line": 2174
         }
       ],
       "consumers": [],
@@ -7317,7 +7353,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2496
+          "line": 2524
         }
       ],
       "consumers": [
@@ -7343,7 +7379,7 @@
         {
           "kind": "rust_tuple_dispatch",
           "file": "rust/crates/proletariusd/src/main.rs",
-          "line": 2106
+          "line": 2134
         }
       ],
       "consumers": [],
@@ -7678,6 +7714,84 @@
       "method": "POST",
       "paths": [
         "/api/sms/send"
+      ],
+      "resolution": "literal_or_interpolated"
+    },
+    {
+      "source": {
+        "file": "app/Sources/DeviceSMSSendLive.swift",
+        "line": 25
+      },
+      "api_method": "get",
+      "expression": "\"api/sms/send-intents?authority=2\"",
+      "method": "GET",
+      "paths": [
+        "/api/sms/send-intents"
+      ],
+      "resolution": "literal_or_interpolated"
+    },
+    {
+      "source": {
+        "file": "app/Sources/DeviceSMSSendLive.swift",
+        "line": 28
+      },
+      "api_method": "upload",
+      "expression": "\"api/sms/send-intents\"",
+      "method": "POST",
+      "paths": [
+        "/api/sms/send-intents"
+      ],
+      "resolution": "literal_or_interpolated"
+    },
+    {
+      "source": {
+        "file": "app/Sources/DeviceSMSSendLive.swift",
+        "line": 32
+      },
+      "api_method": "upload",
+      "expression": "\"api/sms/send-intents\"",
+      "method": "POST",
+      "paths": [
+        "/api/sms/send-intents"
+      ],
+      "resolution": "literal_or_interpolated"
+    },
+    {
+      "source": {
+        "file": "app/Sources/DeviceSMSSendLive.swift",
+        "line": 37
+      },
+      "api_method": "upload",
+      "expression": "\"api/sms/send\"",
+      "method": "POST",
+      "paths": [
+        "/api/sms/send"
+      ],
+      "resolution": "literal_or_interpolated"
+    },
+    {
+      "source": {
+        "file": "app/Sources/DeviceSMSSendLive.swift",
+        "line": 41
+      },
+      "api_method": "upload",
+      "expression": "\"api/sms/send\"",
+      "method": "POST",
+      "paths": [
+        "/api/sms/send"
+      ],
+      "resolution": "literal_or_interpolated"
+    },
+    {
+      "source": {
+        "file": "app/Sources/DeviceSMSSendLive.swift",
+        "line": 44
+      },
+      "api_method": "upload",
+      "expression": "\"api/sms/send-intents?cancel=2\"",
+      "method": "POST",
+      "paths": [
+        "/api/sms/send-intents"
       ],
       "resolution": "literal_or_interpolated"
     },
@@ -9395,7 +9509,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/device_send_store.rs",
-        "line": 21
+        "line": 23
       },
       "value": "/api/internal/device-send/"
     },
@@ -9411,7 +9525,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/device_sms_send.rs",
-        "line": 1352
+        "line": 1447
       },
       "value": "/api/sms/send-intents"
     },
@@ -9459,7 +9573,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 1524
+        "line": 1552
       },
       "value": "/api/v2/vowifi/eap-exchange/release"
     },
@@ -9467,7 +9581,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 1693
+        "line": 1721
       },
       "value": "/api/internal/call-mode/"
     },
@@ -9475,7 +9589,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 1731
+        "line": 1759
       },
       "value": "/api/internal/call-mode/runtime/verify"
     },
@@ -9483,7 +9597,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 1797
+        "line": 1825
       },
       "value": "/api/internal/device-send/finish"
     },
@@ -9491,7 +9605,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 1798
+        "line": 1826
       },
       "value": "/api/internal/call-archive/ingest"
     },
@@ -9499,7 +9613,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 1799
+        "line": 1827
       },
       "value": "/api/internal/call-archive/observe"
     },
@@ -9507,7 +9621,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 1801
+        "line": 1829
       },
       "value": "/api/internal/modem/close"
     },
@@ -9515,7 +9629,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 1802
+        "line": 1830
       },
       "value": "/api/internal/qmi/close"
     },
@@ -9523,7 +9637,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 1983
+        "line": 2011
       },
       "value": "/api/reader/vowifi/stop-control"
     },
@@ -9531,7 +9645,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 1983
+        "line": 2011
       },
       "value": "/api/vowifi/stop-control"
     },
@@ -9539,7 +9653,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2007
+        "line": 2035
       },
       "value": "/api/internal"
     },
@@ -9547,7 +9661,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2007
+        "line": 2035
       },
       "value": "/api/internal/"
     },
@@ -9555,7 +9669,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2045
+        "line": 2073
       },
       "value": "/api/call-mode/status"
     },
@@ -9563,7 +9677,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2051
+        "line": 2079
       },
       "value": "/api/voice/enabled"
     },
@@ -9571,7 +9685,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2086
+        "line": 2114
       },
       "value": "/api/diagnostics/events"
     },
@@ -9579,7 +9693,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2093
+        "line": 2121
       },
       "value": "/api/multistandby/report"
     },
@@ -9587,7 +9701,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2105
+        "line": 2133
       },
       "value": "/api/reader/imei"
     },
@@ -9595,7 +9709,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2106
+        "line": 2134
       },
       "value": "/api/reader/imei"
     },
@@ -9603,7 +9717,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2107
+        "line": 2135
       },
       "value": "/api/reader/imei"
     },
@@ -9611,7 +9725,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2118
+        "line": 2146
       },
       "value": "/api/reader/ble/status"
     },
@@ -9619,7 +9733,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2130
+        "line": 2158
       },
       "value": "/api/reader/ble/scan"
     },
@@ -9627,7 +9741,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2131
+        "line": 2159
       },
       "value": "/api/reader/ble/connect"
     },
@@ -9635,7 +9749,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2132
+        "line": 2160
       },
       "value": "/api/reader/ble/disconnect"
     },
@@ -9643,7 +9757,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2146
+        "line": 2174
       },
       "value": "/api/esim/notes"
     },
@@ -9651,7 +9765,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2146
+        "line": 2174
       },
       "value": "/api/esim/notes"
     },
@@ -9659,7 +9773,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2157
+        "line": 2185
       },
       "value": "/api/sms/adopt"
     },
@@ -9667,7 +9781,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2157
+        "line": 2185
       },
       "value": "/api/sms/adopt"
     },
@@ -9675,7 +9789,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2169
+        "line": 2197
       },
       "value": "/api/at"
     },
@@ -9683,7 +9797,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2181
+        "line": 2209
       },
       "value": "/api/module/flight-mode"
     },
@@ -9691,7 +9805,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2181
+        "line": 2209
       },
       "value": "/api/module/flight-mode"
     },
@@ -9699,7 +9813,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2186
+        "line": 2214
       },
       "value": "/api/esim/module-notes"
     },
@@ -9707,7 +9821,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2186
+        "line": 2214
       },
       "value": "/api/esim/module-notes"
     },
@@ -9715,7 +9829,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2195
+        "line": 2223
       },
       "value": "/api/esim/phonebook/probe"
     },
@@ -9723,7 +9837,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2204
+        "line": 2232
       },
       "value": "/api/esim/profile"
     },
@@ -9731,7 +9845,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2211
+        "line": 2239
       },
       "value": "/api/esim/switch"
     },
@@ -9739,7 +9853,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2218
+        "line": 2246
       },
       "value": "/api/esim/download"
     },
@@ -9747,7 +9861,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2225
+        "line": 2253
       },
       "value": "/api/esim/profile"
     },
@@ -9755,7 +9869,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2232
+        "line": 2260
       },
       "value": "/api/network/reboot-module"
     },
@@ -9763,7 +9877,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2239
+        "line": 2267
       },
       "value": "/api/network"
     },
@@ -9771,7 +9885,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2239
+        "line": 2267
       },
       "value": "/api/network/usbnet"
     },
@@ -9779,7 +9893,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2248
+        "line": 2276
       },
       "value": "/api/sms"
     },
@@ -9787,7 +9901,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2255
+        "line": 2283
       },
       "value": "/api/sms/clear"
     },
@@ -9795,7 +9909,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2269
+        "line": 2297
       },
       "value": "/api/sms/delete"
     },
@@ -9803,7 +9917,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2283
+        "line": 2311
       },
       "value": "/api/sms/delete-sender"
     },
@@ -9811,7 +9925,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2297
+        "line": 2325
       },
       "value": "/api/sms/devices"
     },
@@ -9819,7 +9933,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2304
+        "line": 2332
       },
       "value": "/api/call-mode/download"
     },
@@ -9827,7 +9941,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2311
+        "line": 2339
       },
       "value": "/api/call-mode/enable"
     },
@@ -9835,7 +9949,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2318
+        "line": 2346
       },
       "value": "/api/call-mode/restore"
     },
@@ -9843,7 +9957,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2325
+        "line": 2353
       },
       "value": "/api/call-mode/retry"
     },
@@ -9851,7 +9965,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2332
+        "line": 2360
       },
       "value": "/api/call/audio/start"
     },
@@ -9859,7 +9973,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2332
+        "line": 2360
       },
       "value": "/api/call/audio/stop"
     },
@@ -9867,7 +9981,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2346
+        "line": 2374
       },
       "value": "/api/call-mode/backups"
     },
@@ -9875,7 +9989,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2361
+        "line": 2389
       },
       "value": "/api/call-mode/backups/export"
     },
@@ -9883,7 +9997,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2376
+        "line": 2404
       },
       "value": "/api/call-mode/backups/delete"
     },
@@ -9891,7 +10005,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2392
+        "line": 2420
       },
       "value": "/api/call-mode/backups/import"
     },
@@ -9899,7 +10013,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2407
+        "line": 2435
       },
       "value": "/api/sms/status"
     },
@@ -9907,7 +10021,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2419
+        "line": 2447
       },
       "value": "/api/sms/storage"
     },
@@ -9915,7 +10029,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2429
+        "line": 2457
       },
       "value": "/api/sms/refresh"
     },
@@ -9923,7 +10037,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2489
+        "line": 2517
       },
       "value": "/api/network/check-4g"
     },
@@ -9931,7 +10045,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2496
+        "line": 2524
       },
       "value": "/api/network/services-order"
     },
@@ -9939,7 +10053,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2503
+        "line": 2531
       },
       "value": "/api/voice/enabled"
     },
@@ -9947,7 +10061,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2503
+        "line": 2531
       },
       "value": "/api/voice/enable"
     },
@@ -9955,7 +10069,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2515
+        "line": 2543
       },
       "value": "/api/sms/forwarding/status"
     },
@@ -9963,7 +10077,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2516
+        "line": 2544
       },
       "value": "/api/sms/forwarding/configure"
     },
@@ -9971,7 +10085,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2517
+        "line": 2545
       },
       "value": "/api/sms/forwarding/enqueue"
     },
@@ -9979,7 +10093,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2518
+        "line": 2546
       },
       "value": "/api/sms/forwarding/device-snapshot"
     },
@@ -9987,7 +10101,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2519
+        "line": 2547
       },
       "value": "/api/sms/forwarding/test"
     },
@@ -9995,7 +10109,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2520
+        "line": 2548
       },
       "value": "/api/sms/forwarding/queue-action"
     },
@@ -10003,7 +10117,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2531
+        "line": 2559
       },
       "value": "/api/reader/vowifi/proxy-check"
     },
@@ -10011,7 +10125,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2538
+        "line": 2566
       },
       "value": "/api/reader/info"
     },
@@ -10019,7 +10133,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2539
+        "line": 2567
       },
       "value": "/api/reader/connect"
     },
@@ -10027,7 +10141,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2540
+        "line": 2568
       },
       "value": "/api/reader/disconnect"
     },
@@ -10035,7 +10149,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2541
+        "line": 2569
       },
       "value": "/api/reader/refresh"
     },
@@ -10043,7 +10157,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2544
+        "line": 2572
       },
       "value": "/api/reader/auth"
     },
@@ -10051,7 +10165,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2554
+        "line": 2582
       },
       "value": "/api/reader/esim"
     },
@@ -10059,7 +10173,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2557
+        "line": 2585
       },
       "value": "/api/reader/esim/operation"
     },
@@ -10067,7 +10181,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2560
+        "line": 2588
       },
       "value": "/api/reader/esim/mutation-intent"
     },
@@ -10075,7 +10189,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2566
+        "line": 2594
       },
       "value": "/api/esim/operation"
     },
@@ -10083,7 +10197,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2569
+        "line": 2597
       },
       "value": "/api/esim/mutation-intent"
     },
@@ -10091,7 +10205,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2575
+        "line": 2603
       },
       "value": "/api/esim/operation/acknowledge"
     },
@@ -10099,7 +10213,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2578
+        "line": 2606
       },
       "value": "/api/reader/esim/health"
     },
@@ -10107,7 +10221,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2584
+        "line": 2612
       },
       "value": "/api/reader/esim/download/confirm"
     },
@@ -10115,7 +10229,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2587
+        "line": 2615
       },
       "value": "/api/esim/download/confirm"
     },
@@ -10123,7 +10237,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2593
+        "line": 2621
       },
       "value": "/api/reader/esim/download"
     },
@@ -10131,7 +10245,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2599
+        "line": 2627
       },
       "value": "/api/reader/esim/profile"
     },
@@ -10139,7 +10253,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2602
+        "line": 2630
       },
       "value": "/api/reader/esim/profile"
     },
@@ -10147,7 +10261,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2605
+        "line": 2633
       },
       "value": "/api/reader/esim/switch"
     },
@@ -10155,7 +10269,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2608
+        "line": 2636
       },
       "value": "/api/reader/esim/notifications"
     },
@@ -10163,7 +10277,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2611
+        "line": 2639
       },
       "value": "/api/reader/esim/notifications/retry"
     },
@@ -10171,7 +10285,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2621
+        "line": 2649
       },
       "value": "/api/multistandby/messages/send"
     },
@@ -10179,7 +10293,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2641
+        "line": 2669
       },
       "value": "/api/sms/send-intents"
     },
@@ -10187,7 +10301,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2642
+        "line": 2670
       },
       "value": "/api/sms/send-intents"
     },
@@ -10195,7 +10309,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2643
+        "line": 2671
       },
       "value": "/api/sms/send"
     },
@@ -10203,7 +10317,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2656
+        "line": 2684
       },
       "value": "/api/multistandby/cards"
     },
@@ -10211,7 +10325,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2675
+        "line": 2703
       },
       "value": "/api/multistandby/profiles"
     },
@@ -10219,7 +10333,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2703
+        "line": 2731
       },
       "value": "/api/reader/vowifi/stop-control"
     },
@@ -10227,7 +10341,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2704
+        "line": 2732
       },
       "value": "/api/reader/vowifi/stop-control"
     },
@@ -10235,7 +10349,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2718
+        "line": 2746
       },
       "value": "/api/vowifi/stop-control"
     },
@@ -10243,7 +10357,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2719
+        "line": 2747
       },
       "value": "/api/vowifi/stop-control"
     },
@@ -10251,7 +10365,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2739
+        "line": 2767
       },
       "value": "/api/vowifi"
     },
@@ -10259,7 +10373,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2740
+        "line": 2768
       },
       "value": "/api/vowifi/result"
     },
@@ -10267,7 +10381,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2741
+        "line": 2769
       },
       "value": "/api/vowifi/reconcile"
     },
@@ -10275,7 +10389,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2784
+        "line": 2812
       },
       "value": "/api/call/dtmf"
     },
@@ -10283,73 +10397,9 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2785
+        "line": 2813
       },
       "value": "/api/call/status"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2786
-      },
-      "value": "/api/call/dial"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2787
-      },
-      "value": "/api/call/answer"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2788
-      },
-      "value": "/api/call/hangup"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2796
-      },
-      "value": "/api/status"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2804
-      },
-      "value": "/api/status"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2804
-      },
-      "value": "/api/health"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2807
-      },
-      "value": "/api/esim"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2807
-      },
-      "value": "/api/esim/health"
     },
     {
       "language": "rust",
@@ -10357,93 +10407,13 @@
         "file": "rust/crates/proletariusd/src/main.rs",
         "line": 2814
       },
-      "value": "/api/v2/runtime"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2855
-      },
-      "value": "/api/v2/migration-readiness"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2859
-      },
-      "value": "/api/v2/carrier/resolve"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2863
-      },
-      "value": "/api/v2/call/dtmf"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2867
-      },
-      "value": "/api/v2/call/negotiate-sdp"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2871
-      },
-      "value": "/api/v2/call/build-local-sdp"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2875
-      },
-      "value": "/api/v2/call/invite-policy"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2879
-      },
-      "value": "/api/call/dtmf"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2883
-      },
-      "value": "/api/call/status"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2887
-      },
-      "value": "/api/call-mode/status"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2891
-      },
       "value": "/api/call/dial"
     },
     {
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2895
+        "line": 2815
       },
       "value": "/api/call/answer"
     },
@@ -10451,7 +10421,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2899
+        "line": 2816
       },
       "value": "/api/call/hangup"
     },
@@ -10459,303 +10429,23 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2903
+        "line": 2824
       },
-      "value": "/api/v2/ims/validate-register-response"
+      "value": "/api/status"
     },
     {
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2907
+        "line": 2832
       },
-      "value": "/api/v2/reader/authenticate"
+      "value": "/api/status"
     },
     {
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2916
-      },
-      "value": "/api/v2/reader/eap-aka"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2926
-      },
-      "value": "/api/v2/vowifi/eap-identity"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2927
-      },
-      "value": "/api/v2/vowifi/eap-exchange/release"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2931
-      },
-      "value": "/api/v2/reader/identity"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2940
-      },
-      "value": "/api/reader/list"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2944
-      },
-      "value": "/api/v2/vowifi/proxy-policy"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2948
-      },
-      "value": "/api/v2/vowifi/proxy-probe"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2952
-      },
-      "value": "/api/v2/vowifi/select-transport"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2956
-      },
-      "value": "/api/v2/vowifi/session-policy"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2960
-      },
-      "value": "/api/v2/vowifi/native-session-plan"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2973
-      },
-      "value": "/api/v2/sms/encode-rpdu"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2974
-      },
-      "value": "/api/v2/sms/decode-rpdu"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2975
-      },
-      "value": "/api/v2/sms/prepare-tpdu"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2976
-      },
-      "value": "/api/v2/sms/decode-incoming-tpdu"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2977
-      },
-      "value": "/api/v2/sms/decode-stored-snapshot"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2982
-      },
-      "value": "/api/v2/sms/forwarding/handoff"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2983
-      },
-      "value": "/api/v2/sms/forwarding/handoff"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2991
-      },
-      "value": "/api/calls"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2992
-      },
-      "value": "/api/calls/clear"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2993
-      },
-      "value": "/api/calls/delete"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2997
-      },
-      "value": "/api/v2/sms-archive"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2998
-      },
-      "value": "/api/v2/sms-archive/clear"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2999
-      },
-      "value": "/api/v2/sms-archive/delete"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 3000
-      },
-      "value": "/api/v2/sms-archive/delete-sender"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 3010
-      },
-      "value": "/api/sms/send"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 3010
-      },
-      "value": "/api/sms/send-intents"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 3015
-      },
-      "value": "/api/multistandby/"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 3016
-      },
-      "value": "/api/multistandby/stop"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 3017
-      },
-      "value": "/api/multistandby/report"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 3018
-      },
-      "value": "/api/multistandby/operations/"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 3030
-      },
-      "value": "/api/network/recovery"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 3030
-      },
-      "value": "/api/network/recovery"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 3033
-      },
-      "value": "/api/network/services"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 3039
-      },
-      "value": "/api/network/traffic"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 3051
-      },
-      "value": "/api/v2/device-snapshot"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 3064
+        "line": 2832
       },
       "value": "/api/health"
     },
@@ -10763,15 +10453,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 3084
-      },
-      "value": "/api/esim/health"
-    },
-    {
-      "language": "rust",
-      "source": {
-        "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 3091
+        "line": 2835
       },
       "value": "/api/esim"
     },
@@ -10779,7 +10461,439 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 3098
+        "line": 2835
+      },
+      "value": "/api/esim/health"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2842
+      },
+      "value": "/api/v2/runtime"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2883
+      },
+      "value": "/api/v2/migration-readiness"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2887
+      },
+      "value": "/api/v2/carrier/resolve"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2891
+      },
+      "value": "/api/v2/call/dtmf"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2895
+      },
+      "value": "/api/v2/call/negotiate-sdp"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2899
+      },
+      "value": "/api/v2/call/build-local-sdp"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2903
+      },
+      "value": "/api/v2/call/invite-policy"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2907
+      },
+      "value": "/api/call/dtmf"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2911
+      },
+      "value": "/api/call/status"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2915
+      },
+      "value": "/api/call-mode/status"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2919
+      },
+      "value": "/api/call/dial"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2923
+      },
+      "value": "/api/call/answer"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2927
+      },
+      "value": "/api/call/hangup"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2931
+      },
+      "value": "/api/v2/ims/validate-register-response"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2935
+      },
+      "value": "/api/v2/reader/authenticate"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2944
+      },
+      "value": "/api/v2/reader/eap-aka"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2954
+      },
+      "value": "/api/v2/vowifi/eap-identity"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2955
+      },
+      "value": "/api/v2/vowifi/eap-exchange/release"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2959
+      },
+      "value": "/api/v2/reader/identity"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2968
+      },
+      "value": "/api/reader/list"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2972
+      },
+      "value": "/api/v2/vowifi/proxy-policy"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2976
+      },
+      "value": "/api/v2/vowifi/proxy-probe"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2980
+      },
+      "value": "/api/v2/vowifi/select-transport"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2984
+      },
+      "value": "/api/v2/vowifi/session-policy"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 2988
+      },
+      "value": "/api/v2/vowifi/native-session-plan"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3001
+      },
+      "value": "/api/v2/sms/encode-rpdu"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3002
+      },
+      "value": "/api/v2/sms/decode-rpdu"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3003
+      },
+      "value": "/api/v2/sms/prepare-tpdu"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3004
+      },
+      "value": "/api/v2/sms/decode-incoming-tpdu"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3005
+      },
+      "value": "/api/v2/sms/decode-stored-snapshot"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3010
+      },
+      "value": "/api/v2/sms/forwarding/handoff"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3011
+      },
+      "value": "/api/v2/sms/forwarding/handoff"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3019
+      },
+      "value": "/api/calls"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3020
+      },
+      "value": "/api/calls/clear"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3021
+      },
+      "value": "/api/calls/delete"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3025
+      },
+      "value": "/api/v2/sms-archive"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3026
+      },
+      "value": "/api/v2/sms-archive/clear"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3027
+      },
+      "value": "/api/v2/sms-archive/delete"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3028
+      },
+      "value": "/api/v2/sms-archive/delete-sender"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3038
+      },
+      "value": "/api/sms/send"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3038
+      },
+      "value": "/api/sms/send-intents"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3043
+      },
+      "value": "/api/multistandby/"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3044
+      },
+      "value": "/api/multistandby/stop"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3045
+      },
+      "value": "/api/multistandby/report"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3046
+      },
+      "value": "/api/multistandby/operations/"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3058
+      },
+      "value": "/api/network/recovery"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3058
+      },
+      "value": "/api/network/recovery"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3061
+      },
+      "value": "/api/network/services"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3067
+      },
+      "value": "/api/network/traffic"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3079
+      },
+      "value": "/api/v2/device-snapshot"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3092
+      },
+      "value": "/api/health"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3112
+      },
+      "value": "/api/esim/health"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3119
+      },
+      "value": "/api/esim"
+    },
+    {
+      "language": "rust",
+      "source": {
+        "file": "rust/crates/proletariusd/src/main.rs",
+        "line": 3126
       },
       "value": "/api/status"
     },
@@ -18162,6 +18276,54 @@
     {
       "language": "swift",
       "source": {
+        "file": "app/Sources/DeviceSMSSendLive.swift",
+        "line": 25
+      },
+      "value": "api/sms/send-intents?authority=2"
+    },
+    {
+      "language": "swift",
+      "source": {
+        "file": "app/Sources/DeviceSMSSendLive.swift",
+        "line": 28
+      },
+      "value": "api/sms/send-intents"
+    },
+    {
+      "language": "swift",
+      "source": {
+        "file": "app/Sources/DeviceSMSSendLive.swift",
+        "line": 32
+      },
+      "value": "api/sms/send-intents"
+    },
+    {
+      "language": "swift",
+      "source": {
+        "file": "app/Sources/DeviceSMSSendLive.swift",
+        "line": 37
+      },
+      "value": "api/sms/send"
+    },
+    {
+      "language": "swift",
+      "source": {
+        "file": "app/Sources/DeviceSMSSendLive.swift",
+        "line": 41
+      },
+      "value": "api/sms/send"
+    },
+    {
+      "language": "swift",
+      "source": {
+        "file": "app/Sources/DeviceSMSSendLive.swift",
+        "line": 44
+      },
+      "value": "api/sms/send-intents?cancel=2"
+    },
+    {
+      "language": "swift",
+      "source": {
         "file": "app/Sources/DeviceSnapshotStore.swift",
         "line": 67
       },
@@ -18896,8 +19058,8 @@
     },
     {
       "file": "app/Sources/DeviceSMSSendLive.swift",
-      "sha256": "2066d5beda804b1145681e7bbf9016c331074021f8007c1793e2cd7a5a6f64ed",
-      "review": "Reviewed live device-send API: GET list and single intent use fixed /api/sms/send-intents with percent-encoded query values; POST prepare and submit use fixed /api/sms/send-intents and /api/sms/send. Availability follows backend state. These remain Rust HTTP endpoints with documented Go hardware and mode dependencies; no new route or send attempt is inferred from this scope.\n\nCloud reviewed preparation at a7b12205e406d215f5c4a462856804ad8410a5c1: Root review of exact phase-one diff: retained owner binding, exact retry installation, original accepted archive-only receipt; GitHub regression acceptance remains pending. No functional, device or product acceptance is awarded.",
+      "sha256": "3cc725d35ccd745bb2a05639958e3863d88068976bedf81ec561cbc7d043d1fc",
+      "review": "Reviewed live device-send API: GET list and single intent use fixed /api/sms/send-intents with percent-encoded query values; POST prepare and submit use fixed /api/sms/send-intents and /api/sms/send. Availability follows backend state. These remain Rust HTTP endpoints with documented Go hardware and mode dependencies; no new route or send attempt is inferred from this scope.\n\nCloud reviewed preparation at a7b12205e406d215f5c4a462856804ad8410a5c1: Root review of exact phase-one diff: retained owner binding, exact retry installation, original accepted archive-only receipt; GitHub regression acceptance remains pending. No functional, device or product acceptance is awarded.\n\nCloud reviewed preparation at bfc29eb42426a7d0a9ceedf80ce947878c9a72de: Reviewed raw-byte v2 reserve/send transport and original nonce/payload journal recovery; no automatic fresh identity after uncertainty. Independent Swift GitHub fixtures passed 29 groups; integrated final-source gates remain required. No functional, device or product acceptance is awarded.",
       "source": {
         "file": "app/Sources/DeviceSMSSendLive.swift",
         "line": 1
@@ -19305,7 +19467,7 @@
       "review": "Routing/ownership or dynamic suffix dispatch; any semantic change requires manual re-review before updating this digest.\n\nIteration701 controlled source-scope pin: handle approved_current in stability-700/s13-durable-manual-review-audio.json (SHA256 a8816deb80f6d52b1f1c468d8116529f13872446f81397207afbbf761ceb72b0); current raw file 038d9100e81a90f845f9ea3f66b92de1c1ce4c3aedfb15153dcaf6cb799a931f. Matching real original scope and complete reviewed current scope/delta are bound in the report. This limited source-review pin grants no hardware, carrier, performance or P0-P6 product acceptance; unchanged outside scopes and pending owner issues remain separate.",
       "source": {
         "file": "rust/crates/proletariusd/src/device_send_store.rs",
-        "line": 349
+        "line": 505
       }
     },
     {
@@ -19319,8 +19481,8 @@
     },
     {
       "file": "rust/crates/proletariusd/src/device_sms_send.rs",
-      "sha256": "a032c504efbb72fa79b9219c83915924ae83d553fa59143df34e3a18d0472bed",
-      "review": "Iteration510 supersedes runtime Go dependency portions of earlier reviews: production child startup/monitor/restart and fallback dispatch are retired; native exact-session ownership, durable journal and retained physical cleanup stay authoritative. Reviewed the complete native public device-SMS service: strict bounded JSON with existing message whitespace and optional-ID semantics; payload/target conflicts; direct durable get/list/prepare/claim/finish; loser-binding release; batched prepared-binding validation and private-field redaction; one hardware execute after a confirmed claim; non-replayable unknown on partial/lost outcomes; stable send_request_id archive identity; success only after confirmed archive. A bounded sixteen-job supervisor keeps post-send archive/finish alive after the HTTP waiter drops. Ordinary ledger/archive waits each have an eight-second deadline. Claim uses a separate production-shared sixteen-permit worker budget and a result/acceptance double handshake: caller waiting is bounded at eight seconds without retry, but the worker retains its permit through the actual late write and cleanup RPC. Only a result with can_submit=true and this same attempt can release its binding when delivery or acceptance acknowledgement is lost; a competing losing claim never revokes the winning route. Successful receipt requires an acceptance acknowledgement before submission resumes. Private RPC has eight-second control and 180-second execute budgets. Go coded selection errors retain recoverable and original status/code/error. Go restart invalidates process-local bindings; Go hardware ownership is retained.\n\nIteration349: A captured plain USB AT route is stored with a private Rust-owner marker while the raw Go capability remains opaque for route validation/release. After the durable single-use claim, Rust calls its USB AT owner directly using the currently active SIM lease and committed identity snapshot; Go execute is skipped. Missing/stale/voice lease or identity fails closed, partial acceptance remains unknown/non-replayable, and Go route capability is released after finish. Tests use fake owners only; no physical SMS is claimed.\n\nIteration350: A generation-bound `rust_modem` binding dispatches the claimed send directly to `ModuleRadioService::submit_device_sms`, which holds the Rust module reservation through completion and calls the Rust modem actor with the captured SIM generation. It does not execute through Go. The Go capability is released only after durable finish; failures and uncertain outcomes remain non-replayable. A detached Rust supervisor preserves the 180-second public response budget while holding the radio reservation and durable claim until the actor settles; it then finalizes the ledger and releases the Go route capability. A timed-out or disconnected waiter sees unknown and cannot replay the send.\n\nIteration467: A new plain USB route is converted at capture into a Rust-owned capability bound to the exact USB session and SIM identity generation. Go supplies the initial route observation, then its opaque token is released; validation and the single-use submit no longer call Go validate/execute for this binding. Legacy persisted Rust USB bindings, Rust modem bindings and other compatibility routes retain their existing recovery behavior. USB and modem physical submissions now use detached owner tasks so an HTTP waiter timeout returns unknown while durable claim finalization and module reservation release wait for actual I/O settlement. Regression coverage verifies local session binding without Go route RPC and detached completion after waiter timeout; no physical SMS was sent.\n\nIteration468: For ordinary module requests without an expected subscription and while VoWiFi does not own the SIM channel, Rust now branches on the configured ModuleRadio transport: serial captures its current modem SMS generation; USB captures the active Rust USB AT session/SIM identity generation. A stale serial generation cannot override a USB configuration. The capability is locally fenced and never sent to Go validate/execute. Requests selecting the reader, an explicit subscription, or an unavailable Rust owner continue through the compatibility capture path. Tests cover configured serial-vs-USB selection, stale session rejection, and reader/subscription bypass; hardware and carrier SMS remain unverified.\n\nIteration468 transport fence: USB capture additionally requires the Rust USB owner session to equal the session configured in ModuleRadio; a still-active but retired/differently configured USB lease falls back instead of being captured. Synthetic tests cover matching, retired, missing and zero-generation cases.\n\nIteration485 baseline-delta review: a retained native intent plus explicit reader selection captures its process/intent/IMS-generation capability and exact hashed subscription; ambiguous automatic selection requires an explicit device. Native unavailable/stale capture or stored native tokens never reverse to Go. Old Go-reader prepared rows become expired under a native intent. After the existing unique durable claim, native sending uses one typed SendText and read-only SmsStatus; accepted/unknown parts never replay or double-archive. Compatibility capture/execute and prepared-claim boundaries preserve the prior Go-ready/socket 503 precedence; malformed/non-native requests retain legacy recovery behavior, while proven native reader/USB/modem-generation routes do not require the Go child. Thirty-seven device-send tests (ten actual registered dispatcher fixtures plus two public HTTP recovery cases and prior regressions) passed. Default module/reader IMS compatibility and N-wait remain Go-dependent; gates remain false. Iteration498: Exposes the existing compatibility_binding predicate to the durable recovery owner so Go-child exit uses the same immutable dispatch classification as actual submission; no new SMS dispatch or automatic retry behavior. Iteration498: Exposes the existing compatibility_binding predicate to the durable recovery owner so Go-child exit uses the same immutable dispatch classification as actual submission; no new SMS dispatch or automatic retry behavior. Iteration499: Added rust_module_ims binding selection/recovery exclusion, frozen capability validation and retained single-claim dispatch. Unique native module intent chooses dji for explicit/default selection even when unavailable, preventing AT/Go fallback; ambiguous ownership fails closed. Dormant module Service is only observed, never initialized here. Iteration502: Configured native USB capture no longer needs Go route acquisition. Fresh CPIN/QCCID/CIMI, RF admission and exact session/generation facts prepare a native capability; retained execution acquires a short physical lease, rechecks actual identity and finishes the existing durable one-shot ledger/archive. Reader/module IMS precedence and old binding compatibility remain; preparation errors preserve selection categories while post-claim uncertainty never replays.\n\nIteration506: Native serial intents use exact actor owner_epoch, serial_session and SIM generation. Configured serial owns default/dji capture including not-ready errors; recheck after delayed compatibility capture releases obsolete Go token before native recapture. Old generation-only and wrapped rust_modem capabilities expire, never upgrade or execute; wrapped tokens may only be released for cleanup. Full-binding validity precedes durable claim and retained radio/actor execution. USB/reader/module IMS and true compatibility behavior remain. Go serial lifecycle/configuration remains a transitive dependency; offline software evidence is separate from physical acceptance.\n\nIteration506 repair: go_recovery_binding separates owner-loss recovery from new-send admission. Retired rust_modem wrappers cannot authorize sending but must change old submitting records to unknown on Go exit; native v2 serial records keep their retained owner and may finish. The first full gate caught this real recovery regression; the existing legacy assertion is retained and v2 completion coverage added.\n\nIteration508: Sticky full native serial claim selects typed actor/session/SIM facts and capture even before radio configuration, preventing Go fallback during initial failure or absence. Strict native transmit/receive readiness and old-token invalidation remain; explicit standalone compatibility cleanup is retained. No new sending capability is inferred merely from lifecycle selection. Iteration556 reviewed module recovery Gate and isolation projection; 294 Rust routes, 127 Swift HTTP calls and 54 HEAD aliases unchanged. This does not certify historical physical restore or unwrapped downgrade. Iteration579: Check live module revocation at new route capture and before durable claim; ordinary reader route precedence remains intact. Offline software evidence only; hardware/carrier and complete P0-P6 acceptance remain pending.\n\nIteration702 scoped manual source review (whole production file): BodyExt is test-only; remove Limited collector. POST uses the shared 1 MiB collector with absolute 5 s ingress deadline; timeout adds typed 408 request_body_timeout before decoding/claim/supervisor dispatch. Existing other-body-error 400 and its Chinese diagnostic remain. GET still never consumes the body. Service::post validates explicit target/payload/request ID against the durable row. Service::submit executes only a prepared row after binding validity and exact single-use claim; non-prepared rows return their existing accepted/unknown outcome. Sticky native Reader/Module/serial/USB capability classification does not downgrade to compatibility execution. start_claim owns a separate sixteen-permit worker and late-result/acceptance handshake. Failure to deliver or accept can release only this exact winning attempt; losing claims cannot release another attempt. submit retains the actual worker through physical settlement, and the public supervisor owns its sixteen-permit slot after the HTTP waiter is cancelled. finish_claimed_send persists the exact accepted/unknown outcome and stable archive identity; partial/missing/timeout physical evidence is non-replayable unknown. Native Module/serial/USB paths hold their captured route/RF/session until settlement; compatibility RPC execution exists only in cfg(test) in the current file. Evidence: build/reports/stability-701/s13-sms-owner-review-forwarding.json#/scopes/0; decision approve_current, exact anchored old scope and current raw/normalized source verified. This pin records only the approved source/contract delta; it does not certify hardware, carrier interoperability, long-run behavior, or completion of S03/P6/other open acceptance. No pending scope is included.\n\nS13 independent manual semantic review 2026-10-24: class B. Replace detached semaphore-only supervisors with one bounded root Job inherited by child claim, native IMS/serial/USB and output envelopes. Register before spawn; caller cancellation does not release accepted physical/finalizer work. Durable ledger/archive I/O retain same Job through actual worker and IoAck. Whitelist only four exact precommit Store refusals as business output; real I/O/unknown configuration remain sticky orphan failures. No v2 family/seal pilot activation is present in this delta. Boundary: New owner.rs and changed device_send_store Store/open/send_owner lie outside existing scopes. Candidate must add both whole-production pins; parent whole-file fingerprint alone cannot bind child implementation. No claim of production S10 v2 adoption. Limits: 165 source-bound independent slice tests and canonical targeted run; historical full workspace had failures and is not current complete gate. Exact expected/current production and normalized evidence, hashes and test provenance: build/reports/s13-manual-scope-semantic-review-20261024/scope-decisions.json#/3. No functional acceptance; P5/P6 remain OPEN; successor/cold/full gate not established.\n\nCloud reviewed preparation at a7b12205e406d215f5c4a462856804ad8410a5c1: Root review of exact phase-one diff: retained owner binding, exact retry installation, original accepted archive-only receipt; GitHub regression acceptance remains pending. No functional, device or product acceptance is awarded.",
+      "sha256": "a921e9663e649993288beb81d7128bc3a96874f81808511cafecd50f8e5863a6",
+      "review": "Iteration510 supersedes runtime Go dependency portions of earlier reviews: production child startup/monitor/restart and fallback dispatch are retired; native exact-session ownership, durable journal and retained physical cleanup stay authoritative. Reviewed the complete native public device-SMS service: strict bounded JSON with existing message whitespace and optional-ID semantics; payload/target conflicts; direct durable get/list/prepare/claim/finish; loser-binding release; batched prepared-binding validation and private-field redaction; one hardware execute after a confirmed claim; non-replayable unknown on partial/lost outcomes; stable send_request_id archive identity; success only after confirmed archive. A bounded sixteen-job supervisor keeps post-send archive/finish alive after the HTTP waiter drops. Ordinary ledger/archive waits each have an eight-second deadline. Claim uses a separate production-shared sixteen-permit worker budget and a result/acceptance double handshake: caller waiting is bounded at eight seconds without retry, but the worker retains its permit through the actual late write and cleanup RPC. Only a result with can_submit=true and this same attempt can release its binding when delivery or acceptance acknowledgement is lost; a competing losing claim never revokes the winning route. Successful receipt requires an acceptance acknowledgement before submission resumes. Private RPC has eight-second control and 180-second execute budgets. Go coded selection errors retain recoverable and original status/code/error. Go restart invalidates process-local bindings; Go hardware ownership is retained.\n\nIteration349: A captured plain USB AT route is stored with a private Rust-owner marker while the raw Go capability remains opaque for route validation/release. After the durable single-use claim, Rust calls its USB AT owner directly using the currently active SIM lease and committed identity snapshot; Go execute is skipped. Missing/stale/voice lease or identity fails closed, partial acceptance remains unknown/non-replayable, and Go route capability is released after finish. Tests use fake owners only; no physical SMS is claimed.\n\nIteration350: A generation-bound `rust_modem` binding dispatches the claimed send directly to `ModuleRadioService::submit_device_sms`, which holds the Rust module reservation through completion and calls the Rust modem actor with the captured SIM generation. It does not execute through Go. The Go capability is released only after durable finish; failures and uncertain outcomes remain non-replayable. A detached Rust supervisor preserves the 180-second public response budget while holding the radio reservation and durable claim until the actor settles; it then finalizes the ledger and releases the Go route capability. A timed-out or disconnected waiter sees unknown and cannot replay the send.\n\nIteration467: A new plain USB route is converted at capture into a Rust-owned capability bound to the exact USB session and SIM identity generation. Go supplies the initial route observation, then its opaque token is released; validation and the single-use submit no longer call Go validate/execute for this binding. Legacy persisted Rust USB bindings, Rust modem bindings and other compatibility routes retain their existing recovery behavior. USB and modem physical submissions now use detached owner tasks so an HTTP waiter timeout returns unknown while durable claim finalization and module reservation release wait for actual I/O settlement. Regression coverage verifies local session binding without Go route RPC and detached completion after waiter timeout; no physical SMS was sent.\n\nIteration468: For ordinary module requests without an expected subscription and while VoWiFi does not own the SIM channel, Rust now branches on the configured ModuleRadio transport: serial captures its current modem SMS generation; USB captures the active Rust USB AT session/SIM identity generation. A stale serial generation cannot override a USB configuration. The capability is locally fenced and never sent to Go validate/execute. Requests selecting the reader, an explicit subscription, or an unavailable Rust owner continue through the compatibility capture path. Tests cover configured serial-vs-USB selection, stale session rejection, and reader/subscription bypass; hardware and carrier SMS remain unverified.\n\nIteration468 transport fence: USB capture additionally requires the Rust USB owner session to equal the session configured in ModuleRadio; a still-active but retired/differently configured USB lease falls back instead of being captured. Synthetic tests cover matching, retired, missing and zero-generation cases.\n\nIteration485 baseline-delta review: a retained native intent plus explicit reader selection captures its process/intent/IMS-generation capability and exact hashed subscription; ambiguous automatic selection requires an explicit device. Native unavailable/stale capture or stored native tokens never reverse to Go. Old Go-reader prepared rows become expired under a native intent. After the existing unique durable claim, native sending uses one typed SendText and read-only SmsStatus; accepted/unknown parts never replay or double-archive. Compatibility capture/execute and prepared-claim boundaries preserve the prior Go-ready/socket 503 precedence; malformed/non-native requests retain legacy recovery behavior, while proven native reader/USB/modem-generation routes do not require the Go child. Thirty-seven device-send tests (ten actual registered dispatcher fixtures plus two public HTTP recovery cases and prior regressions) passed. Default module/reader IMS compatibility and N-wait remain Go-dependent; gates remain false. Iteration498: Exposes the existing compatibility_binding predicate to the durable recovery owner so Go-child exit uses the same immutable dispatch classification as actual submission; no new SMS dispatch or automatic retry behavior. Iteration498: Exposes the existing compatibility_binding predicate to the durable recovery owner so Go-child exit uses the same immutable dispatch classification as actual submission; no new SMS dispatch or automatic retry behavior. Iteration499: Added rust_module_ims binding selection/recovery exclusion, frozen capability validation and retained single-claim dispatch. Unique native module intent chooses dji for explicit/default selection even when unavailable, preventing AT/Go fallback; ambiguous ownership fails closed. Dormant module Service is only observed, never initialized here. Iteration502: Configured native USB capture no longer needs Go route acquisition. Fresh CPIN/QCCID/CIMI, RF admission and exact session/generation facts prepare a native capability; retained execution acquires a short physical lease, rechecks actual identity and finishes the existing durable one-shot ledger/archive. Reader/module IMS precedence and old binding compatibility remain; preparation errors preserve selection categories while post-claim uncertainty never replays.\n\nIteration506: Native serial intents use exact actor owner_epoch, serial_session and SIM generation. Configured serial owns default/dji capture including not-ready errors; recheck after delayed compatibility capture releases obsolete Go token before native recapture. Old generation-only and wrapped rust_modem capabilities expire, never upgrade or execute; wrapped tokens may only be released for cleanup. Full-binding validity precedes durable claim and retained radio/actor execution. USB/reader/module IMS and true compatibility behavior remain. Go serial lifecycle/configuration remains a transitive dependency; offline software evidence is separate from physical acceptance.\n\nIteration506 repair: go_recovery_binding separates owner-loss recovery from new-send admission. Retired rust_modem wrappers cannot authorize sending but must change old submitting records to unknown on Go exit; native v2 serial records keep their retained owner and may finish. The first full gate caught this real recovery regression; the existing legacy assertion is retained and v2 completion coverage added.\n\nIteration508: Sticky full native serial claim selects typed actor/session/SIM facts and capture even before radio configuration, preventing Go fallback during initial failure or absence. Strict native transmit/receive readiness and old-token invalidation remain; explicit standalone compatibility cleanup is retained. No new sending capability is inferred merely from lifecycle selection. Iteration556 reviewed module recovery Gate and isolation projection; 294 Rust routes, 127 Swift HTTP calls and 54 HEAD aliases unchanged. This does not certify historical physical restore or unwrapped downgrade. Iteration579: Check live module revocation at new route capture and before durable claim; ordinary reader route precedence remains intact. Offline software evidence only; hardware/carrier and complete P0-P6 acceptance remain pending.\n\nIteration702 scoped manual source review (whole production file): BodyExt is test-only; remove Limited collector. POST uses the shared 1 MiB collector with absolute 5 s ingress deadline; timeout adds typed 408 request_body_timeout before decoding/claim/supervisor dispatch. Existing other-body-error 400 and its Chinese diagnostic remain. GET still never consumes the body. Service::post validates explicit target/payload/request ID against the durable row. Service::submit executes only a prepared row after binding validity and exact single-use claim; non-prepared rows return their existing accepted/unknown outcome. Sticky native Reader/Module/serial/USB capability classification does not downgrade to compatibility execution. start_claim owns a separate sixteen-permit worker and late-result/acceptance handshake. Failure to deliver or accept can release only this exact winning attempt; losing claims cannot release another attempt. submit retains the actual worker through physical settlement, and the public supervisor owns its sixteen-permit slot after the HTTP waiter is cancelled. finish_claimed_send persists the exact accepted/unknown outcome and stable archive identity; partial/missing/timeout physical evidence is non-replayable unknown. Native Module/serial/USB paths hold their captured route/RF/session until settlement; compatibility RPC execution exists only in cfg(test) in the current file. Evidence: build/reports/stability-701/s13-sms-owner-review-forwarding.json#/scopes/0; decision approve_current, exact anchored old scope and current raw/normalized source verified. This pin records only the approved source/contract delta; it does not certify hardware, carrier interoperability, long-run behavior, or completion of S03/P6/other open acceptance. No pending scope is included.\n\nS13 independent manual semantic review 2026-10-24: class B. Replace detached semaphore-only supervisors with one bounded root Job inherited by child claim, native IMS/serial/USB and output envelopes. Register before spawn; caller cancellation does not release accepted physical/finalizer work. Durable ledger/archive I/O retain same Job through actual worker and IoAck. Whitelist only four exact precommit Store refusals as business output; real I/O/unknown configuration remain sticky orphan failures. No v2 family/seal pilot activation is present in this delta. Boundary: New owner.rs and changed device_send_store Store/open/send_owner lie outside existing scopes. Candidate must add both whole-production pins; parent whole-file fingerprint alone cannot bind child implementation. No claim of production S10 v2 adoption. Limits: 165 source-bound independent slice tests and canonical targeted run; historical full workspace had failures and is not current complete gate. Exact expected/current production and normalized evidence, hashes and test provenance: build/reports/s13-manual-scope-semantic-review-20261024/scope-decisions.json#/3. No functional acceptance; P5/P6 remain OPEN; successor/cold/full gate not established.\n\nCloud reviewed preparation at a7b12205e406d215f5c4a462856804ad8410a5c1: Root review of exact phase-one diff: retained owner binding, exact retry installation, original accepted archive-only receipt; GitHub regression acceptance remains pending. No functional, device or product acceptance is awarded.\n\nCloud reviewed preparation at bfc29eb42426a7d0a9ceedf80ce947878c9a72de: Reviewed exact v2 payload, original expected subscription and nonce matching, strict duplicate/case validation, sealed reservation dispatch, archive-only recovery and terminal replay without hardware IO. Three static passes closed reported findings. No functional, device or product acceptance is awarded.",
       "source": {
         "file": "rust/crates/proletariusd/src/device_sms_send.rs",
         "line": 1
@@ -19401,8 +19563,8 @@
     },
     {
       "file": "rust/crates/proletariusd/src/main.rs",
-      "sha256": "0ae5d81ee42912b2d9ab011368a58b27b70e1723c3b3310a38d8dfe05f415ae2",
-      "review": "Iteration514 independent baseline review: parse historical port/listen/backend/vowifi-config flags once before native owners; preserve string-value boundaries, inline values, last-wins and positional termination. Freeze the trimmed CLI > environment > default carrier path relative to startup cwd using lexical normalization, but reread YAML for each preview/start; active sessions retain their prepared snapshot. Required Unix listener and native route ownership stay unchanged. Focused parser/configuration/shipping-process tests passed; hardware/operator/performance/long-run acceptance remains separate. Iteration512 HTTP regression repair independently reviewed: shared internal route/auth/native-owner/cleanup allowlist precedes final gate; retained handler owns permit; retired routes preserve404, active unauthenticated401, closed authenticated503. Iteration512: Final-only cleanup receipt retention, preflight and exit funnel, independent drains, archive worker ledger and cleanup admission barrier, best-effort diagnostics; ordinary public routes/DTOs/codecs/carrier resources unchanged. Full hardware acceptance remains pending. Iteration510 supersedes runtime Go dependency portions of earlier reviews: production child startup/monitor/restart and fallback dispatch are retired; native exact-session ownership, durable journal and retained physical cleanup stay authoritative. Iteration504: Reader overview, health, download and confirmation enter native dispatch before Go readiness gating. Missing selection returns local 503 and unmatched confirmation local 409; auth, method/HEAD policy and request budgets remain. Module operation retains conditional Go observation outside native-managed USB.\n\nIteration505: All 15 retired reader wire routes are removed from public/private/shutdown dispatch and explicitly prevented from Go forwarding. Status-only business observer, native lifecycle/owner and public identity/authenticate are preserved. Offline source/software evidence does not certify physical cards or full Go exit.\n\nIteration507: Serial selection claims native eSIM authority before Go spawn; the child receives explicit SWITCH_NATIVE_SERIAL_ESIM=1 (removed for native USB). eSIM reads/confirmation/operation route locally even during compatibility unavailability. Serial public health replaces only the eSIM capability using the current typed binding; Go remains the serial health/status/lifecycle observer. No claim of complete serial or Go retirement.\n\nIteration508: Full serial selection and exact child launch flag transfer lifecycle ownership to Rust before Go spawn. Native producer/session/call/radio owners survive compatibility child exit; compatibility facts/tokens still retire. Full shutdown freezes startup, drains native business/call/radio, then finalizes physical session and receiver. All three ingress paths deny legacy managed hardware while exact pure call-state projection retains authentication/body limits. Native status/health precede Go and do not manufacture readiness.\n\nIteration509: Existing Rust module public service now supplies the native serial actor to transport-neutral ModuleSessionCard, compares typed physical identity on reconnect, and projects idle availability from the authoritative configured native route. Public routes, shared carrier/proxy/IKE/IMS runtime, ordinary admission and network-join-before-RF cleanup ordering remain unchanged. Actual loopback IKE/ESP/IMS registration, incoming/outgoing durable SMS and EVS call media pass using the real serial PTY/actor/card path. This is simulated integration, not hardware or carrier acceptance; standalone compatibility and final Go removal remain outside this package. Iteration556 reviewed module recovery Gate and isolation projection; 294 Rust routes, 127 Swift HTTP calls and 54 HEAD aliases unchanged. This does not certify historical physical restore or unwrapped downgrade.\n\nIteration564 independent High review: bounded nonblocking diagnostic enqueue (64 records, 4096-byte UTF8 lines), one detached duplicated-stderr writer and four 100ms final flush calls; main with those four lines removed exactly matches Iteration563 frozen main SHA. Profile notes preserve raw unknown JSON across all three writers and clears without expanding public DTO/request fields, retain strict known types and atomic size/error semantics. Focused tests and actual mandatory-sandbox full/closed/available pipe daemon exits pass. Real hardware, media renegotiation and full P6 remain unverified. Iteration579: Inject the same held-lifetime module authority into USB, radio, serial, QMI and native voice owners. Runtime status refreshes live evidence without masking accepted physical facts. Offline software evidence only; hardware/carrier and complete P0-P6 acceptance remain pending. Iteration585: Link the production restore journal module only; cfg(test) crash seams remain excluded from release. No additional public HTTP route or owner credit. Metadata-to-kernel I/O is not atomic; hardware and full P0-P6 acceptance remain separate. Iteration586: Run independent bounded startup metadata coordinator before module producers. Retain read-only inspection until shutdown; failures preserve module quarantine and reader functionality. No new public API, installation or DMG. Full physical startup recovery, real-device and P0-P6 acceptance remain pending. Iteration589: Resolve escaped public literal segments once against the finite reviewed ROUTES table before HEAD classification. Raw slash boundaries, wildcard tail spelling, query/scheme/authority and canonical redirect behavior are retained. Unknown/private/retired paths cannot acquire an internal capability. Existing authentication, body budget, module quarantine and final dispatch consume the same effective public URI. This fixes the four independently witnessed escaped-literal routing failures; full URL/wildcard semantics and the complete applicable HTTP matrix remain separate acceptance requirements. Iteration591 reviewed: capture original parent and TERM/INT/PIPE handlers before finite native startup; cancel then await the same actual worker. Typed close/panic/unlock debt survives startup and shutdown results. Retain only inactive readonly inspection; no automatic restore, recovery receipt, ordinary activation or Gate unseal. Iteration591 final preflight error funnel also retains typed native cleanup debt. Iteration592 composed-source review: Before ordinary producers, await actual startup reconciliation join, preserve typed cleanup debt and cancellation, consume verified completion into the original Gate before activation. No read-only second attempt after failed compensation. Existing isolated reader behavior remains. No real hardware acceptance or full P0-P6 completion is inferred. Iteration594 composed-source review: Carry genuine current Gate RootProof into the existing six backup dispatches, retain validation/error ordering, and perform only exact metadata backup resume before Gate inspection and ordinary module producers. No physical replay or recovery authority constructor. No physical or full P0-P6 completion is inferred.\n\nIteration597 composed-source review: both startup-stopped and ordinary teardown feed the actual forwarding Service.shutdown Result into shutdown::Report; cleanup of other owners still continues. No routing, device, proxy or media behavior change.\n\nIteration606 manual review: Runtime diagnostics now expose separate backend, app release, build and source identities. Shutdown closes eSIM admission and drains retained LPA owners before module radio final receipt. Existing route ownership and physical cleanup policies remain; P1-P6 hardware/operator acceptance is still outstanding.\n\nIteration629: socket_is_live is only called by the cfg(test) compatibility fixture in device_sms_send; its definition is now cfg(test), removing the unused helper from Release. No listener lifecycle, route, API, runtime owner, persistence, or hardware behavior changed. The focused compatibility recovery test passed; full migration gate is recorded separately.\n\nIteration646 QMI hot-plug review: the optional spawn_blocking constructor now retains NativeQmiRetryLifecycle; the surrounding readiness, request dispatch and coordinated shutdown layout is unchanged. This changes no HTTP method/path owner and does not prove DJI hardware enumeration.\n\nIteration650 manual review against i649 frozen source: the retained native module /api/status fast path calls cached_native_status_with_qmi, which obtains the same retained native_module_status observation and attaches the existing cached QMI projection. It does not invoke async capture or add AT/USB requests; absent QMI preserves shape and it does not promote SIM/radio/network readiness. True HTTP synthetic scenario 1/1 and status projection unit tests 3/3 passed, including unchanged AT command count. Public route/method/authentication/DTO behavior outside this additive status field is unchanged. Physical DJI and full product acceptance remain pending.\n\nIteration663 manual source-scope review: Rust dispatch adds one POST for legacy operation acknowledgement and keeps the public method/authorization path explicit. Recovery gate handling and startup are reviewed as source boundaries, not proof of physical recovery. Existing P0-P6 product acceptance remains open.\n\nIteration666: Reviewed Rust-owned network recovery GET/HEAD/POST, retained operation IDs, monotonic wake delay/cooldown, structured traffic admission, and finite readback. Recovery uses the existing module-radio actor reservation with same-owner USB-mode and strict CLCC observations followed by the existing reboot plan fresh call guard. A lost HTTP/UI waiter cannot cancel the admitted worker. No DNS/proxy path is changed; offline tests are not hardware or carrier acceptance.\n\nIteration670 manual source review: Compared immutable i669 main: inserts metadata-only legacy_locks::migrate under the already-held root lifetime before Gate construction and module producers. Exact old safe empty lock pair may gain provenance; absent/inapplicable/pending evidence remains guarded. No HTTP route or QMI behavior change; defaultAT retained. All9 existing main QMI fragments move12lines only. Independent9-file r2review binds5637cbc9...; final66parallel evidence remains required. No functional/device/product PASS.\n\nIteration679 security boundary review: The ordinary public Unix listener and retained .rs sibling share handle_request_inner and reject every /api/internal/* path with route_not_found before app-token checks, redirects, body admission, or dispatch. The former public private-token branch was removed only after comparing its route groups against the retained .in handle_internal_request handler; the latter keeps its internal-token check and shutdown cleanup policy. The shutdown EAP release handler is unchanged. Offline Rust tests and a sandboxed three-listener process probe validate the boundary; real devices, carrier activity, and full P0-P6 acceptance remain pending.\n\nIteration685 explicit public/private path review: i683 to i684 changes exactly one production line in handle_request_inner, extending the early public 404 guard from /api/internal/* to also cover the exact /api/internal path. It runs before public app-token, canonical redirect, body admission and business dispatch. The distinct .in listener still uses unchanged handle_internal_request with private-token and shutdown policy; .rs shares the public handler. This adds only one source literal reference, no route contract, Swift consumer, or business capability. Software-only boundary verification remains distinct from hardware/carrier/product acceptance.\n\nIteration701 controlled source-scope pin: whole production file approved_current in stability-701/s13-dispatch-review-audio.json (SHA256 799ae0bad428685ef36a370d9773a8d71e4e240aee87a7b2ea3ee5aa7a8522b9); current raw file 34f84f7711155932de8bd280d28c6412f1d71b8570ba656b510f9e0131b4eb4c. Matching real original scope and complete reviewed current scope/delta are bound in the report. This limited source-review pin grants no hardware, carrier, performance or P0-P6 product acceptance; unchanged outside scopes and pending owner issues remain separate.\n\nIteration759 explicit current-source scope review for baseline82f04c7cfa9ca84eaff529d8d3748f9fe19817bedc1308ff2757aa61b8d87c6a: Main whole-production-file review against the exact4346 main bytes: only two production hunks add network recovery begin_shutdown before request observers can be aborted and await finish_pending at the start of the module drain branch. Reader/QMI drains remain independent. Public/internal routing, method/auth/body policy, route_owner and consumer dispatch bodies are unchanged. Both complete raw/production diffs and the original record digest are frozen in this report. This versions retained network coordinator lifetime/shutdown behavior, not a claim of unchanged execution or complete release acceptance. Current raw SHA256 4c1bac42392b604dc8eee93025efd6b4472dbf09a5df074e437fbc5925b318db. F2 is pending; final SMS-chain source provenance must be recaptured after that successor.\n\nIteration762 final-source recapture on 2c11207fd88d102abf7ebdd204fea7c38291f0b1d36e4182dd8f958df6493420: the above Iteration759 82f binding and F2-pending statements are preserved as historical text and superseded for current-source status by this paragraph. This file remains byte-identical to its reviewed759 source (raw SHA256 4c1bac42392b604dc8eee93025efd6b4472dbf09a5df074e437fbc5925b318db); its production fingerprint and routing/consumer responsibilities remain unchanged. All six F2 production scopes are independently re-reviewed in this same successor, both new external tests have explicit test-only graph closure, and the unchanged scanner is rerun against the final F2 business tree. No renewed functional, measured-capacity, device, carrier, soak or P0-P6 acceptance is awarded.\n\nS13 independent manual semantic review 2026-10-24: class B. Move BLE observer loop into reader_lifecycle helper; signal stop before teardown and join before final reader jobs. Close device-SMS root admission before HTTP observers abort, then finish accepted owners before dependent transport/native cleanup. Unconfirmed owner/join enters shutdown::once and blocks dependents. shutdown::coordinate awaits shared first, then independent module/reader/QMI, then archive. Startup data-root/store recovery/auth/routes are otherwise unchanged. Boundary: Whole main production delta is entirely inside run_with_sms_stores; this is independently checked using normalized token diff. New owner dependency receives separate pin. Existing shutdown coordinator proof source saved as context. Limits: Current main raw matches integrated narrow source receipt; earlier Rust regression/source cut is historical, no current all-source PASS. Exact expected/current production and normalized evidence, hashes and test provenance: build/reports/s13-manual-scope-semantic-review-20261024/scope-decisions.json#/4. No functional acceptance; P5/P6 remain OPEN; successor/cold/full gate not established.",
+      "sha256": "f9e82588c94ef118c5621c60cd8899e3350b6f3954743b40f61f5c3630269dd1",
+      "review": "Iteration514 independent baseline review: parse historical port/listen/backend/vowifi-config flags once before native owners; preserve string-value boundaries, inline values, last-wins and positional termination. Freeze the trimmed CLI > environment > default carrier path relative to startup cwd using lexical normalization, but reread YAML for each preview/start; active sessions retain their prepared snapshot. Required Unix listener and native route ownership stay unchanged. Focused parser/configuration/shipping-process tests passed; hardware/operator/performance/long-run acceptance remains separate. Iteration512 HTTP regression repair independently reviewed: shared internal route/auth/native-owner/cleanup allowlist precedes final gate; retained handler owns permit; retired routes preserve404, active unauthenticated401, closed authenticated503. Iteration512: Final-only cleanup receipt retention, preflight and exit funnel, independent drains, archive worker ledger and cleanup admission barrier, best-effort diagnostics; ordinary public routes/DTOs/codecs/carrier resources unchanged. Full hardware acceptance remains pending. Iteration510 supersedes runtime Go dependency portions of earlier reviews: production child startup/monitor/restart and fallback dispatch are retired; native exact-session ownership, durable journal and retained physical cleanup stay authoritative. Iteration504: Reader overview, health, download and confirmation enter native dispatch before Go readiness gating. Missing selection returns local 503 and unmatched confirmation local 409; auth, method/HEAD policy and request budgets remain. Module operation retains conditional Go observation outside native-managed USB.\n\nIteration505: All 15 retired reader wire routes are removed from public/private/shutdown dispatch and explicitly prevented from Go forwarding. Status-only business observer, native lifecycle/owner and public identity/authenticate are preserved. Offline source/software evidence does not certify physical cards or full Go exit.\n\nIteration507: Serial selection claims native eSIM authority before Go spawn; the child receives explicit SWITCH_NATIVE_SERIAL_ESIM=1 (removed for native USB). eSIM reads/confirmation/operation route locally even during compatibility unavailability. Serial public health replaces only the eSIM capability using the current typed binding; Go remains the serial health/status/lifecycle observer. No claim of complete serial or Go retirement.\n\nIteration508: Full serial selection and exact child launch flag transfer lifecycle ownership to Rust before Go spawn. Native producer/session/call/radio owners survive compatibility child exit; compatibility facts/tokens still retire. Full shutdown freezes startup, drains native business/call/radio, then finalizes physical session and receiver. All three ingress paths deny legacy managed hardware while exact pure call-state projection retains authentication/body limits. Native status/health precede Go and do not manufacture readiness.\n\nIteration509: Existing Rust module public service now supplies the native serial actor to transport-neutral ModuleSessionCard, compares typed physical identity on reconnect, and projects idle availability from the authoritative configured native route. Public routes, shared carrier/proxy/IKE/IMS runtime, ordinary admission and network-join-before-RF cleanup ordering remain unchanged. Actual loopback IKE/ESP/IMS registration, incoming/outgoing durable SMS and EVS call media pass using the real serial PTY/actor/card path. This is simulated integration, not hardware or carrier acceptance; standalone compatibility and final Go removal remain outside this package. Iteration556 reviewed module recovery Gate and isolation projection; 294 Rust routes, 127 Swift HTTP calls and 54 HEAD aliases unchanged. This does not certify historical physical restore or unwrapped downgrade.\n\nIteration564 independent High review: bounded nonblocking diagnostic enqueue (64 records, 4096-byte UTF8 lines), one detached duplicated-stderr writer and four 100ms final flush calls; main with those four lines removed exactly matches Iteration563 frozen main SHA. Profile notes preserve raw unknown JSON across all three writers and clears without expanding public DTO/request fields, retain strict known types and atomic size/error semantics. Focused tests and actual mandatory-sandbox full/closed/available pipe daemon exits pass. Real hardware, media renegotiation and full P6 remain unverified. Iteration579: Inject the same held-lifetime module authority into USB, radio, serial, QMI and native voice owners. Runtime status refreshes live evidence without masking accepted physical facts. Offline software evidence only; hardware/carrier and complete P0-P6 acceptance remain pending. Iteration585: Link the production restore journal module only; cfg(test) crash seams remain excluded from release. No additional public HTTP route or owner credit. Metadata-to-kernel I/O is not atomic; hardware and full P0-P6 acceptance remain separate. Iteration586: Run independent bounded startup metadata coordinator before module producers. Retain read-only inspection until shutdown; failures preserve module quarantine and reader functionality. No new public API, installation or DMG. Full physical startup recovery, real-device and P0-P6 acceptance remain pending. Iteration589: Resolve escaped public literal segments once against the finite reviewed ROUTES table before HEAD classification. Raw slash boundaries, wildcard tail spelling, query/scheme/authority and canonical redirect behavior are retained. Unknown/private/retired paths cannot acquire an internal capability. Existing authentication, body budget, module quarantine and final dispatch consume the same effective public URI. This fixes the four independently witnessed escaped-literal routing failures; full URL/wildcard semantics and the complete applicable HTTP matrix remain separate acceptance requirements. Iteration591 reviewed: capture original parent and TERM/INT/PIPE handlers before finite native startup; cancel then await the same actual worker. Typed close/panic/unlock debt survives startup and shutdown results. Retain only inactive readonly inspection; no automatic restore, recovery receipt, ordinary activation or Gate unseal. Iteration591 final preflight error funnel also retains typed native cleanup debt. Iteration592 composed-source review: Before ordinary producers, await actual startup reconciliation join, preserve typed cleanup debt and cancellation, consume verified completion into the original Gate before activation. No read-only second attempt after failed compensation. Existing isolated reader behavior remains. No real hardware acceptance or full P0-P6 completion is inferred. Iteration594 composed-source review: Carry genuine current Gate RootProof into the existing six backup dispatches, retain validation/error ordering, and perform only exact metadata backup resume before Gate inspection and ordinary module producers. No physical replay or recovery authority constructor. No physical or full P0-P6 completion is inferred.\n\nIteration597 composed-source review: both startup-stopped and ordinary teardown feed the actual forwarding Service.shutdown Result into shutdown::Report; cleanup of other owners still continues. No routing, device, proxy or media behavior change.\n\nIteration606 manual review: Runtime diagnostics now expose separate backend, app release, build and source identities. Shutdown closes eSIM admission and drains retained LPA owners before module radio final receipt. Existing route ownership and physical cleanup policies remain; P1-P6 hardware/operator acceptance is still outstanding.\n\nIteration629: socket_is_live is only called by the cfg(test) compatibility fixture in device_sms_send; its definition is now cfg(test), removing the unused helper from Release. No listener lifecycle, route, API, runtime owner, persistence, or hardware behavior changed. The focused compatibility recovery test passed; full migration gate is recorded separately.\n\nIteration646 QMI hot-plug review: the optional spawn_blocking constructor now retains NativeQmiRetryLifecycle; the surrounding readiness, request dispatch and coordinated shutdown layout is unchanged. This changes no HTTP method/path owner and does not prove DJI hardware enumeration.\n\nIteration650 manual review against i649 frozen source: the retained native module /api/status fast path calls cached_native_status_with_qmi, which obtains the same retained native_module_status observation and attaches the existing cached QMI projection. It does not invoke async capture or add AT/USB requests; absent QMI preserves shape and it does not promote SIM/radio/network readiness. True HTTP synthetic scenario 1/1 and status projection unit tests 3/3 passed, including unchanged AT command count. Public route/method/authentication/DTO behavior outside this additive status field is unchanged. Physical DJI and full product acceptance remain pending.\n\nIteration663 manual source-scope review: Rust dispatch adds one POST for legacy operation acknowledgement and keeps the public method/authorization path explicit. Recovery gate handling and startup are reviewed as source boundaries, not proof of physical recovery. Existing P0-P6 product acceptance remains open.\n\nIteration666: Reviewed Rust-owned network recovery GET/HEAD/POST, retained operation IDs, monotonic wake delay/cooldown, structured traffic admission, and finite readback. Recovery uses the existing module-radio actor reservation with same-owner USB-mode and strict CLCC observations followed by the existing reboot plan fresh call guard. A lost HTTP/UI waiter cannot cancel the admitted worker. No DNS/proxy path is changed; offline tests are not hardware or carrier acceptance.\n\nIteration670 manual source review: Compared immutable i669 main: inserts metadata-only legacy_locks::migrate under the already-held root lifetime before Gate construction and module producers. Exact old safe empty lock pair may gain provenance; absent/inapplicable/pending evidence remains guarded. No HTTP route or QMI behavior change; defaultAT retained. All9 existing main QMI fragments move12lines only. Independent9-file r2review binds5637cbc9...; final66parallel evidence remains required. No functional/device/product PASS.\n\nIteration679 security boundary review: The ordinary public Unix listener and retained .rs sibling share handle_request_inner and reject every /api/internal/* path with route_not_found before app-token checks, redirects, body admission, or dispatch. The former public private-token branch was removed only after comparing its route groups against the retained .in handle_internal_request handler; the latter keeps its internal-token check and shutdown cleanup policy. The shutdown EAP release handler is unchanged. Offline Rust tests and a sandboxed three-listener process probe validate the boundary; real devices, carrier activity, and full P0-P6 acceptance remain pending.\n\nIteration685 explicit public/private path review: i683 to i684 changes exactly one production line in handle_request_inner, extending the early public 404 guard from /api/internal/* to also cover the exact /api/internal path. It runs before public app-token, canonical redirect, body admission and business dispatch. The distinct .in listener still uses unchanged handle_internal_request with private-token and shutdown policy; .rs shares the public handler. This adds only one source literal reference, no route contract, Swift consumer, or business capability. Software-only boundary verification remains distinct from hardware/carrier/product acceptance.\n\nIteration701 controlled source-scope pin: whole production file approved_current in stability-701/s13-dispatch-review-audio.json (SHA256 799ae0bad428685ef36a370d9773a8d71e4e240aee87a7b2ea3ee5aa7a8522b9); current raw file 34f84f7711155932de8bd280d28c6412f1d71b8570ba656b510f9e0131b4eb4c. Matching real original scope and complete reviewed current scope/delta are bound in the report. This limited source-review pin grants no hardware, carrier, performance or P0-P6 product acceptance; unchanged outside scopes and pending owner issues remain separate.\n\nIteration759 explicit current-source scope review for baseline82f04c7cfa9ca84eaff529d8d3748f9fe19817bedc1308ff2757aa61b8d87c6a: Main whole-production-file review against the exact4346 main bytes: only two production hunks add network recovery begin_shutdown before request observers can be aborted and await finish_pending at the start of the module drain branch. Reader/QMI drains remain independent. Public/internal routing, method/auth/body policy, route_owner and consumer dispatch bodies are unchanged. Both complete raw/production diffs and the original record digest are frozen in this report. This versions retained network coordinator lifetime/shutdown behavior, not a claim of unchanged execution or complete release acceptance. Current raw SHA256 4c1bac42392b604dc8eee93025efd6b4472dbf09a5df074e437fbc5925b318db. F2 is pending; final SMS-chain source provenance must be recaptured after that successor.\n\nIteration762 final-source recapture on 2c11207fd88d102abf7ebdd204fea7c38291f0b1d36e4182dd8f958df6493420: the above Iteration759 82f binding and F2-pending statements are preserved as historical text and superseded for current-source status by this paragraph. This file remains byte-identical to its reviewed759 source (raw SHA256 4c1bac42392b604dc8eee93025efd6b4472dbf09a5df074e437fbc5925b318db); its production fingerprint and routing/consumer responsibilities remain unchanged. All six F2 production scopes are independently re-reviewed in this same successor, both new external tests have explicit test-only graph closure, and the unchanged scanner is rerun against the final F2 business tree. No renewed functional, measured-capacity, device, carrier, soak or P0-P6 acceptance is awarded.\n\nS13 independent manual semantic review 2026-10-24: class B. Move BLE observer loop into reader_lifecycle helper; signal stop before teardown and join before final reader jobs. Close device-SMS root admission before HTTP observers abort, then finish accepted owners before dependent transport/native cleanup. Unconfirmed owner/join enters shutdown::once and blocks dependents. shutdown::coordinate awaits shared first, then independent module/reader/QMI, then archive. Startup data-root/store recovery/auth/routes are otherwise unchanged. Boundary: Whole main production delta is entirely inside run_with_sms_stores; this is independently checked using normalized token diff. New owner dependency receives separate pin. Existing shutdown coordinator proof source saved as context. Limits: Current main raw matches integrated narrow source receipt; earlier Rust regression/source cut is historical, no current all-source PASS. Exact expected/current production and normalized evidence, hashes and test provenance: build/reports/s13-manual-scope-semantic-review-20261024/scope-decisions.json#/4. No functional acceptance; P5/P6 remain OPEN; successor/cold/full gate not established.\n\nCloud reviewed preparation at bfc29eb42426a7d0a9ceedf80ce947878c9a72de: Reviewed production lifetime RootProof wiring before Owner publication and explicit SMS-only startup isolation. Damaged authority never falls back to legacy writable storage; unrelated modules may start and status remains unavailable. No functional, device or product acceptance is awarded.",
       "reason": "\n\nIteration573 reviewed: data-root process-static lease precedes configuration/store recovery and stays until OS exit; separate listener Claim spans prepare/bind/guard retirement across roots; existing live/saturated sockets are preserved, same-UID stale checks use bounded system lsof, and guard cleanup checks dev/inode. Authentication, route ownership, DTO and shutdown drain order are unchanged. Swift only validates node shape and delegates destructive admission/reclaim to Rust. This is participating-daemon/socket exclusion, not full legacy lineage, physical recovery or end-to-end P6 acceptance.",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
@@ -19416,7 +19578,7 @@
       "review": "Iteration512 HTTP regression repair independently reviewed: shared internal route/auth/native-owner/cleanup allowlist precedes final gate; retained handler owns permit; retired routes preserve404, active unauthenticated401, closed authenticated503. Iteration480: Eager ModuleCallService construction installs native serial/USB call observation before accepting any Go open request. Public five CS routes call the native service directly. Authenticated history-error is an orderly-shutdown cleanup path. Child replacement drains native call jobs/releases before old transport retirement; shutdown confirms call/source cleanup before closing transports. IMS aliases retain Go observation and merge the native history aggregate.\n\nIteration481: Eager native ReaderService registers direct supplier before accepting Go callbacks or physical opens. Public reader list/info/connect/disconnect/refresh/auth and the sole private reader-service dispatch use native authority; strict private auth/current producer checks remain. Snapshot does not reverse query Go. Shutdown preserves communication callbacks and captured producer proof until native jobs/leases and real old workers settle; no unconfirmed state permits native PCSC close.\n\nIteration486 baseline-archive manual review: the new ordinary admission path is available only through the internal-token-authenticated private listener; the public UDS returns fixed 404 even with internal credentials and never forwards its claim. Shutdown permits exact cleanup/status while acquire is rejected. The process initializes one current Go producer and replaces it only after confirmed child exit and existing radio/serial physical retirement; native claims survive Go replacement. Shared body accounting reserves 4 KiB in the cleanup pool. No default ordinary public activation, public method-policy or explicit Go allowlist cutover is added.\n\nIteration493 frozen-baseline review: removes only the obsolete Go socket/token parameters from the three Rust SMS deletion handlers. One OnceLock card-workflow Service shares the actual PCSC Owner and Gate; exact private routes require internal token (including public-listener internal-token dispatch), and shutdown closes fresh admission, permits exact status/cancel cleanup, awaits actual workflow completion, then shuts physical reader owners. Go child exit revokes business authority without manufacturing a fresh PCSC producer. Added test ServerState literals only initialize the new OnceLock; public routing/authentication remains explicit. Iteration496: Declares the callable native manager without instantiating it or changing public Nwait routing/default gates. Adds exact internal-token-only POST inventory dispatch, denied during shutdown. The endpoint reads the selected generation with retained native physical authority; no public card mutation route is broadened. Iteration498: Retires unreachable Go Nwait store/runtime/operation/card IPC dispatch, including shutdown and public entrypoints; retained reader-reservation operation and native inventory APIs remain. Observes exact BLE close receipts until native cleanup finishes. Native reader default routing, private module-only sessions observation, and Go-child exit recovery are distinct from full Go exit. Iteration498: Retires unreachable Go Nwait store/runtime/operation/card IPC dispatch, including shutdown and public entrypoints; retained reader-reservation operation and native inventory APIs remain. Observes exact BLE close receipts until native cleanup finishes. Native reader default routing, private module-only sessions observation, and Go-child exit recovery are distinct from full Go exit. Iteration502: SMS selection dispatch uses handle_internal_for_state to replace caller facts with current native facts. GET/normalized HEAD status and health on explicitly selected USB enter native handlers without the Go Ready/socket gate. Other recovery policy, auth/private credentials, non-USB/unconfigured admission and Go-exit physical retirement are unchanged.\n\nIteration503: Rust starts serial-first retained discovery before spawning compatibility Go. Confirmed serial choice retains its prior Go configuration/retirement; native USB has an independent producer and native bootstrap. Managed Go exit rotates compatibility facts/ledger only and restart exhaustion marks failed without stopping native services. Both authenticated private dispatch paths deny USB/radio/modem/USB-SMS/call-mode prefixes in native-managed mode including shutdown. Managed USB eSIM observation, operation and confirmation never fall back to Go. Shared RPC credentials are not newly rotated per child; fixed managed-mode denial is the physical boundary. Whole application shutdown still joins startup and physical owners; runtime hardware_owner remains the old conservative go marker.\n\nIteration505: All 15 retired reader wire routes are removed from public/private/shutdown dispatch and explicitly prevented from Go forwarding. Status-only business observer, native lifecycle/owner and public identity/authenticate are preserved. Offline source/software evidence does not certify physical cards or full Go exit. Iteration594 composed-source review: Carry genuine current Gate RootProof into the existing six backup dispatches, retain validation/error ordering, and perform only exact metadata backup resume before Gate inspection and ordinary module producers. No physical replay or recovery authority constructor. No physical or full P0-P6 completion is inferred.",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 1709
+        "line": 1737
       }
     },
     {
@@ -19426,7 +19588,7 @@
       "review": "Iteration510 supersedes runtime Go dependency portions of earlier reviews: production child startup/monitor/restart and fallback dispatch are retired; native exact-session ownership, durable journal and retained physical cleanup stay authoritative. Iteration504: Removes the late reader overview and health branches now owned by unconditional early native dispatch; unrelated ready-state routing remains.\n\nIteration666: Reviewed Rust-owned network recovery GET/HEAD/POST, retained operation IDs, monotonic wake delay/cooldown, structured traffic admission, and finite readback. Recovery uses the existing module-radio actor reservation with same-owner USB-mode and strict CLCC observations followed by the existing reboot plan fresh call guard. A lost HTTP/UI waiter cannot cancel the admitted worker. No DNS/proxy path is changed; offline tests are not hardware or carrier acceptance.",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 3025
+        "line": 3053
       }
     },
     {
@@ -19436,7 +19598,7 @@
       "review": "Iteration480: Eager ModuleCallService construction installs native serial/USB call observation before accepting any Go open request. Public five CS routes call the native service directly. Authenticated history-error is an orderly-shutdown cleanup path. Child replacement drains native call jobs/releases before old transport retirement; shutdown confirms call/source cleanup before closing transports. IMS aliases retain Go observation and merge the native history aggregate.\n\nIteration481: Eager native ReaderService registers direct supplier before accepting Go callbacks or physical opens. Public reader list/info/connect/disconnect/refresh/auth and the sole private reader-service dispatch use native authority; strict private auth/current producer checks remain. Snapshot does not reverse query Go. Shutdown preserves communication callbacks and captured producer proof until native jobs/leases and real old workers settle; no unconfirmed state permits native PCSC close. Iteration589: Resolve escaped public literal segments once against the finite reviewed ROUTES table before HEAD classification. Raw slash boundaries, wildcard tail spelling, query/scheme/authority and canonical redirect behavior are retained. Unknown/private/retired paths cannot acquire an internal capability. Existing authentication, body budget, module quarantine and final dispatch consume the same effective public URI. This fixes the four independently witnessed escaped-literal routing failures; full URL/wildcard semantics and the complete applicable HTTP matrix remain separate acceptance requirements.",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 1963
+        "line": 1991
       }
     },
     {
@@ -19446,7 +19608,7 @@
       "function": "handle_request_inner",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 2000
+        "line": 2028
       }
     },
     {
@@ -19467,13 +19629,13 @@
       "reason": "\n\nIteration573 reviewed: data-root process-static lease precedes configuration/store recovery and stays until OS exit; separate listener Claim spans prepare/bind/guard retirement across roots; existing live/saturated sockets are preserved, same-UID stale checks use bounded system lsof, and guard cleanup checks dev/inode. Authentication, route ownership, DTO and shutdown drain order are unchanged. Swift only validates node shape and delegates destructive admission/reclaim to Rust. This is participating-daemon/socket exclusion, not full legacy lineage, physical recovery or end-to-end P6 acceptance.",
       "source": {
         "file": "rust/crates/proletariusd/src/main.rs",
-        "line": 586
+        "line": 614
       }
     },
     {
       "file": "rust/crates/proletariusd/src/message_archive.rs",
-      "sha256": "ba57d1cd4a9a7531b017a23bb88256e6b6ec7ef28c84c1b9544e4db91b4a0cd1",
-      "review": "Iteration162 adds a forwarding projection from the durable SMS archive and bounded Rust USB preview, independent of the Go child snapshot. Existing GET /api/sms merging and authenticated compatibility inbox-snapshot/archive routes retain their prior behavior.\n\nIteration197 adds bounded Rust helpers that obtain the exact same merged public SMS view and delete archive records by frozen stable/cache IDs. The public clear handler still synchronizes the Go volatile inbox and native USB preview before reporting success; archive ownership alone does not imply a Go-free inbox.\n\nIteration197 review update: local-only bulk clear freezes the public volatile view and exact Go-owned partition in one InboxState lock operation, then merges it with the durable archive and deletes only the selected stable/cache IDs. The Go bridge receives only selected frozen rows and prunes a current cache row only if its full legacy record still matches; a concurrent update with the same stable ID is retained.\n\nIteration297 retires the private Go inbox-snapshot receiver and Go volatile partition. Public SMS projections use durable archive plus Rust USB preview; local deletion sends stable IDs to the Go cache-prune adapter, without transferring a full cache snapshot.\n\nIteration297: Removed the private full inbox snapshot receiver and its unused InboxState argument. Archive ingest/delete remain; public list state consists of durable archive plus native USB preview.\n\nIteration457: narrowed the Rust internal SMS archive prefix to /api/internal/sms/archive/ so it cannot capture unrelated explicit Go compatibility routes such as SMS hardware operations. Archive endpoint payload behavior is unchanged.\n\nIteration470: current_go_producer_id returns a cloned producer snapshot under the same mutex as ownership fencing; no producer identity is changed or persisted by the read.\n\nIteration503: Adds immutable native-module producer distinct from Go ingress producer. Native module identity survives compatibility replacement; Go replacement cannot bind that identity, and owns_current_producer still authorizes only the compatibility producer. Historical archive behavior is unchanged.\n\nIteration606 manual review: Multipart archival now correlates by subscription, sender, reference width/value and total, distinguishes sequence numbers even for equal text/SCTS, retains unfinished groups across retention and restart, and deduplicates replay before notification eligibility. message_archive tests 24/24 passed offline; live SMS delivery remains unverified.\n\nIteration612 manual review: Removed an unused owned copy of multipart_group_id after retaining the required-field assertion. Multipart grouping, identifiers, stored rows and public projection are unchanged; 24 focused archive tests passed.\nIteration665 manual review: Exact fragment receipt replay remains idempotent. Late completed-group collisions retain durable ambiguous raw fragments; new canonical rows persist the actual anchor. Legacy rows without the hidden anchor use a bounded conservative potential-overlap fence, retain that original fence through pruning and never guess another complete message. Internal quarantine metadata does not change canonical/raw cache identities; single and bulk deletion ownership remain separate. Raw concat rows from volatile sources cannot enter forwarding, regardless of missing/forged multipart status. Synthetic archive/restart/forwarding regressions do not prove actual SMS receipt or delivery.\n\nIteration702 scoped manual source review (whole production file): The entire difference from the matched 669 whole scope is the request collector/helper contract: checked bounded manual frame collection is replaced by the shared absolute 5 s collector; TooLarge still maps to 413 request_body_too_large, Invalid still maps to the prior invalid-body shape but the diagnostic is deliberately stabilized as 读取请求失败 (underlying transport suffix removed), and new typed 408 occurs before dispatch. This exact current raw file is already present in retained 694, not merely inferred from the 695 report. handle_internal parses and bounds ingest (8 MiB / 1..200 rows) and deletion bodies (delete IDs <=1500, 128 KiB), then awaits the real retained archive transaction. No successful ingest/deletion ACK is generated before the mutation returns committed success. Ingest preserves normalized stable IDs, raw multipart fragments, deduplication, collision quarantine, legacy overlap fences and assembled-message identity. Only canonical complete forwarding-owned rows are eligible for forwarding; incomplete/ambiguous raw fragments do not become a send source. Persistent deletion is not replaced by cache-only removal or changed by this delta. Evidence: build/reports/stability-701/s13-sms-owner-review-forwarding.json#/scopes/2; decision approve_current, exact anchored old scope and current raw/normalized source verified. This pin records only the approved source/contract delta; it does not certify hardware, carrier interoperability, long-run behavior, or completion of S03/P6/other open acceptance. No pending scope is included.\n\nIteration707 scoped manual source review: Reviewed complete exact pre703 approved whole-production anchor to mergedv7. Only cfg(test) clear_module_producers_for_tests is added; it clears fixture producer identity under the existing mutex. Production runtime archive and identity behavior are unchanged. Scanner production() strips cfg-test modules but retains individually cfg(test) methods, so this test-only delta still changes the whole-file fingerprint. Evidence: build/reports/stability-707/post703/manual-pin-adjudication.json and exact-anchor-scope-diffs.json; final703 root-v7-cross-review.json and directed-v7-summary.json are source/binary-bound supporting evidence. Approval covers this exact source/contract delta only. Private HTTP pending, EINTR, saturated blocking-queue cancellation and natural OS-fault dynamic coverage remain unclaimed; permanently unreapable ownership remains honestly blocked. No hardware, carrier, performance, full-daemon/App or complete P0-P6 product acceptance is granted.\n\nIteration729 proposed finite source-scope adoption, pending independent S13 decision: Complete exact approved718-to-current whole-production delta is the S12 read-only receipt replay/latest async offload reviewed in retained723 final-cross-review. Matching718 approved normalized scope and current raw bytes are independently verified. Durable run remains sole claim/dispatch owner; expected409 remains a typed business result; genuine StoreError staysErr; audio retained mutex and revalidation remain. Named718 is not asserted to be immediate-pre722. Shared public_mutation_receipt helper and archive_io lifetime remain separately pinned companions. This is a source/contract metadata proposal only; no P0-P6 functional, hardware, carrier, long-run, performance, final-soak or product acceptance is granted. Evidence: build/reports/stability-729-metadata-candidate/source-review.json and exact lineage/diffs; software-only scope and unresolved leaves remain unchanged.\n\nIteration750 source-identity recheck: exact current raw SHA256 63fec487aaf7b9c14f94046ca089559d6ae14d92ab5c42d7f29a9928d4f73672 for message_archive.rs matches the independently reviewed stage1b six-scope input. The prior versioned async/test-only behavior delta and limits are retained; this is a new current source binding, not a claim that old synchronous execution or old whole-file bytes still apply. Exact old/current file diff and static disposition are in build/reports/stability-750-ownership-inventory-4346-review/message_archive.rs.production.diff. Full combined Rust regression and P0-P6 acceptance remain pending.\n\nIteration759 source successor for baseline82f04c7cfa9ca84eaff529d8d3748f9fe19817bedc1308ff2757aa61b8d87c6a: current raw SHA256 63fec487aaf7b9c14f94046ca089559d6ae14d92ab5c42d7f29a9928d4f73672 exactly matches the independently reviewed750 scope input. Preserve the complete historical text and750 behavior limits; this is a current-source binding for the unchanged Rust route/consumer census, not renewed functional or P0-P6 acceptance. F2 changes to SMS ownership/archive/projection require a fresh source scan and explicit scope review before final activation.\n\nIteration762 final-source recapture on 2c11207fd88d102abf7ebdd204fea7c38291f0b1d36e4182dd8f958df6493420: the above Iteration759 82f binding and F2-pending statements are preserved as historical text and superseded for current-source status by this paragraph. This file remains byte-identical to its reviewed759 source (raw SHA256 63fec487aaf7b9c14f94046ca089559d6ae14d92ab5c42d7f29a9928d4f73672); its production fingerprint and routing/consumer responsibilities remain unchanged. All six F2 production scopes are independently re-reviewed in this same successor, both new external tests have explicit test-only graph closure, and the unchanged scanner is rerun against the final F2 business tree. No renewed functional, measured-capacity, device, carrier, soak or P0-P6 acceptance is awarded.\n\nS13 independent manual semantic review 2026-10-24: class B. Add retained outgoing archive entry using archive_io::run_durable. A timed/cancelled caller keeps accepted SMS Job through captured input, actual ingest and output witness. Only two exact precommit capacity refusals become nested business Err; unknown configuration, malformed input and I/O remain executor failures. Existing generic ingest_messages_to path is unchanged. Boundary: Whole-production pin covers new helpers. archive_io and device owner dependencies separately pinned; tests.rs/module erasure whitespace does not affect normalized semantics. Limits: No real message send, provider delivery or disk-fault full-system acceptance. Exact expected/current production and normalized evidence, hashes and test provenance: build/reports/s13-manual-scope-semantic-review-20261024/scope-decisions.json#/6. No functional acceptance; P5/P6 remain OPEN; successor/cold/full gate not established.\n\nCloud reviewed preparation at a7b12205e406d215f5c4a462856804ad8410a5c1: Root review of exact phase-one diff: retained owner binding, exact retry installation, original accepted archive-only receipt; GitHub regression acceptance remains pending. No functional, device or product acceptance is awarded.",
+      "sha256": "ced8356b320c108c9daa59624ecd4eb7a03c8d745772aa130871146037d0c8b9",
+      "review": "Iteration162 adds a forwarding projection from the durable SMS archive and bounded Rust USB preview, independent of the Go child snapshot. Existing GET /api/sms merging and authenticated compatibility inbox-snapshot/archive routes retain their prior behavior.\n\nIteration197 adds bounded Rust helpers that obtain the exact same merged public SMS view and delete archive records by frozen stable/cache IDs. The public clear handler still synchronizes the Go volatile inbox and native USB preview before reporting success; archive ownership alone does not imply a Go-free inbox.\n\nIteration197 review update: local-only bulk clear freezes the public volatile view and exact Go-owned partition in one InboxState lock operation, then merges it with the durable archive and deletes only the selected stable/cache IDs. The Go bridge receives only selected frozen rows and prunes a current cache row only if its full legacy record still matches; a concurrent update with the same stable ID is retained.\n\nIteration297 retires the private Go inbox-snapshot receiver and Go volatile partition. Public SMS projections use durable archive plus Rust USB preview; local deletion sends stable IDs to the Go cache-prune adapter, without transferring a full cache snapshot.\n\nIteration297: Removed the private full inbox snapshot receiver and its unused InboxState argument. Archive ingest/delete remain; public list state consists of durable archive plus native USB preview.\n\nIteration457: narrowed the Rust internal SMS archive prefix to /api/internal/sms/archive/ so it cannot capture unrelated explicit Go compatibility routes such as SMS hardware operations. Archive endpoint payload behavior is unchanged.\n\nIteration470: current_go_producer_id returns a cloned producer snapshot under the same mutex as ownership fencing; no producer identity is changed or persisted by the read.\n\nIteration503: Adds immutable native-module producer distinct from Go ingress producer. Native module identity survives compatibility replacement; Go replacement cannot bind that identity, and owns_current_producer still authorizes only the compatibility producer. Historical archive behavior is unchanged.\n\nIteration606 manual review: Multipart archival now correlates by subscription, sender, reference width/value and total, distinguishes sequence numbers even for equal text/SCTS, retains unfinished groups across retention and restart, and deduplicates replay before notification eligibility. message_archive tests 24/24 passed offline; live SMS delivery remains unverified.\n\nIteration612 manual review: Removed an unused owned copy of multipart_group_id after retaining the required-field assertion. Multipart grouping, identifiers, stored rows and public projection are unchanged; 24 focused archive tests passed.\nIteration665 manual review: Exact fragment receipt replay remains idempotent. Late completed-group collisions retain durable ambiguous raw fragments; new canonical rows persist the actual anchor. Legacy rows without the hidden anchor use a bounded conservative potential-overlap fence, retain that original fence through pruning and never guess another complete message. Internal quarantine metadata does not change canonical/raw cache identities; single and bulk deletion ownership remain separate. Raw concat rows from volatile sources cannot enter forwarding, regardless of missing/forged multipart status. Synthetic archive/restart/forwarding regressions do not prove actual SMS receipt or delivery.\n\nIteration702 scoped manual source review (whole production file): The entire difference from the matched 669 whole scope is the request collector/helper contract: checked bounded manual frame collection is replaced by the shared absolute 5 s collector; TooLarge still maps to 413 request_body_too_large, Invalid still maps to the prior invalid-body shape but the diagnostic is deliberately stabilized as 读取请求失败 (underlying transport suffix removed), and new typed 408 occurs before dispatch. This exact current raw file is already present in retained 694, not merely inferred from the 695 report. handle_internal parses and bounds ingest (8 MiB / 1..200 rows) and deletion bodies (delete IDs <=1500, 128 KiB), then awaits the real retained archive transaction. No successful ingest/deletion ACK is generated before the mutation returns committed success. Ingest preserves normalized stable IDs, raw multipart fragments, deduplication, collision quarantine, legacy overlap fences and assembled-message identity. Only canonical complete forwarding-owned rows are eligible for forwarding; incomplete/ambiguous raw fragments do not become a send source. Persistent deletion is not replaced by cache-only removal or changed by this delta. Evidence: build/reports/stability-701/s13-sms-owner-review-forwarding.json#/scopes/2; decision approve_current, exact anchored old scope and current raw/normalized source verified. This pin records only the approved source/contract delta; it does not certify hardware, carrier interoperability, long-run behavior, or completion of S03/P6/other open acceptance. No pending scope is included.\n\nIteration707 scoped manual source review: Reviewed complete exact pre703 approved whole-production anchor to mergedv7. Only cfg(test) clear_module_producers_for_tests is added; it clears fixture producer identity under the existing mutex. Production runtime archive and identity behavior are unchanged. Scanner production() strips cfg-test modules but retains individually cfg(test) methods, so this test-only delta still changes the whole-file fingerprint. Evidence: build/reports/stability-707/post703/manual-pin-adjudication.json and exact-anchor-scope-diffs.json; final703 root-v7-cross-review.json and directed-v7-summary.json are source/binary-bound supporting evidence. Approval covers this exact source/contract delta only. Private HTTP pending, EINTR, saturated blocking-queue cancellation and natural OS-fault dynamic coverage remain unclaimed; permanently unreapable ownership remains honestly blocked. No hardware, carrier, performance, full-daemon/App or complete P0-P6 product acceptance is granted.\n\nIteration729 proposed finite source-scope adoption, pending independent S13 decision: Complete exact approved718-to-current whole-production delta is the S12 read-only receipt replay/latest async offload reviewed in retained723 final-cross-review. Matching718 approved normalized scope and current raw bytes are independently verified. Durable run remains sole claim/dispatch owner; expected409 remains a typed business result; genuine StoreError staysErr; audio retained mutex and revalidation remain. Named718 is not asserted to be immediate-pre722. Shared public_mutation_receipt helper and archive_io lifetime remain separately pinned companions. This is a source/contract metadata proposal only; no P0-P6 functional, hardware, carrier, long-run, performance, final-soak or product acceptance is granted. Evidence: build/reports/stability-729-metadata-candidate/source-review.json and exact lineage/diffs; software-only scope and unresolved leaves remain unchanged.\n\nIteration750 source-identity recheck: exact current raw SHA256 63fec487aaf7b9c14f94046ca089559d6ae14d92ab5c42d7f29a9928d4f73672 for message_archive.rs matches the independently reviewed stage1b six-scope input. The prior versioned async/test-only behavior delta and limits are retained; this is a new current source binding, not a claim that old synchronous execution or old whole-file bytes still apply. Exact old/current file diff and static disposition are in build/reports/stability-750-ownership-inventory-4346-review/message_archive.rs.production.diff. Full combined Rust regression and P0-P6 acceptance remain pending.\n\nIteration759 source successor for baseline82f04c7cfa9ca84eaff529d8d3748f9fe19817bedc1308ff2757aa61b8d87c6a: current raw SHA256 63fec487aaf7b9c14f94046ca089559d6ae14d92ab5c42d7f29a9928d4f73672 exactly matches the independently reviewed750 scope input. Preserve the complete historical text and750 behavior limits; this is a current-source binding for the unchanged Rust route/consumer census, not renewed functional or P0-P6 acceptance. F2 changes to SMS ownership/archive/projection require a fresh source scan and explicit scope review before final activation.\n\nIteration762 final-source recapture on 2c11207fd88d102abf7ebdd204fea7c38291f0b1d36e4182dd8f958df6493420: the above Iteration759 82f binding and F2-pending statements are preserved as historical text and superseded for current-source status by this paragraph. This file remains byte-identical to its reviewed759 source (raw SHA256 63fec487aaf7b9c14f94046ca089559d6ae14d92ab5c42d7f29a9928d4f73672); its production fingerprint and routing/consumer responsibilities remain unchanged. All six F2 production scopes are independently re-reviewed in this same successor, both new external tests have explicit test-only graph closure, and the unchanged scanner is rerun against the final F2 business tree. No renewed functional, measured-capacity, device, carrier, soak or P0-P6 acceptance is awarded.\n\nS13 independent manual semantic review 2026-10-24: class B. Add retained outgoing archive entry using archive_io::run_durable. A timed/cancelled caller keeps accepted SMS Job through captured input, actual ingest and output witness. Only two exact precommit capacity refusals become nested business Err; unknown configuration, malformed input and I/O remain executor failures. Existing generic ingest_messages_to path is unchanged. Boundary: Whole-production pin covers new helpers. archive_io and device owner dependencies separately pinned; tests.rs/module erasure whitespace does not affect normalized semantics. Limits: No real message send, provider delivery or disk-fault full-system acceptance. Exact expected/current production and normalized evidence, hashes and test provenance: build/reports/s13-manual-scope-semantic-review-20261024/scope-decisions.json#/6. No functional acceptance; P5/P6 remain OPEN; successor/cold/full gate not established.\n\nCloud reviewed preparation at a7b12205e406d215f5c4a462856804ad8410a5c1: Root review of exact phase-one diff: retained owner binding, exact retry installation, original accepted archive-only receipt; GitHub regression acceptance remains pending. No functional, device or product acceptance is awarded.\n\nCloud reviewed preparation at bfc29eb42426a7d0a9ceedf80ce947878c9a72de: Reviewed archive-then-ledger lock order and exact archived receipt confirmation. Imported, nonissued or retired identity deletion cannot resurrect dispatch; storage corruption still fails closed. No functional, device or product acceptance is awarded.",
       "source": {
         "file": "rust/crates/proletariusd/src/message_archive.rs",
         "line": 1
@@ -22714,11 +22876,11 @@
     {
       "file": "rust/crates/proletariusd/src/device_send_store.rs",
       "function": "recover_go_owned",
-      "sha256": "603bd7c66a8372d27992c9d062b136d8a28027fcb2886ccd2bcc75fc229a1d88",
-      "review": "Iteration506 repair: Go-owner retirement uses go_recovery_binding, separately from send admission. Existing raw/USB legacy and retired rust_modem wrapped submitting intents become unknown without re-claim or replay; v2 native serial and other retained native owners are not interrupted by Go exit. Complete daemon restart still recovers all in-flight records. Existing recovery regression assertion remains and adds v2 native finish-after-Go-exit.",
+      "sha256": "86457664222053273c44cbd9e07ee19b49d13f74bb6911d6681f03b0c1817693",
+      "review": "Iteration506 repair: Go-owner retirement uses go_recovery_binding, separately from send admission. Existing raw/USB legacy and retired rust_modem wrapped submitting intents become unknown without re-claim or replay; v2 native serial and other retained native owners are not interrupted by Go exit. Complete daemon restart still recovers all in-flight records. Existing recovery regression assertion remains and adds v2 native finish-after-Go-exit.\n\nCloud reviewed preparation at bfc29eb42426a7d0a9ceedf80ce947878c9a72de: Reviewed shared root-scoped adapter and Owner, sticky startup unavailability, original-lock v1 migration and sealed bounded transactions. Retired IDs remain burned by high water; unknown and accepted-unarchived records never evict for capacity. No functional, device or product acceptance is awarded.",
       "source": {
         "file": "rust/crates/proletariusd/src/device_send_store.rs",
-        "line": 143
+        "line": 274
       }
     },
     {
@@ -23273,8 +23435,8 @@
     },
     {
       "file": "rust/crates/proletariusd/src/device_send_store.rs",
-      "sha256": "35b47f2f01b3e91ed63c95787031358f602eed5ba73991083faf55ecd358ce8f",
-      "review": "S13 manual-scope semantic companion review 2026-10-24: Store clones share one Owner Arc; open creates one ledger owner and send_owner returns that same instance. Durable schema/read/apply/claim/finish unchanged outside reviewed S12 field/open/accessor addition; compile-only authority_v2 remains separately conditional and not selected by production. Complete source pin expands former handle/recover_go_owned function-only coverage. This binds source metadata only; P5/P6 remain OPEN, no successor/cold/full/product acceptance. Evidence: build/reports/s13-manual-scope-semantic-review-20261024/REVIEW.md and companion-boundaries.json.\n\nCloud reviewed preparation at a7b12205e406d215f5c4a462856804ad8410a5c1: Root review of exact phase-one diff: retained owner binding, exact retry installation, original accepted archive-only receipt; GitHub regression acceptance remains pending. No functional, device or product acceptance is awarded.",
+      "sha256": "a41f4e91a353f4de33410083f8f3a4b578688ff83263119bf39f69a6668b4ffc",
+      "review": "S13 manual-scope semantic companion review 2026-10-24: Store clones share one Owner Arc; open creates one ledger owner and send_owner returns that same instance. Durable schema/read/apply/claim/finish unchanged outside reviewed S12 field/open/accessor addition; compile-only authority_v2 remains separately conditional and not selected by production. Complete source pin expands former handle/recover_go_owned function-only coverage. This binds source metadata only; P5/P6 remain OPEN, no successor/cold/full/product acceptance. Evidence: build/reports/s13-manual-scope-semantic-review-20261024/REVIEW.md and companion-boundaries.json.\n\nCloud reviewed preparation at a7b12205e406d215f5c4a462856804ad8410a5c1: Root review of exact phase-one diff: retained owner binding, exact retry installation, original accepted archive-only receipt; GitHub regression acceptance remains pending. No functional, device or product acceptance is awarded.\n\nCloud reviewed preparation at bfc29eb42426a7d0a9ceedf80ce947878c9a72de: Reviewed shared root-scoped adapter and Owner, sticky startup unavailability, original-lock v1 migration and sealed bounded transactions. Retired IDs remain burned by high water; unknown and accepted-unarchived records never evict for capacity. No functional, device or product acceptance is awarded.",
       "source": {
         "file": "rust/crates/proletariusd/src/device_send_store.rs",
         "line": 1

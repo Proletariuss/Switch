@@ -238,18 +238,26 @@ pub(super) fn inspect_bytes(
 }
 
 fn overlay_preserves_legacy(current: &[LegacyFence], original: &[LegacyFence]) -> bool {
-    if current.len() != original.len() { return false; }
-    let original: BTreeMap<_, _> = original.iter().map(|entry| (&entry.client_request_id, entry)).collect();
-    current.iter().all(|now| original.get(&now.client_request_id).is_some_and(|before| {
-        now.original_attempt == before.original_attempt
-            && now.segments == before.segments
-            && (now.original_state == before.original_state
-                || before.original_state == LegacyPhase::Submitting
-                    && now.original_state == LegacyPhase::Unknown)
-            && (now.archive_confirmed == before.archive_confirmed
-                || before.original_state == LegacyPhase::Accepted
-                    && !before.archive_confirmed && now.archive_confirmed)
-    }))
+    if current.len() != original.len() {
+        return false;
+    }
+    let original: BTreeMap<_, _> = original
+        .iter()
+        .map(|entry| (&entry.client_request_id, entry))
+        .collect();
+    current.iter().all(|now| {
+        original.get(&now.client_request_id).is_some_and(|before| {
+            now.original_attempt == before.original_attempt
+                && now.segments == before.segments
+                && (now.original_state == before.original_state
+                    || before.original_state == LegacyPhase::Submitting
+                        && now.original_state == LegacyPhase::Unknown)
+                && (now.archive_confirmed == before.archive_confirmed
+                    || before.original_state == LegacyPhase::Accepted
+                        && !before.archive_confirmed
+                        && now.archive_confirmed)
+        })
+    })
 }
 
 /// A valid standalone snapshot must also preserve progress acknowledged in the
@@ -270,23 +278,36 @@ pub(super) fn validate_transition(previous: &[u8], next: &[u8]) -> Result<()> {
 
 /// Called only inside Kernel::open_or_migrate's original-lock transaction.
 pub(super) fn migration_step(
-    active: &[u8], siblings: &[Option<Vec<u8>>], authority: &str,
+    active: &[u8],
+    siblings: &[Option<Vec<u8>>],
+    authority: &str,
 ) -> Result<proletarius_store::device_sms_seal::MigrationStep> {
     use proletarius_store::device_sms_seal::MigrationStep;
     let inspected = inspect_bytes_for_authority(active, siblings, authority)?;
     match inspected.next_step() {
         RecoveryStep::ProposeMigration => {
             let proposed = inspected.propose_migration(authority)?;
-            Ok(MigrationStep::WriteSibling { index: 2, bytes: proposed.journal_bytes })
+            Ok(MigrationStep::WriteSibling {
+                index: 2,
+                bytes: proposed.journal_bytes,
+            })
         }
-        RecoveryStep::FreezeLegacy => {
-            Ok(MigrationStep::WriteSibling { index: 0, bytes: active.to_vec() })
-        }
+        RecoveryStep::FreezeLegacy => Ok(MigrationStep::WriteSibling {
+            index: 0,
+            bytes: active.to_vec(),
+        }),
         RecoveryStep::PrepareV2 => {
-            let journal = read_journal(siblings[2].as_deref().ok_or(CodecError::LegacyUnavailable)?)?;
+            let journal = read_journal(
+                siblings[2]
+                    .as_deref()
+                    .ok_or(CodecError::LegacyUnavailable)?,
+            )?;
             let legacy = CompleteLegacyIndex::from_snapshot(active, &journal.legacy_sha256.0)?;
             let initial = initial_snapshot(&legacy, &journal.authority_id)?;
-            Ok(MigrationStep::WriteSibling { index: 1, bytes: encode_checked(&initial)? })
+            Ok(MigrationStep::WriteSibling {
+                index: 1,
+                bytes: encode_checked(&initial)?,
+            })
         }
         RecoveryStep::ReplaceActive => Ok(MigrationStep::ReplaceActive(
             siblings[1].clone().ok_or(CodecError::LegacyUnavailable)?,

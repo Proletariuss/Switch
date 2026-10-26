@@ -460,7 +460,6 @@ fn full_ten_thousand_record_family_is_frozen_without_paging_or_losing_last_fence
     assert_eq!(step(&f), RecoveryStep::V2Present);
 }
 
-
 #[test]
 fn legacy_overlay_allows_only_recovery_and_archive_ack_monotonic_progress() {
     let f = Fixture::new();
@@ -480,8 +479,11 @@ fn legacy_overlay_allows_only_recovery_and_archive_ack_monotonic_progress() {
     assert_eq!(step(&f), RecoveryStep::V2Present);
     assert!(validate_transition(&p.prepared_bytes, &progressed).is_ok());
     assert!(validate_transition(&progressed, &p.prepared_bytes).is_err());
-    let accepted = current.legacy_overlay.iter_mut()
-        .find(|fence| fence.original_state == LegacyPhase::Accepted).unwrap();
+    let accepted = current
+        .legacy_overlay
+        .iter_mut()
+        .find(|fence| fence.original_state == LegacyPhase::Accepted)
+        .unwrap();
     accepted.original_attempt = "different-attempt".into();
     f.put(ACTIVE, &encode_checked(&current).unwrap());
     assert!(inspect(&f.0).is_err());
