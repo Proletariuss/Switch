@@ -65,7 +65,7 @@ struct DeviceSMSReserveRequest: Codable, Equatable {
     var request: DeviceSMSIntentRequest {
         DeviceSMSIntentRequest(clientRequestID: clientRequestID, phone: payload.phone,
             message: payload.message, device: device,
-            expectedSubscriptionID: payload.expectedSubscriptionID, identityVersion: 2)
+            expectedSubscriptionID: payload.expectedSubscriptionID, identityVersion: 2, intentNonce: intentNonce)
     }
     func validate() throws {
         guard identityVersion == 2, family == "device_sms", purpose == "device_sms_send",
@@ -307,10 +307,9 @@ final class DeviceSMSIssuanceJournal {
         try transaction { rows in
             guard let index = try rows.firstIndex(where: { try $0.request.clientRequestID == record.id }) else { return }
             let checkpoint = rows[index]
-            guard try record.matches(checkpoint.request) else { throw DeviceSMSJournalError.invalid }
-            if record.state == .cancelled {
-                guard try record.intentNonce == checkpoint.reserve.intentNonce else { throw DeviceSMSJournalError.invalid }
-            }
+            // A same-sequence CAS winner is not proof about the loser's nonce.
+            guard try record.matches(checkpoint.request),
+                  record.intentNonce == checkpoint.reserve.intentNonce else { return }
             rows.remove(at: index)
         }
     }

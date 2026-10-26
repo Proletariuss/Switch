@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 
 struct FixtureFailure: Error, CustomStringConvertible {
     let description: String
@@ -16,7 +17,9 @@ func record(_ request: DeviceSMSIntentRequest, state: DeviceSMSSendState = .prep
                     message: request.message, device: request.device,
                     subscriptionID: request.expectedSubscriptionID, state: state,
                     segments: state == .accepted ? 1 : 0, archiveConfirmed: archived,
-                    canSubmit: canSubmit, createdAtMS: 100, updatedAtMS: 101)
+                    canSubmit: canSubmit, createdAtMS: 100, updatedAtMS: 101,
+                    identityVersion: request.identityVersion, intentNonce: request.intentNonce,
+                    expectedSubscriptionID: request.identityVersion == 2 ? request.expectedSubscriptionID : nil)
 }
 
 @MainActor
@@ -46,6 +49,15 @@ func waitUntil(_ condition: @escaping @MainActor () -> Bool) async throws {
 
 @MainActor
 final class FixtureAPI: DeviceSMSSendAPI {
+    let journalDirectory = FileManager.default.temporaryDirectory.appendingPathComponent("device-sms-fixture-" + UUID().uuidString)
+    var authorityCalls = 0
+    var highWater: UInt64 = 0
+    var reserveBytes: [Data] = []
+    var prepareBytes: [Data] = []
+    var submitBytes: [Data] = []
+    var reserveHook: ((DeviceSMSReserveRequest) async throws -> DeviceSMSIntent)?
+    var loseReserveACK = false
+    var reservations: [String: DeviceSMSReserveRequest] = [:]
     var rows: [String: DeviceSMSIntent] = [:]
     var prepareCalls: [DeviceSMSIntentRequest] = []
     var submitCalls: [DeviceSMSIntentRequest] = []
@@ -58,6 +70,45 @@ final class FixtureAPI: DeviceSMSSendAPI {
     var getHook: ((String) async throws -> DeviceSMSIntent)?
     var listHook: ((String?) async throws -> DeviceSMSIntentPage)?
 
+    func authority() async throws -> DeviceSMSAuthorityStatus {
+        authorityCalls += 1
+        return DeviceSMSSendTests.status(high: highWater)
+    }
+    func reserve(bytes: Data) async throws -> DeviceSMSIntent {
+        reserveBytes.append(bytes)
+        let reservation = try JSONDecoder().decode(DeviceSMSReserveRequest.self, from: bytes)
+        if let reserveHook { return try await reserveHook(reservation) }
+        if let existing = reservations[reservation.clientRequestID] {
+            guard existing == reservation else { throw DeviceSMSIdentityRefusal() }
+            return rows[reservation.clientRequestID]!
+        }
+        guard UInt64(reservation.sequence) == highWater + 1 else { throw DeviceSMSIdentityRefusal() }
+        highWater += 1
+        reservations[reservation.clientRequestID] = reservation
+        let value = record(reservation.request, state: .reserved, canSubmit: false)
+        rows[value.id] = value
+        if loseReserveACK { throw URLError(.networkConnectionLost) }
+        return value
+    }
+    func prepareV2(bytes: Data) async throws -> DeviceSMSIntent {
+        prepareBytes.append(bytes)
+        return try await prepare(JSONDecoder().decode(DeviceSMSIntentRequest.self, from: bytes))
+    }
+    func submitV2(bytes: Data) async throws {
+        submitBytes.append(bytes)
+        try await submit(JSONDecoder().decode(DeviceSMSIntentRequest.self, from: bytes))
+    }
+    func reconcileArchiveV2(bytes: Data) async throws {
+        try await reconcileArchive(JSONDecoder().decode(DeviceSMSIntentRequest.self, from: bytes))
+    }
+    func cancelReservation(bytes: Data) async throws -> DeviceSMSIntent {
+        let reservation = try JSONDecoder().decode(DeviceSMSReserveRequest.self, from: bytes)
+        guard let previous = rows[reservation.clientRequestID], previous.state == .reserved,
+              previous.intentNonce == reservation.intentNonce else { throw DeviceSMSIdentityRefusal() }
+        let result = record(reservation.request, state: .cancelled, canSubmit: false)
+        rows[result.id] = result
+        return result
+    }
     func list(cursor: String?) async throws -> DeviceSMSIntentPage {
         listCalls.append(cursor)
         if let listHook { return try await listHook(cursor) }
@@ -76,7 +127,7 @@ final class FixtureAPI: DeviceSMSSendAPI {
     func prepare(_ request: DeviceSMSIntentRequest) async throws -> DeviceSMSIntent {
         prepareCalls.append(request)
         if let prepareHook { return try await prepareHook(request) }
-        if let row = rows[request.clientRequestID] { return row }
+        if let row = rows[request.clientRequestID], row.state != .reserved { return row }
         let row = record(request)
         rows[row.id] = row
         return row
@@ -105,7 +156,7 @@ struct DeviceSMSSendTests {
                                device: "reader", expectedSubscriptionID: subscription)
     }
     static func makeStore(_ api: FixtureAPI) -> DeviceSMSSendStore {
-        let store = DeviceSMSSendStore(api: api)
+        let store = DeviceSMSSendStore(api: api, journal: DeviceSMSIssuanceJournal(directory: api.journalDirectory))
         store.setAvailable(true)
         return store
     }
@@ -177,7 +228,7 @@ struct DeviceSMSSendTests {
         try expect(restarted.intents.first?.id == oldID, "restart lost original pending ID")
         api.submitHook = nil
         let result = try await send(restarted, newRequest: true)
-        try expect(result.clientRequestID != oldID && UUID(uuidString: result.clientRequestID) != nil, "explicit new send reused old request ID")
+        try expect(result.clientRequestID != oldID && result.clientRequestID.hasPrefix("m2:ds:"), "explicit new send reused old request ID")
         try expect(api.submitCalls.count == 2, "explicit new send did not submit exactly once")
     }
 
@@ -204,7 +255,7 @@ struct DeviceSMSSendTests {
         api.prepareHook = { request in
             let bound = DeviceSMSIntentRequest(clientRequestID: request.clientRequestID,
                                                phone: request.phone, message: request.message,
-                                               device: request.device, expectedSubscriptionID: subscription)
+                                               device: request.device, expectedSubscriptionID: subscription, identityVersion: request.identityVersion, intentNonce: request.intentNonce)
             let row = record(bound)
             api.rows[row.id] = row
             return row
@@ -383,8 +434,179 @@ struct DeviceSMSSendTests {
                    "mismatched archive observation granted a mutation")
     }
 
+    static func status(high: UInt64 = 0) -> DeviceSMSAuthorityStatus {
+        let authority = String(repeating: "a", count: 32)
+        return DeviceSMSAuthorityStatus(identityVersion: 2, family: "device_sms", authorityID: authority,
+            epoch: "1", issuedHighWater: String(high), nextSequence: high == UInt64.max ? nil : String(high + 1),
+            nextClientRequestID: high == UInt64.max ? nil : DeviceSMSAuthorityStatus.identifier(authority: authority, epoch: 1, sequence: high + 1))
+    }
+    static func checkpoint(high: UInt64 = 0, body: String = message) throws -> DeviceSMSIssuanceCheckpoint {
+        try .make(DeviceSMSReserveRequest.candidate(status: status(high: high), phone: phone,
+            message: body, device: "reader", subscription: subscription))
+    }
+    static func testReserveACKLossReopensExactBytes() async throws {
+        let api = FixtureAPI()
+        defer { try? FileManager.default.removeItem(at: api.journalDirectory) }
+        api.loseReserveACK = true
+        try await pending { try await send(makeStore(api)) }
+        try expect(api.prepareCalls.isEmpty && api.submitCalls.isEmpty && api.reserveBytes.count == 1,
+                   "reserve ACK loss reached prepare/dispatch")
+        let before = try DeviceSMSIssuanceJournal(directory: api.journalDirectory).entries()[0]
+        api.loseReserveACK = false
+        let result = try await send(makeStore(api))
+        try expect(api.reserveBytes == [before.reserveBytes, before.reserveBytes], "restart did not replay exact reserve bytes")
+        try expect(api.prepareBytes == [before.sendBytes] && api.submitBytes == [before.sendBytes], "prepare/claim changed saved business bytes")
+        let remaining = try DeviceSMSIssuanceJournal(directory: api.journalDirectory).entries()
+        try expect(result.archiveConfirmed && remaining.isEmpty && api.authorityCalls == 1, "terminal confirmation or original candidate recovery drifted")
+    }
+    static func testJournalDurabilityFailurePrecedesNetwork() async throws {
+        for boundary in ["before-rename", "after-rename"] {
+            let api = FixtureAPI()
+            defer { try? FileManager.default.removeItem(at: api.journalDirectory) }
+            let journal = DeviceSMSIssuanceJournal(directory: api.journalDirectory)
+            _ = try journal.entries()
+            journal.fault = { point in if point == boundary { throw DeviceSMSJournalError.unavailable } }
+            let store = DeviceSMSSendStore(api: api, journal: journal)
+            store.setAvailable(true)
+            try await pending { try await send(store) }
+            try expect(api.reserveBytes.isEmpty && api.prepareCalls.isEmpty && api.submitCalls.isEmpty,
+                       "failed durable boundary allowed network mutation")
+            journal.fault = nil
+            try await pending { try await send(store) }
+            try expect(api.reserveBytes.isEmpty, "failed lifetime recovered its own health")
+            let reopened = DeviceSMSIssuanceJournal(directory: api.journalDirectory)
+            let entries = try reopened.entries()
+            try expect(entries.count == (boundary == "after-rename" ? 1 : 0), "interrupted replacement lost expected prior/next bytes")
+            if let saved = entries.first {
+                _ = try await send(makeStore(api))
+                try expect(api.reserveBytes == [saved.reserveBytes], "reopen replaced interrupted exact candidate")
+            }
+        }
+    }
+    static func testCorruptionPermissionsAndMissingSnapshotFailClosed() async throws {
+        for failure in ["corrupt", "missing", "symlink", "permissions"] {
+            let api = FixtureAPI()
+            defer { try? FileManager.default.removeItem(at: api.journalDirectory) }
+            let journal = DeviceSMSIssuanceJournal(directory: api.journalDirectory)
+            _ = try journal.insert(checkpoint(), explicitNew: false)
+            let snapshot = api.journalDirectory.appendingPathComponent("issuance.json")
+            let mode = try FileManager.default.attributesOfItem(atPath: snapshot.path)[.posixPermissions] as? NSNumber
+            try expect(mode?.intValue == 0o600, "journal snapshot is not private")
+            switch failure {
+            case "corrupt": try Data("broken".utf8).write(to: snapshot)
+            case "missing": try FileManager.default.removeItem(at: snapshot)
+            case "permissions": try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: snapshot.path)
+            default:
+                try FileManager.default.removeItem(at: snapshot)
+                try FileManager.default.createSymbolicLink(atPath: snapshot.path, withDestinationPath: "/dev/null")
+            }
+            try await pending { try await send(makeStore(api)) }
+            try expect(api.authorityCalls == 0 && api.reserveBytes.isEmpty && api.submitCalls.isEmpty, "damaged journal created a new identity")
+        }
+    }
+    static func testRetiredAndNonceConflictKeepOriginalEvidence() async throws {
+        let api = FixtureAPI()
+        defer { try? FileManager.default.removeItem(at: api.journalDirectory) }
+        api.reserveHook = { _ in throw DeviceSMSIdentityRefusal() }
+        let store = makeStore(api)
+        try await pending { try await send(store) }
+        let journal = DeviceSMSIssuanceJournal(directory: api.journalDirectory)
+        let saved = try journal.entries()[0]
+        try await pending { try await send(makeStore(api)) }
+        try expect(api.reserveBytes.count == 1 && api.authorityCalls == 1, "retired identity was reissued or renumbered")
+        var other = try saved.request
+        other.intentNonce = String(repeating: "b", count: 32)
+        api.rows[other.clientRequestID] = record(other, state: .accepted, canSubmit: false, archived: true)
+        api.highWater = 1
+        let restarted = makeStore(api)
+        await restarted.refresh()
+        let retained = try journal.entries()
+        try expect(retained.count == 1 && retained[0].sameBytes(saved), "other nonce's terminal record cleared loser checkpoint")
+        try await pending { try await send(restarted) }
+        api.reserveHook = nil
+        let newResult = try await send(restarted, newRequest: true)
+        let after = try journal.entries()
+        try expect(newResult.id != other.clientRequestID && after.count == 1 && after[0].sameBytes(saved), "explicit new message discarded or reused conflicting old evidence")
+    }
+    static func testLegacyPreparedOnlyQueries() async throws {
+        let api = FixtureAPI()
+        let legacy = record(request("legacy-pending"))
+        api.rows[legacy.id] = legacy
+        let store = makeStore(api)
+        try await pending { try await send(store) }
+        try await pending { try await store.resume(legacy) }
+        try expect(api.authorityCalls == 0 && api.reserveBytes.isEmpty && api.prepareCalls.isEmpty && api.submitCalls.isEmpty,
+                   "legacy pending upgraded or resubmitted")
+    }
+    static func testLostJournalCanOnlyCancelReservedNonce() async throws {
+        let api = FixtureAPI()
+        let saved = try checkpoint()
+        let request = try saved.request
+        api.rows[request.clientRequestID] = record(request, state: .reserved, canSubmit: false)
+        let store = DeviceSMSSendStore(api: api)
+        store.setAvailable(true)
+        await store.refresh()
+        try await pending { try await store.resume(api.rows[request.clientRequestID]!) }
+        let result = try await store.cancelReservation(api.rows[request.clientRequestID]!)
+        try expect(result.state == .cancelled && api.prepareCalls.isEmpty && api.submitCalls.isEmpty && api.reserveBytes.isEmpty,
+                   "lost journal cancellation acquired issuance/dispatch permission")
+        let unknown = record(request, state: .unknown, canSubmit: false)
+        try await pending { try await store.cancelReservation(unknown) }
+    }
+    static func testJournalCapacityDoesNotEvictUnknown() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("sms-capacity-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let journal = DeviceSMSIssuanceJournal(directory: directory)
+        for index in 0..<64 {
+            let saved = try journal.insert(checkpoint(high: UInt64(index), body: "message-\(index)"), explicitNew: true)
+            _ = try journal.advance(saved, to: .unresolved)
+        }
+        do { _ = try journal.insert(checkpoint(high: 64), explicitNew: true); throw FixtureFailure(description: "journal exceeded bound") }
+        catch DeviceSMSJournalError.capacity {}
+        let rows = try DeviceSMSIssuanceJournal(directory: directory).entries()
+        try expect(rows.count == 64 && rows.allSatisfy { $0.phase == .unresolved }, "capacity evicted uncertain evidence")
+    }
+    static func testTwoProcessesClaimOneLocalCheckpoint() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("sms-flock-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let journal = DeviceSMSIssuanceJournal(directory: directory)
+        _ = try journal.insert(checkpoint(), explicitNew: false)
+        let executable = URL(fileURLWithPath: CommandLine.arguments[0])
+        let children = (0..<2).map { _ -> Process in
+            let child = Process()
+            child.executableURL = executable
+            child.arguments = ["--journal-claim", directory.path]
+            return child
+        }
+        for child in children { try child.run() }
+        for child in children { child.waitUntilExit() }
+        try expect(children.filter { $0.terminationStatus == 0 }.count == 1,
+                   "two processes acquired the same checkpoint dispatch permission")
+        let rows = try journal.entries()
+        try expect(rows.count == 1 && rows[0].phase == .dispatched, "cross-process claim not durable")
+    }
+    static func journalWorker() throws {
+        let journal = DeviceSMSIssuanceJournal(directory: URL(fileURLWithPath: CommandLine.arguments[2]))
+        do {
+            let original = try journal.entries()[0]
+            let prepared = try journal.advance(original, to: .prepared)
+            _ = try journal.advance(prepared, to: .dispatched)
+        } catch DeviceSMSJournalError.conflict { exit(10) }
+    }
     static func main() async throws {
+        if CommandLine.arguments.count == 3 && CommandLine.arguments[1] == "--journal-claim" {
+            try journalWorker()
+            return
+        }
         let tests: [(String, () async throws -> Void)] = [
+            ("reserve ACK loss reopens exact bytes", testReserveACKLossReopensExactBytes),
+            ("journal durability faults precede network", testJournalDurabilityFailurePrecedesNetwork),
+            ("journal corruption/missing/permissions", testCorruptionPermissionsAndMissingSnapshotFailClosed),
+            ("retired and nonce conflicts retain evidence", testRetiredAndNonceConflictKeepOriginalEvidence),
+            ("legacy prepared remains read-only", testLegacyPreparedOnlyQueries),
+            ("lost journal reserved cancellation", testLostJournalCanOnlyCancelReservedNonce),
+            ("journal bounds retain unknown", testJournalCapacityDoesNotEvictUnknown),
+            ("two-process journal claim", testTwoProcessesClaimOneLocalCheckpoint),
             ("archive recovery lost ACK and restart", testArchiveRecoveryLostACKAndRestartKeepOriginalIdentity),
             ("archive recovery failure and mismatch", testArchiveRecoveryFailureAndMismatchNeverReissue),
             ("clear preserves durable dispatch safety", testClearPersistsWithoutGrantingResend),

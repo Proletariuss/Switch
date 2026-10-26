@@ -10,11 +10,12 @@ struct DeviceSMSIntentRequest: Codable, Equatable {
     let device: String
     let expectedSubscriptionID: String?
     var identityVersion: Int? = nil
+    var intentNonce: String? = nil
     enum CodingKeys: String, CodingKey {
         case phone, message, device
         case clientRequestID = "client_request_id"
         case expectedSubscriptionID = "expected_subscription_id"
-        case identityVersion = "identity_version"
+        case identityVersion = "identity_version", intentNonce = "intent_nonce"
     }
 }
 
@@ -38,7 +39,7 @@ struct DeviceSMSIntent: Decodable, Identifiable, Equatable {
     var needsRecovery: Bool { state != .cancelled && (state != .accepted || !archiveConfirmed) }
     var request: DeviceSMSIntentRequest {
         DeviceSMSIntentRequest(clientRequestID: clientRequestID, phone: phone, message: message,
-                               device: device, expectedSubscriptionID: expectedSubscriptionID ?? subscriptionID, identityVersion: identityVersion)
+                               device: device, expectedSubscriptionID: expectedSubscriptionID ?? subscriptionID, identityVersion: identityVersion, intentNonce: intentNonce)
     }
     var statusText: String {
         switch state {
@@ -52,6 +53,7 @@ struct DeviceSMSIntent: Decodable, Identifiable, Equatable {
     func matches(_ request: DeviceSMSIntentRequest) -> Bool {
         version == (request.identityVersion ?? 1) && clientRequestID == request.clientRequestID && phone == request.phone && message == request.message
             && device == request.device
+            && (request.intentNonce == nil || intentNonce == request.intentNonce)
             && (request.expectedSubscriptionID == nil || request.expectedSubscriptionID == "" || subscriptionID == request.expectedSubscriptionID)
     }
     enum CodingKeys: String, CodingKey {
@@ -176,8 +178,14 @@ struct DeviceSMSPendingError: LocalizedError {
             for row in rows { try journal?.confirmTerminal(row) }
             let checkpoints = try journal?.entries() ?? []
             for checkpoint in checkpoints {
-                let projection = try checkpoint.projection()
-                if !rows.contains(where: { $0.id == projection.id }) { rows.append(projection) }
+                var projection = try checkpoint.projection()
+                if let index = rows.firstIndex(where: { $0.id == projection.id }) {
+                    if try !rows[index].matches(checkpoint.request) {
+                        let unresolved = try journal?.advance(checkpoint, to: .unresolved)
+                        projection = try unresolved?.projection() ?? projection
+                        rows[index] = projection
+                    }
+                } else { rows.append(projection) }
             }
             recoveryRecords = rows.filter(\.needsRecovery)
             publishRecoveryRecords()
@@ -417,6 +425,8 @@ struct DeviceSMSPendingError: LocalizedError {
             if let record = try? await api.get(id: request.clientRequestID), current(generation), record.matches(request) {
                 if record.state == .unknown || (record.state == .accepted && !record.archiveConfirmed) {
                     _ = try? journal.advance(checkpoint, to: .unresolved)
+                } else if record.state == .prepared {
+                    _ = try? journal.advance(checkpoint, to: .prepared)
                 }
                 try recordResult(record)
                 notice = record.statusText
