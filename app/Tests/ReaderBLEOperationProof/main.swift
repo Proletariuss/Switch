@@ -193,13 +193,22 @@ private func bridgeTests(_ path: String) {
     let invalid = wire(path, request("invalid", hex: "not-hex"))
     expect(invalid["terminal"] as? Bool == true && invalid["errorCode"] as? String == "ble_invalid_apdu", "invalid APDU receipt")
     expect(status("invalid")["terminal"] as? Bool == true, "invalid receipt retained without dispatch")
+    BluetoothReaderManager.shared.holdNextCardCompletion()
     let legacy = wire(path, ["token": auth, "action": "apdu", "reader": reader, "hex": "00840000"])
+    expect(BluetoothReaderManager.shared.cardCompletionHeld.wait(timeout: .now() + 2) == .success,
+           "legacy physical callback is held before timeout assertions")
     expect(legacy["operation_id"] == nil && legacy["terminal"] == nil, "legacy response shape retained")
     expect(legacy["errorCode"] as? String == "ble_timeout", "legacy wait timeout remains compatible")
     expect(wire(path, request("legacy-fence"))["errorCode"] as? String == "ble_busy", "legacy pending work shares physical fence")
-    usleep(60_000)
+    expect(BluetoothReaderManager.shared.releaseHeldCardCompletion().wait(timeout: .now() + 2) == .success,
+           "legacy physical callback and ledger completion finished")
+    BluetoothReaderManager.shared.holdNextCardCompletion()
     let reset = wire(path, request("reset", action: "reset"))
+    expect(BluetoothReaderManager.shared.cardCompletionHeld.wait(timeout: .now() + 2) == .success,
+           "reset physical callback is held before timeout assertions")
     expect(reset["terminal"] as? Bool == false, "reset timeout also retains ownership")
+    expect(BluetoothReaderManager.shared.releaseHeldCardCompletion().wait(timeout: .now() + 2) == .success,
+           "reset physical callback and ledger completion finished")
     expect(awaitTerminal("reset")["ok"] as? Bool == true, "reset completion is tracked")
     let connection=state["connection_id"] as! String
     let closeID=state["close_operation_id"] as! String
@@ -316,13 +325,15 @@ private func startupStaleSocketTests(_ directory: String) {
     let livePath = directory + "/live.sock"
     let live = bindFixtureSocket(livePath, listen: true)
     let liveIdentity = socketIdentity(livePath)
+    let liveAttemptFinished = DispatchSemaphore(value: 0)
     let contender = ReaderBLEBridge(standardRequestTimeout: 1, cardOperationTimeout: 0.01,
-                                    staleProbeTimeout: 0.05)
+                                    staleProbeTimeout: 0.05,
+                                    afterStartupAttempt: { liveAttemptFinished.signal() })
     let startBegan = ProcessInfo.processInfo.systemUptime
     contender.start(socketPath: livePath)
     expect(ProcessInfo.processInfo.systemUptime - startBegan < 0.02,
            "bridge start returns without probing a live socket on the caller")
-    usleep(100_000)
+    expect(liveAttemptFinished.wait(timeout: .now() + 2) == .success, "live ownership probe completed")
     expect(socketIdentity(livePath) == liveIdentity,
            "live listener survives a competing bridge start")
     contender.stop()
@@ -353,13 +364,15 @@ private func startupStaleSocketTests(_ directory: String) {
         }
         queuedClients.append(client)
     }
+    let fullAttemptFinished = DispatchSemaphore(value: 0)
     let fullContender = ReaderBLEBridge(standardRequestTimeout: 1, cardOperationTimeout: 0.01,
-                                        staleProbeTimeout: 0.05)
+                                        staleProbeTimeout: 0.05,
+                                        afterStartupAttempt: { fullAttemptFinished.signal() })
     let fullStartBegan = ProcessInfo.processInfo.systemUptime
     fullContender.start(socketPath: fullPath)
     expect(ProcessInfo.processInfo.systemUptime - fullStartBegan < 0.02,
            "saturated accept queue never blocks bridge start caller")
-    usleep(120_000)
+    expect(fullAttemptFinished.wait(timeout: .now() + 2) == .success, "saturated ownership probe completed")
     expect(socketIdentity(fullPath) == fullIdentity,
            "timeout or uncertain probe preserves the saturated listener")
     fullContender.stop()
@@ -504,6 +517,125 @@ private func bridgeLifecycleTests(_ bridge: ReaderBLEBridge, _ path: String) {
     print("BLE Unix bridge: own-socket cleanup, restart and foreign/non-socket preservation passed")
 }
 
+private final class AcceptRetirementProbe: @unchecked Sendable {
+    let entered = DispatchSemaphore(value: 0)
+    let release = DispatchSemaphore(value: 0)
+    let retired = DispatchSemaphore(value: 0)
+    private let lock = NSLock()
+    private var current: Int32 = -1
+    private var results: [(Int32, Int32)] = []
+    func hold(_ descriptor: Int32) {
+        lock.lock(); current = descriptor; lock.unlock()
+        entered.signal()
+        expect(release.wait(timeout: .now() + 10) == .success, "paused accept worker was released")
+    }
+    func finished(_ descriptor: Int32, _ result: Int32) {
+        lock.lock(); results.append((descriptor, result)); lock.unlock()
+        retired.signal()
+    }
+    var descriptor: Int32 { lock.lock(); defer { lock.unlock() }; return current }
+    var closes: [(Int32, Int32)] { lock.lock(); defer { lock.unlock() }; return results }
+}
+
+private func listenerRetirementTests(_ directory: String) {
+    // Pause before weak-self acquisition: both a living bridge and a deallocated
+    // bridge must leave fd closure exclusively to the queued accept worker.
+    for keepBridge in [true, false] {
+        let path = directory + (keepBridge ? "/owned.sock" : "/gone.sock")
+        let probe = AcceptRetirementProbe()
+        let startup = DispatchSemaphore(value: 0)
+        var old: ReaderBLEBridge? = ReaderBLEBridge(
+            afterStartupAttempt: { startup.signal() },
+            beforeAcceptWorker: probe.hold, afterAcceptRetired: probe.finished)
+        weak var weakOld = old
+        old!.start(socketPath: path)
+        expect(startup.wait(timeout: .now() + 2) == .success, "paused listener startup completed")
+        expect(probe.entered.wait(timeout: .now() + 2) == .success, "accept worker reached its barrier")
+        let oldFD = probe.descriptor
+        expect(Darwin.fcntl(oldFD, F_GETFL, 0) & O_NONBLOCK != 0, "listener must be nonblocking")
+        old!.stop()
+        expect(!socketExists(path), "stop unpublishes the owned socket")
+        expect(Darwin.fcntl(oldFD, F_GETFD, 0) >= 0,
+               "stop closed a descriptor still owned by a queued accept worker")
+        if !keepBridge {
+            old = nil
+            let deadline = ProcessInfo.processInfo.systemUptime + 2
+            while weakOld != nil && ProcessInfo.processInfo.systemUptime < deadline { usleep(1_000) }
+            expect(weakOld == nil, "paused worker did not preserve weak-self lifetime semantics")
+        }
+
+        let successorStarted = DispatchSemaphore(value: 0)
+        let successorRetired = AcceptRetirementProbe()
+        var successorFD: Int32 = -1
+        let successor = ReaderBLEBridge(
+            afterBindBeforePublish: { _, descriptor in successorFD = descriptor },
+            afterStartupAttempt: { successorStarted.signal() },
+            afterAcceptRetired: successorRetired.finished)
+        successor.start(socketPath: path)
+        expect(successorStarted.wait(timeout: .now() + 2) == .success, "successor startup completed")
+        waitForBridge(path)
+        expect(successorFD != oldFD, "successor reused a descriptor still owned by the paused worker")
+        let before = wire(path, ["token": LocalBackendAuthentication.appToken, "action": "status"])
+        expect(before["ok"] as? Bool == true, "successor serves while predecessor is paused")
+        probe.release.signal()
+        expect(probe.retired.wait(timeout: .now() + 2) == .success, "predecessor worker actually retired")
+        expect(probe.closes.count == 1 && probe.closes[0].0 == oldFD && probe.closes[0].1 == 0,
+               "predecessor did not close its own descriptor exactly once")
+        let after = wire(path, ["token": LocalBackendAuthentication.appToken, "action": "status"])
+        expect(after["ok"] as? Bool == true && after["bridge_id"] as? String == before["bridge_id"] as? String,
+               "retired worker consumed or closed a successor connection")
+        old?.stop()
+        expect(wire(path, ["token": LocalBackendAuthentication.appToken, "action": "status"])["ok"] as? Bool == true,
+               "stopped predecessor damaged the successor listener")
+        successor.stop()
+        expect(successorRetired.retired.wait(timeout: .now() + 2) == .success, "idle poll retired within its budget")
+        expect(successorRetired.closes.count == 1 && successorRetired.closes[0].1 == 0,
+               "successor listener was not closed exactly once")
+    }
+
+    // Inject a real listening-socket shutdown without invalidating bridge state.
+    // Natural poll/accept retirement must clear that state before a restart.
+    let faultPath = directory + "/fault.sock"
+    let fault = AcceptRetirementProbe()
+    let startup = DispatchSemaphore(value: 0)
+    let recoverable = ReaderBLEBridge(afterStartupAttempt: { startup.signal() },
+        beforeAcceptWorker: fault.hold, afterAcceptRetired: fault.finished)
+    recoverable.start(socketPath: faultPath)
+    expect(startup.wait(timeout: .now() + 2) == .success && fault.entered.wait(timeout: .now() + 2) == .success,
+           "fault listener reached its worker barrier")
+    expect(Darwin.shutdown(fault.descriptor, SHUT_RDWR) == 0, "inject listener shutdown without closing its fd")
+    fault.release.signal()
+    expect(fault.retired.wait(timeout: .now() + 2) == .success, "poll failure did not retire its listener")
+    expect(!socketExists(faultPath) && fault.closes.count == 1 && fault.closes[0].1 == 0,
+           "natural retirement left published state or leaked its descriptor")
+    recoverable.start(socketPath: faultPath)
+    expect(startup.wait(timeout: .now() + 2) == .success && fault.entered.wait(timeout: .now() + 2) == .success,
+           "natural retirement did not permit a new listener")
+    fault.release.signal()
+    waitForBridge(faultPath)
+    expect(wire(faultPath, ["token": LocalBackendAuthentication.appToken, "action": "status"])["ok"] as? Bool == true,
+           "listener failed to recover after natural poll retirement")
+    recoverable.stop()
+    expect(fault.retired.wait(timeout: .now() + 2) == .success && fault.closes.count == 2
+           && fault.closes.allSatisfy { $0.1 == 0 }, "restarted listener retirement leaked or double-closed")
+
+    let rapidPath = directory + "/rapid.sock"
+    let rapid = AcceptRetirementProbe()
+    let bridge = ReaderBLEBridge(afterAcceptRetired: rapid.finished)
+    for _ in 0..<12 {
+        bridge.start(socketPath: rapidPath)
+        waitForBridge(rapidPath)
+        expect(wire(rapidPath, ["token": LocalBackendAuthentication.appToken, "action": "status"])["ok"] as? Bool == true,
+               "rapid restart lost authenticated status")
+        bridge.stop() // Deliberately do not join before starting the successor.
+    }
+    for _ in 0..<12 {
+        expect(rapid.retired.wait(timeout: .now() + 2) == .success, "rapid restart leaked a retired worker")
+    }
+    expect(rapid.closes.count == 12 && rapid.closes.allSatisfy { $0.1 == 0 }, "rapid restart did not close each listener once")
+    print("BLE Unix bridge: queued/weak-self/idle/error retirement, successor isolation and rapid restart passed")
+}
+
 private func temporarySocketPathBoundaryTests() {
     let build = URL(fileURLWithPath: ProcessInfo.processInfo.environment["SWITCH_BUILD_DIR"]!)
     let root = build.appendingPathComponent("tmp/bind-" + String(UUID().uuidString.prefix(8)))
@@ -557,6 +689,7 @@ private enum ReaderBLEOperationProofTests {
             bridgeTests(path)
             bridgeLifecycleTests(bridge, path)
             startupStaleSocketTests((path as NSString).deletingLastPathComponent)
+            listenerRetirementTests((path as NSString).deletingLastPathComponent)
             print("Reader BLE operation proof tests passed (no hardware)")
             exit(0)
         }

@@ -28,6 +28,30 @@ final class BluetoothReaderManager {
     func connectionIdentityForBridge() -> PhysicalConnectionIdentity? { state == .connected ? identity : nil }
     private let countLock = NSLock()
     private var calls = 0
+    private var holdNextCompletion = false
+    private var heldCompletion: (() -> Void)?
+    let cardCompletionHeld = DispatchSemaphore(value: 0)
+
+    func holdNextCardCompletion() {
+        countLock.lock(); defer { countLock.unlock() }
+        precondition(!holdNextCompletion && heldCompletion == nil)
+        holdNextCompletion = true
+    }
+
+    func releaseHeldCardCompletion() -> DispatchSemaphore {
+        countLock.lock()
+        let completion = heldCompletion
+        heldCompletion = nil
+        countLock.unlock()
+        precondition(completion != nil)
+        let finished = DispatchSemaphore(value: 0)
+        DispatchQueue.main.async {
+            completion!()
+            // The production completion closure synchronously finishes the ledger.
+            finished.signal()
+        }
+        return finished
+    }
 
     var cardCalls: Int {
         countLock.lock()
@@ -46,7 +70,16 @@ final class BluetoothReaderManager {
         state == .connected && (reader == nil || reader == "BLE:" + Self.readerID.uuidString)
     }
     func exchangeAPDU(_ data: Data, completion: @escaping (Result<Data, Error>) -> Void) {
-        countLock.lock(); calls += 1; countLock.unlock()
+        countLock.lock()
+        calls += 1
+        if holdNextCompletion {
+            holdNextCompletion = false
+            heldCompletion = { completion(.success(Data([0x90, 0x00]))) }
+            countLock.unlock()
+            cardCompletionHeld.signal()
+            return
+        }
+        countLock.unlock()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.04) {
             completion(.success(Data([0x90, 0x00])))
         }
