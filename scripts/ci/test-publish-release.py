@@ -59,6 +59,19 @@ def validate(files, reports, **overrides):
     return publisher.validate_payload(files, reports, **values)
 
 class ReleaseFixtures(unittest.TestCase):
+    def test_evidence_gzip_pins_level_nine_across_python_defaults(self):
+        from unittest import mock
+        files, _, reports = fixture()
+        with mock.patch.object(publisher.gzip, "GzipFile", wraps=publisher.gzip.GzipFile) as constructor:
+            assets, _ = validate(files, reports)
+        writes = [call.kwargs for call in constructor.call_args_list if call.kwargs.get("mode") == "wb"]
+        self.assertEqual(len(writes), 1)
+        self.assertEqual(writes[0]["compresslevel"], 9)
+        self.assertEqual(writes[0]["mtime"], 0)
+        self.assertEqual(writes[0]["filename"], "")
+        # Gzip XFL=2 records maximum compression, irrespective of Python's default.
+        self.assertEqual(assets["test-reports.tar.gz"][8], 2)
+
     def test_valid_four_asset_whitelist_and_deterministic_retry(self):
         files, _, reports = fixture()
         first, _ = validate(files, reports)

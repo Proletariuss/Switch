@@ -131,7 +131,7 @@ def validate_payload(files, reports, commit, tree, version, build, run_id, attem
     need(seen == set(inventory), "missing App entry")
     # Deterministic evidence archive makes publish-only retries byte-identical.
     evidence = io.BytesIO()
-    with gzip.GzipFile(fileobj=evidence, mode="wb", mtime=0, filename="") as compressed:
+    with gzip.GzipFile(fileobj=evidence, mode="wb", compresslevel=9, mtime=0, filename="") as compressed:
         with tarfile.open(fileobj=compressed, mode="w", format=tarfile.USTAR_FORMAT) as archive:
             for name, raw in sorted(test_files.items()):
                 entry = tarfile.TarInfo("test-reports/" + name)
