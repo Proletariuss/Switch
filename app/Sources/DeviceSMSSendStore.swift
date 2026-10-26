@@ -111,6 +111,7 @@ struct DeviceSMSPendingError: LocalizedError {
     private var epoch: UInt64 = 0
     private var queryRevision: UInt64 = 0
     private var loaded = false
+    private static let maximumServerIntents = 10_000 + 32 + 32 // Frozen v1 + v2 live + terminal cache.
     private var recoveryRecords: [DeviceSMSIntent] = []
     private let preferences: UserDefaults?
     private var dismissed: Set<String>
@@ -175,7 +176,7 @@ struct DeviceSMSPendingError: LocalizedError {
             repeat {
                 let page = try await api.list(cursor: cursor)
                 guard current(generation), query == queryRevision else { return }
-                guard rows.count + page.intents.count <= 10_000 else { throw CocoaError(.fileReadCorruptFile) }
+                guard rows.count + page.intents.count <= Self.maximumServerIntents else { throw CocoaError(.fileReadCorruptFile) }
                 rows.append(contentsOf: page.intents)
                 cursor = page.nextCursor
                 if let cursor, cursor.isEmpty || !seen.insert(cursor).inserted { throw CocoaError(.fileReadCorruptFile) }
@@ -243,6 +244,7 @@ struct DeviceSMSPendingError: LocalizedError {
         error = nil
         notice = nil
         defer { if generation == epoch { sending = false } }
+        var checkpointConfirmed = !newRequest && existing != nil
         do {
             let checkpoint: DeviceSMSIssuanceCheckpoint
             if !newRequest, let existing { checkpoint = existing }
@@ -253,12 +255,15 @@ struct DeviceSMSPendingError: LocalizedError {
                     message: message, device: device, subscription: subscriptionID)
                 // insert rechecks concurrent same-payload/candidate ownership under flock.
                 checkpoint = try journal.insert(.make(reservation), explicitNew: newRequest)
+                checkpointConfirmed = true
             }
             return try await continueIssuance(checkpoint, allowPrepared: false, generation: generation)
         } catch is CancellationError { throw CancellationError() }
         catch {
             guard current(generation) else { throw CancellationError() }
-            self.error = "原候选和业务内容已保留；未自动创建其他请求。可查询原请求，或明确确认一条新短信。"
+            self.error = checkpointConfirmed
+                ? "原候选和业务内容已保留；未自动创建其他请求。可查询原请求，或明确确认一条新短信。"
+                : "尚未确认签发候选或本机日志，未提交短信；不会自动替换已有请求。"
             throw DeviceSMSPendingError(reason: self.error!)
         }
     }
@@ -451,6 +456,9 @@ struct DeviceSMSPendingError: LocalizedError {
     }
 
     private func recordResult(_ record: DeviceSMSIntent) throws {
+        if let checkpoint = try journal?.checkpoint(id: record.id), try !record.matches(checkpoint.request) {
+            throw DeviceSMSIdentityRefusal()
+        }
         try journal?.confirmTerminal(record)
         issuancePhases = try Dictionary(uniqueKeysWithValues: (journal?.entries() ?? []).map { (try $0.request.clientRequestID, $0.phase) })
         queryRevision &+= 1

@@ -51,6 +51,7 @@ func waitUntil(_ condition: @escaping @MainActor () -> Bool) async throws {
 final class FixtureAPI: DeviceSMSSendAPI {
     let journalDirectory = FileManager.default.temporaryDirectory.appendingPathComponent("device-sms-fixture-" + UUID().uuidString)
     var authorityCalls = 0
+    var authorityHook: (() async throws -> DeviceSMSAuthorityStatus)?
     var highWater: UInt64 = 0
     var reserveBytes: [Data] = []
     var prepareBytes: [Data] = []
@@ -72,6 +73,7 @@ final class FixtureAPI: DeviceSMSSendAPI {
 
     func authority() async throws -> DeviceSMSAuthorityStatus {
         authorityCalls += 1
+        if let authorityHook { return try await authorityHook() }
         return DeviceSMSSendTests.status(high: highWater)
     }
     func reserve(bytes: Data) async throws -> DeviceSMSIntent {
@@ -586,6 +588,55 @@ struct DeviceSMSSendTests {
         let rows = try journal.entries()
         try expect(rows.count == 1 && rows[0].phase == .dispatched, "cross-process claim not durable")
     }
+    static func testFullLegacyPlusV2PaginationRemainsReadable() async throws {
+        let api = FixtureAPI()
+        defer { try? FileManager.default.removeItem(at: api.journalDirectory) }
+        for index in 0..<10_000 {
+            let value = record(request("legacy-full-\(index)"), state: .unknown, canSubmit: false)
+            api.rows[value.id] = value
+        }
+        let v2 = record(try checkpoint().request, state: .reserved, canSubmit: false)
+        api.rows[v2.id] = v2
+        let store = makeStore(api)
+        await store.refresh()
+        try expect(store.error == nil && store.intents.count == 10_001 && api.listCalls.count == 101,
+                   "full frozen v1 plus new v2 record exceeded the GUI census bound")
+        let cancelled = try await store.cancelReservation(v2)
+        try expect(cancelled.state == .cancelled, "full legacy migration blocked explicit v2 cancellation")
+    }
+    static func testTwoGUIReserveCollisionAllowsExplicitIndependentMessage() async throws {
+        let api = FixtureAPI()
+        let secondDirectory = api.journalDirectory.appendingPathExtension("second")
+        defer { try? FileManager.default.removeItem(at: api.journalDirectory); try? FileManager.default.removeItem(at: secondDirectory) }
+        api.authorityHook = { status() } // Both GUIs read the same unissued candidate.
+        let gate = FixtureGate<DeviceSMSIntent>()
+        api.prepareHook = { request in
+            if request.clientRequestID.hasSuffix("0000000000000001") { return await gate.wait() }
+            let result = record(request)
+            api.rows[result.id] = result
+            return result
+        }
+        let first = makeStore(api)
+        let firstTask = Task { try await send(first) }
+        try await waitUntil { gate.entered }
+        let second = DeviceSMSSendStore(api: api, journal: DeviceSMSIssuanceJournal(directory: secondDirectory))
+        second.setAvailable(true)
+        // Different payload models a distinct GUI action, not an ordinary retry.
+        try await pending { try await second.send(phone: phone, message: "second GUI", device: "reader", subscriptionID: subscription) }
+        let secondJournal = DeviceSMSIssuanceJournal(directory: secondDirectory)
+        let loser = try secondJournal.entries()[0]
+        try expect(loser.phase == .unresolved && api.submitCalls.isEmpty && api.reserveBytes.count == 2,
+                   "reserve collision claimed the winner or discarded losing identity")
+        api.authorityHook = nil
+        let separate = try await second.send(phone: phone, message: "second GUI", device: "reader", subscriptionID: subscription, newRequest: true)
+        let retained = try secondJournal.entries()
+        try expect(separate.archiveConfirmed && retained.count == 1 && retained[0].sameBytes(loser),
+                   "explicit separate message replaced collision evidence")
+        gate.release(record(api.prepareCalls[0]))
+        _ = try await firstTask.value
+        try expect(api.submitCalls.count == 2 && Set(api.submitCalls.map(\.clientRequestID)).count == 2,
+                   "two GUI collision produced an extra claim")
+    }
     static func expectJournalRefused(_ journal: DeviceSMSIssuanceJournal, _ message: String) throws {
         do { _ = try journal.entries(); throw FixtureFailure(description: message) }
         catch is DeviceSMSJournalError {}
@@ -726,6 +777,8 @@ struct DeviceSMSSendTests {
             return
         }
         let tests: [(String, () async throws -> Void)] = [
+            ("full v1 plus v2 recovery pagination", testFullLegacyPlusV2PaginationRemainsReadable),
+            ("two GUI CAS collision and explicit new message", testTwoGUIReserveCollisionAllowsExplicitIndependentMessage),
             ("missing/replaced lock and directory authority", testMissingAndReplacedLocksCannotReenroll),
             ("directory swap cannot authorize network", testDirectorySwapDuringCommitCannotAuthorizeNetwork),
             ("live child lock quickly rejects UI mutation", testOtherProcessLockDoesNotBlockMainActor),
