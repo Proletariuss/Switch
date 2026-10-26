@@ -73,6 +73,7 @@ pub(super) async fn run(
                     bootstrapped = Some(session.serial_session);
                     next_metadata = tokio::time::Instant::now() + METADATA_INTERVAL;
                     service.error(None);
+                    diagnostic::startup(Stage::Startup, ResultKind::Succeeded, Code::None, Transport::Serial);
                 }
                 Ok(false) => break,
                 Err(error) => {
@@ -89,7 +90,8 @@ pub(super) async fn run(
                 }
             }
         } else if observed.refresh_needed || tokio::time::Instant::now() >= next_metadata {
-            match modem.refresh_native_serial_metadata(&session).await {
+            match diagnostic::startup_step(Stage::MetadataRefresh, Transport::Serial,
+                modem.refresh_native_serial_metadata(&session), |error| error.code()).await {
                 Ok(_) => {
                     if *stop.borrow() {
                         break;
@@ -166,9 +168,8 @@ async fn bootstrap(
     stop: &watch::Receiver<bool>,
 ) -> Result<bool, StageError> {
     if !session.observation().initialized {
-        let initialized = modem
-            .initialize_native_serial(session)
-            .await
+        let initialized = diagnostic::startup_step(Stage::SerialInitialize, Transport::Serial,
+            modem.initialize_native_serial(session), |error| error.code()).await
             .map_err(|error| StageError {
                 code: error.code(),
                 retire: !matches!(
@@ -190,9 +191,8 @@ async fn bootstrap(
     if *stop.borrow() {
         return Ok(false);
     }
-    radio
-        .configure_native_serial(session.serial_session)
-        .await
+    diagnostic::startup_step(Stage::RadioConfigure, Transport::Serial,
+        radio.configure_native_serial(session.serial_session), |error| error.public_code()).await
         .map_err(|error| StageError {
             code: error.public_code(),
             retire: false,
@@ -200,9 +200,8 @@ async fn bootstrap(
     if *stop.borrow() {
         return Ok(false);
     }
-    radio
-        .bootstrap_native_serial(session.serial_session)
-        .await
+    diagnostic::startup_step(Stage::RadioBootstrap, Transport::Serial,
+        radio.bootstrap_native_serial(session.serial_session), |error| error.public_code()).await
         .map_err(|error| StageError {
             code: error.public_code(),
             retire: false,
@@ -210,9 +209,8 @@ async fn bootstrap(
     if *stop.borrow() {
         return Ok(false);
     }
-    modem
-        .refresh_native_serial_metadata(session)
-        .await
+    diagnostic::startup_step(Stage::MetadataRefresh, Transport::Serial,
+        modem.refresh_native_serial_metadata(session), |error| error.code()).await
         .map_err(|error| StageError {
             code: error.code(),
             retire: false,
@@ -220,9 +218,8 @@ async fn bootstrap(
     if *stop.borrow() {
         return Ok(false);
     }
-    modem
-        .commit_native_serial_ready(session)
-        .await
+    diagnostic::startup_step(Stage::SmsReady, Transport::Serial,
+        modem.commit_native_serial_ready(session), |error| error.code()).await
         .map_err(|error| StageError {
             code: error.code(),
             retire: false,

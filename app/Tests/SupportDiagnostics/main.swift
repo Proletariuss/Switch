@@ -212,6 +212,88 @@ private func expect(_ condition: @autoclosure () throws -> Bool, _ message: Stri
         print("PASS bundle: all event kinds, malformed/oversized fallback, integer-only counters, nested privacy and event/byte caps")
     }
 
+    static func moduleEvent() -> [String: Any] {
+        ["kind": "module", "detail": ["stage": "reservation_release", "result": "deferred",
+            "code": "shared_voice_pin", "transport": "usb", "duration_ms": 42, "suppressed_repeats": 7,
+            "owner": ["owner": "esim", "shared_voice_pins": 1, "voice_pins": 0,
+                      "reconnect_pins": 0, "queued_jobs": 2, "outcome_unknown": false]]]
+    }
+    static func moduleBundles() throws {
+        func check(_ event: [String: Any], accepted: Bool) throws {
+            var source = backendEnvelope()
+            var records = source["events"] as! [[String: Any]]
+            records.append(record(4, event)); source["events"] = records
+            let bytes = try bundle(source)
+            try expect(!String(decoding: bytes, as: UTF8.self).contains(secret), "module diagnostic leaked private data")
+            let backend = try json(bytes)["backend"] as? [String: Any]
+            try expect(backend != nil, "unknown module record rejected the entire backend")
+            let retained = backend?["events"] as? [[String: Any]]
+            try expect(retained?.count == (accepted ? 4 : 3), "module closed schema acceptance mismatch")
+            if !accepted {
+                try expect((backend?["warnings"] as? [String])?.contains("backend_invalid_records_skipped") == true,
+                           "rejected module record omitted warning")
+            } else {
+                let output = retained!.last!["event"] as! [String: Any]
+                let detail = output["detail"] as! [String: Any]
+                try expect(detail["duration_ms"] as? Int == 42 && detail["suppressed_repeats"] as? Int == 7,
+                           "module evidence counters lost during export")
+            }
+        }
+        try check(moduleEvent(), accepted: true)
+        let choices: [String: [String]] = [
+            "stage": ["startup","serial_probe","usb_open","transport_claim","inbox_bind","session_open","serial_initialize","radio_configure","radio_bootstrap","esim_warmup","metadata_refresh","sms_ready","reservation_acquire","reservation_release","admission","physical","shutdown"],
+            "result": ["started","succeeded","failed","deferred","waiter_ended"],
+            "code": ["none","busy","no_device","timeout","stale","stopped","invalid","transport_failed","policy_unavailable","archive_unavailable","inbox_unavailable","worker_failed","cleanup_unconfirmed","initialization_incomplete","admission_revoked","reservation_conflict","shared_voice_pin","voice_pin","reconnect_pin","queue_full","gate_timeout","binding_missing","outcome_unknown","other"],
+            "transport": ["unknown","serial","usb"]
+        ]
+        for (field, values) in choices {
+            for value in values {
+                var event = moduleEvent(), detail = event["detail"] as! [String: Any]
+                detail[field] = value; event["detail"] = detail
+                try check(event, accepted: true)
+            }
+        }
+        for value in ["none","unknown","esim","module_profile_notes","device_sms","call","call_mode","reboot","diagnostic","vowifi","shared_voice"] {
+            var event = moduleEvent(), detail = event["detail"] as! [String: Any]
+            var owner = detail["owner"] as! [String: Any]
+            owner["owner"] = value; detail["owner"] = owner; event["detail"] = detail
+            try check(event, accepted: true)
+        }
+        for field in ["stage", "result", "code", "transport"] {
+            var event = moduleEvent(), detail = event["detail"] as! [String: Any]
+            detail[field] = secret; event["detail"] = detail
+            try check(event, accepted: false)
+        }
+        for level in ["event", "detail", "owner"] {
+            var event = moduleEvent(), detail = event["detail"] as! [String: Any]
+            if level == "event" { event["payload"] = secret }
+            else if level == "detail" { detail["command"] = secret }
+            else {
+                var owner = detail["owner"] as! [String: Any]
+                owner["token"] = secret; detail["owner"] = owner
+            }
+            event["detail"] = detail
+            try check(event, accepted: false)
+        }
+        for bad in [true, -1, 1.25, secret] as [Any] {
+            var event = moduleEvent(), detail = event["detail"] as! [String: Any]
+            detail["duration_ms"] = bad; event["detail"] = detail
+            try check(event, accepted: false)
+        }
+        for (field, bad) in [("shared_voice_pins", 65536 as Any), ("queued_jobs", true as Any),
+                             ("outcome_unknown", 1 as Any), ("owner", secret as Any)] {
+            var event = moduleEvent(), detail = event["detail"] as! [String: Any]
+            var owner = detail["owner"] as! [String: Any]
+            owner[field] = bad; detail["owner"] = owner; event["detail"] = detail
+            try check(event, accepted: false)
+        }
+        var event = moduleEvent(), detail = event["detail"] as! [String: Any]
+        detail["suppressed_repeats"] = UInt64(UInt32.max) + 1; event["detail"] = detail
+        try check(event, accepted: false)
+        try check(["kind": "future_module_kind", "payload": secret], accepted: false)
+        print("PASS module support events: complete enum vocabulary, integer/Boolean bounds, nested privacy and record-only fallback")
+    }
+
     static func unsafeSnapshotPaths() throws {
         for attack in ["directory", "ancestor", "segment", "oversized"] {
             let base = try directory("unsafe-" + attack), outside = base.appendingPathComponent("outside", isDirectory: true)
@@ -288,6 +370,7 @@ private func expect(_ condition: @autoclosure () throws -> Bool, _ message: Stri
         try rotationAndRestart()
         try clientSchemaAndExport()
         try bundles()
+        try moduleBundles()
         try unsafeSnapshotPaths()
         print("PASS production support diagnostics; isolated files; no devices, network or real user data")
     }
