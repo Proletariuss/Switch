@@ -279,7 +279,7 @@ jobs:
         run: scripts/build.sh
 
   review-result:
-    name: Review result
+    name: ${{ github.event_name == 'pull_request' && 'Review result' || 'Maintenance result' }}
     if: always()
     needs:
       - classify

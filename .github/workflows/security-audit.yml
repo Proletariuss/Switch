@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   rustsec-pr:
-    name: RustSec PR (${{ matrix.directory }})
+    name: ${{ github.event_name == 'pull_request' && format('RustSec PR ({0})', matrix.directory) || format('RustSec PR inactive ({0})', matrix.directory) }}
     if: github.event_name == 'pull_request'
     # audit-check falls back to the job log when the Check API is denied on
     # pull_request (GITHUB_HEAD_REF is set), and still fails on vulnerabilities.

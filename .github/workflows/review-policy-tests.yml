@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   review-policy:
-    name: Review policy regression fixtures
+    name: ${{ github.event_name == 'pull_request' && 'Review policy regression fixtures' || 'Review policy development fixtures' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     steps:
@@ -158,5 +158,26 @@ jobs:
                       raise SystemExit(f"{path}: missing PR event {event}")
               if "    paths:" in pr or "    paths-ignore:" in pr:
                   raise SystemExit(f"{path}: PR checks must not disappear behind path filters")
-          print(f"PASS: {mode}: {count} production-policy fixtures and PR event coverage")
+          # Required PR contexts must never be emitted by maintenance/push runs,
+          # even as skipped jobs. Build the expression delimiters at runtime so
+          # GitHub does not interpolate the expected literal YAML before Python.
+          expressions = (
+              ("quality.yml", "review-result",
+               "github.event_name == 'pull_request' && 'Review result' || 'Maintenance result'"),
+              ("security-audit.yml", "rustsec-pr",
+               "github.event_name == 'pull_request' && format('RustSec PR ({0})', matrix.directory) || format('RustSec PR inactive ({0})', matrix.directory)"),
+              ("review-policy-tests.yml", "review-policy",
+               "github.event_name == 'pull_request' && 'Review policy regression fixtures' || 'Review policy development fixtures'"),
+          )
+          for path, job_id, expression in expressions:
+              text = pathlib.Path(".github/workflows", path).read_text()
+              marker = f"  {job_id}:\n"
+              if text.count(marker) != 1:
+                  raise SystemExit(f"{path}: expected one {job_id} job")
+              job = re.split(r"\n  (?=\S)", text.split(marker, 1)[1], maxsplit=1)[0]
+              expected_name = "    name: $" + "{{ " + expression + " }}" + "\n"
+              if expected_name not in job:
+                  raise SystemExit(f"{path}: required PR check context is not isolated by event")
+
+          print(f"PASS: {mode}: {count} production-policy fixtures, PR event coverage, and isolated check contexts")
           PY
