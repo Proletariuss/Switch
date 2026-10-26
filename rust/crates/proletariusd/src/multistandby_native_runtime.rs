@@ -854,6 +854,8 @@ mod tests {
             e.stop.send_replace(false);
             e.installing_retry = Some(installing.clone());
         }
+        // The journal rejects nonpositive wall-clock times, even in a deterministic fixture.
+        let scheduled_at_ms = 1000;
         let schedule = manager
             .resources
             .journal
@@ -864,7 +866,7 @@ mod tests {
                 manager.boot_id().into(),
                 installing.clone(),
                 1,
-                0,
+                scheduled_at_ms,
             )
             .unwrap();
         let pending = manager
@@ -880,7 +882,7 @@ mod tests {
             &manager.resources.journal,
             &pending,
             delivery,
-            1000,
+            scheduled_at_ms,
         );
         assert!(
             manager
@@ -910,7 +912,7 @@ mod tests {
             &manager.resources.journal,
             &pending,
             delivery,
-            1000,
+            scheduled_at_ms,
         );
         assert!(matches!(received.try_recv(), Ok(Wake::RetryDue(g)) if g == schedule.generation));
         assert!(
@@ -933,7 +935,7 @@ mod tests {
                 manager.boot_id().into(),
                 "e".repeat(48),
                 1,
-                0,
+                scheduled_at_ms,
             )
             .unwrap();
         let stale = manager
@@ -949,7 +951,7 @@ mod tests {
             &manager.resources.journal,
             &stale,
             delivery,
-            1000,
+            scheduled_at_ms,
         );
         assert!(
             manager
