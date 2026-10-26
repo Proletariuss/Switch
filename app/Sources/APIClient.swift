@@ -271,7 +271,7 @@ struct APIClient {
         let start = ProcessInfo.processInfo.systemUptime
         let route = request.url?.path ?? ""
         let excluded = route.hasPrefix("/api/diagnostics/")
-        let safeRoutes: Set<String> = ["/api/reader/vowifi", "/api/reader/vowifi/reconcile", "/api/reader/vowifi/stop-control", "/api/vowifi", "/api/vowifi/result", "/api/vowifi/reconcile", "/api/vowifi/stop-control", "/api/call/dial", "/api/call/answer", "/api/call/hangup", "/api/call/status", "/api/reader/vowifi/call/dial", "/api/reader/vowifi/call/answer", "/api/reader/vowifi/call/hangup", "/api/sms/send", "/api/sms/storage", "/api/sms/forwarding/status", "/api/sms/forwarding/configure", "/api/sms/forwarding/test", "/api/network/services", "/api/network/services-order", "/api/network/usbnet", "/api/status", "/api/reader/status", "/api/multistandby/status"]
+        let safeRoutes: Set<String> = ["/api/reader/vowifi", "/api/reader/vowifi/reconcile", "/api/reader/vowifi/stop-control", "/api/vowifi", "/api/vowifi/result", "/api/vowifi/reconcile", "/api/vowifi/stop-control", "/api/call/dial", "/api/call/answer", "/api/call/hangup", "/api/call/status", "/api/reader/vowifi/calls/dial", "/api/reader/vowifi/calls/answer", "/api/reader/vowifi/calls/hangup", "/api/reader/vowifi/calls/reject", "/api/reader/vowifi/calls/status", "/api/vowifi/calls/dial", "/api/vowifi/calls/answer", "/api/vowifi/calls/hangup", "/api/vowifi/calls/reject", "/api/vowifi/calls/status", "/api/sms/send", "/api/sms/storage", "/api/sms/forwarding/status", "/api/sms/forwarding/configure", "/api/sms/forwarding/test", "/api/network/services", "/api/network/services-order", "/api/network/usbnet", "/api/status", "/api/reader/status", "/api/multistandby/status"]
         let safeRoute = safeRoutes.contains(route) ? route : "/api/other"
         let method = ["GET","POST","PUT","PATCH","DELETE","HEAD"].contains(request.httpMethod ?? "") ? request.httpMethod! : "OTHER"
         var originalID: String?
@@ -446,6 +446,8 @@ func userFacingErrorMessage(_ error: any Error) -> String {
     }
     if let urlError = error as? URLError {
         switch urlError.code {
+        case .badURL:
+            return "本机请求格式无法处理，请导出诊断包；原操作是否完成仍需核对"
         case .timedOut:
             return "请求超时，请检查设备连接后重试"
         case .cannotConnectToHost, .networkConnectionLost, .notConnectedToInternet:
