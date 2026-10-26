@@ -353,5 +353,120 @@ class PublicationStateFixtures(unittest.TestCase):
         for marketing, backend in [("3.52", "3.52.0"), ("4.00", "4.0.0"), ("4.09", "4.9.0")]:
             self.assertEqual(publisher.backend_version(marketing), backend)
 
+
+class RequestTransportFixtures(unittest.TestCase):
+    """Exercise real request construction with only HTTP responses mocked."""
+    def client(self):
+        from unittest import mock
+        with mock.patch.dict(publisher.os.environ, {"GH_TOKEN": "synthetic-token"}):
+            return publisher.GitHub()
+
+    def response(self, raw, headers=None):
+        value = io.BytesIO(raw)
+        value.headers = headers or {}
+        return value
+
+    def error(self, status, location=None):
+        headers = {} if location is None else {"Location": location}
+        return publisher.urllib.error.HTTPError("https://api.github.com/synthetic", status, "synthetic", headers, None)
+
+    def test_artifact_zip_200_uses_github_json_accept_and_returns_raw_bytes(self):
+        from unittest import mock
+        client = self.client()
+        raw = b"PK synthetic ZIP bytes"
+        with mock.patch.object(client.opener, "open", return_value=self.response(raw)) as opened:
+            result = client.api("GET", "/actions/artifacts/123/zip", binary=True)
+        request = opened.call_args.args[0]
+        self.assertEqual(request.get_header("Accept"), "application/vnd.github+json")
+        self.assertEqual(request.get_header("Authorization"), "Bearer synthetic-token")
+        self.assertIsNone(request.data)
+        self.assertEqual(result, raw)
+
+    def test_release_asset_200_uses_octet_stream_accept(self):
+        from unittest import mock
+        client = self.client()
+        with mock.patch.object(client.opener, "open", return_value=self.response(b"asset bytes")) as opened:
+            result = client.api("GET", "/releases/assets/123", binary=True)
+        self.assertEqual(opened.call_args.args[0].get_header("Accept"), "application/octet-stream")
+        self.assertEqual(result, b"asset bytes")
+
+    def test_artifact_and_release_302_follow_without_token(self):
+        from unittest import mock
+        for suffix, accept in [("/actions/artifacts/123/zip", "application/vnd.github+json"),
+                               ("/releases/assets/123", "application/octet-stream")]:
+            with self.subTest(suffix=suffix):
+                client = self.client()
+                location = "https://storage.example.invalid/signed?synthetic=1"
+                with mock.patch.object(client.opener, "open", side_effect=self.error(302, location)) as first, \
+                        mock.patch.object(publisher.urllib.request, "urlopen", return_value=self.response(b"download")) as second:
+                    self.assertEqual(client.api("GET", suffix, binary=True), b"download")
+                self.assertEqual(first.call_args.args[0].get_header("Accept"), accept)
+                self.assertEqual(first.call_args.args[0].get_header("Authorization"), "Bearer synthetic-token")
+                # The second request is a bare signed URL, not the authenticated Request.
+                self.assertEqual(second.call_args.args, (location,))
+                self.assertEqual(second.call_args.kwargs, {"timeout": 120})
+                self.assertNotIn("synthetic-token", second.call_args.args[0])
+
+    def test_upload_keeps_binary_body_type_and_json_response(self):
+        from unittest import mock
+        client = self.client()
+        payload = b"exact binary asset"
+        with mock.patch.object(client.opener, "open", return_value=self.response(b'{"id":123,"state":"uploaded"}')) as opened:
+            result = client.api("POST", "/releases/7/assets?name=fixture.tar.gz", payload, binary=True, upload=True)
+        request = opened.call_args.args[0]
+        self.assertTrue(request.full_url.startswith("https://uploads.github.com/repos/" + publisher.REPO + "/"))
+        self.assertEqual(request.get_method(), "POST")
+        self.assertEqual(request.get_header("Accept"), "application/vnd.github+json")
+        self.assertEqual(request.get_header("Content-type"), "application/octet-stream")
+        self.assertEqual(request.data, payload)
+        self.assertEqual(result, {"id": 123, "state": "uploaded"})
+
+    def test_non_https_redirect_is_rejected_before_second_request(self):
+        from unittest import mock
+        for location in ["http://storage.example.invalid/asset", "file:///synthetic", "//storage.example.invalid/asset"]:
+            client = self.client()
+            with self.subTest(location=location), \
+                    mock.patch.object(client.opener, "open", side_effect=self.error(302, location)), \
+                    mock.patch.object(publisher.urllib.request, "urlopen") as second:
+                with self.assertRaisesRegex(RuntimeError, "unsafe download redirect"):
+                    client.api("GET", "/actions/artifacts/123/zip", binary=True)
+                second.assert_not_called()
+
+    def test_http_errors_are_not_retried_or_reinterpreted_as_bytes(self):
+        from unittest import mock
+        for status in [403, 410, 415, 500, 307]:
+            client = self.client()
+            with self.subTest(status=status), \
+                    mock.patch.object(client.opener, "open", side_effect=self.error(status)), \
+                    mock.patch.object(publisher.urllib.request, "urlopen") as second:
+                with self.assertRaises(publisher.urllib.error.HTTPError):
+                    client.api("GET", "/actions/artifacts/123/zip", binary=True)
+                second.assert_not_called()
+
+    def test_missing_get_is_optional_but_missing_post_fails(self):
+        from unittest import mock
+        client = self.client()
+        with mock.patch.object(client.opener, "open", side_effect=self.error(404)):
+            self.assertIsNone(client.api("GET", "/releases/tags/v3.52"))
+            with self.assertRaises(publisher.urllib.error.HTTPError):
+                client.api("POST", "/releases", {"draft": True})
+
+    def test_write_redirect_never_forwards_token_or_body(self):
+        from unittest import mock
+        client = self.client()
+        with mock.patch.object(client.opener, "open", side_effect=self.error(302, "https://storage.example.invalid")), \
+                mock.patch.object(publisher.urllib.request, "urlopen") as second:
+            with self.assertRaises(publisher.urllib.error.HTTPError):
+                client.api("POST", "/releases/7/assets?name=x", b"asset", binary=True, upload=True)
+            second.assert_not_called()
+
+    def test_declared_oversize_binary_response_fails_before_read(self):
+        from unittest import mock
+        client = self.client()
+        response = self.response(b"small", {"Content-Length": str(publisher.LIMIT + 1)})
+        with mock.patch.object(client.opener, "open", return_value=response):
+            with self.assertRaisesRegex(RuntimeError, "response size exceeds limit"):
+                client.api("GET", "/actions/artifacts/123/zip", binary=True)
+
 if __name__ == "__main__":
     unittest.main()

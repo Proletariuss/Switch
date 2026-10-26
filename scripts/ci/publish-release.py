@@ -155,7 +155,11 @@ class GitHub:
         host = "https://uploads.github.com" if upload else "https://api.github.com"
         need(path.startswith("/repos/" + REPO + "/"), "API repository mismatch")
         data = value if binary else None if value is None else json.dumps(value).encode()
-        headers = {"Authorization": "Bearer " + self.token, "Accept": "application/octet-stream" if binary and method == "GET" else "application/vnd.github+json",
+        # Actions ZIP downloads negotiate the GitHub API media type to obtain
+        # their redirect; only Release asset downloads request octet-stream.
+        release_asset = binary and method == "GET" and re.fullmatch(
+            r"/repos/" + re.escape(REPO) + r"/releases/assets/[0-9]+", path) is not None
+        headers = {"Authorization": "Bearer " + self.token, "Accept": "application/octet-stream" if release_asset else "application/vnd.github+json",
                    "User-Agent": "switch-reviewed-release", "X-GitHub-Api-Version": "2022-11-28",
                    "Content-Type": "application/octet-stream" if binary else "application/json"}
         request = urllib.request.Request(host + path, data=data, method=method, headers=headers)
