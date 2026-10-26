@@ -552,7 +552,8 @@ private func listenerRetirementTests(_ directory: String) {
         expect(startup.wait(timeout: .now() + 2) == .success, "paused listener startup completed")
         expect(probe.entered.wait(timeout: .now() + 2) == .success, "accept worker reached its barrier")
         let oldFD = probe.descriptor
-        expect(Darwin.fcntl(oldFD, F_GETFL, 0) & O_NONBLOCK != 0, "listener must be nonblocking")
+        let listenerFlags = Darwin.fcntl(oldFD, F_GETFL, 0)
+        expect(listenerFlags >= 0 && listenerFlags & O_NONBLOCK != 0, "listener must be nonblocking")
         old!.stop()
         expect(!socketExists(path), "stop unpublishes the owned socket")
         expect(Darwin.fcntl(oldFD, F_GETFD, 0) >= 0,
