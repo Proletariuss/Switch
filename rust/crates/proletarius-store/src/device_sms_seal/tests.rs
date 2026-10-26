@@ -574,7 +574,12 @@ fn sealed_family_callback_cannot_replace_active_marker_or_original_lock_with_sam
 
 
 fn migration(kernel: &Kernel) -> Result<Identity, Error<&'static str>> {
-    kernel.open_or_migrate(&identity(), |active, _, _| valid(active), |active, family, _| {
+    migration_with_candidate(kernel, |_| Ok(identity()))
+}
+fn migration_with_candidate(
+    kernel: &Kernel, candidate: impl FnOnce(&[u8]) -> Result<Identity, &'static str>,
+) -> Result<Identity, Error<&'static str>> {
+    kernel.open_or_migrate(candidate, |active, _, _| valid(active), |active, family, _| {
         let row: serde_json::Value = serde_json::from_slice(active).map_err(|_| "json")?;
         if row[0]["schema_version"] == 2 { return Ok(MigrationStep::Complete); }
         if family[2].is_none() {
@@ -603,7 +608,7 @@ fn original_lock_migration_recovers_every_durable_protocol_boundary() {
         let original = fs::read(old.path()).unwrap();
         let fault = kernel.clone().with_hook_for_test(Arc::new(move |at| at == point));
         assert!(migration(&fault).is_err(), "{point:?}");
-        let recovered = migration(&kernel).unwrap();
+        let recovered = migration_with_candidate(&kernel, |_| panic!("recovery created another authority")).unwrap();
         assert_eq!(recovered, identity());
         let current = fs::read(old.path()).unwrap();
         assert_eq!(current, target(&original, 0, "initial"));

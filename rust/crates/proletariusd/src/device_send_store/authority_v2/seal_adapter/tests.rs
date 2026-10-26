@@ -689,8 +689,10 @@ fn migration_startup_requires_the_same_real_unpublished_owner_proof() {
 fn live_business_refusal_does_not_latch_but_missing_prepared_provenance_does() {
     let f = Fixture::new();
     let adapter = Adapter::open_or_migrate(&f.root, f.proof(), startup(&f)).unwrap();
+    adapter.0.state.lock().unwrap().last = None;
     assert!(matches!(adapter.transact::<()>(|_, _| Err(CodecError::AuthorityMismatch)),
         Err(Error::Rejected(CodecError::AuthorityMismatch))));
+    assert!(adapter.0.state.lock().unwrap().last.is_some());
     assert!(!adapter.restart_required());
     let prepared = f.root.join("device-send-ledger.v2-prepared.json");
     let bytes = fs::read(&prepared).unwrap();

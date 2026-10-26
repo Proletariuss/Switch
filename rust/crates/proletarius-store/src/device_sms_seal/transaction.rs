@@ -220,7 +220,7 @@ impl Kernel {
     /// an unpublished/drained send owner before entering. Every family step,
     /// including recovery, runs under the same original named ledger lock.
     pub fn open_or_migrate<S>(
-        &self, candidate: &Identity,
+        &self, candidate: impl FnOnce(&[u8]) -> Result<Identity, S>,
         validate: impl Fn(&[u8], &[Option<Vec<u8>>], &Identity) -> Result<(), S>,
         plan: impl Fn(&[u8], &[Option<Vec<u8>>], &Identity) -> Result<MigrationStep, S>,
     ) -> Result<Identity, Error<S>> {
@@ -232,10 +232,11 @@ impl Kernel {
             // No sidecar may silently select or replace a virgin authority.
             if family.bytes.iter().any(Option::is_some) { return Err(Error::Guard(GuardError::Conflict)); }
             legacy(&current.bytes).map_err(Error::Guard)?;
-            validate(&current.bytes, &family.bytes, candidate).map_err(Error::Schema)?;
+            let candidate = candidate(&current.bytes).map_err(Error::Schema)?;
+            validate(&current.bytes, &family.bytes, &candidate).map_err(Error::Schema)?;
             // Reject a candidate authority colliding with any frozen legacy ID
             // before installing even the first v2 witness.
-            let _ = plan(&current.bytes, &family.bytes, candidate).map_err(Error::Schema)?;
+            let _ = plan(&current.bytes, &family.bytes, &candidate).map_err(Error::Schema)?;
             self.check_family(&family)?;
             let hash = digest(&current.bytes);
             let next = Seal {

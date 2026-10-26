@@ -223,7 +223,7 @@ impl Lease {
                 root_identity,
                 lock_identity: Identity::of(&metadata),
                 active: AtomicBool::new(true),
-            device_sms_adapter_claimed: AtomicBool::new(false),
+                device_sms_adapter_claimed: AtomicBool::new(false),
             }),
         };
         lease.validate()?;

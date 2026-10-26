@@ -65,14 +65,18 @@ impl Adapter {
         proof.claim_device_sms_adapter(root).map_err(Error::Owner)?;
         let kernel = Kernel::existing(root).map_err(|e| Error::Seal(SealError::Storage(e)))?;
         let identity = proof.with_root(root, |_| {
-            let authority = crate::multistandby_store::random_token()
-                .map_err(|e| SealError::Storage(e))?;
-            let generation = crate::multistandby_store::random_token()
-                .map_err(|e| SealError::Storage(e))?;
-            let candidate = Identity::parse(&authority[..32], &generation[..32])
-                .map_err(SealError::Guard)?;
             kernel.open_or_migrate(
-                &candidate,
+                |legacy| {
+                    // Entropy is requested only after a complete virgin v1
+                    // family is validated under the original writer lock.
+                    CompleteLegacyIndex::from_snapshot(legacy, &digest(legacy).0)?;
+                    let authority = crate::multistandby_store::random_token()
+                        .map_err(|_| CodecError::InvalidIdentity)?;
+                    let generation = crate::multistandby_store::random_token()
+                        .map_err(|_| CodecError::InvalidIdentity)?;
+                    Identity::parse(&authority[..32], &generation[..32])
+                        .map_err(|_| CodecError::InvalidIdentity)
+                },
                 |active, siblings, identity| {
                     family::inspect_bytes_for_authority(active, siblings, identity.authority_id())
                         .map(|_| ())
@@ -103,6 +107,9 @@ impl Adapter {
                 diagnose(active, siblings, self.0.identity.authority_id())
             }).map_err(Error::Seal)?;
             check_observation(state.last.as_ref(), &before)?;
+            // A business refusal cannot erase a newer successfully observed
+            // revision/floor, even though it does not write archive bytes.
+            state.last = Some(before.clone());
             let result = self.0.kernel.transact_family(
                 &self.0.identity, before.seal(),
                 |active, siblings, identity| {
