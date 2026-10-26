@@ -91,10 +91,16 @@ Eine fehlgeschlagene Sicherung erlaubt keine Löschung.
 
 Gelöscht werden ausschließlich die vorab geprüften fünf Audit-Asset-IDs des
 vorgesehenen Release. Die beiden Installationsdateien werden weder ersetzt noch
-umbenannt. Teilweise abgeschlossene Bereinigungen sind idempotent fortsetzbar:
-bereits entfernte erlaubte Anlagen bleiben entfernt, während fremde Anlagen,
-abweichende IDs oder Inhalte zum Abbruch führen. Abschließend werden die beiden
-verbleibenden Dateien und die Release-/Tag-Bindung erneut geprüft.
+umbenannt. Bei teilweise gelöschten Anlagen oder vollständig gelöschten Audit-Dateien
+ohne bereits geschriebene Bereinigungsnotiz wird ausschließlich der ursprüngliche
+fehlgeschlagene prune-Job erneut ausgeführt. Er verwendet denselben vollständigen
+Actions-Snapshot und Löschplan; bereits entfernte erlaubte Anlagen bleiben entfernt.
+Ein neuer Dispatch lehnt diese unvollständigen Zustände ab. Sind nur noch die beiden
+Installationsdateien vorhanden und ist die Bereinigungsnotiz bereits geschrieben,
+bleibt eine Wiederholung am Release lesend und erhält den ursprünglichen
+Snapshot-Verweis. Fremde Anlagen, abweichende IDs oder Inhalte führen zum Abbruch.
+Abschließend werden die beiden verbleibenden Dateien und die Release-/Tag-Bindung
+erneut geprüft.
 
 Ein bereinigtes Release ist ein Endzustand. Alte vollständige App-Publisher oder
 DMG-Packläufe dürfen dafür nicht erneut gestartet werden; insbesondere dürfen sie
