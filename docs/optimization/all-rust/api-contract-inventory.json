@@ -15532,7 +15532,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 214
       },
-      "value": "/api/diagnostics/support"
+      "value": "/api/esim/notes"
     },
     {
       "language": "rust",
@@ -15540,7 +15540,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 215
       },
-      "value": "/api/esim/notes"
+      "value": "/api/esim/module-notes"
     },
     {
       "language": "rust",
@@ -15548,7 +15548,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 216
       },
-      "value": "/api/esim/module-notes"
+      "value": "/api/esim/phonebook/probe"
     },
     {
       "language": "rust",
@@ -15556,7 +15556,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 217
       },
-      "value": "/api/esim/phonebook/probe"
+      "value": "/api/esim/switch"
     },
     {
       "language": "rust",
@@ -15564,7 +15564,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 218
       },
-      "value": "/api/esim/switch"
+      "value": "/api/esim/profile"
     },
     {
       "language": "rust",
@@ -15572,7 +15572,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 219
       },
-      "value": "/api/esim/profile"
+      "value": "/api/module/flight-mode"
     },
     {
       "language": "rust",
@@ -15580,7 +15580,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 220
       },
-      "value": "/api/module/flight-mode"
+      "value": "/api/multistandby/cards"
     },
     {
       "language": "rust",
@@ -15588,7 +15588,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 221
       },
-      "value": "/api/multistandby/cards"
+      "value": "/api/multistandby/operations/{id}"
     },
     {
       "language": "rust",
@@ -15596,7 +15596,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 222
       },
-      "value": "/api/multistandby/operations/{id}"
+      "value": "/api/multistandby/report"
     },
     {
       "language": "rust",
@@ -15604,7 +15604,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 223
       },
-      "value": "/api/multistandby/report"
+      "value": "/api/multistandby/retry"
     },
     {
       "language": "rust",
@@ -15612,7 +15612,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 224
       },
-      "value": "/api/multistandby/retry"
+      "value": "/api/multistandby/start"
     },
     {
       "language": "rust",
@@ -15620,7 +15620,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 225
       },
-      "value": "/api/multistandby/start"
+      "value": "/api/multistandby/stop"
     },
     {
       "language": "rust",
@@ -15628,7 +15628,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 226
       },
-      "value": "/api/multistandby/stop"
+      "value": "/api/network/check-4g"
     },
     {
       "language": "rust",
@@ -15636,7 +15636,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 227
       },
-      "value": "/api/network/check-4g"
+      "value": "/api/network"
     },
     {
       "language": "rust",
@@ -15644,7 +15644,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 228
       },
-      "value": "/api/network"
+      "value": "/api/network/reboot-module"
     },
     {
       "language": "rust",
@@ -15652,7 +15652,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 229
       },
-      "value": "/api/network/reboot-module"
+      "value": "/api/network/services"
     },
     {
       "language": "rust",
@@ -15660,7 +15660,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 230
       },
-      "value": "/api/network/services"
+      "value": "/api/network/services-order"
     },
     {
       "language": "rust",
@@ -15668,7 +15668,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 231
       },
-      "value": "/api/network/services-order"
+      "value": "/api/network/traffic"
     },
     {
       "language": "rust",
@@ -15676,7 +15676,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 232
       },
-      "value": "/api/network/traffic"
+      "value": "/api/network/usbnet"
     },
     {
       "language": "rust",
@@ -15684,7 +15684,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 233
       },
-      "value": "/api/network/usbnet"
+      "value": "/api/reader/ble/status"
     },
     {
       "language": "rust",
@@ -15692,7 +15692,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 234
       },
-      "value": "/api/reader/ble/status"
+      "value": "/api/reader/ble/scan"
     },
     {
       "language": "rust",
@@ -15700,7 +15700,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 235
       },
-      "value": "/api/reader/ble/scan"
+      "value": "/api/reader/ble/connect"
     },
     {
       "language": "rust",
@@ -15708,7 +15708,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 236
       },
-      "value": "/api/reader/ble/connect"
+      "value": "/api/reader/ble/disconnect"
     },
     {
       "language": "rust",
@@ -15716,7 +15716,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 237
       },
-      "value": "/api/reader/ble/disconnect"
+      "value": "/api/reader/list"
     },
     {
       "language": "rust",
@@ -15724,7 +15724,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 238
       },
-      "value": "/api/reader/list"
+      "value": "/api/reader/info"
     },
     {
       "language": "rust",
@@ -15732,7 +15732,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 239
       },
-      "value": "/api/reader/info"
+      "value": "/api/reader/auth"
     },
     {
       "language": "rust",
@@ -15740,7 +15740,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 240
       },
-      "value": "/api/reader/auth"
+      "value": "/api/reader/connect"
     },
     {
       "language": "rust",
@@ -15748,7 +15748,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 241
       },
-      "value": "/api/reader/connect"
+      "value": "/api/reader/disconnect"
     },
     {
       "language": "rust",
@@ -15756,7 +15756,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 242
       },
-      "value": "/api/reader/disconnect"
+      "value": "/api/reader/refresh"
     },
     {
       "language": "rust",
@@ -15764,7 +15764,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 243
       },
-      "value": "/api/reader/refresh"
+      "value": "/api/reader/vowifi/proxy-check"
     },
     {
       "language": "rust",
@@ -15772,7 +15772,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 244
       },
-      "value": "/api/reader/vowifi/proxy-check"
+      "value": "/api/reader/imei"
     },
     {
       "language": "rust",
@@ -15780,7 +15780,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 245
       },
-      "value": "/api/reader/imei"
+      "value": "/api/reader/esim"
     },
     {
       "language": "rust",
@@ -15788,7 +15788,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 246
       },
-      "value": "/api/reader/esim"
+      "value": "/api/reader/esim/health"
     },
     {
       "language": "rust",
@@ -15796,7 +15796,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 247
       },
-      "value": "/api/reader/esim/health"
+      "value": "/api/esim/health"
     },
     {
       "language": "rust",
@@ -15804,7 +15804,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 248
       },
-      "value": "/api/esim/health"
+      "value": "/api/esim"
     },
     {
       "language": "rust",
@@ -15812,7 +15812,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 249
       },
-      "value": "/api/esim"
+      "value": "/api/esim/download"
     },
     {
       "language": "rust",
@@ -15820,7 +15820,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 250
       },
-      "value": "/api/esim/download"
+      "value": "/api/esim/download/confirm"
     },
     {
       "language": "rust",
@@ -15828,7 +15828,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 251
       },
-      "value": "/api/esim/download/confirm"
+      "value": "/api/reader/esim/operation"
     },
     {
       "language": "rust",
@@ -15836,7 +15836,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 252
       },
-      "value": "/api/reader/esim/operation"
+      "value": "/api/reader/esim/notifications"
     },
     {
       "language": "rust",
@@ -15844,7 +15844,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 253
       },
-      "value": "/api/reader/esim/notifications"
+      "value": "/api/reader/esim/notifications/retry"
     },
     {
       "language": "rust",
@@ -15852,7 +15852,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 254
       },
-      "value": "/api/reader/esim/notifications/retry"
+      "value": "/api/reader/esim/download"
     },
     {
       "language": "rust",
@@ -15860,7 +15860,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 255
       },
-      "value": "/api/reader/esim/download"
+      "value": "/api/reader/esim/download/confirm"
     },
     {
       "language": "rust",
@@ -15868,7 +15868,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 256
       },
-      "value": "/api/reader/esim/download/confirm"
+      "value": "/api/reader/esim/profile"
     },
     {
       "language": "rust",
@@ -15876,7 +15876,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 257
       },
-      "value": "/api/reader/esim/profile"
+      "value": "/api/reader/esim/switch"
     },
     {
       "language": "rust",
@@ -15884,7 +15884,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 258
       },
-      "value": "/api/reader/esim/switch"
+      "value": "/api/voice/enable"
     },
     {
       "language": "rust",
@@ -15892,7 +15892,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 259
       },
-      "value": "/api/voice/enable"
+      "value": "/api/voice/enabled"
     },
     {
       "language": "rust",
@@ -15900,7 +15900,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 260
       },
-      "value": "/api/voice/enabled"
+      "value": "/api/sms"
     },
     {
       "language": "rust",
@@ -15908,7 +15908,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 261
       },
-      "value": "/api/sms"
+      "value": "/api/sms/adopt"
     },
     {
       "language": "rust",
@@ -15916,7 +15916,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 262
       },
-      "value": "/api/sms/adopt"
+      "value": "/api/sms/clear"
     },
     {
       "language": "rust",
@@ -15924,7 +15924,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 263
       },
-      "value": "/api/sms/clear"
+      "value": "/api/sms/delete"
     },
     {
       "language": "rust",
@@ -15932,7 +15932,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 264
       },
-      "value": "/api/sms/delete"
+      "value": "/api/sms/delete-sender"
     },
     {
       "language": "rust",
@@ -15940,7 +15940,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 265
       },
-      "value": "/api/sms/delete-sender"
+      "value": "/api/sms/send"
     },
     {
       "language": "rust",
@@ -15948,7 +15948,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 266
       },
-      "value": "/api/sms/send"
+      "value": "/api/sms/send-intents"
     },
     {
       "language": "rust",
@@ -15956,7 +15956,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 267
       },
-      "value": "/api/sms/send-intents"
+      "value": "/api/sms/forwarding/status"
     },
     {
       "language": "rust",
@@ -15964,7 +15964,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 268
       },
-      "value": "/api/sms/forwarding/status"
+      "value": "/api/sms/forwarding/configure"
     },
     {
       "language": "rust",
@@ -15972,7 +15972,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 269
       },
-      "value": "/api/sms/forwarding/configure"
+      "value": "/api/sms/forwarding/enqueue"
     },
     {
       "language": "rust",
@@ -15980,7 +15980,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 270
       },
-      "value": "/api/sms/forwarding/enqueue"
+      "value": "/api/sms/forwarding/test"
     },
     {
       "language": "rust",
@@ -15988,7 +15988,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 271
       },
-      "value": "/api/sms/forwarding/test"
+      "value": "/api/sms/forwarding/queue-action"
     },
     {
       "language": "rust",
@@ -15996,7 +15996,7 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 272
       },
-      "value": "/api/sms/forwarding/queue-action"
+      "value": "/api/sms/status"
     },
     {
       "language": "rust",
@@ -16004,15 +16004,15 @@
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 273
       },
-      "value": "/api/sms/status"
+      "value": "/api/sms/storage"
     },
     {
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/public_http.rs",
-        "line": 274
+        "line": 278
       },
-      "value": "/api/sms/storage"
+      "value": "/api/diagnostics/support"
     },
     {
       "language": "rust",
@@ -22097,8 +22097,8 @@
     },
     {
       "file": "rust/crates/proletariusd/src/public_http.rs",
-      "sha256": "039df984877b2704b999595ffe7a28c7ed677b0339370512fc65f43a748a3a98",
-      "review": "Iteration146: Public method policy includes POST /api/esim/phonebook/probe while preserving the frozen Go mux method oracle. Module notes retain GET/HEAD/PUT and the 1 MiB PUT body cap. Iteration147: BLE status retains GET/HEAD and frozen Go method behavior; the route performs read-only bridge status and preserves the coded 503 error shape. Offline parity is not BLE hardware acceptance.\n\nIteration147: Public method policy includes GET/HEAD /api/reader/esim/health. HEAD reuses the same conditional Rust/Go behavior as GET. The legacy Go method oracle remains; method parity does not certify hardware behavior. Iteration150: POST /api/reader/auth is added to Rust public method admission; other method responses remain checked against the frozen Go mux. Iteration154: GET /api/multistandby/report is added with a HEAD alias inheriting the GET policy; frozen Go mux method parity remains enforced.\n\nIteration156: Adds exact POST method contracts for BLE scan/connect/disconnect and keeps them under the frozen legacy Go mux method oracle; no other method gains a handler.\n\nIteration158: Adds GET/HEAD /api/multistandby/profiles to public method policy. The GET has an existing Go method oracle; HEAD remains a bodyless alias of GET and is not extra implementation credit.\n\nIteration146-156: Public policy preserves existing method/HEAD behavior for module phonebook, BLE, reader auth/health, report and BLE scan/connect/disconnect routes. Iteration158/159: GET/HEAD for /api/multistandby/profiles and /api/multistandby/cards follows the frozen Go method oracle; HEAD aliases GET and adds no handler credit.\n\nIteration 161 adds the existing POST /api/reader/vowifi/proxy-check method to the Rust public allow table; no path or request/response field changes.\n\nIteration166: preserves public GET/HEAD and 405 method compatibility for a single nonempty operation-ID segment and POST-only start/stop/retry routes. These entries declare policy, while reviewed dynamic dispatch and ownership tables provide handler evidence.\n\nIteration172 adds POST-only /api/multistandby/messages/send to the frozen Go method oracle; other methods remain 405/Allow compatible.\n\nIteration175: GET/HEAD /api/health are admitted as a Rust projection and POST preserves legacy 405/Allow behavior; the frozen Go mux oracle keeps compatibility-mode semantics. This table is policy evidence, not proof that Go is absent.\n\nIteration176: adds GET/HEAD /api/status to Rust public admission and preserves the legacy GET, HEAD, and 405/Allow contract. Rust policy plus the public GET/HEAD integration test cover this transferred route; the frozen Go mux differential fixture intentionally excludes /api/status because it is Rust-owned at the public gateway. Explicit Go-compatibility startup retains the original Go handler; live status facts still come from the private generation-bound adapter.\n\nIteration178: The public GET /api/sms/devices method table now includes its derived HEAD alias, matching the Rust projection and preserving method compatibility.\n\nIteration180 adds GET/HEAD /api/reader/info to the public method policy; the frozen Go mux remains the method/response parity oracle.\n\nIteration180: Added method contracts for Rust-owned GET/HEAD /api/health, GET/HEAD /api/status and GET/HEAD /api/reader/info; POST /api/multistandby/messages/send remains POST-only. The Go POST /api/at registration remains in the frozen mux for explicit compatibility startup and historical response comparison; normal public admission and dispatch are Rust-owned since Iteration185. Frozen Go parity excludes only routes removed from its mux while Rust retains documented 405/Allow semantics.\n\nIteration183: Adds the existing GET /api/sms/storage response and its bodyless HEAD alias to Rust public admission. A wire-level GET/HEAD test verifies archive counts and representation headers with no Go listener and an absent-device transport fixture.\n\nIteration183 public policy declares GET/HEAD for /api/sms/storage and GET/HEAD for the existing /api/esim/operation alias, preserving frozen Go method parity and bodyless HEAD behavior. No mutation method is admitted.\n\nIteration185 adds GET/HEAD /api/esim/health to public method policy and the frozen Go mux parity set. Wire-level fixtures verify GET projection and bodyless HEAD representation headers.\n\nIteration186 adds GET/HEAD /api/esim to the frozen public method policy; the Rust HEAD wrapper preserves the GET representation length and suppresses the body.\n\nIteration189: Public method policy and the frozen Go mux oracle now include POST-only /api/call/dtmf. Unsupported methods preserve 405/Allow behavior; request body collection is bounded by the route and aggregate admission budget.\n\nIteration189 changes no public HTTP method/path: selected BLE uses the existing POST /api/reader/auth policy and response contract. Iteration190 adds no HTTP contract; heartbeat actions use the existing authenticated IMS codec path.\n\nIteration193: Adds POST-only /api/call/dial to the Rust method policy and frozen legacy Go method oracle. Other methods remain rejected with the existing 405/Allow semantics; route admission does not prove downstream hardware behavior.\n\nIteration193: Adds POST-only public method admission for /api/call/dial and registers it in the legacy method oracle. Non-POST requests preserve 405/Allow behavior; no public request or response schema is broadened.\n\nIteration194: The public method table admits only POST for /api/call/answer and /api/call/hangup and preserves 405/Allow behavior for GET/HEAD/other methods. The frozen Go method oracle remains the compatibility reference.\n\nIteration194: Adds POST-only public method contracts for /api/call/answer and /api/call/hangup to match the existing Go mux oracle. Other methods retain 405/Allow semantics; public admission does not certify live call behavior.\n\nIteration195: Adds GET/HEAD method admission for /api/call/status with GET-derived bodyless HEAD behavior, retaining the Go method oracle and unsupported-method response contract.\n\nIteration196: Adds GET/HEAD admission for /api/call-mode/status and a frozen Go method oracle. Rust returns a validated Go status snapshot; HEAD remains bodyless and unsupported methods preserve 405/Allow.\n\nIteration197 adds POST-only public method admission for /api/sms/clear and preserves its frozen Go method oracle for 405/Allow behavior. It does not certify Go-free physical SMS storage operations.\n\nIteration198 admits only POST /api/sms/delete and retains the frozen Go mux method oracle for unsupported-method/Allow compatibility; method parity does not certify physical storage deletion as Rust-owned.\n\nIteration199 adds POST-only /api/sms/delete-sender to the frozen Go method oracle and public method policy; unsupported methods retain 405/Allow behavior.\n\nIteration200: Public method policy admits GET/HEAD for the Rust-owned VoWiFi operation-result projection, retaining bodyless HEAD semantics.\n\nIteration205 adds PATCH /api/esim/profile to the existing public method contract and retains DELETE. Unsupported methods continue through the legacy 405/Allow policy; this method declaration is not Go-free certification.\n\nIteration 208: Public method policy permits POST for /api/esim/switch and the frozen legacy method oracle records the original method contract. GET/HEAD and other route policies remain unchanged.  Iteration209: Adds the existing Go public methods POST /api/esim/download and POST /api/esim/download/confirm to the Rust method policy. Frozen Go mux parity still includes the private Go VoWiFi retirement adapter and excludes the two Rust-gateway public paths.\n\nIteration391: admits POST /api/v2/call/negotiate-sdp only; SDP negotiation is a call-setup action, not a media-loop route.\n\nIteration392: Public app route admits only POST for local SDP construction; unsupported methods retain standard rejection behavior.\n\nIteration393: /api/v2/call/invite-policy is declared POST-only in the admission table. App authentication still precedes public method admission; the endpoint is a local authenticated policy API, not a new user-facing call operation.\n\nIteration427: public method table now declares both VoWiFi call-status aliases GET/HEAD, so Rust preserves GET semantics for HEAD and rejects other methods at the gateway.\n\nIteration427: legacy method-mismatch classification includes both newly Rust-owned VoWiFi call-status aliases so non-GET/HEAD requests continue to receive the original 405/Allow behavior.\n\nIteration432: public method policy allows POST only for /api/call-mode/download and preserves legacy 405 response behavior via frozen Go mux parity. The Rust route is still dependent on Go call-mode admission/deployment; policy parity does not establish Go-free operation.\n\nIteration 434: public method policy now admits only POST for /api/call-mode/enable, preserving Rust 405 behavior for other methods.\n\nIteration 435: public method policy admits only POST for /api/call-mode/restore and preserves 405 behavior for other methods.\n\nIteration470: public audio start/stop POST methods are declared explicitly; unsupported methods receive Rust 405/Allow behavior equivalent to the prior Go ServeMux registrations.\n\nIteration481: Native method table now declares POST reader connect/disconnect/refresh. Legacy method rejection additionally owns connect/disconnect/refresh/auth/info after Go handler retirement, preserving authenticated 405, sorted Allow and HEAD response-body semantics. Existing real-UDS wrong-method tests add five reader cases; no new method/path or HEAD migration credit is assigned.\n\nIteration493 frozen-oracle correction: GET /api/sms/storage remains in the independent test-only Go mux after the old production Go route is removed. Add its already-supported GET/HEAD path to LEGACY_METHOD_PATHS so frozen oracle path census and original Go 405/Allow method semantics are retained; no public API is removed. Iteration498: Records the retired Go reader GET/HEAD/POST and sessions GET/HEAD method union in the actual native dispatcher. Existing frozen Go mux differential fixture retains these original registrations, including 405 Allow order and empty HEAD body semantics. Iteration500: Preserves historical GET/HEAD/POST and Allow behavior for the retired public Go module/shared IMS registrations. The frozen independent Go oracle now includes both call/status aliases and result, with Rust parity test exclusions removed for those status routes. No mutation is accepted by HEAD. Iteration589: Resolve escaped public literal segments once against the finite reviewed ROUTES table before HEAD classification. Raw slash boundaries, wildcard tail spelling, query/scheme/authority and canonical redirect behavior are retained. Unknown/private/retired paths cannot acquire an internal capability. Existing authentication, body budget, module quarantine and final dispatch consume the same effective public URI. This fixes the four independently witnessed escaped-literal routing failures; full URL/wildcard semantics and the complete applicable HTTP matrix remain separate acceptance requirements.\n\nIteration663 manual source-scope review: Public HTTP policy admits the new bounded POST while preserving existing authentication and method gates. Existing P0-P6 product acceptance remains open.\n\nIteration666: Reviewed Rust-owned network recovery GET/HEAD/POST, retained operation IDs, monotonic wake delay/cooldown, structured traffic admission, and finite readback. Recovery uses the existing module-radio actor reservation with same-owner USB-mode and strict CLCC observations followed by the existing reboot plan fresh call guard. A lost HTTP/UI waiter cannot cancel the admitted worker. No DNS/proxy path is changed; offline tests are not hardware or carrier acceptance.\n\nIteration666 final gate-fix manual review: removed the two Rust-only multistandby control-intent paths from LEGACY_METHOD_PATHS so unsupported methods use native unknown-route behavior rather than a legacy-Go mux classification. Their POST routes, Rust ownership, authentication, DTOs and dispatch remain unchanged; the 304-route census and 150-entry public method policy remain stable. This metadata synchronization grants no functional or product acceptance.\n\nIteration701 controlled source-scope pin: whole production file approved_current in stability-701/s13-dispatch-review-audio.json (SHA256 799ae0bad428685ef36a370d9773a8d71e4e240aee87a7b2ea3ee5aa7a8522b9); current raw file 7949d7bcf61aedcbf74d55888fa4de27814724402299705bd211b098e4d73143. Matching real original scope and complete reviewed current scope/delta are bound in the report. This limited source-review pin grants no hardware, carrier, performance or P0-P6 product acceptance; unchanged outside scopes and pending owner issues remain separate.\n\nUser-authorized stability and support-diagnostics integration, independently reviewed before this normalization: authenticated route templates and bounded redacted diagnostics; private rotating files and cancellation-retained export leases; retained call/forwarding/store authority and URL transport fixes. Only source-scope fingerprints of the pinned changed files are refreshed. Generated census, rustfmt and Xcode project updates grant no software, physical-device, carrier or product acceptance; final-source GitHub gates are still required. Source snapshot: 49610c3116af2509d31765b49124dda8f6f3b74a.",
+      "sha256": "fa54c851ff9105e59b9f5c151a7760de5f3eca7a27836e5e708e41b47136ad3d",
+      "review": "Iteration146: Public method policy includes POST /api/esim/phonebook/probe while preserving the frozen Go mux method oracle. Module notes retain GET/HEAD/PUT and the 1 MiB PUT body cap. Iteration147: BLE status retains GET/HEAD and frozen Go method behavior; the route performs read-only bridge status and preserves the coded 503 error shape. Offline parity is not BLE hardware acceptance.\n\nIteration147: Public method policy includes GET/HEAD /api/reader/esim/health. HEAD reuses the same conditional Rust/Go behavior as GET. The legacy Go method oracle remains; method parity does not certify hardware behavior. Iteration150: POST /api/reader/auth is added to Rust public method admission; other method responses remain checked against the frozen Go mux. Iteration154: GET /api/multistandby/report is added with a HEAD alias inheriting the GET policy; frozen Go mux method parity remains enforced.\n\nIteration156: Adds exact POST method contracts for BLE scan/connect/disconnect and keeps them under the frozen legacy Go mux method oracle; no other method gains a handler.\n\nIteration158: Adds GET/HEAD /api/multistandby/profiles to public method policy. The GET has an existing Go method oracle; HEAD remains a bodyless alias of GET and is not extra implementation credit.\n\nIteration146-156: Public policy preserves existing method/HEAD behavior for module phonebook, BLE, reader auth/health, report and BLE scan/connect/disconnect routes. Iteration158/159: GET/HEAD for /api/multistandby/profiles and /api/multistandby/cards follows the frozen Go method oracle; HEAD aliases GET and adds no handler credit.\n\nIteration 161 adds the existing POST /api/reader/vowifi/proxy-check method to the Rust public allow table; no path or request/response field changes.\n\nIteration166: preserves public GET/HEAD and 405 method compatibility for a single nonempty operation-ID segment and POST-only start/stop/retry routes. These entries declare policy, while reviewed dynamic dispatch and ownership tables provide handler evidence.\n\nIteration172 adds POST-only /api/multistandby/messages/send to the frozen Go method oracle; other methods remain 405/Allow compatible.\n\nIteration175: GET/HEAD /api/health are admitted as a Rust projection and POST preserves legacy 405/Allow behavior; the frozen Go mux oracle keeps compatibility-mode semantics. This table is policy evidence, not proof that Go is absent.\n\nIteration176: adds GET/HEAD /api/status to Rust public admission and preserves the legacy GET, HEAD, and 405/Allow contract. Rust policy plus the public GET/HEAD integration test cover this transferred route; the frozen Go mux differential fixture intentionally excludes /api/status because it is Rust-owned at the public gateway. Explicit Go-compatibility startup retains the original Go handler; live status facts still come from the private generation-bound adapter.\n\nIteration178: The public GET /api/sms/devices method table now includes its derived HEAD alias, matching the Rust projection and preserving method compatibility.\n\nIteration180 adds GET/HEAD /api/reader/info to the public method policy; the frozen Go mux remains the method/response parity oracle.\n\nIteration180: Added method contracts for Rust-owned GET/HEAD /api/health, GET/HEAD /api/status and GET/HEAD /api/reader/info; POST /api/multistandby/messages/send remains POST-only. The Go POST /api/at registration remains in the frozen mux for explicit compatibility startup and historical response comparison; normal public admission and dispatch are Rust-owned since Iteration185. Frozen Go parity excludes only routes removed from its mux while Rust retains documented 405/Allow semantics.\n\nIteration183: Adds the existing GET /api/sms/storage response and its bodyless HEAD alias to Rust public admission. A wire-level GET/HEAD test verifies archive counts and representation headers with no Go listener and an absent-device transport fixture.\n\nIteration183 public policy declares GET/HEAD for /api/sms/storage and GET/HEAD for the existing /api/esim/operation alias, preserving frozen Go method parity and bodyless HEAD behavior. No mutation method is admitted.\n\nIteration185 adds GET/HEAD /api/esim/health to public method policy and the frozen Go mux parity set. Wire-level fixtures verify GET projection and bodyless HEAD representation headers.\n\nIteration186 adds GET/HEAD /api/esim to the frozen public method policy; the Rust HEAD wrapper preserves the GET representation length and suppresses the body.\n\nIteration189: Public method policy and the frozen Go mux oracle now include POST-only /api/call/dtmf. Unsupported methods preserve 405/Allow behavior; request body collection is bounded by the route and aggregate admission budget.\n\nIteration189 changes no public HTTP method/path: selected BLE uses the existing POST /api/reader/auth policy and response contract. Iteration190 adds no HTTP contract; heartbeat actions use the existing authenticated IMS codec path.\n\nIteration193: Adds POST-only /api/call/dial to the Rust method policy and frozen legacy Go method oracle. Other methods remain rejected with the existing 405/Allow semantics; route admission does not prove downstream hardware behavior.\n\nIteration193: Adds POST-only public method admission for /api/call/dial and registers it in the legacy method oracle. Non-POST requests preserve 405/Allow behavior; no public request or response schema is broadened.\n\nIteration194: The public method table admits only POST for /api/call/answer and /api/call/hangup and preserves 405/Allow behavior for GET/HEAD/other methods. The frozen Go method oracle remains the compatibility reference.\n\nIteration194: Adds POST-only public method contracts for /api/call/answer and /api/call/hangup to match the existing Go mux oracle. Other methods retain 405/Allow semantics; public admission does not certify live call behavior.\n\nIteration195: Adds GET/HEAD method admission for /api/call/status with GET-derived bodyless HEAD behavior, retaining the Go method oracle and unsupported-method response contract.\n\nIteration196: Adds GET/HEAD admission for /api/call-mode/status and a frozen Go method oracle. Rust returns a validated Go status snapshot; HEAD remains bodyless and unsupported methods preserve 405/Allow.\n\nIteration197 adds POST-only public method admission for /api/sms/clear and preserves its frozen Go method oracle for 405/Allow behavior. It does not certify Go-free physical SMS storage operations.\n\nIteration198 admits only POST /api/sms/delete and retains the frozen Go mux method oracle for unsupported-method/Allow compatibility; method parity does not certify physical storage deletion as Rust-owned.\n\nIteration199 adds POST-only /api/sms/delete-sender to the frozen Go method oracle and public method policy; unsupported methods retain 405/Allow behavior.\n\nIteration200: Public method policy admits GET/HEAD for the Rust-owned VoWiFi operation-result projection, retaining bodyless HEAD semantics.\n\nIteration205 adds PATCH /api/esim/profile to the existing public method contract and retains DELETE. Unsupported methods continue through the legacy 405/Allow policy; this method declaration is not Go-free certification.\n\nIteration 208: Public method policy permits POST for /api/esim/switch and the frozen legacy method oracle records the original method contract. GET/HEAD and other route policies remain unchanged.  Iteration209: Adds the existing Go public methods POST /api/esim/download and POST /api/esim/download/confirm to the Rust method policy. Frozen Go mux parity still includes the private Go VoWiFi retirement adapter and excludes the two Rust-gateway public paths.\n\nIteration391: admits POST /api/v2/call/negotiate-sdp only; SDP negotiation is a call-setup action, not a media-loop route.\n\nIteration392: Public app route admits only POST for local SDP construction; unsupported methods retain standard rejection behavior.\n\nIteration393: /api/v2/call/invite-policy is declared POST-only in the admission table. App authentication still precedes public method admission; the endpoint is a local authenticated policy API, not a new user-facing call operation.\n\nIteration427: public method table now declares both VoWiFi call-status aliases GET/HEAD, so Rust preserves GET semantics for HEAD and rejects other methods at the gateway.\n\nIteration427: legacy method-mismatch classification includes both newly Rust-owned VoWiFi call-status aliases so non-GET/HEAD requests continue to receive the original 405/Allow behavior.\n\nIteration432: public method policy allows POST only for /api/call-mode/download and preserves legacy 405 response behavior via frozen Go mux parity. The Rust route is still dependent on Go call-mode admission/deployment; policy parity does not establish Go-free operation.\n\nIteration 434: public method policy now admits only POST for /api/call-mode/enable, preserving Rust 405 behavior for other methods.\n\nIteration 435: public method policy admits only POST for /api/call-mode/restore and preserves 405 behavior for other methods.\n\nIteration470: public audio start/stop POST methods are declared explicitly; unsupported methods receive Rust 405/Allow behavior equivalent to the prior Go ServeMux registrations.\n\nIteration481: Native method table now declares POST reader connect/disconnect/refresh. Legacy method rejection additionally owns connect/disconnect/refresh/auth/info after Go handler retirement, preserving authenticated 405, sorted Allow and HEAD response-body semantics. Existing real-UDS wrong-method tests add five reader cases; no new method/path or HEAD migration credit is assigned.\n\nIteration493 frozen-oracle correction: GET /api/sms/storage remains in the independent test-only Go mux after the old production Go route is removed. Add its already-supported GET/HEAD path to LEGACY_METHOD_PATHS so frozen oracle path census and original Go 405/Allow method semantics are retained; no public API is removed. Iteration498: Records the retired Go reader GET/HEAD/POST and sessions GET/HEAD method union in the actual native dispatcher. Existing frozen Go mux differential fixture retains these original registrations, including 405 Allow order and empty HEAD body semantics. Iteration500: Preserves historical GET/HEAD/POST and Allow behavior for the retired public Go module/shared IMS registrations. The frozen independent Go oracle now includes both call/status aliases and result, with Rust parity test exclusions removed for those status routes. No mutation is accepted by HEAD. Iteration589: Resolve escaped public literal segments once against the finite reviewed ROUTES table before HEAD classification. Raw slash boundaries, wildcard tail spelling, query/scheme/authority and canonical redirect behavior are retained. Unknown/private/retired paths cannot acquire an internal capability. Existing authentication, body budget, module quarantine and final dispatch consume the same effective public URI. This fixes the four independently witnessed escaped-literal routing failures; full URL/wildcard semantics and the complete applicable HTTP matrix remain separate acceptance requirements.\n\nIteration663 manual source-scope review: Public HTTP policy admits the new bounded POST while preserving existing authentication and method gates. Existing P0-P6 product acceptance remains open.\n\nIteration666: Reviewed Rust-owned network recovery GET/HEAD/POST, retained operation IDs, monotonic wake delay/cooldown, structured traffic admission, and finite readback. Recovery uses the existing module-radio actor reservation with same-owner USB-mode and strict CLCC observations followed by the existing reboot plan fresh call guard. A lost HTTP/UI waiter cannot cancel the admitted worker. No DNS/proxy path is changed; offline tests are not hardware or carrier acceptance.\n\nIteration666 final gate-fix manual review: removed the two Rust-only multistandby control-intent paths from LEGACY_METHOD_PATHS so unsupported methods use native unknown-route behavior rather than a legacy-Go mux classification. Their POST routes, Rust ownership, authentication, DTOs and dispatch remain unchanged; the 304-route census and 150-entry public method policy remain stable. This metadata synchronization grants no functional or product acceptance.\n\nIteration701 controlled source-scope pin: whole production file approved_current in stability-701/s13-dispatch-review-audio.json (SHA256 799ae0bad428685ef36a370d9773a8d71e4e240aee87a7b2ea3ee5aa7a8522b9); current raw file 7949d7bcf61aedcbf74d55888fa4de27814724402299705bd211b098e4d73143. Matching real original scope and complete reviewed current scope/delta are bound in the report. This limited source-review pin grants no hardware, carrier, performance or P0-P6 product acceptance; unchanged outside scopes and pending owner issues remain separate.\n\nUser-authorized stability and support-diagnostics integration, independently reviewed before this normalization: authenticated route templates and bounded redacted diagnostics; private rotating files and cancellation-retained export leases; retained call/forwarding/store authority and URL transport fixes. Only source-scope fingerprints of the pinned changed files are refreshed. Generated census, rustfmt and Xcode project updates grant no software, physical-device, carrier or product acceptance; final-source GitHub gates are still required. Source snapshot: 49610c3116af2509d31765b49124dda8f6f3b74a.\n\nUser-authorized support diagnostics route consistency review at c90634690fe2c202c35bd5c0d58b163146a7af7a: /api/diagnostics/support is a new native route and is removed only from the independently frozen historical Go method corpus. NATIVE_METHOD_PATHS preserves authenticated Rust-owned 405 rejection with Allow GET, HEAD; GET and HEAD remain read-only. Root reviewed the three-file diff and the bounded real-wire regression for authentication, no-store, unsupported methods, unavailable GET/HEAD behavior, and absence of Go/runtime-data side effects. The frozen Go parity fixture remains unchanged. This preparation only applies pinned Rust formatting and refreshes this source fingerprint and derived census; complete final-source cloud tests remain required. No physical-device, carrier or product acceptance is awarded.",
       "source": {
         "file": "rust/crates/proletariusd/src/public_http.rs",
         "line": 1

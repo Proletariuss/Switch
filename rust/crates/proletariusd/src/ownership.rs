@@ -796,10 +796,7 @@ mod tests {
                 "{method} must be rejected by Rust"
             );
             assert_eq!(
-                crate::public_http::admission(
-                    &method.parse().unwrap(),
-                    "/api/diagnostics/support"
-                ),
+                crate::public_http::admission(&method.parse().unwrap(), "/api/diagnostics/support"),
                 crate::public_http::Admission::MethodNotAllowed("GET, HEAD")
             );
         }
