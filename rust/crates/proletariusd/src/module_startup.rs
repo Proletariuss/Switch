@@ -204,7 +204,7 @@ impl Service {
                 .completion
                 .lock()
                 .unwrap_or_else(|e| e.into_inner()) = Some(result);
-            diagnostic::startup(Stage::Shutdown, if result.is_ok() { ResultKind::Succeeded } else { ResultKind::Failed },
+            diagnostic::startup(Stage::Startup, ResultKind::WaiterEnded,
                 result.err().map_or(Code::None, |error| Code::from_error(error.code)), Transport::Unknown);
             retained.0.finished.notify_waiters();
         });

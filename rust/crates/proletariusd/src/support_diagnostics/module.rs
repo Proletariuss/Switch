@@ -63,7 +63,7 @@ impl Code {
             | "serial_card_binding_changed" => Self::Stale,
             "backend_stopping" | "usb_at_stopping" => Self::Stopped,
             "invalid_radio_request" | "usb_at_invalid_request" => Self::Invalid,
-            "module_recovery_required" => Self::AdmissionRevoked,
+            "legacy_recovery_required" | "module_recovery_required" => Self::AdmissionRevoked,
             "usb_at_unavailable" | "usb_at_io" | "usb_at_disconnected" | "flight_mode_read_failed"
             | "serial_command_failed" => Self::TransportFailed,
             _ => Self::Other,
