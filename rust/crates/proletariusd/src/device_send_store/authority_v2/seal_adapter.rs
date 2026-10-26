@@ -65,6 +65,13 @@ impl Adapter {
         proof.claim_device_sms_adapter(root).map_err(Error::Owner)?;
         let kernel = Kernel::existing(root).map_err(|e| Error::Seal(SealError::Storage(e)))?;
         let identity = proof.with_root(root, |_| {
+            kernel.bootstrap_legacy(|active, siblings| {
+                let inspected = family::inspect_bytes(active, siblings)?;
+                if inspected.next_step() != family::RecoveryStep::ProposeMigration {
+                    return Err(CodecError::InvalidSnapshot);
+                }
+                Ok(())
+            })?;
             kernel.open_or_migrate(
                 |legacy| {
                     // Entropy is requested only after a complete virgin v1

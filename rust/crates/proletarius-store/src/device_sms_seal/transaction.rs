@@ -216,6 +216,38 @@ impl Kernel {
         self.check_family(&family)?;
         self.finish_wal(lock, &wal, &bytes, &wal_stamp)
     }
+    /// Enroll a historical v1 archive only after its complete family schema
+    /// succeeds under the original writer lock. Never recreate a missing lock
+    /// when a presence witness exists, or repair a partially sealed generation.
+    pub fn bootstrap_legacy<S>(
+        &self,
+        validate: impl FnOnce(&[u8], &[Option<Vec<u8>>]) -> Result<(), S>,
+    ) -> Result<(), Error<S>> {
+        use crate::raw::FamilyInspectionError;
+        // A pending sealed transaction is exclusively the recovery executor's
+        // responsibility, including its old-v1 prefix.
+        if optional_stamp(&self.wal()?.path).map_err(Error::Storage)?.is_some() {
+            return Ok(());
+        }
+        let marker = self.archive.presence_path().map_err(Error::Storage)?;
+        let marker_stamp = optional_stamp(&marker).map_err(Error::Storage)?;
+        let anchor = self.archive.lock_path().map_err(Error::Storage)?;
+        let anchor_stamp = optional_stamp(&anchor).map_err(Error::Storage)?;
+        if marker_stamp.is_some() {
+            if anchor_stamp.is_none() { return Err(Error::Guard(GuardError::Witness)); }
+            if read_witness(&marker).map_err(Error::Storage)? != PRESENCE_CONTRACT {
+                return Ok(()); // sealed or corrupt: strict kernel recovery decides
+            }
+        } else if anchor_stamp.as_ref().is_some_and(|stamp| stamp.2 != 0) {
+            return Err(Error::Guard(GuardError::Witness));
+        }
+        self.no_pending()?;
+        self.archive.inspect_raw_family(&MEMBERS, validate).map_err(|error| match error {
+            FamilyInspectionError::Storage(error) => Error::Storage(error),
+            FamilyInspectionError::Schema(error) => Error::Schema(error),
+        })
+    }
+
     /// Startup-only executor. The daemon must hold its real lifetime lease and
     /// an unpublished/drained send owner before entering. Every family step,
     /// including recovery, runs under the same original named ledger lock.

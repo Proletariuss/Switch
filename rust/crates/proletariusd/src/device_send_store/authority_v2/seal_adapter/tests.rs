@@ -738,3 +738,26 @@ fn failed_sealed_write_is_sticky_until_a_new_real_lifetime_recovers_the_exact_ta
         assert!(!recovered.restart_required());
     }
 }
+
+
+#[test]
+fn historical_v1_enrolls_only_after_full_schema_and_never_recreates_a_missing_witness_lock() {
+    let f = Fixture::new();
+    let original = fs::read(f.active()).unwrap();
+    fs::remove_file(f.marker()).unwrap();
+    fs::remove_file(f.lock()).unwrap();
+    let migrated = Adapter::open_or_migrate(&f.root, f.proof(), startup(&f)).unwrap();
+    migrated.transact(|_, frozen| { assert_eq!(frozen, original); Ok((None, ())) }).unwrap();
+
+    let f = Fixture::new();
+    fs::remove_file(f.marker()).unwrap();
+    fs::remove_file(f.lock()).unwrap();
+    fs::write(f.active(), br#"[{"schema_version":1,"records":{"corrupt":{}}}]"#).unwrap();
+    assert!(Adapter::open_or_migrate(&f.root, f.proof(), startup(&f)).is_err());
+    assert!(!f.marker().exists(), "invalid legacy schema enrolled a presence witness");
+
+    let f = Fixture::new();
+    fs::remove_file(f.lock()).unwrap();
+    assert!(Adapter::open_or_migrate(&f.root, f.proof(), startup(&f)).is_err());
+    assert!(!f.lock().exists(), "existing witness silently recreated its original lock");
+}
