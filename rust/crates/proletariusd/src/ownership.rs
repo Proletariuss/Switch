@@ -782,9 +782,27 @@ mod tests {
             );
         }
         assert_eq!(
-            route_owner("POST", "/api/diagnostics/support"),
-            RouteOwner::Unknown
+            crate::public_http::admission(&hyper::Method::GET, "/api/diagnostics/support"),
+            crate::public_http::Admission::Allowed
         );
+        assert_eq!(
+            crate::public_http::admission(&hyper::Method::HEAD, "/api/diagnostics/support"),
+            crate::public_http::Admission::HeadAsGet
+        );
+        for method in ["POST", "PUT", "PATCH", "DELETE", "OPTIONS"] {
+            assert_eq!(
+                route_owner(method, "/api/diagnostics/support"),
+                RouteOwner::Rust,
+                "{method} must be rejected by Rust"
+            );
+            assert_eq!(
+                crate::public_http::admission(
+                    &method.parse().unwrap(),
+                    "/api/diagnostics/support"
+                ),
+                crate::public_http::Admission::MethodNotAllowed("GET, HEAD")
+            );
+        }
     }
 
     #[test]

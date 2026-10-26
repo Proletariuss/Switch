@@ -211,7 +211,6 @@ const LEGACY_METHOD_PATHS: &[&str] = &[
     "/api/status",
     "/api/multistandby/messages/send",
     "/api/diagnostics/events",
-    "/api/diagnostics/support",
     "/api/esim/notes",
     "/api/esim/module-notes",
     "/api/esim/phonebook/probe",
@@ -274,6 +273,10 @@ const LEGACY_METHOD_PATHS: &[&str] = &[
     "/api/sms/storage",
 ];
 
+// Native additions define explicit method rejection without claiming membership
+// in the independently frozen Go compatibility corpus.
+const NATIVE_METHOD_PATHS: &[&str] = &["/api/diagnostics/support"];
+
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum Admission {
     Allowed,
@@ -326,7 +329,7 @@ pub(crate) fn admission(method: &Method, path: &str) -> Admission {
         .split(", ")
         .any(|candidate| candidate == method.as_str())
     {
-        return if legacy_method_path(path) {
+        return if legacy_method_path(path) || NATIVE_METHOD_PATHS.contains(&path) {
             Admission::MethodNotAllowed(allowed)
         } else {
             Admission::Unknown

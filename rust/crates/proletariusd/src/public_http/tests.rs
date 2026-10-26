@@ -211,6 +211,60 @@ async fn public(fixture: &Fixture, method: &str, path: &str, body: &[u8]) -> Wir
 }
 
 #[tokio::test]
+async fn support_snapshot_method_contract_is_native_authenticated_and_read_only() {
+    let fixture = Fixture::new();
+    let path = "/api/diagnostics/support";
+    assert!(!super::LEGACY_METHOD_PATHS.contains(&path));
+    assert!(super::NATIVE_METHOD_PATHS.contains(&path));
+    assert!(!fixture.state.go_socket_path.exists());
+    for method in ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"] {
+        for token in [None, Some("wrong-token")] {
+            let denied = exchange(
+                fixture.state.clone(),
+                Surface::Public,
+                method,
+                path,
+                token,
+                None,
+                &[],
+            )
+            .await;
+            assert_eq!(denied.status, 401, "{method}: {denied:?}");
+            assert!(denied.header("allow").is_none());
+            assert_eq!(denied.header("cache-control"), Some("no-store"));
+            if method == "HEAD" {
+                assert!(denied.body.is_empty());
+            }
+        }
+    }
+    for method in ["POST", "PUT", "PATCH", "DELETE", "OPTIONS"] {
+        let rejected = public(&fixture, method, path, b"ignored").await;
+        assert_eq!(rejected.status, 405, "{method}: {rejected:?}");
+        rejected.assert_allow(&["GET", "HEAD"]);
+        assert_eq!(rejected.header("cache-control"), Some("no-store"));
+        assert_eq!(rejected.body, b"Method Not Allowed\n");
+    }
+    // The wire fixture deliberately does not initialize the process-wide
+    // recorder. Exercise the real unavailable handler and HEAD transformation;
+    // export_snapshot tests separately cover successful bounded exports.
+    let get = public(&fixture, "GET", path, &[]).await;
+    let head = public(&fixture, "HEAD", path, &[]).await;
+    assert_eq!(get.status, 503);
+    let body: Value = serde_json::from_slice(&get.body).unwrap();
+    assert_eq!(body["code"], "support_snapshot_unavailable");
+    assert_eq!(head.status, get.status);
+    assert_eq!(head.content_length(), get.body.len());
+    assert_eq!(head.header("content-type"), get.header("content-type"));
+    assert!(head.body.is_empty());
+    for response in [&get, &head] {
+        assert!(response.header("allow").is_none());
+        assert_eq!(response.header("cache-control"), Some("no-store"));
+    }
+    assert!(!fixture.state.go_socket_path.exists());
+    assert!(!fixture.root.join("support-diagnostics").exists());
+}
+
+#[tokio::test]
 async fn g3_stop_control_public_rejections_always_disable_caching() {
     let fixture = Fixture::new(); // Neither reader nor module service is retained.
     for (route, scope) in [
