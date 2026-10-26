@@ -237,8 +237,13 @@ impl Service {
         &self,
         module_sim_busy: bool,
     ) -> Response<Full<Bytes>> {
-        let archived = match self.inner.archive.load() {
-            Ok(items) => items.len().min(u32::MAX as usize) as u32,
+        let archive = self.inner.archive.clone();
+        let archived = match crate::archive_io::run(move || {
+            archive.load().map(|items| items.len().min(u32::MAX as usize) as u32)
+        })
+        .await
+        {
+            Ok(count) => count,
             Err(_) => {
                 return crate::json_response(
                     StatusCode::INTERNAL_SERVER_ERROR,

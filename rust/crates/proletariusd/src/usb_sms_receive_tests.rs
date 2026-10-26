@@ -94,6 +94,45 @@ mod tests {
         .unwrap();
     }
 
+    #[tokio::test(flavor = "current_thread")]
+    async fn storage_usage_archive_lock_does_not_block_runtime_progress() {
+        let fixture = Fixture::new().await;
+        fixture.service.inner.archive.replace(vec![json!({
+            "sender":"888", "content":"saved", "timestamp":AT
+        })]).unwrap();
+        let lock_path = fixture.directory.join("sms.json.lock");
+        let (ready, started) = tokio::sync::oneshot::channel();
+        let (release, wait) = std::sync::mpsc::channel();
+        let released = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let observed_release = released.clone();
+        let holder = std::thread::spawn(move || {
+            let lock = std::fs::OpenOptions::new().read(true).write(true)
+                .open(lock_path).unwrap();
+            lock.lock().unwrap();
+            ready.send(()).unwrap();
+            // The fallback bounds a regression that blocks the sole Tokio
+            // worker; the timer assertion must run before this lock releases.
+            let _ = wait.recv_timeout(Duration::from_secs(3));
+            observed_release.store(true, Ordering::SeqCst);
+            drop(lock);
+        });
+        started.await.unwrap();
+        let service = fixture.service.clone();
+        let query = tokio::spawn(async move { service.storage_usage_response(true).await });
+        tokio::time::sleep(Duration::from_millis(50)).await;
+        let progressed_while_locked = !released.load(Ordering::SeqCst) && !query.is_finished();
+        let _ = release.send(());
+        let response = tokio::time::timeout(Duration::from_secs(5), query)
+            .await.unwrap().unwrap();
+        holder.join().unwrap();
+        assert!(progressed_while_locked, "archive lock occupied the async I/O worker");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body: Value = serde_json::from_slice(
+            &response.into_body().collect().await.unwrap().to_bytes()).unwrap();
+        assert_eq!(body["usage"]["LOCAL"]["used"], 1);
+        assert_eq!(body["module_sim_busy"], true);
+    }
+
     #[test]
     fn usb_projection_preserves_sm_first_dedup_error_items_and_binary_text() {
         let mut value = raw(false);
