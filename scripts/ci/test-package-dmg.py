@@ -3,6 +3,8 @@
 import copy
 import importlib.util
 import json
+import os
+import tempfile
 from pathlib import Path
 import unittest
 from unittest.mock import patch
@@ -67,6 +69,33 @@ class DMGFixtures(unittest.TestCase):
     def test_internal_symlink(self):
         rows = self.rows() + [{"path": "Switch.app/link", "kind": "symlink", "mode": 0o755, "target": "file"}]
         self.assertEqual(len(dmg.check_inventory(rows)), 3)
+
+    def test_resolved_internal_link(self):
+        with tempfile.TemporaryDirectory() as folder:
+            app = Path(folder) / "Switch.app"
+            app.mkdir()
+            (app / "file").write_bytes(b"accepted")
+            os.symlink("file", app / "link")
+            dmg.check_resolved_links(app)
+
+    def test_resolved_symlink_chain_escape(self):
+        with tempfile.TemporaryDirectory() as folder:
+            app = Path(folder) / "Switch.app"
+            app.mkdir()
+            (Path(folder) / "outside").write_bytes(b"outside")
+            os.symlink(".", app / "a")
+            os.symlink("a/../outside", app / "b")
+            with self.assertRaises(RuntimeError):
+                dmg.check_resolved_links(app)
+
+    def test_resolved_dangling_or_cyclic_link(self):
+        for target in ("missing", "link"):
+            with self.subTest(target=target), tempfile.TemporaryDirectory() as folder:
+                app = Path(folder) / "Switch.app"
+                app.mkdir()
+                os.symlink(target, app / "link")
+                with self.assertRaises(RuntimeError):
+                    dmg.check_resolved_links(app)
 
     def test_expansion_bound(self):
         rows = self.rows()

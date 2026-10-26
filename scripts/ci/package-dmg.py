@@ -63,7 +63,18 @@ def inventory(app):
         rows.append(row)
     return rows
 
+def check_resolved_links(app):
+    root = app.resolve(strict=True)
+    for path in app.rglob("*"):
+        if path.is_symlink():
+            try:
+                target = path.resolve(strict=True)
+                target.relative_to(root)
+            except (ValueError, RuntimeError, OSError) as error:
+                raise RuntimeError("App symlink is dangling, cyclic or escapes the bundle: " + str(path)) from error
+
 def compare_app(app, manifest):
+    check_resolved_links(app)
     expected = check_inventory(manifest["app_inventory"])
     actual = {row["path"]: row for row in inventory(app)}
     need(actual == expected, "mounted/extracted App bytes, permissions or symlinks changed")
