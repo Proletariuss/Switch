@@ -39,7 +39,7 @@ jobs:
           [[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]]
           [[ "$(git rev-parse HEAD)" == "$EXPECTED_COMMIT" ]]
           python3 scripts/ci/run-report.py portable bash scripts/ci/portable-gates.sh
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:
           name: software-report-${{ github.run_attempt }}-portable
@@ -77,7 +77,7 @@ jobs:
       - name: Shared complete Rust gate
         working-directory: src
         run: python3 scripts/ci/run-report.py rust bash scripts/ci/rust-gates.sh
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:
           name: software-report-${{ github.run_attempt }}-rust
@@ -108,7 +108,7 @@ jobs:
         env:
           SUITE: ${{ matrix.suite }}
         run: bash scripts/ci/swift-gates.sh "$SUITE"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:
           name: software-report-${{ github.run_attempt }}-swift-${{ matrix.suite }}
@@ -172,7 +172,7 @@ jobs:
         run: |
           python3 scripts/ci/package-candidate.py
           python3 scripts/ci/package-candidate.py verify ../candidate
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: Switch-candidate-${{ inputs.commit }}-attempt-${{ github.run_attempt }}
           path: candidate/
@@ -190,7 +190,7 @@ jobs:
           cmp ../candidate/SHA256SUMS ../uploaded-candidate/SHA256SUMS
           (cd ../uploaded-candidate && shasum -a 256 -c SHA256SUMS)
           python3 scripts/ci/run-report.py upload-roundtrip python3 scripts/ci/package-candidate.py verify ../uploaded-candidate
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:
           name: software-report-${{ github.run_attempt }}-candidate-and-upload
