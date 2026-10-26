@@ -59,6 +59,19 @@ def validate(files, reports, **overrides):
     return publisher.validate_payload(files, reports, **values)
 
 class ReleaseFixtures(unittest.TestCase):
+    def test_evidence_gzip_pins_level_nine_across_python_defaults(self):
+        from unittest import mock
+        files, _, reports = fixture()
+        with mock.patch.object(publisher.gzip, "GzipFile", wraps=publisher.gzip.GzipFile) as constructor:
+            assets, _ = validate(files, reports)
+        writes = [call.kwargs for call in constructor.call_args_list if call.kwargs.get("mode") == "wb"]
+        self.assertEqual(len(writes), 1)
+        self.assertEqual(writes[0]["compresslevel"], 9)
+        self.assertEqual(writes[0]["mtime"], 0)
+        self.assertEqual(writes[0]["filename"], "")
+        # Gzip XFL=2 records maximum compression, irrespective of Python's default.
+        self.assertEqual(assets["test-reports.tar.gz"][8], 2)
+
     def test_valid_four_asset_whitelist_and_deterministic_retry(self):
         files, _, reports = fixture()
         first, _ = validate(files, reports)
@@ -498,6 +511,227 @@ class RequestTransportFixtures(unittest.TestCase):
         with mock.patch.object(client.opener, "open", return_value=response):
             with self.assertRaisesRegex(RuntimeError, "response size exceeds limit"):
                 client.api("GET", "/actions/artifacts/123/zip", binary=True)
+
+class DerivativeFixtures(unittest.TestCase):
+    """Published retries admit only the exact verified packaging artifact."""
+    def fixture(self):
+        api = FakeGitHub()
+        api.install_draft()
+        api.release["draft"] = False
+        api.tag = {"object": {"type": "commit", "sha": COMMIT}}
+        assets, manifest = validate(api.files, api.reports)
+        for name, raw in assets.items():
+            item = {"id": api.next_id, "name": name, "size": len(raw), "state": "uploaded"}
+            api.next_id += 1
+            api.remote[name], api.asset_bytes[item["id"]] = item, raw
+        name = "Switch_" + VERSION + ".dmg"
+        api.derivative = {name: b"synthetic verified DMG"}
+        api.proof = {"schema_version": 1, "kind": "release-dmg-derivative",
+            "source": {"commit": COMMIT, "tree": TREE, "version": VERSION, "build": BUILD,
+                "source_digest": manifest["source_digest"], "manifest_sha256": publisher.digest(assets["candidate-manifest.json"]),
+                "app_archive_sha256": manifest["artifact"]["sha256"], "app_tree_sha256": manifest["app_tree_sha256"],
+                "release_id": 352, "tag": "v" + VERSION},
+            "packaging": {"commit": COMMIT, "run_id": 54321, "run_attempt": 1,
+                "run_url": "https://github.com/" + publisher.REPO + "/actions/runs/54321",
+                "workflow": ".github/workflows/package-dmg.yml", "reusable_workflow": ".github/workflows/package-dmg.yml"},
+            "dmg": {"name": name, "size": len(api.derivative[name]), "sha256": publisher.digest(api.derivative[name])},
+            "validation": {"input_archive": True, "mounted_inventory": True, "signature": True,
+                "readonly_mount": True, "app_recompiled": False},
+            "acceptance": {"signature": "ad-hoc", "notarized": False,
+                "macos27_runtime": "UNVERIFIED", "device_acceptance": "UNVERIFIED"}}
+        api.dmg_run = {"head_sha": COMMIT, "path": ".github/workflows/package-dmg.yml",
+            "event": "workflow_dispatch", "repository": {"full_name": publisher.REPO},
+            "html_url": api.proof["packaging"]["run_url"]}
+        api.dmg_jobs = [{"name": name, "conclusion": "success", "steps": [{"name": step, "conclusion": "success"}]}
+            for name, step in (("DMG verify", "Verify mounted DMG against accepted App"),
+                               ("DMG publish", "Publish verified DMG derivative"))]
+        api.controller_blobs = {"sha": "e" * 40, "type": "file"}
+        original_api, original_pages, original_artifact = api.api, api.pages, api.artifact
+        def request(method, suffix, value=None, **kwargs):
+            if method == "GET" and suffix == "/actions/runs/54321":
+                return copy.deepcopy(api.dmg_run)
+            if method == "GET" and suffix.startswith("/contents/") and "BUILD_NUMBER" not in suffix:
+                return copy.deepcopy(api.controller_blobs)
+            return original_api(method, suffix, value, **kwargs)
+        def pages(suffix, key=None):
+            if suffix == "/actions/runs/54321/attempts/1/jobs":
+                return copy.deepcopy(api.dmg_jobs)
+            if suffix == "/actions/runs/54321/artifacts":
+                return []
+            return original_pages(suffix, key)
+        def artifact(artifacts, name, run_id, commit):
+            if run_id == 54321:
+                if name != "Switch-dmg-" + VERSION + "-" + COMMIT + "-attempt-1" or commit != api.proof["packaging"]["commit"]:
+                    raise AssertionError("wrong DMG evidence provenance requested")
+                return copy.deepcopy(api.dmg_evidence)
+            return original_artifact(artifacts, name, run_id, commit)
+        api.api, api.pages, api.artifact = request, pages, artifact
+        self.seal(api)
+        return api
+
+    def seal(self, api, evidence=True):
+        name = api.proof["dmg"]["name"]
+        api.derivative[name + ".sha256"] = (publisher.digest(api.derivative[name]) + "  " + name + "\n").encode()
+        api.derivative["dmg-provenance.json"] = encode(api.proof)
+        for filename, raw in api.derivative.items():
+            if filename not in api.remote:
+                api.remote[filename] = {"id": api.next_id, "name": filename, "size": len(raw), "state": "uploaded"}
+                api.next_id += 1
+            item = api.remote[filename]
+            item["size"] = len(raw)
+            api.asset_bytes[item["id"]] = raw
+        if evidence:
+            api.dmg_evidence = copy.deepcopy(api.derivative)
+
+    def invoke(self, api):
+        PublicationStateFixtures().invoke(api, attempt=2)
+
+    def test_complete_verified_derivative_retry_is_readonly(self):
+        api = self.fixture()
+        identities = copy.deepcopy(api.remote)
+        self.invoke(api)
+        self.assertEqual(api.writes, [])
+        self.assertEqual(api.remote, identities)
+        self.assertEqual(len(api.remote), 7)
+
+    def test_reusable_same_run_jobs_use_exact_names_without_waiting_for_whole_run(self):
+        api = self.fixture()
+        api.proof["packaging"]["workflow"] = ".github/workflows/release.yml"
+        api.dmg_run.update(path=".github/workflows/release.yml", status="in_progress", conclusion=None)
+        for job in api.dmg_jobs:
+            job["name"] = "dmg / " + job["name"]
+        self.seal(api)
+        self.invoke(api)
+        self.assertEqual(api.writes, [])
+
+    def test_partial_or_unexpected_derivatives_never_mutate(self):
+        for missing in ("Switch_3.52.dmg", "Switch_3.52.dmg.sha256", "dmg-provenance.json"):
+            api = self.fixture()
+            del api.remote[missing]
+            with self.subTest(missing=missing), self.assertRaisesRegex(RuntimeError, "incomplete DMG"):
+                self.invoke(api)
+            self.assertEqual(api.writes, [])
+        api = self.fixture()
+        api.remote["other.dmg"] = {"id": 999, "name": "other.dmg", "size": 1, "state": "uploaded"}
+        with self.assertRaisesRegex(RuntimeError, "unexpected"):
+            self.invoke(api)
+        self.assertEqual(api.writes, [])
+
+    def test_replaced_dmg_and_self_consistent_provenance_rejected_by_original_artifact(self):
+        api = self.fixture()
+        name = api.proof["dmg"]["name"]
+        api.derivative[name] = b"replacement DMG with rewritten release checksums"
+        api.proof["dmg"].update(size=len(api.derivative[name]), sha256=publisher.digest(api.derivative[name]))
+        self.seal(api, evidence=False)
+        with self.assertRaisesRegex(RuntimeError, "asset differs"):
+            self.invoke(api)
+        self.assertEqual(api.writes, [])
+
+    def test_source_or_scope_drift_rejected_even_in_matching_artifact(self):
+        changes = [("source", "commit", "f" * 40), ("source", "release_id", 999),
+                   ("source", "manifest_sha256", "f" * 64), ("source", "app_archive_sha256", "f" * 64),
+                   ("source", "app_tree_sha256", "f" * 64), ("source", "tree", "f" * 40),
+                   ("source", "tag", "v3.53"), ("source", "version", "3.53"), ("source", "build", "353"),
+                   ("validation", "mounted_inventory", False), ("validation", "app_recompiled", True),
+                   ("acceptance", "notarized", True), ("acceptance", "macos27_runtime", "PASSED")]
+        for area, key, value in changes:
+            api = self.fixture()
+            api.proof[area][key] = value
+            self.seal(api)
+            with self.subTest(area=area, key=key), self.assertRaises(RuntimeError):
+                self.invoke(api)
+            self.assertEqual(api.writes, [])
+
+    def test_failed_missing_or_duplicate_verification_jobs_or_steps_rejected(self):
+        for change in ("failed_job", "missing_job", "duplicate_job", "failed_step", "missing_step", "duplicate_step"):
+            api = self.fixture()
+            if change == "failed_job":
+                api.dmg_jobs[0]["conclusion"] = "failure"
+            elif change == "missing_job":
+                api.dmg_jobs.pop()
+            elif change == "duplicate_job":
+                api.dmg_jobs.append(copy.deepcopy(api.dmg_jobs[0]))
+            elif change == "failed_step":
+                api.dmg_jobs[1]["steps"][0]["conclusion"] = "failure"
+            elif change == "missing_step":
+                api.dmg_jobs[1]["steps"] = []
+            else:
+                api.dmg_jobs[1]["steps"].append(copy.deepcopy(api.dmg_jobs[1]["steps"][0]))
+            with self.subTest(change=change), self.assertRaises(RuntimeError):
+                self.invoke(api)
+            self.assertEqual(api.writes, [])
+
+    def test_wrong_run_source_workflow_event_repository_or_url_rejected(self):
+        for key, value in [("head_sha", "f" * 40), ("path", ".github/workflows/other.yml"),
+                           ("event", "pull_request"), ("repository", {"full_name": "other/repo"}),
+                           ("html_url", "https://example.invalid/other")]:
+            api = self.fixture()
+            api.dmg_run[key] = value
+            with self.subTest(key=key), self.assertRaisesRegex(RuntimeError, "run provenance"):
+                self.invoke(api)
+
+    def test_evidence_missing_extra_or_tampered_is_rejected(self):
+        for change in ("missing", "extra", "tampered"):
+            api = self.fixture()
+            if change == "missing":
+                del api.dmg_evidence["dmg-provenance.json"]
+            elif change == "extra":
+                api.dmg_evidence["unapproved.txt"] = b"extra"
+            else:
+                api.dmg_evidence["dmg-provenance.json"] += b" "
+            with self.subTest(change=change), self.assertRaises(RuntimeError):
+                self.invoke(api)
+            self.assertEqual(api.writes, [])
+
+    def test_checksum_bytes_must_be_exact(self):
+        api = self.fixture()
+        item = api.remote["Switch_3.52.dmg.sha256"]
+        api.asset_bytes[item["id"]] += b"extra line\n"
+        item["size"] = len(api.asset_bytes[item["id"]])
+        with self.assertRaisesRegex(RuntimeError, "checksum mismatch"):
+            self.invoke(api)
+
+    def test_distinct_controller_requires_identical_reviewed_packaging_code(self):
+        api = self.fixture()
+        api.proof["packaging"]["commit"] = "f" * 40
+        api.dmg_run["head_sha"] = "f" * 40
+        self.seal(api)
+        self.invoke(api)
+        self.assertEqual(api.writes, [])
+        original = api.api
+        for dependency in (".github/workflows/package-dmg.yml", "scripts/ci/package-dmg.py",
+                           "scripts/ci/publish-release.py"):
+            def changed(method, suffix, value=None, **kwargs):
+                if suffix == "/contents/" + dependency + "?ref=" + COMMIT:
+                    return {"type": "file", "sha": "d" * 40}
+                return original(method, suffix, value, **kwargs)
+            api.api = changed
+            with self.subTest(dependency=dependency), self.assertRaisesRegex(RuntimeError, "validation code differs"):
+                self.invoke(api)
+            self.assertEqual(api.writes, [])
+
+    def test_draft_with_derivatives_is_rejected_without_writes(self):
+        api = self.fixture()
+        api.release["draft"] = True
+        with self.assertRaisesRegex(RuntimeError, "incomplete DMG"):
+            self.invoke(api)
+        self.assertEqual(api.writes, [])
+
+    def test_final_relist_detects_derivative_id_replacement(self):
+        api = self.fixture()
+        original = api.pages
+        def pages(suffix, key=None):
+            rows = original(suffix, key)
+            if suffix == "/releases/352/assets" and api.asset_lists == 2:
+                for item in rows:
+                    if item["name"] == "Switch_3.52.dmg":
+                        item["id"] = 999
+            return rows
+        api.pages = pages
+        with self.assertRaisesRegex(RuntimeError, "final release asset"):
+            self.invoke(api)
+        self.assertEqual(api.writes, [])
+
 
 if __name__ == "__main__":
     unittest.main()

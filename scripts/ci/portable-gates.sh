@@ -2,6 +2,7 @@
 set -euo pipefail
 scripts/preflight-source.sh
 PYTHONDONTWRITEBYTECODE=1 python3 scripts/ci/test-publish-release.py
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/ci/test-package-dmg.py
 for manifest in rust/Cargo.toml scripts/acceptance/daemon-capsule-fixture/Cargo.toml; do
   cargo +1.98.0 fmt --manifest-path "$manifest" --all -- --check
   # Fetch resolves the entire lockfile, unlike metadata --no-deps.

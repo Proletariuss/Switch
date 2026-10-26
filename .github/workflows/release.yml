@@ -80,3 +80,12 @@ jobs:
           EXPECTED_BUILD: ${{ needs.identity.outputs.build }}
           PYTHONDONTWRITEBYTECODE: '1'
         run: python3 control/scripts/ci/publish-release.py
+  dmg:
+    needs: [identity, publish]
+    permissions:
+      contents: write
+      actions: read
+    uses: ./.github/workflows/package-dmg.yml
+    with:
+      version: ${{ needs.identity.outputs.version }}
+      app_sha: ${{ needs.identity.outputs.commit }}
