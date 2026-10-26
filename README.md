@@ -85,7 +85,7 @@ Ein Fehler beim lokalen HTTP-Transport konnte bei VoWiFi-Abgleichanfragen zu `NS
 
 Bei unklaren Anrufergebnissen bleibt die ursprüngliche Anfrage erhalten. Eine negative Wiederherstellungsantwort hebt die Sperre erst mit einem zur Anfrage passenden, dauerhaft bestätigten Abschlussbeleg auf. SMS-Zustellberichte werden vor ihrer Protokollbestätigung dauerhaft erfasst; sie erscheinen nicht als neue Eingangsnachricht und lösen keine Weiterleitung aus. Die Abfrage des SMS-Speicherverbrauchs führt Dateioperationen außerhalb des asynchronen Runtime-Workers aus. Veraltete Netzwerk- und Weiterleitungsantworten dürfen neuere Einstellungen nach einem Backend-Wechsel nicht überschreiben.
 
-Bei der BLE-Brücke berücksichtigt die Berechnung temporärer Socket-Namen nun auch die strikte Pfadlängengrenze. Lange, zulässige Laufzeitverzeichnisse können damit einen Socket binden; die Mindestgröße des zufälligen Namens und die Prüfungen vorhandener Dateien bleiben erhalten.
+Bei der BLE-Brücke berücksichtigt die Berechnung temporärer Socket-Namen nun auch die strikte Pfadlängengrenze. Lange, zulässige Laufzeitverzeichnisse können damit einen Socket binden; die Mindestgröße des zufälligen Namens und die Prüfungen vorhandener Dateien bleiben erhalten. Listener-Deskriptoren werden erst vom tatsächlich beendeten Empfangs-Worker geschlossen. Stop und Neustart können dadurch keine Verbindung eines nachfolgenden Listeners über eine wiederverwendete Deskriptornummer übernehmen; unerwartete Worker-Ausgänge bereinigen den veröffentlichten Zustand ebenfalls.
 
 ## Laufzeitdiagnose und Export
 
