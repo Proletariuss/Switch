@@ -57,3 +57,14 @@ before renewing the annual automation window on 2027-10-25:
 Do not add a broad advisory ignore or claim this item fixed merely because an
 audit remains green. Record any future time-limited exception, rationale, owner
 and review date explicitly.
+
+## Coordinated RustCrypto API migration
+
+Reviewed 2026-10-26; next review due 2026-11-25. The API-compatible
+md-5/sha1/sha2 0.10 and hmac 0.12 family remains the stability baseline.
+Dependabot version proposals crossing md-5/sha1/sha2 0.11 or hmac 0.13 are held
+until digest traits, formatting and the IKE compress API are migrated and
+AKA/IKE/ESP vectors pass together. This is not a RustSec advisory exception
+and does not waive any security alert. The fixture's sha2 hold also prevents
+incomplete changes to its path-linked main workspace. Both locked dependency
+graphs must resolve before macOS validation starts.
