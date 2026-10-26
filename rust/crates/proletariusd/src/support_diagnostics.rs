@@ -18,6 +18,8 @@ use nix::sys::stat::{Mode, mkdirat};
 use nix::unistd::{UnlinkatFlags, geteuid, unlinkat};
 use serde::{Deserialize, Serialize};
 
+pub(crate) mod module;
+
 pub(crate) const PATH: &str = "/api/diagnostics/support";
 const DIRECTORY: &str = "support-diagnostics";
 const NAMES: [&str; 4] = [
@@ -58,6 +60,9 @@ enum Event {
     },
     SafeEvent {
         detail: crate::safe_events::Event,
+    },
+    Module {
+        detail: module::Event,
     },
 }
 
@@ -141,6 +146,7 @@ fn valid(record: &Record) -> bool {
                 && hex_id(correlation_id)
         }
         Event::SafeEvent { detail } => crate::safe_events::valid_persisted_event(detail),
+        Event::Module { .. } => true, // Every field is a closed enum or bounded integer.
     }
 }
 impl Recorder {
