@@ -1,0 +1,255 @@
+name: Test PR review policy
+
+on:
+  push:
+    branches:
+      - automation/review-policy-353
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - converted_to_draft
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  review-policy:
+    name: ${{ github.event_name == 'pull_request' && 'Review policy regression fixtures' || 'Review policy development fixtures' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Exercise the actual review-result shell with synthetic job results
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import itertools
+          import os
+          import pathlib
+          import subprocess
+          import textwrap
+
+          workflow = pathlib.Path(".github/workflows/quality.yml").read_text()
+          marker = "      - name: Reject failed or unexpectedly skipped checks\n"
+          if workflow.count(marker) != 1:
+              raise SystemExit("expected one production review-result policy step")
+          step = workflow.split(marker, 1)[1]
+          if "        run: |\n" not in step:
+              raise SystemExit("expected a literal production policy script")
+          lines = step.split("        run: |\n", 1)[1].splitlines()
+          body = []
+          for line in lines:
+              if line.strip() and not line.startswith("          "):
+                  break
+              body.append(line)
+          script = textwrap.dedent("\n".join(body))
+          if not script.strip():
+              raise SystemExit("production policy script is empty")
+
+          def check(label, expected, **values):
+              result = subprocess.run(
+                  ["bash", "-euo", "pipefail", "-c", script],
+                  env={**os.environ, **values},
+                  text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+              )
+              if (result.returncode == 0) != expected:
+                  raise SystemExit(
+                      f"{label}: expected {'pass' if expected else 'block'}, "
+                      f"exit={result.returncode}\n{result.stdout}"
+                  )
+              return result
+
+          # Select only a recognized production env/script contract. A mixed
+          # or unknown layout must fail instead of silently reducing coverage.
+          import re
+          review = workflow.split("  review-result:\n", 1)[1]
+          environment = review.split("    env:\n", 1)[1].split("    steps:\n", 1)[0]
+          declared = set(re.findall(r"^      ([A-Z_]+):", environment, re.MULTILINE))
+          common = {"EVENT_NAME", "IS_DRAFT", "CLASSIFY_RESULT"}
+          native = {"SOURCE_RESULT", "MACOS_RESULT", "NEEDS_MACOS"}
+          shared = {"CHECKS_RESULT"}
+          if common <= declared and native <= declared and not shared & declared:
+              mode = "monolithic"
+              expected_variables = common | native
+          elif common <= declared and shared <= declared and not native & declared:
+              mode = "shared"
+              expected_variables = common | shared
+          else:
+              raise SystemExit(f"unrecognized review-result environment: {sorted(declared)}")
+          referenced = set(re.findall(r"\$\{?([A-Z_]+)", script))
+          if not expected_variables <= referenced:
+              raise SystemExit(f"{mode}: production policy ignores required inputs")
+
+          statuses = ("success", "failure", "skipped", "cancelled")
+          count = 0
+          baseline = dict(
+              EVENT_NAME="pull_request", IS_DRAFT="false", CLASSIFY_RESULT="success",
+          )
+          if mode == "monolithic":
+              baseline.update(NEEDS_MACOS="true", SOURCE_RESULT="success", MACOS_RESULT="success")
+              terminal_result = "MACOS_RESULT"
+              for draft, native, classify, source, macos in itertools.product(
+                  ("true", "false"), ("true", "false"), statuses, statuses, statuses
+              ):
+                  expected = (
+                      draft == "false" and classify == source == "success"
+                      and (macos == "success" or (native == "false" and macos == "skipped"))
+                  )
+                  check(
+                      f"draft={draft} native={native} classify={classify} source={source} macos={macos}",
+                      expected, EVENT_NAME="pull_request", IS_DRAFT=draft,
+                      NEEDS_MACOS=native, CLASSIFY_RESULT=classify,
+                      SOURCE_RESULT=source, MACOS_RESULT=macos,
+                  )
+                  count += 1
+              for native in ("", "unknown"):
+                  check("missing/invalid classification", False, **{**baseline, "NEEDS_MACOS": native})
+                  count += 1
+          else:
+              baseline.update(CHECKS_RESULT="success")
+              terminal_result = "CHECKS_RESULT"
+              for draft, classify, checks in itertools.product(("true", "false"), statuses, statuses):
+                  expected = draft == "false" and classify == checks == "success"
+                  check(
+                      f"draft={draft} classify={classify} checks={checks}", expected,
+                      EVENT_NAME="pull_request", IS_DRAFT=draft,
+                      CLASSIFY_RESULT=classify, CHECKS_RESULT=checks,
+                  )
+                  count += 1
+
+          # Ready with skipped required work stays blocked until it succeeds.
+          # Returning to Draft must also revoke an otherwise successful result.
+          for draft, result, expected in (
+              ("true", "skipped", False),
+              ("false", "skipped", False),
+              ("false", "success", True),
+              ("true", "success", False),
+          ):
+              outcome = check(
+                  "draft-to-ready-to-draft", expected,
+                  **{**baseline, "IS_DRAFT": draft, terminal_result: result},
+              )
+              if draft == "true" and "Mark ready for review" not in outcome.stdout:
+                  raise SystemExit("Draft rejection lost its actionable diagnostic")
+              count += 1
+
+          for event in ("workflow_dispatch", "schedule"):
+              for result in statuses:
+                  check(
+                      f"{event} {terminal_result}={result}", result == "success",
+                      **{**baseline, "EVENT_NAME": event, "IS_DRAFT": "", terminal_result: result},
+                  )
+                  count += 1
+
+          # Keep every PR event covered without a path-based missing-check gap.
+          for path in ("quality.yml", "security-audit.yml"):
+              text = pathlib.Path(".github/workflows", path).read_text()
+              pr = text.split("  pull_request:\n", 1)[1].split("  workflow_dispatch:", 1)[0]
+              for event in ("opened", "synchronize", "reopened", "ready_for_review", "converted_to_draft"):
+                  if f"      - {event}\n" not in pr:
+                      raise SystemExit(f"{path}: missing PR event {event}")
+              if "    paths:" in pr or "    paths-ignore:" in pr:
+                  raise SystemExit(f"{path}: PR checks must not disappear behind path filters")
+          # Required PR contexts must never be emitted by maintenance/push runs,
+          # even as skipped jobs. Build the expression delimiters at runtime so
+          # GitHub does not interpolate the expected literal YAML before Python.
+          expressions = (
+              ("quality.yml", "review-result",
+               "github.event_name == 'pull_request' && 'Review result' || 'Maintenance result'"),
+              ("security-audit.yml", "rustsec-pr",
+               "github.event_name == 'pull_request' && format('RustSec PR ({0})', matrix.directory) || format('RustSec PR inactive ({0})', matrix.directory)"),
+              ("review-policy-tests.yml", "review-policy",
+               "github.event_name == 'pull_request' && 'Review policy regression fixtures' || 'Review policy development fixtures'"),
+          )
+          for path, job_id, expression in expressions:
+              text = pathlib.Path(".github/workflows", path).read_text()
+              marker = f"  {job_id}:\n"
+              if text.count(marker) != 1:
+                  raise SystemExit(f"{path}: expected one {job_id} job")
+              job = re.split(r"\n  (?=\S)", text.split(marker, 1)[1], maxsplit=1)[0]
+              expected_name = "    name: $" + "{{ " + expression + " }}" + "\n"
+              if expected_name not in job:
+                  raise SystemExit(f"{path}: required PR check context is not isolated by event")
+
+          # Exercise the real classifier against a synthetic Git repository.
+          # This does not execute application code or touch the checked-out tree.
+          import tempfile
+          classifier_step = workflow.split("      - name: Select the proportional validation tier\n", 1)[1]
+          lines = classifier_step.split("        run: |\n", 1)[1].splitlines()
+          body = []
+          for line in lines:
+              if line.strip() and not line.startswith("          "):
+                  break
+              body.append(line)
+          classifier = textwrap.dedent("\n".join(body))
+          cases = (
+              ("AGENTS.md", "false", "false"),
+              (".github/AGENTS.md", "false", "false"),
+              (".github/CODEOWNERS", "false", "false"),
+              (".github/PULL_REQUEST_TEMPLATE.md", "false", "false"),
+              ("docs/PR_REVIEW_POLICY.md", "false", "false"),
+              (".github/workflows/quality.yml", "true", "true"),
+              (".github/workflows/security-audit.yml", "true", "true"),
+              ("scripts/ci/publish-release.py", "true", "true"),
+              ("rust/crates/synthetic/src/lib.rs", "true", "false"),
+              ("app/Synthetic.swift", "true", "true"),
+              ("VERSION", "true", "true"),
+          )
+          with tempfile.TemporaryDirectory(prefix="switch-policy-") as temporary:
+              root = pathlib.Path(temporary)
+              source = root / "src"
+              source.mkdir()
+              def git(*args):
+                  return subprocess.check_output(["git", "-C", str(source), *args], text=True).strip()
+              git("init", "-q")
+              git("config", "user.name", "Policy Fixture")
+              git("config", "user.email", "fixture@example.invalid")
+              git("commit", "--allow-empty", "-qm", "synthetic baseline")
+              for index, (path, native, app) in enumerate(cases):
+                  base = git("rev-parse", "HEAD")
+                  target = source / path
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  target.write_text(f"synthetic fixture {index}\n")
+                  git("add", "--", path)
+                  git("commit", "-qm", f"synthetic case {index}")
+                  head = git("rev-parse", "HEAD")
+                  output = root / f"outputs-{index}"
+                  result = subprocess.run(
+                      ["bash", "-euo", "pipefail", "-c", classifier], cwd=root,
+                      env={**os.environ, "EVENT_NAME": "pull_request",
+                           "BASE_SHA": base, "HEAD_SHA": head, "GITHUB_SHA": head,
+                           "CANDIDATE_SHA": "", "MANUAL_BUILD_APP": "false",
+                           "GITHUB_OUTPUT": str(output)},
+                      text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                  )
+                  if result.returncode:
+                      raise SystemExit(f"classifier failed for {path}: {result.stdout}")
+                  values = dict(line.split("=", 1) for line in output.read_text().splitlines())
+                  if values.get("needs_macos") != native or values.get("needs_app") != app:
+                      raise SystemExit(f"classifier mismatch for {path}: {values}")
+
+          release = pathlib.Path(".github/workflows/release.yml").read_text()
+          if '          [[ "$GITHUB_REF" == refs/heads/main ]]\n' not in release:
+              raise SystemExit("release identity is missing the main-only check")
+          publish = release.split("  publish:\n", 1)[1]
+          if "    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && needs.candidate.result == 'success'\n" not in publish:
+              raise SystemExit("publish job is missing its independent main-only check")
+          if "prepare_reviewed" in workflow or "prepare-reviewed:" in workflow:
+              raise SystemExit("one-time reviewed preparation remains reachable")
+          if pathlib.Path(".github/workflows/reviewed-prepare.yml").exists():
+              raise SystemExit("one-time reviewed preparation workflow was not retired")
+
+          print(f"PASS: {mode}: {count} production-policy fixtures, {len(cases)} path fixtures, PR events, isolated contexts, and release/retirement contracts")
+          PY
+      - name: Verify the release publisher with offline API and branch fixtures
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 scripts/ci/test-publish-release.py
