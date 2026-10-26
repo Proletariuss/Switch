@@ -252,7 +252,7 @@ def build(api, version, commit, destination, workspace):
     stage = workspace / "stage"
     stage.mkdir(mode=0o700)
     # All tar entry bytes/types/modes and safe internal symlink ancestry were checked above.
-    subprocess.run(["tar", "-xzf", str(archive), "-C", str(stage)], check=True, timeout=300)
+    subprocess.run(["tar", "-xzpf", str(archive), "--no-same-owner", "-C", str(stage)], check=True, timeout=300)
     compare_app(stage / "Switch.app", manifest)
     signature(stage / "Switch.app")
     os.symlink("/Applications", stage / "Applications")
