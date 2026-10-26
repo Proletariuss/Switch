@@ -14,7 +14,7 @@
   <img alt="macOS" src="https://img.shields.io/badge/macOS-27.0%2B-black?logo=apple&logoColor=white">
   <img alt="Architektur" src="https://img.shields.io/badge/Architektur-Apple%20Silicon-blue">
   <img alt="Backend" src="https://img.shields.io/badge/Backend-Rust-black?logo=rust&logoColor=white">
-  <img alt="Version" src="https://img.shields.io/badge/Version-3.51-2f81f7">
+  <img alt="Version" src="https://img.shields.io/badge/Version-3.52-2f81f7">
 </p>
 
 ## Verbindliche Projektrichtlinie: Kein Betrug, kein Missbrauch
@@ -34,13 +34,19 @@ Diese Regeln gelten für alle Nutzer. Sie beschreiben die Verhaltensanforderunge
 
 ## Projekt und Veröffentlichungsstand
 
-Switch bündelt USB/QMI-Module, PC/SC- und BLE-Kartenleser, eSIM-Profile auf physischen Karten, VoWiFi/IMS, SMS und Telefonie in einer macOS-Anwendung. Die veröffentlichte Version ist **3.51, Build 351, mit Rust-Backend 3.51.0**.
+Switch bündelt USB/QMI-Module, PC/SC- und BLE-Kartenleser, eSIM-Profile auf physischen Karten, VoWiFi/IMS, SMS und Telefonie in einer macOS-Anwendung. Der aktuelle Quellstand bereitet **3.52, Build 352, mit Rust-Backend 3.52.0** vor. Das Versionsetikett allein bestätigt weder eine abgeschlossene Prüfung noch eine veröffentlichte Binärdatei; maßgeblich sind die Anlagen und Nachweise des zugehörigen GitHub Release.
 
 Das Repository ist seit dem **26. Oktober 2026 öffentlich**. Die Veröffentlichung des Quellcodes bestätigt keine vollständige Abnahme aller Geräte, Netzbetreiber oder Dauerbetriebsszenarien.
 
-Der Tag `v3.51` bleibt dem eingefrorenen Quellstand des vorhandenen Installationspakets zugeordnet. `main` enthält seit dem 25. Oktober 2026 einen späteren Entwicklungsstand mit dem Status `source-not-final-G0B`. Weitere Änderungen werden über GitHub geprüft; sie machen das vorhandene 3.51-Paket nicht automatisch zu einem neuen Build. Einzelheiten zur Herkunft stehen in [SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md).
+Der Tag `v3.51` bleibt unverändert dem eingefrorenen Quellstand des historischen DMG zugeordnet. Neue Versionen erhalten einen eigenen höheren Versionsstand, einen neuen vollständigen Cloud-Prüflauf und ein GitHub Release für genau denselben Quell-SHA. Das 3.51-DMG wird weder umbenannt noch als 3.52 ausgeliefert. Der [Cloud-Veröffentlichungsvertrag](docs/CLOUD_RELEASE_CONTRACT.md) beschreibt den einzigen manuellen Einstieg über `release.yml`; historische Herkunftsnachweise stehen in [SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md).
 
 ## Download
+
+[Neueste veröffentlichte Version](https://github.com/Proletariuss/Switch/releases/latest) · [Release 3.52 nach seiner Freigabe](https://github.com/Proletariuss/Switch/releases/tag/v3.52)
+
+Neue Releases liefern einen `Switch-<Version>-candidate-<Commit-SHA>-macOS27-arm64.app.tar.gz`, das unveränderte `candidate-manifest.json`, `test-reports.tar.gz` und eine veröffentlichungsbezogene `SHA256SUMS`. Der SHA im Dateinamen bindet die App an ihren geprüften Quellstand. Ein noch nicht vorhandenes Release ist nicht als abgeschlossen anzusehen; bis zur Freigabe kann „Neueste Version“ weiterhin auf 3.51 zeigen. Für 3.52 wird kein neues DMG erzeugt.
+
+### Historisches Installationspaket 3.51
 
 | Version | Plattform | Installationspaket | SHA-256 |
 | --- | --- | --- | --- |
@@ -50,8 +56,8 @@ Der Tag `v3.51` bleibt dem eingefrorenen Quellstand des vorhandenen Installation
 
 ## Installation
 
-1. Das DMG herunterladen und öffnen.
-2. `Switch.app` in den Ordner „Programme“ ziehen.
+1. Für neue Releases App-Tarball, Manifest, Testarchiv und `SHA256SUMS` aus derselben Veröffentlichung in einen gemeinsamen Ordner herunterladen und die Prüfsummen wie unten beschrieben kontrollieren.
+2. Das App-Archiv mit dem Archivierungsprogramm oder `tar -xzf <App-Dateiname>.app.tar.gz` entpacken und `Switch.app` in den Ordner „Programme“ ziehen. Nur beim historischen 3.51-DMG stattdessen das DMG öffnen und die enthaltene App kopieren.
 3. Bei Bedarf die von macOS angeforderten Berechtigungen für Bluetooth, Mitteilungen und Mikrofon erteilen.
 4. Das Paket ist ad hoc signiert und **nicht von Apple notarisiert**. Falls Gatekeeper den Start blockiert, zunächst Herkunft und Prüfsumme kontrollieren und die Freigabe anschließend unter „Systemeinstellungen → Datenschutz & Sicherheit“ vornehmen.
 
@@ -123,7 +129,9 @@ Die Skripte setzen die im Projekt festgelegte Anordnung mit benachbarten `build/
 
 ## Prüfstand und bekannte Grenzen
 
-Für die veröffentlichten 3.51-Artefakte wurden folgende Prüfungen dokumentiert:
+Für 3.52 wird die vollständige Softwareprüfung einschließlich Rust, Swift, App-Build, Bundle-Identität und tatsächlichem Upload-Rücklesen erneut auf GitHub ausgeführt. Diese README behauptet keinen vorweggenommenen Erfolg. Die zugehörigen Release-Anlagen und ihr exakter SHA/Run bestimmen den nachgewiesenen Stand. Frühere 3.51-Läufe ersetzen diesen Nachweis nicht.
+
+Für die **historischen veröffentlichten 3.51-Artefakte** wurden folgende Prüfungen dokumentiert:
 
 - Dateisystemprüfung des DMG;
 - strenge Prüfung der Signaturstruktur von App und eingebetteten Komponenten;
@@ -133,9 +141,19 @@ Für die veröffentlichten 3.51-Artefakte wurden folgende Prüfungen dokumentier
 
 **Nicht als vollständig abgenommen gelten:** alle USB/PCSC/BLE-Gerätekombinationen, sämtliche VoWiFi/IMS-Netzbetreiberregistrierungen, reale SMS-Zustellung, ausgehende und eingehende Anrufe, Audioqualität, Wiederherstellung nach Netzverlust oder Ruhezustand sowie Langzeitstabilität. Maßgeblich sind getrennte Nachweise für die jeweilige Version, Karte, Hardware und Netzwerkumgebung.
 
-Das DMG ist ad hoc signiert und nicht notarisiert; es ist kein von Apple notarisiertes Developer-ID-Paket. Switch ersetzt keinen Notrufdienst und garantiert keine jederzeitige Kommunikationsverfügbarkeit.
+Die App-Pakete sind ad hoc signiert und nicht notarisiert; es ist kein von Apple notarisiertes Developer-ID-Paket. Switch ersetzt keinen Notrufdienst und garantiert keine jederzeitige Kommunikationsverfügbarkeit.
 
 ## Integrität prüfen
+
+Für neue Releases alle drei Nutzdaten-Anlagen und `SHA256SUMS` in denselben Ordner legen:
+
+```bash
+shasum -a 256 -c SHA256SUMS
+```
+
+Die veröffentlichungsbezogene Datei prüft App-Tarball, Originalmanifest und Testarchiv anhand ihrer flachen Dateinamen. Die ursprüngliche Candidate-Prüfsummendatei bleibt zusätzlich als `test-reports/candidate-SHA256SUMS` im Testarchiv erhalten. Das Manifest bindet die Originalberichte, Version, Build, Quell-SHA, Git-Tree, Quell-Digest und Werkzeugversionen. Actions-Zwischenartefakte laufen nach sieben Tagen ab; Release-Anlagen haben diese automatische Ablaufzeit nicht.
+
+Nur für das historische 3.51-DMG:
 
 ```bash
 shasum -a 256 Switch-3.51-macOS27.dmg
