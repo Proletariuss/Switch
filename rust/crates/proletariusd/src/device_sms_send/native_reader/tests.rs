@@ -257,6 +257,8 @@ impl Fixture {
     }
     fn request(&self, id: &str, text: &str) -> SendRequest {
         SendRequest {
+        identity_version: 1,
+        intent_nonce: String::new(),
             client_request_id: id.into(),
             phone: "+447700900123".into(),
             message: text.into(),

@@ -1,7 +1,5 @@
 //! Durable at-most-once dispatch permission. This ledger binds a payload to an
 //! opaque Go process/route reservation; it does not assert physical SIM identity.
-// Compile-only codec: no production Store/HTTP/owner path selects v2 yet.
-#[cfg(any(test, feature = "device-send-authority-codec"))]
 mod authority_v2;
 
 use bytes::Bytes;
@@ -14,7 +12,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::{
     collections::BTreeMap,
-    path::Path,
+    path::{Path, PathBuf},
+    sync::{Arc, Mutex, OnceLock, Weak},
     time::{SystemTime, UNIX_EPOCH},
 };
 
@@ -25,7 +24,41 @@ const MAX_BYTES: u64 = 32 * 1024 * 1024;
 pub(crate) struct Store(
     crate::sms_store_health::GuardedArchive,
     crate::device_sms_send::owner::Owner,
+    Option<Arc<authority_v2::seal_adapter::Adapter>>,
 );
+/// Constructed only while open_with_authority owns an unpublished fresh Owner.
+pub(crate) struct StartupMigration {
+    proof: crate::daemon_lifetime::RootProof,
+}
+impl StartupMigration {
+    pub(in crate::device_send_store) fn validate(&self, proof: &crate::daemon_lifetime::RootProof) -> bool {
+        self.proof.same_authority(proof)
+    }
+}
+type Adapter = authority_v2::seal_adapter::Adapter;
+static AUTHORITIES: OnceLock<Mutex<BTreeMap<PathBuf, Weak<Adapter>>>> = OnceLock::new();
+fn registered(root: &Path) -> Result<Option<Arc<Adapter>>, StoreError> {
+    let mut registry = AUTHORITIES.get_or_init(Default::default).lock().map_err(|_| error("sms_store_unavailable"))?;
+    registry.retain(|_, authority| authority.strong_count() > 0);
+    Ok(registry.get(root).and_then(Weak::upgrade))
+}
+fn codec_error(error: authority_v2::CodecError) -> StoreError {
+    use authority_v2::CodecError::*;
+    error_code(match error {
+        InvalidJson | InvalidReserve | InvalidIdentity => "invalid_request",
+        Conflict | LegacyCollision => "send_intent_conflict",
+        Retired => "mutation_identity_retired",
+        NotIssued => "mutation_identity_not_issued",
+        NotFound => "send_intent_not_found",
+        UpgradeRequired => "mutation_identity_upgrade_required",
+        AuthorityMismatch => "mutation_authority_mismatch",
+        SequenceExhausted => "mutation_sequence_exhausted",
+        Capacity => "ledger_full",
+        InvalidSnapshot | LegacyUnavailable => "sms_store_unavailable",
+    })
+}
+fn error_code(code: &str) -> StoreError { StoreError::Configuration(code.into()) }
+
 #[derive(Clone, Deserialize, Serialize)]
 struct Record {
     client_request_id: String,
@@ -122,25 +155,62 @@ fn write(items: &mut Vec<Value>, records: BTreeMap<String, Record>) {
 fn record_value(record: &Record, can_submit: bool) -> Value {
     let mut v = serde_json::to_value(record).expect("record serialization");
     v["can_submit"] = json!(can_submit);
+    v["identity_version"] = json!(1);
     v
 }
 impl Store {
+    pub(crate) fn strict_v2_body(bytes: &[u8]) -> Result<Value, StoreError> {
+        authority_v2::strict_value(bytes, 1024 * 1024).map_err(codec_error)
+    }
+    pub(crate) fn reserve_body(bytes: &[u8]) -> Result<Value, StoreError> {
+        authority_v2::decode_reserve_bytes(bytes).map_err(codec_error)?;
+        Self::strict_v2_body(bytes)
+    }
     pub(crate) fn open(root: &Path) -> Result<Self, StoreError> {
         Ok(Self(
             ArchiveStore::with_limits(root.join("device-send-ledger.json"), MAX_BYTES, 1)?.into(),
             Default::default(),
+            registered(root)?,
         ))
     }
+    pub(crate) fn open_with_authority(
+        root: &Path, proof: crate::daemon_lifetime::RootProof,
+    ) -> Result<Self, StoreError> {
+        let mut store = Self::open(root)?;
+        if store.2.is_some() { return Err(error("sms_store_unavailable")); }
+        // A virgin root gets a valid empty v1 snapshot under the existing
+        // presence-aware writer. Previously missing evidence still rejects.
+        if !store.0.path().exists() { store.recover()?; }
+        let startup = StartupMigration { proof: proof.clone() };
+        let adapter = Arc::new(Adapter::open_or_migrate(root, proof, startup)
+            .map_err(|_| error("sms_store_unavailable"))?);
+        store.2 = Some(adapter.clone());
+        AUTHORITIES.get_or_init(Default::default).lock()
+            .map_err(|_| error("sms_store_unavailable"))?
+            .insert(root.to_path_buf(), Arc::downgrade(&adapter));
+        store.recover()?;
+        Ok(store)
+    }
+
+    pub(crate) fn is_v2(&self) -> bool { self.2.is_some() }
+
     pub(crate) fn send_owner(&self) -> crate::device_sms_send::owner::Owner {
         self.1.clone()
     }
     pub(crate) fn status(&self) -> proletarius_api_contract::SmsStoreStatus {
+        if self.2.as_ref().is_some_and(|adapter| adapter.restart_required()) {
+            return proletarius_api_contract::SmsStoreStatus {
+                state: "unavailable", reason: Some("store_io_failed"), restart_required: true,
+            };
+        }
         self.0.status()
     }
     pub(crate) fn recover(&self) -> Result<(), StoreError> {
+        if self.2.is_some() { return self.apply("recover", json!({})).map(|_|()); }
         self.recover_bindings(|_| true)
     }
     pub(crate) fn recover_go_owned(&self) -> Result<(), StoreError> {
+        if self.2.is_some() { return self.apply("recover_go", json!({})).map(|_|()); }
         self.recover_bindings(crate::device_sms_send::go_recovery_binding)
     }
     fn recover_bindings(&self, lost_owner: impl Fn(&str) -> bool) -> Result<(), StoreError> {
@@ -165,6 +235,10 @@ impl Store {
         expected_attempt: Option<&str>,
         confirm: bool,
     ) -> Result<bool, StoreError> {
+        if self.2.is_some() {
+            return self.apply("archive_receipt", json!({"item":item,"attempt":expected_attempt,"confirm":confirm}))?
+                .as_bool().ok_or_else(||error("ledger_corrupt"));
+        }
         let id = token(item, "send_request_id")?;
         self.0.mutate_if_changed(|items| {
             let mut records = read(items, self.0.path().exists())?;
@@ -197,6 +271,13 @@ impl Store {
         })
     }
     pub(crate) fn apply(&self, action: &str, body: Value) -> Result<Value, StoreError> {
+        if let Some(adapter) = &self.2 {
+            return adapter.transact(|active, frozen| authority_v2::production::apply(active, frozen, action, &body))
+                .map_err(|failure| match failure {
+                    authority_v2::seal_adapter::Error::Rejected(code) => codec_error(code),
+                    _ => error("sms_store_unavailable"),
+                });
+        }
         if action == "list" {
             let cursor = body["cursor"].as_str().unwrap_or("");
             if cursor.len() > 128 {
@@ -931,4 +1012,99 @@ mod tests {
             assert_eq!(fs::read(f.store.0.path()).unwrap(), bytes);
         }
     }
+    fn v2_reservation(store: &Store) -> Value {
+        let status=store.apply("authority",json!({})).unwrap();
+        json!({"identity_version":2,"family":"device_sms","authority_id":status["authority_id"],
+            "epoch":status["epoch"],"sequence":status["next_sequence"],
+            "client_request_id":status["next_client_request_id"],
+            "intent_nonce":"0123456789abcdef0123456789abcdef","purpose":"device_sms_send","device":"reader",
+            "payload":{"phone":"+12025550100","message":"fixture","expected_subscription_id":""}})
+    }
+    fn finish_v2(store: &Store) -> Value {
+        let reserved=store.apply("reserve",v2_reservation(store)).unwrap();
+        store.apply("prepare",json!({"identity_version":2,"intent_nonce":reserved["intent_nonce"],
+            "client_request_id":reserved["client_request_id"],"phone":"+12025550100","message":"fixture",
+            "device":"reader","expected_subscription_id":"","subscription_id":"","binding":"v2-route"})).unwrap();
+        store.apply("claim",json!({"identity_version":2,"intent_nonce":reserved["intent_nonce"],
+            "client_request_id":reserved["client_request_id"],"binding":"v2-route","attempt":"v2-attempt"})).unwrap();
+        store.apply("finish",json!({"client_request_id":reserved["client_request_id"],
+            "attempt":"v2-attempt","state":"accepted","segments":1,"archive_confirmed":true})).unwrap()
+    }
+    fn archive_row(record: &Value) -> Value {
+        let timestamp=time::OffsetDateTime::from_unix_timestamp_nanos(
+            i128::from(record["created_at_ms"].as_u64().unwrap())*1_000_000).unwrap()
+            .format(&time::format_description::well_known::Rfc3339).unwrap();
+        json!({"send_request_id":record["client_request_id"],"sender":record["phone"],
+            "content":record["message"],"device":record["device"],"subscription_id":record["subscription_id"],
+            "direction":"out","timestamp":timestamp})
+    }
+
+    #[test]
+    fn fresh_root_initializes_v2_but_missing_active_never_recreates_authority() {
+        let f=Fixture::new();
+        {
+            let lease=crate::daemon_lifetime::Lease::acquire(&f.root).unwrap();
+            let store=Store::open_with_authority(&f.root,lease.root_proof()).unwrap();
+            assert_eq!(store.apply("authority",json!({})).unwrap()["issued_high_water"],"0");
+            assert!(f.root.join("device-send-ledger.legacy-v1.json").is_file());
+            let legacy:Vec<Value>=serde_json::from_slice(&fs::read(f.root.join("device-send-ledger.legacy-v1.json")).unwrap()).unwrap();
+            assert_eq!(read(&legacy,true).unwrap().len(),0);
+            assert!(read(&serde_json::from_slice::<Vec<Value>>(&fs::read(f.root.join("device-send-ledger.json")).unwrap()).unwrap(),true).is_err());
+        }
+        fs::remove_file(f.root.join("device-send-ledger.json")).unwrap();
+        let lease=crate::daemon_lifetime::Lease::acquire(&f.root).unwrap();
+        assert!(Store::open_with_authority(&f.root,lease.root_proof()).is_err());
+        assert!(!f.root.join("device-send-ledger.json").exists());
+    }
+
+    #[tokio::test]
+    async fn v2_retired_imported_and_legacy_archives_remain_deletable() {
+        let f=Fixture::new();
+        f.store.apply("prepare",prepare("legacy-archive")).unwrap();
+        f.store.apply("claim",claim("legacy-archive","legacy-attempt")).unwrap();
+        let legacy=f.store.apply("finish",json!({"client_request_id":"legacy-archive",
+            "attempt":"legacy-attempt","state":"accepted","segments":1,"archive_confirmed":false})).unwrap();
+        let lease=crate::daemon_lifetime::Lease::acquire(&f.root).unwrap();
+        let store=Store::open_with_authority(&f.root,lease.root_proof()).unwrap();
+        let first=finish_v2(&store);
+        let archive=ArchiveStore::new(f.root.join("sms-archive.json"));
+        let legacy_item=archive_row(&legacy);
+        let first_item=archive_row(&first);
+        let mut imported=first_item.clone();imported["send_request_id"]=json!("imported-without-ledger");
+        crate::message_archive::ingest_messages_to(archive.clone(),
+            vec![legacy_item.clone(),first_item.clone(),imported.clone()]).await.unwrap();
+        for _ in 0..40 {finish_v2(&store);}
+        assert!(matches!(store.apply("get",json!({"client_request_id":first["client_request_id"]})),
+            Err(StoreError::Configuration(code)) if code=="mutation_identity_retired"));
+        for item in [legacy_item,first_item,imported] {
+            let id=crate::message_archive::cache_digest(&item);
+            assert_eq!(crate::message_archive::delete_ids_from_store(archive.clone(),vec![id]).await.unwrap(),1);
+        }
+        assert!(archive.load().unwrap().is_empty());
+        assert_eq!(store.apply("get",json!({"client_request_id":"legacy-archive"})).unwrap()["archive_confirmed"],true);
+        assert!(!store.status().restart_required);
+    }
+
+    #[test]
+    fn full_v1_migrates_without_removing_any_identity_and_old_ids_cannot_claim() {
+        let f=Fixture::new();
+        let mut records=BTreeMap::new();
+        for n in 0..MAX_RECORDS {
+            let id=format!("full-legacy-{n}");
+            records.insert(id.clone(),Record{client_request_id:id,phone:"+12025550100".into(),
+                message:"fixture".into(),device:"reader".into(),subscription_id:String::new(),
+                binding:"old-route".into(),state:"accepted".into(),attempt:"old-attempt".into(),
+                segments:1,archive_confirmed:true,created_at_ms:1000,updated_at_ms:1000});
+        }
+        f.store.0.mutate(|items|{write(items,records);Ok(())}).unwrap();
+        let original=fs::read(f.root.join("device-send-ledger.json")).unwrap();
+        let lease=crate::daemon_lifetime::Lease::acquire(&f.root).unwrap();
+        let store=Store::open_with_authority(&f.root,lease.root_proof()).unwrap();
+        assert_eq!(fs::read(f.root.join("device-send-ledger.legacy-v1.json")).unwrap(),original);
+        assert_eq!(store.apply("get",json!({"client_request_id":"full-legacy-9999"})).unwrap()["attempt"],"old-attempt");
+        assert!(store.apply("claim",json!({"client_request_id":"full-legacy-9999",
+            "binding":"old-route","attempt":"new-attempt"})).is_err());
+        assert_eq!(finish_v2(&store)["archive_confirmed"],true);
+    }
+
 }

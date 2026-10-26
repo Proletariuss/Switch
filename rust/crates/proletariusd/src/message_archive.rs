@@ -958,7 +958,15 @@ fn confirm_deleted_device_sends<'a>(
     for item in items {
         if item["direction"] == "out" && item["send_request_id"].as_str().is_some_and(|id| !id.is_empty()) {
             let root = store.path().parent().ok_or_else(|| StoreError::Configuration("archive root missing".into()))?;
-            crate::device_send_store::Store::open(root)?.archive_receipt(item, None, true)?;
+            match crate::device_send_store::Store::open(root)?.archive_receipt(item, None, true) {
+                Ok(_) => {}
+                // Imported/non-issued and retired identities cannot authorize
+                // archive repair. Deleting them needs no new ledger record.
+                Err(StoreError::Configuration(code)) if matches!(code.as_str(),
+                    "send_intent_not_found" | "mutation_identity_retired"
+                    | "mutation_identity_not_issued" | "mutation_authority_mismatch") => {}
+                Err(error) => return Err(error),
+            }
         }
     }
     Ok(())

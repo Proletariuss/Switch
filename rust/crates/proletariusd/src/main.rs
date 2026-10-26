@@ -529,7 +529,7 @@ async fn run(arguments: Vec<std::ffi::OsString>) -> Result<(), BackendFailure> {
     native_vowifi_session::configuration::initialize_config_path(&arguments, &data_root)
         .map_err(|_| BackendFailure::Io("native_carrier_overrides_invalid".into()))?;
     let (multistandby_store, device_send_store, forwarding_handoff_store) =
-        initialize_sms_stores(&data_root)?;
+        initialize_sms_stores_with_authority(&data_root, Some(lifetime.root_proof()))?;
     let device_sms_forwarding_store = device_forwarding_store::Store::open(&data_root)
         .map_err(|error| BackendFailure::Io(error.to_string()))?;
     let sms_forwarding = sms_forwarding::Service::new_with_admission(
@@ -550,8 +550,24 @@ async fn run(arguments: Vec<std::ffi::OsString>) -> Result<(), BackendFailure> {
     .await
 }
 
+#[cfg(test)]
 fn initialize_sms_stores(
     data_root: &Path,
+) -> Result<
+    (
+        multistandby_store::Store,
+        device_send_store::Store,
+        forwarding_handoff_store::Store,
+    ),
+    BackendFailure,
+> {
+
+    initialize_sms_stores_with_authority(data_root, None)
+}
+
+fn initialize_sms_stores_with_authority(
+    data_root: &Path,
+    proof: Option<daemon_lifetime::RootProof>,
 ) -> Result<
     (
         multistandby_store::Store,
@@ -567,8 +583,10 @@ fn initialize_sms_stores(
             "switchd-rs: Nwait store unavailable; new submissions disabled"
         ));
     }
-    let device_send_store =
-        device_send_store::Store::open(data_root).map_err(|e| BackendFailure::Io(e.to_string()))?;
+    let device_send_store = match proof {
+        Some(proof) => device_send_store::Store::open_with_authority(data_root, proof),
+        None => device_send_store::Store::open(data_root),
+    }.map_err(|e| BackendFailure::Io(e.to_string()))?;
     if device_send_store.recover().is_err() {
         crate::diagnostics::write_line(format_args!(
             "switchd-rs: device send store unavailable; new submissions disabled"

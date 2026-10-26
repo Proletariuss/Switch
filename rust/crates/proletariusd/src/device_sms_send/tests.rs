@@ -372,6 +372,8 @@ async fn rust_usb_session_binding_is_validated_without_go_route_rpc() {
 
 fn request(id: &str) -> SendRequest {
     SendRequest {
+        identity_version: 1,
+        intent_nonce: String::new(),
         client_request_id: id.into(),
         phone: "65075".into(),
         message: "fixture-only".into(),
@@ -1342,4 +1344,50 @@ async fn archive_reconciliation_rejects_changed_attempt_payload_and_concurrent_r
         "binding":original.binding,"attempt":"another-attempt"})).await.unwrap_or_else(|_| panic!());
     assert!(!claim.can_submit);
     assert_eq!(claim.attempt, original.attempt);
+}
+
+#[tokio::test]
+async fn v2_reserved_nonce_binding_claim_and_archive_are_one_dispatch() {
+    let mut f=Fixture::new().await;
+    let lease=crate::daemon_lifetime::Lease::acquire(&f.root).unwrap();
+    f.service.store=crate::device_send_store::Store::open_with_authority(&f.root,lease.root_proof()).unwrap();
+    let status:Value=f.service.ledger("authority",json!({})).await.unwrap_or_else(|_|panic!());
+    let reserve=json!({"identity_version":2,"family":"device_sms","authority_id":status["authority_id"],
+        "epoch":status["epoch"],"sequence":status["next_sequence"],"client_request_id":status["next_client_request_id"],
+        "intent_nonce":"0123456789abcdef0123456789abcdef","purpose":"device_sms_send","device":"dji",
+        "payload":{"phone":"65075","message":"fixture-only","expected_subscription_id":""}});
+    let reserved:Record=f.service.ledger("reserve",reserve.clone()).await.unwrap_or_else(|_|panic!());
+    assert_eq!(reserved.state,"reserved");
+    assert_eq!(f.hardware.captures.load(Ordering::SeqCst),0);
+    let body=||{
+        let mut value=request(&reserved.client_request_id);
+        value.identity_version=2;value.intent_nonce="0123456789abcdef0123456789abcdef".into();value
+    };
+    let mut wrong=body();wrong.intent_nonce="ffffffffffffffffffffffffffffffff".into();
+    assert_eq!(code(f.service.post(wrong,true,&AtomicBool::new(false)).await),"sms_intent_conflict");
+    assert_eq!(f.hardware.captures.load(Ordering::SeqCst),0);
+    let prepared=f.service.post(body(),true,&AtomicBool::new(false)).await.unwrap_or_else(|_|panic!());
+    assert_eq!(prepared["identity_version"],2);
+    assert_eq!(prepared["expected_subscription_id"],"");
+    for _ in 0..3 {assert!(f.service.post(body(),false,&AtomicBool::new(false)).await.is_ok());}
+    assert_eq!(f.hardware.sends.load(Ordering::SeqCst),1);
+    assert_eq!(f.service.archive.load().unwrap().len(),1);
+    let replay:Record=f.service.ledger("reserve",reserve).await.unwrap_or_else(|_|panic!());
+    assert_eq!(replay.state,"accepted");assert!(replay.archive_confirmed);
+}
+
+#[tokio::test]
+async fn v2_authority_query_rejects_mixed_or_unknown_fields_without_issuing() {
+    let mut f=Fixture::new().await;
+    let lease=crate::daemon_lifetime::Lease::acquire(&f.root).unwrap();
+    f.service.store=crate::device_send_store::Store::open_with_authority(&f.root,lease.root_proof()).unwrap();
+    let (status,value)=f.public_request(Method::GET,"/api/sms/send-intents?authority=2","",true,true).await;
+    assert_eq!(status,StatusCode::OK);assert_eq!(value["issued_high_water"],"0");
+    for query in ["authority=2&cursor=old","authority=2&client_request_id=old","authority=3"] {
+        let (status,_)=f.public_request(Method::GET,&format!("/api/sms/send-intents?{query}"),"",true,true).await;
+        assert_eq!(status,StatusCode::BAD_REQUEST);
+    }
+    let unchanged:Value=f.service.ledger("authority",json!({})).await.unwrap_or_else(|_|panic!());
+    assert_eq!(unchanged["issued_high_water"],"0");
+    assert_eq!(f.hardware.sends.load(Ordering::SeqCst),0);
 }

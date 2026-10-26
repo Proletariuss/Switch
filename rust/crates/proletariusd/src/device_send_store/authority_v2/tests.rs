@@ -113,6 +113,8 @@ fn cache(slot: &ReservedSlot) -> TerminalRecord {
         payload_fingerprint: slot.payload_fingerprint.clone(),
         payload: slot.payload.clone(),
         outcome: TerminalOutcome::NotDispatched,
+        execution: None,
+        created_at_ms: slot.created_at_ms,
     }
 }
 fn snapshot_value(state: &AuthoritySnapshot) -> Value {

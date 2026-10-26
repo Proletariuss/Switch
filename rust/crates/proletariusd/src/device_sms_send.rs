@@ -106,6 +106,8 @@ struct ClaimJob {
 
 #[derive(Default)]
 struct SendRequest {
+    identity_version: u8,
+    intent_nonce: String,
     client_request_id: String,
     phone: String,
     message: String,
@@ -130,7 +132,16 @@ impl<'de> Deserialize<'de> for SendRequest {
             fn visit_map<M: MapAccess<'de>>(self, mut map: M) -> Result<Self::Value, M::Error> {
                 let mut request = SendRequest::default();
                 while let Some(key) = map.next_key::<String>()? {
+                    if key.eq_ignore_ascii_case("identity_version") {
+                        let version = map.next_value::<u8>()?;
+                        if !matches!(version, 1 | 2) {
+                            return Err(serde::de::Error::custom("unsupported SMS identity version"));
+                        }
+                        request.identity_version = version;
+                        continue;
+                    }
                     let field = match key.to_ascii_lowercase().as_str() {
+                        "intent_nonce" => &mut request.intent_nonce,
                         "client_request_id" => &mut request.client_request_id,
                         "phone" => &mut request.phone,
                         "message" => &mut request.message,
@@ -151,6 +162,12 @@ impl<'de> Deserialize<'de> for SendRequest {
 
 #[derive(Clone, Deserialize, Serialize)]
 struct Record {
+    #[serde(default = "legacy_identity_version")]
+    identity_version: u8,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    intent_nonce: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    expected_subscription_id: Option<String>,
     client_request_id: String,
     phone: String,
     message: String,
@@ -166,6 +183,8 @@ struct Record {
     binding: String,
     attempt: String,
 }
+
+fn legacy_identity_version() -> u8 { 1 }
 
 #[derive(Deserialize)]
 struct Page {
@@ -229,6 +248,15 @@ fn ledger_result<T: serde::de::DeserializeOwned>(
             "未找到短信发送记录，请确认后重新准备",
         ),
         StoreError::Configuration(code) if code == "send_intent_conflict" => conflict(),
+        StoreError::Configuration(code) if matches!(code.as_str(),
+            "mutation_identity_retired" | "mutation_identity_not_issued"
+            | "mutation_identity_upgrade_required" | "mutation_authority_mismatch"
+            | "mutation_sequence_exhausted" | "ledger_full" | "invalid_request") => {
+            Failure(if code == "mutation_identity_retired" { StatusCode::GONE }
+                else if code == "invalid_request" { StatusCode::BAD_REQUEST }
+                else { StatusCode::CONFLICT },
+                json!({"code":code,"error":code,"retryable":false,"request_dispatched":false}))
+        }
         _ => unavailable(),
     })?;
     serde_json::from_value(value).map_err(|_| unavailable())
@@ -246,7 +274,9 @@ impl SendRequest {
                 || valid_token(&self.expected_subscription_id))
     }
     fn matches(&self, r: &Record) -> bool {
-        self.phone == r.phone
+        self.identity_version.max(1) == r.identity_version
+            && (r.identity_version == 1 || r.intent_nonce.as_deref() == Some(self.intent_nonce.as_str()))
+            && self.phone == r.phone
             && self.message == r.message
             && (self.device.is_empty() || self.device == r.device)
             && (self.expected_subscription_id.is_empty()
@@ -336,7 +366,7 @@ impl Service {
         let service = self.clone();
         let store = self.store.clone();
         let binding = record.binding.clone();
-        let body = json!({"client_request_id":record.client_request_id,"binding":binding,"attempt":attempt});
+        let body = json!({"identity_version":record.identity_version,"intent_nonce":record.intent_nonce,"client_request_id":record.client_request_id,"binding":binding,"attempt":attempt});
         let (result_tx, result_rx) = tokio::sync::oneshot::channel();
         let (accepted_tx, accepted_rx) = tokio::sync::oneshot::channel();
         let finished = self.spawn_owned(async move {
@@ -695,6 +725,12 @@ impl Service {
             .ledger("get", json!({"client_request_id":body.client_request_id}))
             .await;
         match existing {
+            Ok(record) if record.state == "reserved" => {
+                if !body.matches(&record) {
+                    if let Some(binding) = captured { self.release(&binding.binding).await; }
+                    return Err(conflict());
+                }
+            }
             Ok(record) => {
                 if let Some(binding) = captured {
                     self.release(&binding.binding).await;
@@ -711,7 +747,15 @@ impl Service {
                 }
                 return Err(failure);
             }
-            Err(_) => {}
+            Err(_) => {
+                if self.store.is_v2() {
+                    if let Some(binding) = captured { self.release(&binding.binding).await; }
+                    return Err(Failure(StatusCode::CONFLICT, json!({
+                        "code":if body.identity_version == 2 { "mutation_identity_not_issued" } else { "mutation_identity_upgrade_required" },"error":"新请求需要持久签发身份",
+                        "retryable":false,"request_dispatched":false
+                    })));
+                }
+            }
         }
         if cancel.load(Ordering::Acquire) {
             if let Some(binding) = captured {
@@ -799,7 +843,7 @@ impl Service {
                 }
             }
         };
-        let result: Result<Record> = self.ledger("prepare",json!({"client_request_id":body.client_request_id,"phone":body.phone,"message":body.message,"device":binding.device,"subscription_id":binding.subscription_id,"binding":stored_binding})).await;
+        let result: Result<Record> = self.ledger("prepare",json!({"identity_version":body.identity_version.max(1),"intent_nonce":body.intent_nonce,"client_request_id":body.client_request_id,"phone":body.phone,"message":body.message,"device":binding.device,"expected_subscription_id":body.expected_subscription_id,"subscription_id":binding.subscription_id,"binding":stored_binding})).await;
         if !result.as_ref().is_ok_and(|r| r.binding == stored_binding) {
             self.release(&binding.binding).await;
         }
@@ -808,7 +852,7 @@ impl Service {
     async fn project(&self, records: Vec<Record>) -> Vec<Value> {
         let bindings = records
             .iter()
-            .filter(|r| r.state == "prepared" && !self.superseded_binding(r))
+            .filter(|r| r.state == "prepared" && (r.identity_version == 2 || !self.store.is_v2()) && !self.superseded_binding(r))
             .map(|r| r.binding.clone())
             .collect::<Vec<_>>();
         let valid = if bindings.is_empty() {
@@ -820,6 +864,7 @@ impl Service {
             .into_iter()
             .map(|mut record| {
                 record.can_submit = record.state == "prepared"
+                    && (record.identity_version == 2 || !self.store.is_v2())
                     && valid.get(&record.binding) == Some(&true)
                     && !self.superseded_binding(&record);
                 if record.state == "submitting" {
@@ -1330,9 +1375,17 @@ where
         io_timeout: RPC_TIMEOUT,
         claims: CLAIMS.get_or_init(|| Arc::new(Semaphore::new(16))).clone(),
     };
+    let query = request.uri().query().unwrap_or("").to_owned();
     let result = if request.method() == Method::GET {
-        service.get(request.uri().query().unwrap_or("")).await
+        if query == "authority=2" {
+            service.ledger("authority", json!({})).await
+        } else {
+            service.get(&query).await
+        }
     } else {
+        if !query.is_empty() && query != "cancel=2" {
+            return respond(Err(coded(StatusCode::BAD_REQUEST, "invalid_request", "查询参数无效")));
+        }
         let prepare_only = request.uri().path() == "/api/sms/send-intents";
         let bytes = match crate::http_server::collect_body(request.into_body(), MAX_BODY).await {
             Ok(body) => body,
@@ -1346,6 +1399,25 @@ where
                 ))));
             }
         };
+        let inspected: Value = match serde_json::from_slice(&bytes) {
+            Ok(value) => value,
+            Err(_) => return respond(Err(coded(StatusCode::BAD_REQUEST, "invalid_request", "请求格式无效"))),
+        };
+        if inspected["identity_version"] == 2 {
+            if crate::device_send_store::Store::strict_v2_body(&bytes).is_err() {
+                return respond(Err(coded(StatusCode::BAD_REQUEST, "invalid_request", "请求字段重复或无效")));
+            }
+        }
+        if query == "cancel=2" || inspected.get("payload").is_some() {
+            if !prepare_only {
+                return respond(Err(coded(StatusCode::BAD_REQUEST, "invalid_request", "签发必须使用准备接口")));
+            }
+            let body = match crate::device_send_store::Store::reserve_body(&bytes) {
+                Ok(body) => body,
+                Err(_) => return respond(Err(coded(StatusCode::BAD_REQUEST, "invalid_request", "签发请求无效"))),
+            };
+            return respond(supervise_reservation(service, body, query == "cancel=2").await);
+        }
         let mut decoder = serde_json::Deserializer::from_slice(&bytes);
         let body = match SendRequest::deserialize(&mut decoder) {
             Ok(body) => body,
@@ -1382,6 +1454,11 @@ fn ledger_storage_result(
                     | "send_intent_not_found"
                     | "send_intent_conflict"
                     | "ledger_full"
+                    | "mutation_identity_retired"
+                    | "mutation_identity_not_issued"
+                    | "mutation_identity_upgrade_required"
+                    | "mutation_authority_mismatch"
+                    | "mutation_sequence_exhausted"
             ) =>
         {
             Ok(Err(StoreError::Configuration(code)))
@@ -1409,6 +1486,15 @@ async fn supervise(mut service: Service, body: SendRequest, prepare_only: bool) 
         .await
         .map(|output| output.into_inner())
         .unwrap_or_else(|_| Err(unknown()))
+}
+
+async fn supervise_reservation(mut service: Service, body: Value, cancel: bool) -> Result<Value> {
+    let job = service.store.send_owner().admit().map_err(owner_failure)?;
+    service.job = Some(job.clone());
+    job.spawn(async move {
+        let record: Record = service.ledger(if cancel { "cancel" } else { "reserve" }, body).await?;
+        Ok(service.project(vec![record]).await.remove(0))
+    }).await.map(|output| output.into_inner()).unwrap_or_else(|_| Err(unavailable()))
 }
 
 fn respond(result: Result<Value>) -> Response<Full<Bytes>> {
