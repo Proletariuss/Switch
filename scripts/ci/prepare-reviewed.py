@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Apply only root-authorized source review updates on a GitHub-hosted runner."""
 import hashlib
+import difflib
 import importlib.util
 import json
 import os
@@ -50,13 +51,27 @@ require(set(allowed) == changed_sources, "reviewed file allowlist does not match
 spec = importlib.util.spec_from_file_location("contracts", ROOT / "scripts/check-rust-migration-contracts.py")
 checker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(checker)
-before_tokens = {path: checker.normalized((ROOT / path).read_text()) for path in allowed if path.endswith(".rs")}
+def tokens(path):
+    return [token for token, _, _ in checker.lex((ROOT / path).read_text())]
+def formatting_only(before, after):
+    # Pinned rustfmt can insert/remove an optional final comma. No other token
+    # edit is allowed; the complete generated diff remains in review evidence.
+    for operation, i, j, x, y in difflib.SequenceMatcher(a=before, b=after, autojunk=False).get_opcodes():
+        if operation == "equal":
+            continue
+        if operation == "insert" and after[x:y] == [","] and y < len(after) and after[y] in (")", "]", "}"):
+            continue
+        if operation == "delete" and before[i:j] == [","] and j < len(before) and before[j] in (")", "]", "}"):
+            continue
+        return False
+    return True
+before_tokens = {path: tokens(path) for path in allowed if path.endswith(".rs")}
 for manifest in ["rust/Cargo.toml", "scripts/acceptance/daemon-capsule-fixture/Cargo.toml"]:
     subprocess.run(["cargo", "+1.98.0", "fmt", "--manifest-path", manifest, "--all"], check=True)
 formatted = set(git("diff", "--name-only").splitlines())
 require(formatted <= set(before_tokens), "formatting changed a file outside the reviewed Rust allowlist")
-for path, tokens in before_tokens.items():
-    require(checker.normalized((ROOT / path).read_text()) == tokens, "formatting changed reviewed tokens")
+for path, original in before_tokens.items():
+    require(formatting_only(original, tokens(path)), "formatting changed reviewed tokens: " + path)
 review = json.loads((ROOT / REVIEW).read_text())
 scopes = {key(row): row for row in review["scopes"]}
 require(len(scopes) == len(review["scopes"]), "duplicate source review scope")
