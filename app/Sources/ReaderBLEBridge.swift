@@ -25,6 +25,15 @@ final class ReaderBLEBridge {
     private let afterStartupAttempt: (() -> Void)?
     private let beforeAcceptWorker: ((Int32) -> Void)?
     private let afterAcceptRetired: ((Int32, Int32) -> Void)?
+    #if SWITCH_BLE_BRIDGE_TESTING
+    private var failNextAcceptPoll = false
+
+    func failNextAcceptPollForTesting() {
+        lifecycleLock.lock()
+        failNextAcceptPoll = true
+        lifecycleLock.unlock()
+    }
+    #endif
 
     init(standardRequestTimeout: TimeInterval = 35, cardOperationTimeout: TimeInterval = 130,
          staleProbeTimeout: TimeInterval = 0.2, beforeStaleUnlink: (() -> Void)? = nil,
@@ -404,7 +413,21 @@ final class ReaderBLEBridge {
             lifecycleLock.unlock()
             guard active else { return }
             var item = pollfd(fd: fd, events: Int16(POLLIN), revents: 0)
+            #if SWITCH_BLE_BRIDGE_TESTING
+            lifecycleLock.lock()
+            let injectFailure = failNextAcceptPoll
+            failNextAcceptPoll = false
+            lifecycleLock.unlock()
+            let ready: Int32
+            if injectFailure {
+                errno = EIO
+                ready = -1
+            } else {
+                ready = Darwin.poll(&item, 1, 100)
+            }
+            #else
             let ready = Darwin.poll(&item, 1, 100)
+            #endif
             if ready < 0 {
                 if errno == EINTR { continue }
                 return

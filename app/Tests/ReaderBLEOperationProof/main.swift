@@ -594,8 +594,8 @@ private func listenerRetirementTests(_ directory: String) {
                "successor listener was not closed exactly once")
     }
 
-    // Inject a real listening-socket shutdown without invalidating bridge state.
-    // Natural poll/accept retirement must clear that state before a restart.
+    // Inject a single EIO poll result only in this test build. The real error
+    // branch and unique fd owner must retire and clear state before a restart.
     let faultPath = directory + "/fault.sock"
     let fault = AcceptRetirementProbe()
     let startup = DispatchSemaphore(value: 0)
@@ -604,18 +604,18 @@ private func listenerRetirementTests(_ directory: String) {
     recoverable.start(socketPath: faultPath)
     expect(startup.wait(timeout: .now() + 2) == .success && fault.entered.wait(timeout: .now() + 2) == .success,
            "fault listener reached its worker barrier")
-    expect(Darwin.shutdown(fault.descriptor, SHUT_RDWR) == 0, "inject listener shutdown without closing its fd")
+    recoverable.failNextAcceptPollForTesting()
     fault.release.signal()
-    expect(fault.retired.wait(timeout: .now() + 2) == .success, "poll failure did not retire its listener")
+    expect(fault.retired.wait(timeout: .now() + 2) == .success, "injected poll failure did not retire its listener")
     expect(!socketExists(faultPath) && fault.closes.count == 1 && fault.closes[0].1 == 0,
-           "natural retirement left published state or leaked its descriptor")
+           "injected-error retirement left published state or leaked its descriptor")
     recoverable.start(socketPath: faultPath)
     expect(startup.wait(timeout: .now() + 2) == .success && fault.entered.wait(timeout: .now() + 2) == .success,
-           "natural retirement did not permit a new listener")
+           "injected-error retirement did not permit a new listener")
     fault.release.signal()
     waitForBridge(faultPath)
     expect(wire(faultPath, ["token": LocalBackendAuthentication.appToken, "action": "status"])["ok"] as? Bool == true,
-           "listener failed to recover after natural poll retirement")
+           "listener failed to recover after injected poll-error retirement")
     recoverable.stop()
     expect(fault.retired.wait(timeout: .now() + 2) == .success && fault.closes.count == 2
            && fault.closes.allSatisfy { $0.1 == 0 }, "restarted listener retirement leaked or double-closed")
@@ -634,7 +634,7 @@ private func listenerRetirementTests(_ directory: String) {
         expect(rapid.retired.wait(timeout: .now() + 2) == .success, "rapid restart leaked a retired worker")
     }
     expect(rapid.closes.count == 12 && rapid.closes.allSatisfy { $0.1 == 0 }, "rapid restart did not close each listener once")
-    print("BLE Unix bridge: queued/weak-self/idle/error retirement, successor isolation and rapid restart passed")
+    print("BLE Unix bridge: queued/weak-self/idle/injected-error retirement, successor isolation and rapid restart passed")
 }
 
 private func temporarySocketPathBoundaryTests() {
