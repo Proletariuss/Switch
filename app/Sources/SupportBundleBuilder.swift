@@ -148,3 +148,27 @@ enum SupportBundleBuilder {
         }
     }
 }
+
+/// Cancellation releases the view, not the filesystem owner. Keep one lease
+/// across the awaited detached reader/writer until its actual work has retired.
+final class SupportExportLease: @unchecked Sendable {
+    private static let lock = NSLock()
+    private static var busy = false
+    private var released = false
+    private init() {}
+    static func acquire() -> SupportExportLease? {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !busy else { return nil }
+        busy = true
+        return SupportExportLease()
+    }
+    func release() {
+        Self.lock.lock()
+        defer { Self.lock.unlock() }
+        guard !released else { return }
+        released = true
+        Self.busy = false
+    }
+    deinit { release() }
+}

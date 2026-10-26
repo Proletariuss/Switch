@@ -40,6 +40,10 @@ struct SupportDiagnosticsView: View {
         let date = ISO8601DateFormatter().string(from: Date()).replacingOccurrences(of: ":", with: "-")
         panel.nameFieldStringValue = "Switch-diagnostics-" + date + ".json"
         guard panel.runModal() == .OK, let destination = panel.url else { return }
+        guard let lease = SupportExportLease.acquire() else {
+            feedback = "上一份诊断包仍在处理，请等待后台文件操作结束后重试。"
+            return
+        }
         exportRevision &+= 1
         let revision = exportRevision
         exporting = true
@@ -48,7 +52,7 @@ struct SupportDiagnosticsView: View {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"
         request = Task { @MainActor in
-            defer { if revision == exportRevision { exporting = false; request = nil } }
+            defer { lease.release(); if revision == exportRevision { exporting = false; request = nil } }
             let runtime: Data?
             if isRunning { runtime = try? await APIClient(timeoutInterval: 6).getData("api/diagnostics/support") }
             else { runtime = nil }
