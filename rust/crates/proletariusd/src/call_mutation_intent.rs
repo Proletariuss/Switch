@@ -451,7 +451,7 @@ pub(crate) fn preflight(
     };
     match store.lookup(client_request_id, action, fingerprint) {
         Ok(Lookup::Missing) => None,
-        Ok(Lookup::Replay(response)) => Some(response_from_stored(&response, client_request_id)),
+        Ok(Lookup::Replay(response)) => Some(replay_response(&store, &response, client_request_id)),
         // Only a strongly bound non-module `admitted` may re-evaluate its live
         // owner and atomically claim it. Module admissions are quarantined by
         // lookup: no durable specific-call identity exists for recovery. A
@@ -484,7 +484,9 @@ where
         Err(_) => return unavailable_before_dispatch(),
     };
     match store.admit(&request) {
-        Ok(Admission::Replay(response)) => response_from_stored(&response, &request.client_request_id),
+        Ok(Admission::Replay(response)) => {
+            replay_response(&store, &response, &request.client_request_id)
+        }
         Ok(Admission::Receipt(record)) => receipt_response(&record),
         Ok(Admission::Dispatch) => {
             if store.claim(&request).is_err() {
@@ -498,7 +500,7 @@ where
                     &request.raw_payload_fingerprint,
                 ) {
                     Ok(Lookup::Replay(response)) => {
-                        response_from_stored(&response, &request.client_request_id)
+                        replay_response(&store, &response, &request.client_request_id)
                     }
                     Ok(Lookup::Receipt(record)) if record.phase != "admitted" => {
                         receipt_response(&record)
@@ -547,6 +549,23 @@ fn unavailable_before_dispatch() -> Response<Full<Bytes>> {
         "call_mutation_receipt_unavailable",
         "无法读取或安全记录原通话回执；本次未提交新的物理命令",
     )
+}
+
+fn replay_response(
+    store: &Store,
+    response: &StoredResponse,
+    client_request_id: &str,
+) -> Response<Full<Bytes>> {
+    // A visible terminal record may come from a failed directory fsync after
+    // rename. Reading those bytes is not yet durable acknowledgement authority.
+    if store.archive.confirm_directory_sync().is_err() {
+        return rejection(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "call_mutation_receipt_outcome_unknown",
+            "原通话终结回执的持久化尚未确认；请保留原请求编号继续查询",
+        );
+    }
+    response_from_stored(response, client_request_id)
 }
 
 fn response_from_stored(
@@ -1382,6 +1401,81 @@ mod tests {
         let records = decode_records(&store.archive.load().unwrap()).unwrap();
         assert_eq!(records[0].phase, "unknown");
         assert_eq!(records[0].dispatch_count, 0);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[tokio::test]
+    async fn visible_terminal_replay_requires_confirmed_directory_durability() {
+        let root = root();
+        let original = request(
+            "uncertain-terminal-directory-sync",
+            "dial",
+            54,
+            OwnerBinding {
+                owner: "reader",
+                generation: 29,
+            },
+        );
+        let store = Store::new(&root).unwrap();
+        assert!(matches!(store.admit(&original).unwrap(), Admission::Dispatch));
+        store.claim(&original).unwrap();
+        let terminal = StoredResponse {
+            status: 409,
+            body: r#"{"error":"call busy","code":"call_owner_busy"}"#.into(),
+        };
+        // The rename is visible, but finish has not confirmed its directory entry.
+        store.archive.fail_commit_at_for_test(4);
+        assert!(store.finish(&original, terminal.clone()).is_err());
+
+        let lookup_replay = match store
+            .lookup(
+                &original.client_request_id,
+                &original.action,
+                &original.raw_payload_fingerprint,
+            )
+            .unwrap()
+        {
+            Lookup::Replay(response) => response,
+            _ => panic!("visible terminal receipt must be available for replay"),
+        };
+        let admission_replay = match store.admit(&original).unwrap() {
+            Admission::Replay(response) => response,
+            _ => panic!("exact retry must not dispatch the original call again"),
+        };
+        for stored in [lookup_replay, admission_replay] {
+            assert_eq!(stored.status, terminal.status);
+            assert_eq!(stored.body, terminal.body);
+            store.archive.fail_commit_at_for_test(7);
+            let unknown = replay_response(&store, &stored, &original.client_request_id);
+            assert_eq!(unknown.status(), StatusCode::SERVICE_UNAVAILABLE);
+            assert!(!unknown.headers().contains_key("x-switch-call-terminal"));
+            assert!(!unknown.headers().contains_key("x-switch-call-request-id"));
+            let body = unknown.into_body().collect().await.unwrap().to_bytes();
+            let value: Value = serde_json::from_slice(&body).unwrap();
+            assert_eq!(value["code"], "call_mutation_receipt_outcome_unknown");
+        }
+
+        let confirmed = replay_response(&store, &terminal, &original.client_request_id);
+        assert_eq!(confirmed.status(), StatusCode::CONFLICT);
+        assert_eq!(confirmed.headers()["x-switch-call-terminal"], "true");
+        assert_eq!(
+            confirmed.headers()["x-switch-call-request-id"],
+            original.client_request_id
+        );
+        let replay = preflight(
+            &root,
+            &original.client_request_id,
+            &original.action,
+            &original.raw_payload_fingerprint,
+        )
+        .unwrap();
+        assert_eq!(replay.headers()["x-switch-call-terminal"], "true");
+        let replay = execute(&root, original, || async {
+            panic!("durable terminal retry must never dispatch")
+        })
+        .await;
+        assert_eq!(replay.status(), StatusCode::CONFLICT);
+        assert_eq!(replay.headers()["x-switch-call-terminal"], "true");
         fs::remove_dir_all(root).unwrap();
     }
 
