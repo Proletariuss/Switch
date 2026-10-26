@@ -655,14 +655,16 @@ class DerivativeFixtures(unittest.TestCase):
         self.invoke(api)
         self.assertEqual(api.writes, [])
         original = api.api
-        def changed(method, suffix, value=None, **kwargs):
-            if suffix.startswith("/contents/") and suffix.endswith("ref=" + COMMIT):
-                return {"type": "file", "sha": "d" * 40}
-            return original(method, suffix, value, **kwargs)
-        api.api = changed
-        with self.assertRaisesRegex(RuntimeError, "validation code differs"):
-            self.invoke(api)
-        self.assertEqual(api.writes, [])
+        for dependency in (".github/workflows/package-dmg.yml", "scripts/ci/package-dmg.py",
+                           "scripts/ci/publish-release.py"):
+            def changed(method, suffix, value=None, **kwargs):
+                if suffix == "/contents/" + dependency + "?ref=" + COMMIT:
+                    return {"type": "file", "sha": "d" * 40}
+                return original(method, suffix, value, **kwargs)
+            api.api = changed
+            with self.subTest(dependency=dependency), self.assertRaisesRegex(RuntimeError, "validation code differs"):
+                self.invoke(api)
+            self.assertEqual(api.writes, [])
 
     def test_draft_with_derivatives_is_rejected_without_writes(self):
         api = self.fixture()
