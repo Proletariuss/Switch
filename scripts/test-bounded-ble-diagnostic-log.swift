@@ -49,10 +49,10 @@ private final class ChildReadResult: @unchecked Sendable {
     static func queueAdmissionAndFailures() {
         let entered = DispatchSemaphore(value: 0), release = DispatchSemaphore(value: 0)
         let recorder = Recorder()
-        let logger = BoundedBLEDiagnosticLog(directory: { fatalError("sink must replace disk IO") }) { data in
+        let logger = BoundedBLEDiagnosticLog(directory: { fatalError("sink must replace disk IO") }, sink: { data in
             if recorder.values.isEmpty { entered.signal(); release.wait() }
             recorder.append(data)
-        }
+        })
         precondition(logger.enqueue("blocked writer"))
         precondition(entered.wait(timeout: .now() + 2) == .success)
         let start = DispatchTime.now().uptimeNanoseconds
@@ -68,10 +68,10 @@ private final class ChildReadResult: @unchecked Sendable {
 
         enum IOFailure: Error { case simulated }
         let failures = Recorder()
-        let broken = BoundedBLEDiagnosticLog(directory: { fatalError() }) { data in
+        let broken = BoundedBLEDiagnosticLog(directory: { fatalError() }, sink: { data in
             failures.append(data)
             throw IOFailure.simulated
-        }
+        })
         for _ in 0..<96 { emit(broken) }
         precondition(failures.values.count == 96, "IO failure leaked an admission slot")
         print("PASS production queue: 32 running+queued slots, immediate full drops, IO-failure slot release")
