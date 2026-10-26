@@ -21,6 +21,7 @@ use tokio::task::JoinHandle;
 pub(crate) const PREFIX: &str = "/api/internal/module-radio/";
 #[cfg(test)]
 mod bootstrap_projection_tests;
+mod diagnostics;
 mod esim_cleanup;
 mod native_startup;
 mod native_vowifi;
@@ -61,6 +62,8 @@ struct Inner {
     timer_fixture: Mutex<Option<TimerFixture>>,
     #[cfg(test)]
     usbnet_waiters: std::sync::atomic::AtomicUsize,
+    #[cfg(test)]
+    module_diagnostic_fixture: Mutex<Option<tokio::sync::mpsc::Sender<crate::support_diagnostics::module::Event>>>,
 }
 struct State {
     producer: String,
@@ -741,6 +744,8 @@ impl Service {
             timer_fixture: Mutex::new(None),
             #[cfg(test)]
             usbnet_waiters: std::sync::atomic::AtomicUsize::new(0),
+            #[cfg(test)]
+            module_diagnostic_fixture: Mutex::new(None),
         }))
     }
     /// True while a module SIM/radio workflow owns or reserves the shared AT
@@ -2973,7 +2978,7 @@ impl Service {
             }
             let (send, mut waiting) = oneshot::channel();
             let result = self
-                .submit_bound(
+                .submit_usbnet_with_diagnostics(
                     Job::PublicUSBNetMode {
                         mode,
                         deadline,

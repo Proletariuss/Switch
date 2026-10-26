@@ -222,3 +222,65 @@ async fn ordinary_status_still_borrows_existing_call_mode_read_reservation() {
     })).await.unwrap();
     fixture.service.finish_shutdown_receipt().await.unwrap();
 }
+
+#[tokio::test]
+async fn usbnet_busy_evidence_distinguishes_admission_and_actor_rejection() {
+    use crate::module_radio::tests::tests::request_public_route;
+    use crate::support_diagnostics::module::{Code, Event, Owner, ResultKind, Stage, Transport};
+    async fn next(receiver: &mut tokio::sync::mpsc::Receiver<Event>) -> Event {
+        tokio::time::timeout(Duration::from_secs(5), receiver.recv())
+            .await.unwrap().unwrap()
+    }
+    let mut fixture = Fixture::new();
+    fixture.configure().await;
+    let reservation = fixture.service.reserve_esim().await.unwrap();
+    let mut evidence = fixture.service.module_diagnostics_for_test();
+
+    // The eSIM reservation blocks USB-net inside the admitted radio actor.
+    let (status, _) = request_public_route(
+        fixture.service.clone(), "POST", "/api/network/usbnet",
+        r#"{"client_request_id":"esim-owned-actor","mode":1}"#,
+    ).await;
+    assert_eq!(status, 409);
+    fixture.empty();
+    let started = next(&mut evidence).await;
+    let failed = next(&mut evidence).await;
+    assert_eq!((started.stage, started.result), (Stage::Admission, ResultKind::Started));
+    assert_eq!((failed.stage, failed.result, failed.code),
+        (Stage::Physical, ResultKind::Failed, Code::Busy));
+    assert_eq!(failed.owner.owner, Owner::Esim);
+    assert_eq!(failed.owner.shared_voice_pins, 0);
+    assert_eq!(failed.transport, Transport::Usb);
+
+    let pin = fixture.service.borrow_shared_voice_operation("producer-1", true).unwrap();
+    let (status, _) = request_public_route(
+        fixture.service.clone(), "POST", "/api/network/usbnet",
+        r#"{"client_request_id":"shared-pin-admission","mode":1}"#,
+    ).await;
+    assert_eq!(status, 409);
+    fixture.empty();
+    let _started = next(&mut evidence).await;
+    let failed = next(&mut evidence).await;
+    assert_eq!((failed.stage, failed.result, failed.code),
+        (Stage::Admission, ResultKind::Failed, Code::Busy));
+    assert_eq!((failed.owner.owner, failed.owner.shared_voice_pins), (Owner::Esim, 1));
+
+    let service = fixture.service.clone();
+    let release = tokio::spawn(async move { service.release_esim(reservation).await });
+    let started = next(&mut evidence).await;
+    let deferred = tokio::time::timeout(Duration::from_secs(5), evidence.recv())
+        .await.unwrap().unwrap();
+    assert_eq!((started.stage, started.result),
+        (Stage::ReservationRelease, ResultKind::Started));
+    assert_eq!((deferred.stage, deferred.result, deferred.code),
+        (Stage::ReservationRelease, ResultKind::Deferred, Code::SharedVoicePin));
+    assert_eq!((deferred.owner.owner, deferred.owner.shared_voice_pins), (Owner::Esim, 1));
+    assert!(!release.is_finished());
+    drop(pin);
+    tokio::time::timeout(Duration::from_secs(5), release).await.unwrap().unwrap().unwrap();
+    let confirmed = next(&mut evidence).await;
+    assert_eq!((confirmed.stage, confirmed.result, confirmed.code),
+        (Stage::ReservationRelease, ResultKind::Succeeded, Code::None));
+    assert_eq!(confirmed.owner.owner, Owner::None);
+    fixture.service.finish_shutdown_receipt().await.unwrap();
+}

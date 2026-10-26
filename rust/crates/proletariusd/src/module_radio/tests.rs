@@ -133,7 +133,7 @@ pub(crate) mod tests {
     async fn request_module_notes(service: Service, method: &str, body: &str) -> (u16, Value) {
         request_public_route(service, method, "/api/esim/module-notes", body).await
     }
-    async fn request_public_route(
+    pub(crate) async fn request_public_route(
         service: Service,
         method: &str,
         path: &str,

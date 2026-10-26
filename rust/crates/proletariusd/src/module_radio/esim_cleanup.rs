@@ -1,5 +1,7 @@
 //! Retain eSIM release until the exact physical owner has stopped borrowing it.
 use super::*;
+use super::diagnostics::Snapshot;
+use crate::support_diagnostics::module::{Code, ResultKind, Stage};
 
 pub(super) struct AcquireBinding {
     producer_id: String,
@@ -70,20 +72,32 @@ impl Service {
     /// Call only after the real AT/APDU worker and its logical-channel cleanup
     /// have returned. This retains the release obligation, never the HTTP waiter.
     pub(crate) async fn release_esim(&self, reservation: EsimReservation) -> Result<(), Failure> {
+        let started = Instant::now();
         let identity = Identity {
             token: reservation.token.clone(),
             sequence: reservation.sequence,
         };
-        {
+        let (registration, snapshot) = {
             let mut state = self.0.state.lock().unwrap_or_else(|e| e.into_inner());
-            self.validate_esim_release(&state, &reservation, &identity)?;
-            if state.esim_release_pending.is_some() {
-                return Err(Failure::busy());
-            }
-            // Exactly one non-clone native reservation can own this obligation.
-            // Register before spawning so finalization/retirement must drain it.
-            state.esim_release_pending = Some((reservation.epoch, identity.clone()));
-            state.jobs += 1;
+            let result = self.validate_esim_release(&state, &reservation, &identity)
+                .and_then(|()| {
+                    if state.esim_release_pending.is_some() {
+                        return Err(Failure::busy());
+                    }
+                    // Exactly one non-clone reservation owns this obligation.
+                    // Finalization/retirement must drain it before sealing.
+                    state.esim_release_pending = Some((reservation.epoch, identity.clone()));
+                    state.jobs += 1;
+                    Ok(())
+                });
+            (result, Snapshot::capture(&state))
+        };
+        if let Err(error) = registration {
+            self.record_module_snapshot(
+                Stage::ReservationRelease, ResultKind::Failed, Code::from_error(error.code),
+                snapshot, started.elapsed(),
+            );
+            return Err(error);
         }
         let obligation = ReleaseObligation {
             inner: self.0.clone(),
@@ -93,7 +107,20 @@ impl Service {
         let service = self.clone();
         tokio::spawn(async move {
             let _obligation = obligation;
-            service.finish_esim_release(reservation, identity).await
+            service.record_module_snapshot(
+                Stage::ReservationRelease, ResultKind::Started, Code::None,
+                snapshot, started.elapsed(),
+            );
+            let result = service.finish_esim_release(reservation, identity, started).await;
+            let (outcome, code) = match &result {
+                Ok(()) => (ResultKind::Succeeded, Code::None),
+                Err(error) => (ResultKind::Failed, Code::from_error(error.code)),
+            };
+            service.record_module_snapshot(
+                Stage::ReservationRelease, outcome, code,
+                service.module_diagnostic_snapshot(), started.elapsed(),
+            );
+            result
         })
         .await
         .map_err(|_| Failure::stopped())?
@@ -134,6 +161,7 @@ impl Service {
         &self,
         reservation: EsimReservation,
         identity: Identity,
+        started: Instant,
     ) -> Result<(), Failure> {
         loop {
             // Register before checking pins to avoid missing their final drop.
@@ -143,14 +171,20 @@ impl Service {
             // This one retained cleanup has no queue-admission/30s timeout:
             // saturation cannot discard the only token that can settle it.
             let gate = self.0.gate.lock().await;
-            {
+            let (reason, snapshot) = {
                 let mut state = self.0.state.lock().unwrap_or_else(|e| e.into_inner());
                 self.validate_esim_release(&state, &reservation, &identity)?;
                 let owner = state.reservation.as_ref().unwrap();
-                if state.active_shared_voice_pins == 0
-                    && owner.active_voice_pins == 0
-                    && owner.active_reconnect_pins == 0
-                {
+                let reason = if state.active_shared_voice_pins != 0 {
+                    Some(Code::SharedVoicePin)
+                } else if owner.active_voice_pins != 0 {
+                    Some(Code::VoicePin)
+                } else if owner.active_reconnect_pins != 0 {
+                    Some(Code::ReconnectPin)
+                } else {
+                    None
+                };
+                if reason.is_none() {
                     // Same transition as an exact Reservation(release), under
                     // the actor gate and the same lock as identity validation.
                     state.reservation = None;
@@ -165,8 +199,13 @@ impl Service {
                     self.0.wake.notify_one();
                     return Ok(());
                 }
-            }
+                (reason.unwrap(), Snapshot::capture(&state))
+            };
             drop(gate);
+            self.record_module_snapshot(
+                Stage::ReservationRelease, ResultKind::Deferred, reason,
+                snapshot, started.elapsed(),
+            );
             finished.await;
         }
     }
