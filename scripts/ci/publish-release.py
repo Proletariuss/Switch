@@ -258,7 +258,8 @@ def verify_dmg_derivative(api, remote, assets, manifest, release):
     # A separate packaging controller may wrap an older accepted App. Its validator
     # and workflow must be identical to this reviewed publisher's source revision.
     if controller != os.environ["GITHUB_SHA"]:
-        for path in (".github/workflows/package-dmg.yml", "scripts/ci/package-dmg.py"):
+        for path in (".github/workflows/package-dmg.yml", "scripts/ci/package-dmg.py",
+                     "scripts/ci/publish-release.py"):
             revisions = [api.api("GET", "/contents/" + path + "?ref=" + ref)
                          for ref in (controller, os.environ["GITHUB_SHA"])]
             need(all(item is not None and item["type"] == "file" for item in revisions)
