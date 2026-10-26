@@ -235,7 +235,9 @@ final class DeviceSMSIssuanceJournal {
             guard lock >= 0 else { throw DeviceSMSJournalError.unavailable }
             defer { close(lock) }
             try validateFD(lock)
-            guard flock(lock, LOCK_EX | LOCK_NB) == 0 else { throw DeviceSMSJournalError.conflict }
+            while flock(lock, LOCK_EX) != 0 {
+                guard errno == EINTR else { throw DeviceSMSJournalError.unavailable }
+            }
             defer { flock(lock, LOCK_UN) }
             if newLock {
                 var info = stat()
