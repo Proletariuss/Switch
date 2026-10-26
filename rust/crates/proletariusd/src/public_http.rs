@@ -52,6 +52,7 @@ const ROUTES: &[(&str, &str)] = &[
     ("/api/calls/clear", "POST"),
     ("/api/calls/delete", "POST"),
     ("/api/diagnostics/events", "GET, HEAD"),
+    ("/api/diagnostics/support", "GET, HEAD"),
     ("/api/esim/notes", "GET, HEAD, PUT"),
     ("/api/esim/module-notes", "GET, HEAD, PUT"),
     ("/api/esim", "GET, HEAD"),
@@ -210,6 +211,7 @@ const LEGACY_METHOD_PATHS: &[&str] = &[
     "/api/status",
     "/api/multistandby/messages/send",
     "/api/diagnostics/events",
+    "/api/diagnostics/support",
     "/api/esim/notes",
     "/api/esim/module-notes",
     "/api/esim/phonebook/probe",
@@ -288,6 +290,19 @@ fn legacy_method_path(path: &str) -> bool {
         } else {
             path == *pattern
         }
+    })
+}
+
+/// Return only a reviewed static route template; never an actual dynamic ID.
+pub(crate) fn diagnostic_route(path: &str) -> Option<&'static str> {
+    ROUTES.iter().find_map(|(pattern, _)| {
+        let matched = if let Some((prefix, _)) = pattern.split_once('{') {
+            path.strip_prefix(prefix)
+                .is_some_and(|tail| !tail.is_empty() && !tail.contains('/'))
+        } else {
+            path == *pattern
+        };
+        matched.then_some(*pattern)
     })
 }
 

@@ -332,7 +332,7 @@ pub(crate) fn route_owner(method: &str, path: &str) -> RouteOwner {
     {
         return RouteOwner::Rust;
     }
-    if (method == "GET" && matches!(path, "/api/diagnostics/events"))
+    if (method == "GET" && matches!(path, "/api/diagnostics/events" | "/api/diagnostics/support"))
         || (method == "POST" && matches!(path, "/api/internal/diagnostics/events/append"))
     {
         return RouteOwner::Rust;
@@ -771,6 +771,14 @@ mod tests {
             crate::public_http::admission(&hyper::Method::POST, "/api/reader/vowifi/proxy-check"),
             crate::public_http::Admission::Allowed
         );
+    }
+
+    #[test]
+    fn support_snapshot_is_read_only_and_rust_owned() {
+        for method in ["GET", "HEAD"] {
+            assert_eq!(route_owner(method, "/api/diagnostics/support"), RouteOwner::Rust);
+        }
+        assert_eq!(route_owner("POST", "/api/diagnostics/support"), RouteOwner::Unknown);
     }
 
     #[test]
