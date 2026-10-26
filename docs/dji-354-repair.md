@@ -53,6 +53,22 @@ CCHC-Abschluss, HTTP 409 ohne USB-Netzschreibbefehl, tatsächliche Freigabe,
 SMS-/Metadatenbereitschaft und HTTP 200 mit genau einem USB-Netzschreibbefehl.
 `needs_reboot=true` bleibt erhalten; dies behauptet weder Neustart noch Internetzugang.
 
+## Begrenztes Warten auf interne Leseabfragen
+
+Auch normale Metadatenabfragen und der Startup-Warmup reservieren kurzzeitig den
+SIM-Kanal. Nur diese beiden internen Pfade erhalten einen privaten Lesemarker;
+HTTP-Anfragen können ihn nicht setzen. Der Netzmoduswechsel wartet innerhalb
+seiner bestehenden absoluten 25-Sekunden-Frist auf deren Freigabe, ohne Actor-Slot
+oder Gate festzuhalten. Danach wird dieselbe Gerätebindung erneut geprüft.
+Normale eSIM-Schreibvorgänge, Anrufe, Pins und unklare Ergebnisse werden weiterhin
+nicht verdrängt. Ein Timeout erzeugt keinen Schreibbefehl.
+
+Sechs zusätzliche Grenztests prüfen Freigabe, einmaliges Schreiben und
+dauerhafte Antwortwiederholung, unveränderte echte Konflikte, nicht fälschbare
+Markierung, Timeout, Retirement und HTTP-Abbruch ohne Wiederholung.
+Eine weitere Startup-Fixture verbindet den tatsächlichen CCHC-Abschluss mit
+einer wartenden HTTP-Anfrage und genau einem späteren USB-Netzschreibbefehl.
+
 ## AT-Antwortgrenzen und Diagnose
 
 Statusabfragen verlangen eine vollständige terminale Antwortzeile.
@@ -78,6 +94,8 @@ Drei Quellprüfrunden fanden vor der Cloud-Normalisierung statt:
 3. Integrierte Prüfung von `9b50c00e`, HTTP-Regressionspfad und verbleibenden Grenzen.
 Dabei wurden zusätzlich die Akquisition über einen Epoch-Wechsel und die
 begrenzte, versionskonsistente Cloud-Vorbereitung korrigiert.
+Die anschließende Lesewarte-Erweiterung in `22aad7fa` wurde separat auf
+Fristen, Gerätebindung, Abbruch, Konfliktschutz und HTTP-Einmaligkeit kreuzgeprüft.
 
 Die verbindlichen Testergebnisse, der endgültige Commit und das App-Artefakt
 werden im zugehörigen PR und seinen GitHub-Läufen festgehalten.
