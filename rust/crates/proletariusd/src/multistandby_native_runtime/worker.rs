@@ -273,7 +273,9 @@ impl Manager {
             let scheduled_attempt = attempt.clone();
             {
                 let mut state = self.state.lock().unwrap();
-                let e = state.entries.get_mut(&spec.profile_id)
+                let e = state
+                    .entries
+                    .get_mut(&spec.profile_id)
                     .ok_or("native_multi_profile_retired")?;
                 e.installing_retry = Some(attempt.clone());
             }

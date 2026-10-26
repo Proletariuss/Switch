@@ -168,10 +168,18 @@ impl Store {
         let id = token(item, "send_request_id")?;
         self.0.mutate_if_changed(|items| {
             let mut records = read(items, self.0.path().exists())?;
-            let r = records.get_mut(&id).ok_or_else(|| error("send_intent_not_found"))?;
-            let timestamp = item["timestamp"].as_str()
-                .and_then(|value| time::OffsetDateTime::parse(
-                    value, &time::format_description::well_known::Rfc3339).ok())
+            let r = records
+                .get_mut(&id)
+                .ok_or_else(|| error("send_intent_not_found"))?;
+            let timestamp = item["timestamp"]
+                .as_str()
+                .and_then(|value| {
+                    time::OffsetDateTime::parse(
+                        value,
+                        &time::format_description::well_known::Rfc3339,
+                    )
+                    .ok()
+                })
                 .map(|value| value.unix_timestamp_nanos());
             if r.state != "accepted"
                 || r.attempt.is_empty()

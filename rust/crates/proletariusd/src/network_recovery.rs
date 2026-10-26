@@ -226,8 +226,11 @@ trait Runtime: Send + Sync + 'static {
     fn sample(&self) -> impl Future<Output = Observation> + Send;
     /// This is the authoritative radio reservation/USB-mode/call-safe commit,
     /// not a client-side status check followed by a separate mutation.
-    fn reboot(&self, direct: bool, binding: &OwnerBinding)
-        -> impl Future<Output = Result<(), RebootFailure>> + Send;
+    fn reboot(
+        &self,
+        direct: bool,
+        binding: &OwnerBinding,
+    ) -> impl Future<Output = Result<(), RebootFailure>> + Send;
 }
 
 struct Admission {
@@ -783,9 +786,15 @@ impl Runtime for NativeRuntime {
 
     async fn reboot(&self, direct: bool, binding: &OwnerBinding) -> Result<(), RebootFailure> {
         let result = if direct {
-            self.0.module_radio.reboot_module(&binding.radio_binding).await
+            self.0
+                .module_radio
+                .reboot_module(&binding.radio_binding)
+                .await
         } else {
-            self.0.module_radio.recover_network_reboot(&binding.radio_binding).await
+            self.0
+                .module_radio
+                .recover_network_reboot(&binding.radio_binding)
+                .await
         };
         result.map_err(|error| RebootFailure {
             reason: error.code.to_owned(),

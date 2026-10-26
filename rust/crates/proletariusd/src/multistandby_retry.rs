@@ -45,7 +45,12 @@ pub(crate) async fn run(
         }
     }
 }
-pub(super) fn complete_retry(journal: &Mutex<Journal>, due: &RetryDue, delivery: DueDelivery, now: i64) {
+pub(super) fn complete_retry(
+    journal: &Mutex<Journal>,
+    due: &RetryDue,
+    delivery: DueDelivery,
+    now: i64,
+) {
     if matches!(delivery, DueDelivery::Accepted | DueDelivery::Stale) {
         let _ = journal
             .lock()

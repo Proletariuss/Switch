@@ -854,17 +854,50 @@ mod tests {
             e.stop.send_replace(false);
             e.installing_retry = Some(installing.clone());
         }
-        let schedule = manager.resources.journal.lock().unwrap()
-            .schedule_native_retry("profile".into(), manager.boot_id().into(), installing.clone(), 1, 0)
+        let schedule = manager
+            .resources
+            .journal
+            .lock()
+            .unwrap()
+            .schedule_native_retry(
+                "profile".into(),
+                manager.boot_id().into(),
+                installing.clone(),
+                1,
+                0,
+            )
             .unwrap();
-        let pending = manager.resources.journal.lock().unwrap().next_due_retry(i64::MAX).unwrap();
+        let pending = manager
+            .resources
+            .journal
+            .lock()
+            .unwrap()
+            .next_due_retry(i64::MAX)
+            .unwrap();
         let delivery = manager.dispatch_retry_due(pending.clone());
         assert_eq!(delivery, DueDelivery::Busy);
-        crate::multistandby_retry::complete_retry(&manager.resources.journal, &pending, delivery, 1000);
-        assert!(manager.resources.journal.lock().unwrap().next_due_retry(i64::MAX).is_some());
-        assert_eq!(manager.dispatch_retry_due(RetryDue {
-            attempt_id: "d".repeat(48), ..pending.clone()
-        }), DueDelivery::Stale);
+        crate::multistandby_retry::complete_retry(
+            &manager.resources.journal,
+            &pending,
+            delivery,
+            1000,
+        );
+        assert!(
+            manager
+                .resources
+                .journal
+                .lock()
+                .unwrap()
+                .next_due_retry(i64::MAX)
+                .is_some()
+        );
+        assert_eq!(
+            manager.dispatch_retry_due(RetryDue {
+                attempt_id: "d".repeat(48),
+                ..pending.clone()
+            }),
+            DueDelivery::Stale
+        );
         {
             let mut state = manager.state.lock().unwrap();
             let e = state.entries.get_mut("profile").unwrap();
@@ -873,18 +906,60 @@ mod tests {
         }
         let delivery = manager.dispatch_retry_due(pending.clone());
         assert_eq!(delivery, DueDelivery::Accepted);
-        crate::multistandby_retry::complete_retry(&manager.resources.journal, &pending, delivery, 1000);
+        crate::multistandby_retry::complete_retry(
+            &manager.resources.journal,
+            &pending,
+            delivery,
+            1000,
+        );
         assert!(matches!(received.try_recv(), Ok(Wake::RetryDue(g)) if g == schedule.generation));
-        assert!(manager.resources.journal.lock().unwrap().next_due_retry(i64::MAX).is_none());
+        assert!(
+            manager
+                .resources
+                .journal
+                .lock()
+                .unwrap()
+                .next_due_retry(i64::MAX)
+                .is_none()
+        );
         // A genuinely orphaned journal deadline still retires as stale.
-        manager.resources.journal.lock().unwrap()
-            .schedule_native_retry("profile".into(), manager.boot_id().into(), "e".repeat(48), 1, 0)
+        manager
+            .resources
+            .journal
+            .lock()
+            .unwrap()
+            .schedule_native_retry(
+                "profile".into(),
+                manager.boot_id().into(),
+                "e".repeat(48),
+                1,
+                0,
+            )
             .unwrap();
-        let stale = manager.resources.journal.lock().unwrap().next_due_retry(i64::MAX).unwrap();
+        let stale = manager
+            .resources
+            .journal
+            .lock()
+            .unwrap()
+            .next_due_retry(i64::MAX)
+            .unwrap();
         let delivery = manager.dispatch_retry_due(stale.clone());
         assert_eq!(delivery, DueDelivery::Stale);
-        crate::multistandby_retry::complete_retry(&manager.resources.journal, &stale, delivery, 1000);
-        assert!(manager.resources.journal.lock().unwrap().next_due_retry(i64::MAX).is_none());
+        crate::multistandby_retry::complete_retry(
+            &manager.resources.journal,
+            &stale,
+            delivery,
+            1000,
+        );
+        assert!(
+            manager
+                .resources
+                .journal
+                .lock()
+                .unwrap()
+                .next_due_retry(i64::MAX)
+                .is_none()
+        );
         manager.state.lock().unwrap().entries.clear();
         manager.shutdown().await.unwrap();
         physical.finish().await;

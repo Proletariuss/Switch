@@ -3110,7 +3110,9 @@ impl Service {
     /// A retained recovery worker enters the existing actor gate. USB mode
     /// observation and the call-safe reboot share one exact reservation.
     pub(crate) async fn reboot_module(&self, binding: &str) -> Result<(), Failure> {
-        self.submit_bound(Job::PublicReboot, binding).await.map(|_| ())
+        self.submit_bound(Job::PublicReboot, binding)
+            .await
+            .map(|_| ())
     }
 
     /// Network-recovery uses the same physical actor but retains its stricter

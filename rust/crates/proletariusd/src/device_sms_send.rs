@@ -840,14 +840,20 @@ impl Service {
         let restored = tokio::time::timeout(
             self.io_timeout,
             crate::message_archive::reconcile_device_send_retained(
-                self.archive.clone(), self.store.clone(), item,
-                record.attempt.clone(), self.job.clone(),
+                self.archive.clone(),
+                self.store.clone(),
+                item,
+                record.attempt.clone(),
+                self.job.clone(),
             ),
-        ).await;
+        )
+        .await;
         if !matches!(restored, Ok(Ok(_))) {
             return outcome(record);
         }
-        let confirmed = self.ledger("get", json!({"client_request_id":record.client_request_id})).await?;
+        let confirmed = self
+            .ledger("get", json!({"client_request_id":record.client_request_id}))
+            .await?;
         outcome(confirmed)
     }
 
@@ -1061,13 +1067,20 @@ impl Service {
                     tokio::time::timeout(
                         self.io_timeout,
                         crate::message_archive::ingest_messages_to_retained(
-                            self.archive.clone(), vec![item], self.job.clone(),
+                            self.archive.clone(),
+                            vec![item],
+                            self.job.clone(),
                         ),
-                    ).await,
+                    )
+                    .await,
                     Ok(Ok(_))
                 )
-            } else { false }
-        } else { false };
+            } else {
+                false
+            }
+        } else {
+            false
+        };
         // This supervisor survives the HTTP waiter. Finishing only writes a
         // result; it does not grant another send after lost network/archive ACKs.
         let finished = self.ledger("finish",json!({"client_request_id":record.client_request_id,"attempt":attempt,"state":if accepted {"accepted"} else {"unknown"},"segments":segments,"archive_confirmed":archived})).await;
@@ -1213,7 +1226,10 @@ fn matching_usb_transport_binding(
 fn archive_item(record: &Record) -> Option<Value> {
     let timestamp = time::OffsetDateTime::from_unix_timestamp_nanos(
         i128::from(record.created_at_ms) * 1_000_000,
-    ).ok()?.format(&time::format_description::well_known::Rfc3339).ok()?;
+    )
+    .ok()?
+    .format(&time::format_description::well_known::Rfc3339)
+    .ok()?;
     let mut item = json!({"sender":record.phone,"content":record.message,"timestamp":timestamp,
         "direction":"out","device":record.device,"send_request_id":record.client_request_id});
     if !record.subscription_id.is_empty() {

@@ -94,7 +94,11 @@ impl Runtime for Fake {
     }
 
     async fn reboot(&self, direct: bool, binding: &OwnerBinding) -> Result<(), RebootFailure> {
-        if self.0.change_binding_on_reboot.swap(false, Ordering::SeqCst) {
+        if self
+            .0
+            .change_binding_on_reboot
+            .swap(false, Ordering::SeqCst)
+        {
             self.change_owner();
         }
         if binding.radio_binding != self.binding().radio_binding {
@@ -492,8 +496,13 @@ async fn owner_replacement_after_durable_arm_cannot_reboot_replacement() {
     for trigger in [Trigger::Manual, Trigger::Reboot] {
         let owner = Service::default();
         let fake = Fake::new(vec![Observation::Disconnected], false);
-        fake.0.change_binding_on_reboot.store(true, Ordering::SeqCst);
-        let operation = owner.start("replace-after-arm", trigger, fake.clone()).await.unwrap();
+        fake.0
+            .change_binding_on_reboot
+            .store(true, Ordering::SeqCst);
+        let operation = owner
+            .start("replace-after-arm", trigger, fake.clone())
+            .await
+            .unwrap();
         let result = finished(&owner, &operation.operation_id).await;
         assert_eq!(result.outcome.as_deref(), Some("blocked"));
         assert_eq!(result.submission, Submission::NotSubmitted);
