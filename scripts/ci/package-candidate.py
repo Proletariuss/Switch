@@ -85,7 +85,7 @@ reports = WORKSPACE / "reports"
 required = {"portable", "rust", "device-sms-send", "module-network-recovery", "api-request-policy", "sms-forwarding-client", "release-initialization", "app-build", "bundle-audit", "signature"}
 for name in required:
     report = json.loads((reports / (name + ".json")).read_text())
-    if report["status"] != "passed" or report["exit_code"] != 0 or report["commit"] != commit or report["run_id"] != os.environ["GITHUB_RUN_ID"] or report["run_attempt"] != os.environ["GITHUB_RUN_ATTEMPT"]:
+    if report["status"] != "passed" or report["exit_code"] != 0 or report["commit"] != commit or report["run_id"] != os.environ["GITHUB_RUN_ID"] or not (1 <= int(report["run_attempt"]) <= int(os.environ["GITHUB_RUN_ATTEMPT"])):
         raise SystemExit("missing, failed or mismatched candidate gate: " + name)
 app = WORKSPACE / "dist/Switch.app"
 records = inventory(app)
@@ -107,6 +107,7 @@ manifest = {
     "artifact": {"name": archive.name, "sha256": sha(archive), "size": archive.stat().st_size},
     "app_inventory": records,
     "app_tree_sha256": hashlib.sha256(json.dumps(records, sort_keys=True, separators=(",", ":")).encode()).hexdigest(),
+    "report_sources": json.loads((reports / "report-sources.json").read_text()),
     "reports_sha256": {p.name: sha(p) for p in sorted(reports.iterdir()) if p.is_file()},
 }
 (delivery / "candidate-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")

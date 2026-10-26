@@ -115,6 +115,9 @@ jobs:
           if-no-files-found: error
           retention-days: 7
   candidate:
+    permissions:
+      contents: read
+      actions: read
     needs: [portable, rust, swift]
     if: inputs.build_app && inputs.native
     runs-on: macos-26
@@ -132,9 +135,14 @@ jobs:
         run: brew install libusb xcodegen
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          pattern: software-report-${{ github.run_attempt }}-*
-          path: reports
-          merge-multiple: true
+          pattern: software-report-*
+          path: downloaded-reports
+      - name: Select latest successful source-bound gate reports across attempts
+        working-directory: src
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_COMMIT: ${{ inputs.commit }}
+        run: python3 scripts/ci/select-gate-reports.py
       - name: Record source identity before build
         working-directory: src
         env:

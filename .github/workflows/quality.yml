@@ -11,6 +11,11 @@ on:
       - ready_for_review
   workflow_dispatch:
     inputs:
+      prepare_reviewed:
+        description: Only prepare the explicit reviewed allowlist on automation/cloud-four-batches
+        required: false
+        default: false
+        type: boolean
       candidate_sha:
         description: Optional exact 40-character commit for a candidate (empty uses dispatch SHA)
         required: false
@@ -32,7 +37,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  prepare-inputs:
+    if: github.event_name == 'workflow_dispatch' && inputs.prepare_reviewed
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - env:
+          EXPECTED_COMMIT: ${{ inputs.candidate_sha }}
+        run: |
+          [[ "$GITHUB_REF" == refs/heads/automation/cloud-four-batches ]]
+          [[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$EXPECTED_COMMIT" == "$GITHUB_SHA" ]]
+  prepare-reviewed:
+    needs: prepare-inputs
+    if: github.event_name == 'workflow_dispatch' && inputs.prepare_reviewed && github.ref == 'refs/heads/automation/cloud-four-batches'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/reviewed-prepare.yml
+    with:
+      expected_commit: ${{ inputs.candidate_sha }}
   classify:
+    if: github.event_name != 'workflow_dispatch' || !inputs.prepare_reviewed
     name: Classify changed paths
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -113,7 +138,7 @@ jobs:
       build_app: ${{ needs.classify.outputs.needs_app == 'true' }}
   review-result:
     name: Review result
-    if: always()
+    if: always() && (github.event_name != 'workflow_dispatch' || !inputs.prepare_reviewed)
     needs: [classify, checks]
     runs-on: ubuntu-24.04
     timeout-minutes: 3
