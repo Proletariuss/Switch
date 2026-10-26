@@ -11,6 +11,9 @@ case "${1:-}" in
     ;;
   handoff)
     cargo +1.98.0 fetch --locked --manifest-path rust/Cargo.toml
+    # Online fetch is complete; offline native fixtures require real toolchain binaries.
+    unset SWITCH_CARGO_BIN
+    . scripts/offline-rust-toolchain.sh
     # These two fixtures share the fault-injection Rust static library build.
     python3 scripts/ci/run-report.py sms-forwarding-client bash scripts/ci/swift-gates.sh handoff-regressions
     python3 scripts/ci/run-report.py release-initialization bash scripts/test-release-initialization.sh
