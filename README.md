@@ -14,7 +14,7 @@
   <img alt="macOS" src="https://img.shields.io/badge/macOS-27.0%2B-black?logo=apple&logoColor=white">
   <img alt="Architektur" src="https://img.shields.io/badge/Architektur-Apple%20Silicon-blue">
   <img alt="Backend" src="https://img.shields.io/badge/Backend-Rust-black?logo=rust&logoColor=white">
-  <img alt="Version" src="https://img.shields.io/badge/Version-3.52-2f81f7">
+  <img alt="Version" src="https://img.shields.io/badge/Version-3.53-2f81f7">
 </p>
 
 ## Verbindliche Projektrichtlinie: Kein Betrug, kein Missbrauch
@@ -34,7 +34,7 @@ Diese Regeln gelten für alle Nutzer. Sie beschreiben die Verhaltensanforderunge
 
 ## Projekt und Veröffentlichungsstand
 
-Switch bündelt USB/QMI-Module, PC/SC- und BLE-Kartenleser, eSIM-Profile auf physischen Karten, VoWiFi/IMS, SMS und Telefonie in einer macOS-Anwendung. Der aktuelle Softwarestand ist **3.52, Build 352, mit Rust-Backend 3.52.0**. Das Versionsetikett allein bestätigt weder eine abgeschlossene Prüfung noch eine veröffentlichte Binärdatei; maßgeblich sind die Anlagen und Nachweise des zugehörigen GitHub Release.
+Switch bündelt USB/QMI-Module, PC/SC- und BLE-Kartenleser, eSIM-Profile auf physischen Karten, VoWiFi/IMS, SMS und Telefonie in einer macOS-Anwendung. Der aktuelle Quellstand ist **3.53, Build 353, mit Rust-Backend 3.53.0**. Das Versionsetikett allein bestätigt weder eine abgeschlossene Prüfung noch eine veröffentlichte Binärdatei; maßgeblich sind die Anlagen und Nachweise des zugehörigen GitHub Release.
 
 Das Repository ist seit dem **26. Oktober 2026 öffentlich**. Die Veröffentlichung des Quellcodes bestätigt keine vollständige Abnahme aller Geräte, Netzbetreiber oder Dauerbetriebsszenarien.
 
@@ -42,11 +42,11 @@ Der Tag `v3.51` bleibt unverändert dem eingefrorenen Quellstand des historische
 
 ## Download
 
-[Neueste veröffentlichte Version](https://github.com/Proletariuss/Switch/releases/latest) · [Release 3.52](https://github.com/Proletariuss/Switch/releases/tag/v3.52)
+[Neueste veröffentlichte Version](https://github.com/Proletariuss/Switch/releases/latest) · [Alle Releases](https://github.com/Proletariuss/Switch/releases)
 
-Das bevorzugte Installationspaket heißt `Switch_<version>.dmg`, für diese Version `Switch_3.52.dmg`. Es wird auf einem GitHub-macOS-Runner aus dem bereits geprüften App-Tarball des Commits `d17eca3305bd2204cc895fc13af8ee0e91173f8b` abgeleitet. Die enthaltenen App-Dateien, Rechte und symbolischen Links müssen unverändert bleiben; die App wird dabei weder neu gebaut noch neu signiert. Die DMG-Ergänzung ist erst verfügbar, wenn ihre geprüften Anlagen im Release erscheinen; diese Beschreibung bestätigt noch keine erfolgte DMG-Veröffentlichung.
+Das bevorzugte Installationspaket heißt `Switch_<version>.dmg`. Es wird auf einem GitHub-macOS-Runner aus dem bereits geprüften App-Tarball derselben Version abgeleitet. Die enthaltenen App-Dateien, Rechte und symbolischen Links müssen unverändert bleiben; die App wird beim Verpacken weder neu gebaut noch neu signiert. Eine Version ist erst freigegeben, wenn ihre geprüften Anlagen im Release erscheinen. Der Quellstand allein bestätigt keine erfolgte Veröffentlichung.
 
-Die vier bisherigen Audit-Anlagen bleiben erhalten: `Switch-<Version>-candidate-<Commit-SHA>-macOS27-arm64.app.tar.gz`, `candidate-manifest.json`, `test-reports.tar.gz` und `SHA256SUMS`. Hinzu kommen das DMG, `Switch_<version>.dmg.sha256` und `dmg-provenance.json`. Der Herkunftsnachweis unterscheidet den ursprünglichen App-Quellstand vom Commit und GitHub-Lauf der Verpackungssteuerung. Künftige Releases sollen diesen DMG-Schritt automatisch an die erfolgreiche App-Veröffentlichung anschließen.
+Die vier bisherigen Audit-Anlagen bleiben erhalten: `Switch-<Version>-candidate-<Commit-SHA>-macOS27-arm64.app.tar.gz`, `candidate-manifest.json`, `test-reports.tar.gz` und `SHA256SUMS`. Hinzu kommen das DMG, `Switch_<version>.dmg.sha256` und `dmg-provenance.json`. Der Herkunftsnachweis unterscheidet den ursprünglichen App-Quellstand vom Commit und GitHub-Lauf der Verpackungssteuerung. Der Release-Workflow schließt den DMG-Schritt an die erfolgreiche App-Veröffentlichung an.
 
 ### Historisches Installationspaket 3.51
 
@@ -58,7 +58,7 @@ Die vier bisherigen Audit-Anlagen bleiben erhalten: `Switch-<Version>-candidate-
 
 ## Installation
 
-1. Sobald angeboten, `Switch_3.52.dmg`, `Switch_3.52.dmg.sha256` und `dmg-provenance.json` aus demselben Release herunterladen und die DMG-Prüfsumme wie unten beschrieben kontrollieren.
+1. Das angebotene `Switch_<version>.dmg`, `Switch_<version>.dmg.sha256` und `dmg-provenance.json` aus demselben Release herunterladen und die DMG-Prüfsumme wie unten beschrieben kontrollieren.
 2. Das DMG öffnen und `Switch.app` in den Ordner „Programme“ ziehen. Bis die DMG-Ergänzung veröffentlicht ist, bleibt der geprüfte App-Tarball verfügbar: zusammen mit den drei Audit-Begleitdateien herunterladen, `SHA256SUMS` prüfen, entpacken und die App nach „Programme“ kopieren.
 3. Bei Bedarf die von macOS angeforderten Berechtigungen für Bluetooth, Mitteilungen und Mikrofon erteilen.
 4. Das Paket ist ad hoc signiert und **nicht von Apple notarisiert**. Falls Gatekeeper den Start blockiert, zunächst Herkunft und Prüfsumme kontrollieren und die Freigabe anschließend unter „Systemeinstellungen → Datenschutz & Sicherheit“ vornehmen.
@@ -75,7 +75,21 @@ Bei einer Neuinstallation sind keine Telegram-Bot-, Bark- oder sonstigen Weiterl
 | SMS-Zentrale | Nachrichtenarchiv für Module, Kartenleser und Mehrprofil-Bereitschaft, Sendestatus, Mitteilungen, Suche, Löschung und optionale Weiterleitung an Telegram Bot oder Bark |
 | Mehrprofil-Bereitschaft | Unabhängige SMS-Sitzungen für mehrere Profile, Erneuerung, Wiederverbindung und Statusberichte; ausschließlich SMS, keine Sprache; Gleichzeitigkeit hängt von Karte und Netzbetreiber ab |
 | Telefonie | Wählen, Annehmen, Auflegen, Anrufhinweise, Anrufprotokoll und Mac-Audioanbindung; bevorzugt EVS, alternativ AMR-WB |
-| Diagnose | Netzwerk- und Gerätediagnose, AT-Konsole, strukturierte Zustände und Sicherheitsereignisse |
+| Diagnose | Netzwerk- und Gerätediagnose, AT-Konsole, strukturierte Zustände, begrenzte private Laufzeitprotokolle und JSON-Diagnoseexport |
+
+## Änderungen im Quellstand 3.53
+
+Ein Fehler beim lokalen HTTP-Transport konnte bei VoWiFi-Abgleichanfragen zu `NSURLErrorDomain -1000` führen: URLSession übergab einen endlichen Anfragekörper als Stream. Switch verwendet nun die zuvor gesicherten Originalbytes. Beliebige Eingabestreams werden weiterhin nicht gelesen.
+
+Bei unklaren Anrufergebnissen bleibt die ursprüngliche Anfrage erhalten. Eine negative Wiederherstellungsantwort hebt die Sperre erst mit einem zur Anfrage passenden, dauerhaft bestätigten Abschlussbeleg auf. SMS-Zustellberichte werden vor ihrer Protokollbestätigung dauerhaft erfasst; sie erscheinen nicht als neue Eingangsnachricht und lösen keine Weiterleitung aus. Archivzugriffe blockieren den asynchronen Runtime-Worker nicht mehr. Veraltete Netzwerk- und Weiterleitungsantworten dürfen neuere Einstellungen nach einem Backend-Wechsel nicht überschreiben.
+
+## Laufzeitdiagnose und Export
+
+Ausgewählte technische Ereignisse werden standardmäßig lokal protokolliert: Anfragestatus, numerische Fehlercodes, Wiederherstellungsphasen sowie Start und Ende des Backends. Private Dateien werden automatisch rotiert und über Neustarts hinweg aufbewahrt, bis ältere Einträge verdrängt werden. Die Obergrenze beträgt **3 MiB für den Client und 8 MiB für das Backend**.
+
+Im Diagnosebereich lässt sich über die Registerkarte für Laufzeitprotokolle ein JSON-Diagnosepaket exportieren. Ist das Backend nicht erreichbar, bleibt der Export verfügbarer Clientdaten möglich. Fehlende, verworfene oder begrenzte Teile sind im Paket gekennzeichnet. Der Export enthält ausschließlich freigegebene technische Felder, keine SMS-Texte, Rufnummern, Teilnehmerkennungen, Zugangsdaten oder HTTP-Nutzdaten.
+
+Die Aufzeichnung ist begrenzt und nicht verlustfrei. Sie ersetzt weder vollständige Paketmitschnitte noch ein lückenloses Archiv. Nicht aufgezeichnete oder bereits rotierte Ereignisse und die Historie älterer Versionen lassen sich nicht nachträglich herstellen. Ein abgebrochener Export darf keinen weiteren Dateizugriff starten, solange der ursprüngliche Hintergrundzugriff noch läuft.
 
 ## Voraussetzungen und Geräte
 
@@ -130,6 +144,8 @@ Die Skripte setzen die im Projekt festgelegte Anordnung mit benachbarten `build/
 - **Issues dieses öffentlichen Repositorys sind öffentlich sichtbar.** Keine unveröffentlichten Schwachstellendetails oder Zugangsdaten dort einstellen. Hinweise zur vertraulichen Meldung stehen in [SECURITY.md](SECURITY.md).
 
 ## Prüfstand und bekannte Grenzen
+
+Für 3.53 gelten ausschließlich die GitHub-Prüfberichte des endgültigen Release-Commits. Geräte, Netzbetreiberregistrierungen, SMS-Zustellung, Telefonie, Audio, Ruhezustand und Dauerbetrieb benötigen eigene Nachweise mit der jeweiligen Hardware, Karte und Netzwerkumgebung. Erfolgreiche Softwareprüfungen ersetzen diese Nachweise nicht.
 
 Die veröffentlichten App-Anlagen für 3.52 stammen aus dem geprüften Commit `d17eca3305bd2204cc895fc13af8ee0e91173f8b` und [GitHub-Lauf 40314576638](https://github.com/Proletariuss/Switch/actions/runs/40314576638). Die DMG-Ableitung erhält eine eigene Prüfung: Dateisystemkontrolle, schreibgeschütztes Einhängen, vollständiger Abgleich des App-Inventars einschließlich Rechten und Links sowie strenge Signaturprüfung. Erst die zugehörigen Berichte und zurückgelesenen Release-Anlagen bestätigen deren Erfolg. Eine neue Verpackung erweitert die Geräte- oder Laufzeitabnahme nicht; frühere 3.51-Läufe ersetzen keinen versionsbezogenen Nachweis.
 
