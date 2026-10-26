@@ -7,7 +7,7 @@ license.workspace = true
 
 [features]
 native-codec-fault-tests = ["proletarius-call/native-codec-fault-tests"]
-# Compile-only foundation; this does not enable v2 storage or dispatch routes.
+# Compatibility feature alias; production device-SMS v2 is wired by the daemon and its store dependency.
 device-send-authority-codec = ["proletarius-store/device-sms-generation-seal"]
 
 [dependencies]

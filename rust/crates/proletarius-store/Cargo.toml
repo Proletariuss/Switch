@@ -7,7 +7,7 @@ rust-version.workspace = true
 
 [features]
 raw-fault-tests = []
-# Compile-only device-SMS fence kernel; no production caller or dispatch.
+# Device-SMS sealed storage kernel used by the daemon production authority adapter.
 device-sms-generation-seal = []
 
 [dependencies]

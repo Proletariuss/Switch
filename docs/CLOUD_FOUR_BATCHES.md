@@ -39,5 +39,21 @@ No Developer ID/notary credentials are configured. Current runners are macos-26.
 
 ## Status
 
-All four batches pending. Final PR and GitHub artifacts provide actual evidence;
-this plan is not an acceptance receipt.
+All planned code changes are integrated in PR #6; final-source software and
+artifact acceptance remain pending. Three static review rounds completed:
+initial implementation review; cross-component review; independent review of
+the fixes and integrated boundaries. Findings corrected include exact v2
+payload/nonce matching, shared Store ownership, startup SMS isolation,
+nonblocking journal locking and directory identity, full v1+v2 pagination,
+report selection across attempts, and valid retry fixture timestamps.
+
+The isolated Swift candidate 6b06ee8be8f1cffcb2b4c3c012f0d9adad815bff passed
+29 groups in GitHub run 40275765127. The first integrated Rust run
+40273933310 passed 3684 daemon tests but failed two fixtures and did not reach
+all isolated groups; those two fixtures are corrected in the integration.
+Neither preliminary run is final acceptance. The final run must test and
+build one exact source commit and successfully verify the uploaded App.
+
+Final evidence and links will be recorded in PR #6 to avoid changing the
+already tested source commit just to add its own run URL. This plan and its
+static review do not award functional, hardware or product acceptance.
