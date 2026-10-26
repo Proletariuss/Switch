@@ -22,15 +22,18 @@ final class ReaderBLEBridge {
     private let staleProbeTimeout: TimeInterval
     private let beforeStaleUnlink: (() -> Void)?
     private let afterBindBeforePublish: ((String, Int32) -> Void)?
+    private let afterStartupAttempt: (() -> Void)?
 
     init(standardRequestTimeout: TimeInterval = 35, cardOperationTimeout: TimeInterval = 130,
          staleProbeTimeout: TimeInterval = 0.2, beforeStaleUnlink: (() -> Void)? = nil,
-         afterBindBeforePublish: ((String, Int32) -> Void)? = nil) {
+         afterBindBeforePublish: ((String, Int32) -> Void)? = nil,
+         afterStartupAttempt: (() -> Void)? = nil) {
         self.standardRequestTimeout = standardRequestTimeout
         self.cardOperationTimeout = cardOperationTimeout
         self.staleProbeTimeout = max(0.01, min(staleProbeTimeout, 1))
         self.beforeStaleUnlink = beforeStaleUnlink
         self.afterBindBeforePublish = afterBindBeforePublish
+        self.afterStartupAttempt = afterStartupAttempt
     }
 
     func start(socketPath: String) {
@@ -52,7 +55,11 @@ final class ReaderBLEBridge {
     }
 
     private func startOnStartupQueue(socketPath: String, generation: UInt64) {
-        defer { clearPendingStart(generation) }
+        defer {
+            clearPendingStart(generation)
+            // Observation only, after pending state and lifecycle locks retire.
+            afterStartupAttempt?()
+        }
         guard socketPath.utf8.count < MemoryLayout<sockaddr_un>.size - 4 else {
             NSLog("BLE bridge socket path too long")
             return

@@ -480,9 +480,15 @@ private func bridgeLifecycleTests(_ bridge: ReaderBLEBridge, _ path: String) {
     expect(Darwin.unlink(path) == 0, "remove test foreign socket")
     expect(FileManager.default.createFile(atPath: path, contents: Data("sentinel".utf8)),
            "create non-socket path guard fixture")
-    bridge.start(socketPath: path)
+    let checkedNonSocket = DispatchSemaphore(value: 0)
+    let fileGuard = ReaderBLEBridge(standardRequestTimeout: 1, cardOperationTimeout: 0.01,
+                                   afterStartupAttempt: { checkedNonSocket.signal() })
+    fileGuard.start(socketPath: path)
+    expect(checkedNonSocket.wait(timeout: .now() + 2) == .success,
+           "non-socket startup attempt completed before fixture removal")
     expect((try? Data(contentsOf: URL(fileURLWithPath: path))) == Data("sentinel".utf8),
-           "bridge start preserves an existing non-socket file")
+           "completed bridge start preserves an existing non-socket file")
+    fileGuard.stop()
     try! FileManager.default.removeItem(atPath: path)
     let replacement = ReaderBLEBridge(standardRequestTimeout: 1, cardOperationTimeout: 0.01)
     replacement.start(socketPath: path)
