@@ -4,13 +4,12 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - 'rust/Cargo.toml'
-      - 'rust/Cargo.lock'
-      - 'rust/crates/**/Cargo.toml'
-      - 'scripts/acceptance/daemon-capsule-fixture/Cargo.toml'
-      - 'scripts/acceptance/daemon-capsule-fixture/Cargo.lock'
-      - '.github/workflows/security-audit.yml'
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - converted_to_draft
   workflow_dispatch:
   schedule:
     - cron: '17 2 * * 1'

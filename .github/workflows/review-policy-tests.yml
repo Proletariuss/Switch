@@ -1,0 +1,129 @@
+name: Test PR review policy
+
+on:
+  push:
+    branches:
+      - automation/pr-review-gates
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - converted_to_draft
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  review-policy:
+    name: Review policy regression fixtures
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Exercise the actual review-result shell with synthetic job results
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import itertools
+          import os
+          import pathlib
+          import subprocess
+          import textwrap
+
+          workflow = pathlib.Path(".github/workflows/quality.yml").read_text()
+          marker = "      - name: Reject failed or unexpectedly skipped checks\n"
+          if workflow.count(marker) != 1:
+              raise SystemExit("expected one production review-result policy step")
+          step = workflow.split(marker, 1)[1]
+          if "        run: |\n" not in step:
+              raise SystemExit("expected a literal production policy script")
+          lines = step.split("        run: |\n", 1)[1].splitlines()
+          body = []
+          for line in lines:
+              if line.strip() and not line.startswith("          "):
+                  break
+              body.append(line)
+          script = textwrap.dedent("\n".join(body))
+          if not script.strip():
+              raise SystemExit("production policy script is empty")
+
+          def check(label, expected, **values):
+              result = subprocess.run(
+                  ["bash", "-euo", "pipefail", "-c", script],
+                  env={**os.environ, **values},
+                  text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+              )
+              if (result.returncode == 0) != expected:
+                  raise SystemExit(
+                      f"{label}: expected {'pass' if expected else 'block'}, "
+                      f"exit={result.returncode}\n{result.stdout}"
+                  )
+              return result
+
+          statuses = ("success", "failure", "skipped", "cancelled")
+          count = 0
+          for draft, native, classify, source, macos in itertools.product(
+              ("true", "false"), ("true", "false"), statuses, statuses, statuses
+          ):
+              expected = (
+                  draft == "false" and classify == source == "success"
+                  and (macos == "success" or (native == "false" and macos == "skipped"))
+              )
+              check(
+                  f"draft={draft} native={native} classify={classify} source={source} macos={macos}",
+                  expected, EVENT_NAME="pull_request", IS_DRAFT=draft,
+                  NEEDS_MACOS=native, CLASSIFY_RESULT=classify,
+                  SOURCE_RESULT=source, MACOS_RESULT=macos,
+              )
+              count += 1
+
+          baseline = dict(
+              EVENT_NAME="pull_request", IS_DRAFT="false", NEEDS_MACOS="true",
+              CLASSIFY_RESULT="success", SOURCE_RESULT="success", MACOS_RESULT="success",
+          )
+          for native in ("", "unknown"):
+              check("missing/invalid classification", False, **{**baseline, "NEEDS_MACOS": native})
+              count += 1
+
+          # The same required-native PR cannot pass merely by becoming Ready:
+          # Ready with skipped native work stays blocked until native succeeds.
+          for draft, macos, expected in (
+              ("true", "skipped", False),
+              ("false", "skipped", False),
+              ("false", "success", True),
+              ("true", "success", False),
+          ):
+              result = check(
+                  "draft-to-ready-to-draft", expected,
+                  **{**baseline, "IS_DRAFT": draft, "MACOS_RESULT": macos},
+              )
+              if draft == "true" and "Mark ready for review" not in result.stdout:
+                  raise SystemExit("Draft rejection lost its actionable diagnostic")
+              count += 1
+
+          for event in ("workflow_dispatch", "schedule"):
+              for macos in statuses:
+                  check(
+                      f"{event} native={macos}", macos == "success",
+                      **{**baseline, "EVENT_NAME": event, "IS_DRAFT": "", "MACOS_RESULT": macos},
+                  )
+                  count += 1
+
+          # Keep every PR event covered without a path-based missing-check gap.
+          for path in ("quality.yml", "security-audit.yml"):
+              text = pathlib.Path(".github/workflows", path).read_text()
+              pr = text.split("  pull_request:\n", 1)[1].split("  workflow_dispatch:", 1)[0]
+              for event in ("opened", "synchronize", "reopened", "ready_for_review", "converted_to_draft"):
+                  if f"      - {event}\n" not in pr:
+                      raise SystemExit(f"{path}: missing PR event {event}")
+              if "    paths:" in pr or "    paths-ignore:" in pr:
+                  raise SystemExit(f"{path}: PR checks must not disappear behind path filters")
+          print(f"PASS: {count} production-policy fixtures and PR event coverage")
+          PY

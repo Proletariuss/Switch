@@ -9,6 +9,7 @@ on:
       - synchronize
       - reopened
       - ready_for_review
+      - converted_to_draft
   workflow_dispatch:
     inputs:
       build_app:
@@ -300,7 +301,12 @@ jobs:
           set -euo pipefail
           [[ "$CLASSIFY_RESULT" == "success" ]]
           [[ "$SOURCE_RESULT" == "success" ]]
-          if [[ "$NEEDS_MACOS" == "true" && ! ( "$EVENT_NAME" == "pull_request" && "$IS_DRAFT" == "true" ) ]]; then
+          if [[ "$EVENT_NAME" == "pull_request" && "$IS_DRAFT" == "true" ]]; then
+            echo "::error::Draft PR: review is incomplete. Mark ready for review to run the required gates."
+            exit 1
+          fi
+          [[ "$NEEDS_MACOS" == "true" || "$NEEDS_MACOS" == "false" ]]
+          if [[ "$NEEDS_MACOS" == "true" ]]; then
             [[ "$MACOS_RESULT" == "success" ]]
           else
             [[ "$MACOS_RESULT" == "success" || "$MACOS_RESULT" == "skipped" ]]
