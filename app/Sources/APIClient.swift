@@ -163,14 +163,14 @@ struct APIClient {
         let timeout = Self.readTimeout(path: request.url?.path ?? "", defaultTimeout: timeoutInterval)
         request.timeoutInterval = timeout
         guard timeout > session.configuration.timeoutIntervalForResource else {
-            return try await session.data(for: request)
+            return try await observedData(for: request, using: session)
         }
         let configuration = session.configuration
         configuration.timeoutIntervalForRequest = timeout
         configuration.timeoutIntervalForResource = timeout
         let readSession = URLSession(configuration: configuration)
         defer { readSession.finishTasksAndInvalidate() }
-        return try await readSession.data(for: request)
+        return try await observedData(for: request, using: readSession)
     }
 
     private func performMutation(_ original: URLRequest) async throws -> (Data, URLResponse) {
@@ -188,7 +188,7 @@ struct APIClient {
         // must never be inferred from a Swift route-name table.
         request.timeoutInterval = timeoutInterval
         do {
-            let result = try await session.data(for: request)
+            let result = try await observedData(for: request, using: session)
             if let http=result.1 as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
                 // A durable terminal admission error (for example busy) settles
                 // this caller ID too. Unknown receipts retain their checkpoint.
@@ -261,6 +261,48 @@ struct APIClient {
         request.setValue(
             LocalBackendAuthentication.appToken,
             forHTTPHeaderField: LocalBackendAuthentication.headerName)
+    }
+
+
+    private func observedData(for original: URLRequest, using session: URLSession) async throws -> (Data, URLResponse) {
+        var request = original
+        let correlation = UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
+        request.setValue(correlation, forHTTPHeaderField: "X-Switch-Diagnostic-ID")
+        let start = ProcessInfo.processInfo.systemUptime
+        let route = request.url?.path ?? ""
+        let excluded = route.hasPrefix("/api/diagnostics/")
+        let safeRoutes: Set<String> = ["/api/reader/vowifi", "/api/reader/vowifi/reconcile", "/api/reader/vowifi/stop-control", "/api/vowifi", "/api/vowifi/result", "/api/vowifi/reconcile", "/api/vowifi/stop-control", "/api/call/dial", "/api/call/answer", "/api/call/hangup", "/api/call/status", "/api/reader/vowifi/call/dial", "/api/reader/vowifi/call/answer", "/api/reader/vowifi/call/hangup", "/api/sms/send", "/api/sms/storage", "/api/sms/forwarding/status", "/api/sms/forwarding/configure", "/api/sms/forwarding/test", "/api/network/services", "/api/network/services-order", "/api/network/usbnet", "/api/status", "/api/reader/status", "/api/multistandby/status"]
+        let safeRoute = safeRoutes.contains(route) ? route : "/api/other"
+        let method = ["GET","POST","PUT","PATCH","DELETE","HEAD"].contains(request.httpMethod ?? "") ? request.httpMethod! : "OTHER"
+        var originalID: String?
+        if let data = request.httpBody, data.count <= 32768,
+           let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let id = object["client_request_id"] as? String, let uuid = UUID(uuidString: id) {
+            originalID = uuid.uuidString.lowercased()
+        }
+        func record(_ stage: String, status: Int = 0, error: Error? = nil) {
+            guard !excluded else { return }
+            let failure = error as? URLError
+            var values: [String: Any] = [
+                "schema_version": 1, "time_ms": Int64(Date().timeIntervalSince1970 * 1000),
+                "correlation_id": correlation, "route": safeRoute, "method": method,
+                "stage": stage, "status": status, "error_domain": failure == nil ? "none" : "url",
+                "error_code": failure?.errorCode ?? 0,
+                "duration_ms": Int64(max(0, ProcessInfo.processInfo.systemUptime - start) * 1000)
+            ]
+            if let originalID { values["request_id"] = originalID }
+            NotificationCenter.default.post(name: Notification.Name("Switch.SafeAPIDiagnostic.v1"),
+                                            object: nil, userInfo: values)
+        }
+        record("started")
+        do {
+            let result = try await session.data(for: request)
+            record("response", status: (result.1 as? HTTPURLResponse)?.statusCode ?? 0)
+            return result
+        } catch {
+            record("transport_failed", error: error)
+            throw error
+        }
     }
 
     private static func makeURL(_ path: String) -> URL {
