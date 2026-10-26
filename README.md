@@ -44,7 +44,7 @@ Der Tag `v3.51` bleibt unverändert dem eingefrorenen Quellstand des historische
 
 [Neueste veröffentlichte Version](https://github.com/Proletariuss/Switch/releases/latest) · [Release 3.52](https://github.com/Proletariuss/Switch/releases/tag/v3.52)
 
-Das Installationspaket heißt `Switch_<version>.dmg`. Für 3.52 stehen [Switch_3.52.dmg](https://github.com/Proletariuss/Switch/releases/download/v3.52/Switch_3.52.dmg) und [Switch_3.52.dmg.sha256](https://github.com/Proletariuss/Switch/releases/download/v3.52/Switch_3.52.dmg.sha256) bereit. Das DMG wurde auf einem GitHub-macOS-Runner aus dem bereits geprüften App-Tarball des Commits `d17eca3305bd2204cc895fc13af8ee0e91173f8b` abgeleitet. App-Dateien, Rechte und symbolische Links wurden abgeglichen; die App wurde weder neu gebaut noch neu signiert.
+Das Installationspaket heißt `Switch_<version>.dmg`; die zugehörige Prüfsumme steht in `Switch_<version>.dmg.sha256`. Freigegebene Pakete sind unter [Releases](https://github.com/Proletariuss/Switch/releases) verfügbar. Ein Versionsetikett im Quellcode ist keine Freigabe. Das DMG wird auf einem GitHub-macOS-Runner aus der bereits geprüften App derselben Version erstellt; App-Dateien, Rechte und symbolische Links müssen unverändert bleiben.
 
 Der vorgesehene Endzustand des Release enthält nur diese beiden hochgeladenen Dateien. Vor der Bereinigung werden die fünf Audit-Anlagen — App-Tarball, `candidate-manifest.json`, `test-reports.tar.gz`, `SHA256SUMS` und `dmg-provenance.json` — unverändert als Actions-Artefakt gesichert und zurückgeprüft. Ihre Aufbewahrungsfrist richtet sich nach den tatsächlichen GitHub-Einstellungen und dem angezeigten Ablaufdatum. Die von GitHub automatisch angebotenen „Source code“-Archive bleiben sichtbar; sie sind keine hochgeladenen Installationspakete.
 
@@ -60,7 +60,7 @@ Die [App-Prüfung](https://github.com/Proletariuss/Switch/actions/runs/403145766
 
 ## Installation
 
-1. `Switch_3.52.dmg` und `Switch_3.52.dmg.sha256` aus demselben Release herunterladen und die DMG-Prüfsumme wie unten beschrieben kontrollieren.
+1. Das zur gewählten Version gehörende DMG und seine `.dmg.sha256`-Datei aus demselben Release herunterladen und die DMG-Prüfsumme wie unten beschrieben kontrollieren.
 2. Das DMG öffnen und `Switch.app` in den Ordner „Programme“ ziehen.
 3. Bei Bedarf die von macOS angeforderten Berechtigungen für Bluetooth, Mitteilungen und Mikrofon erteilen.
 4. Das Paket ist ad hoc signiert und **nicht von Apple notarisiert**. Falls Gatekeeper den Start blockiert, zunächst Herkunft und Prüfsumme kontrollieren und die Freigabe anschließend unter „Systemeinstellungen → Datenschutz & Sicherheit“ vornehmen.
@@ -83,7 +83,9 @@ Bei einer Neuinstallation sind keine Telegram-Bot-, Bark- oder sonstigen Weiterl
 
 Ein Fehler beim lokalen HTTP-Transport konnte bei VoWiFi-Abgleichanfragen zu `NSURLErrorDomain -1000` führen: URLSession übergab einen endlichen Anfragekörper als Stream. Switch verwendet nun die zuvor gesicherten Originalbytes. Beliebige Eingabestreams werden weiterhin nicht gelesen.
 
-Bei unklaren Anrufergebnissen bleibt die ursprüngliche Anfrage erhalten. Eine negative Wiederherstellungsantwort hebt die Sperre erst mit einem zur Anfrage passenden, dauerhaft bestätigten Abschlussbeleg auf. SMS-Zustellberichte werden vor ihrer Protokollbestätigung dauerhaft erfasst; sie erscheinen nicht als neue Eingangsnachricht und lösen keine Weiterleitung aus. Archivzugriffe blockieren den asynchronen Runtime-Worker nicht mehr. Veraltete Netzwerk- und Weiterleitungsantworten dürfen neuere Einstellungen nach einem Backend-Wechsel nicht überschreiben.
+Bei unklaren Anrufergebnissen bleibt die ursprüngliche Anfrage erhalten. Eine negative Wiederherstellungsantwort hebt die Sperre erst mit einem zur Anfrage passenden, dauerhaft bestätigten Abschlussbeleg auf. SMS-Zustellberichte werden vor ihrer Protokollbestätigung dauerhaft erfasst; sie erscheinen nicht als neue Eingangsnachricht und lösen keine Weiterleitung aus. Die Abfrage des SMS-Speicherverbrauchs führt Dateioperationen außerhalb des asynchronen Runtime-Workers aus. Veraltete Netzwerk- und Weiterleitungsantworten dürfen neuere Einstellungen nach einem Backend-Wechsel nicht überschreiben.
+
+Bei der BLE-Brücke berücksichtigt die Berechnung temporärer Socket-Namen nun auch die strikte Pfadlängengrenze. Lange, zulässige Laufzeitverzeichnisse können damit einen Socket binden; die Mindestgröße des zufälligen Namens und die Prüfungen vorhandener Dateien bleiben erhalten.
 
 ## Laufzeitdiagnose und Export
 
@@ -165,10 +167,10 @@ Die App-Pakete sind ad hoc signiert und nicht notarisiert; es ist kein von Apple
 
 ## Integrität prüfen
 
-Für das bevorzugte DMG die gleichnamige Release-Anlage und `Switch_3.52.dmg.sha256` in denselben Ordner legen:
+Das DMG und seine zugehörige `.dmg.sha256`-Datei aus demselben Release in einen eigenen Ordner legen und dort prüfen:
 
 ```bash
-shasum -a 256 -c Switch_3.52.dmg.sha256
+shasum -a 256 -c ./*.dmg.sha256
 ```
 
 Die Audit-Sicherung in Actions enthält `dmg-provenance.json`, das ursprüngliche App-Manifest, App-Tarball, Testarchiv und `SHA256SUMS`. Der Herkunftsnachweis unterscheidet App-Quellstand und Verpackungslauf; das Manifest bindet Berichte, Version, Build, Quell-SHA, Git-Tree, Quell-Digest und Werkzeugversionen. Diese Dateien sind nach der Bereinigung keine Release-Anlagen mehr. Verfügbarkeit und Aufbewahrung der Actions-Nachweise richten sich nach den tatsächlichen GitHub-Einstellungen; das jeweilige Ablaufdatum ist maßgeblich.
