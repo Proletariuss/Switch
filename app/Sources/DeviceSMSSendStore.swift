@@ -1,18 +1,20 @@
 import Foundation
 import Combine
 
-enum DeviceSMSSendState: String, Decodable { case prepared, unknown, accepted }
+enum DeviceSMSSendState: String, Decodable { case reserved, prepared, unknown, accepted, cancelled }
 
-struct DeviceSMSIntentRequest: Encodable, Equatable {
+struct DeviceSMSIntentRequest: Codable, Equatable {
     let clientRequestID: String
     let phone: String
     let message: String
     let device: String
     let expectedSubscriptionID: String?
+    var identityVersion: Int? = nil
     enum CodingKeys: String, CodingKey {
         case phone, message, device
         case clientRequestID = "client_request_id"
         case expectedSubscriptionID = "expected_subscription_id"
+        case identityVersion = "identity_version"
     }
 }
 
@@ -28,29 +30,37 @@ struct DeviceSMSIntent: Decodable, Identifiable, Equatable {
     let canSubmit: Bool
     let createdAtMS: Int64
     let updatedAtMS: Int64
+    var identityVersion: Int? = nil
+    var intentNonce: String? = nil
+    var expectedSubscriptionID: String? = nil
+    var version: Int { identityVersion ?? 1 }
     var id: String { clientRequestID }
-    var needsRecovery: Bool { state != .accepted || !archiveConfirmed }
+    var needsRecovery: Bool { state != .cancelled && (state != .accepted || !archiveConfirmed) }
     var request: DeviceSMSIntentRequest {
         DeviceSMSIntentRequest(clientRequestID: clientRequestID, phone: phone, message: message,
-                               device: device, expectedSubscriptionID: subscriptionID)
+                               device: device, expectedSubscriptionID: expectedSubscriptionID ?? subscriptionID, identityVersion: identityVersion)
     }
     var statusText: String {
         switch state {
+        case .reserved: "签发候选已保存，尚未提交"
+        case .cancelled: "已取消，未提交"
         case .prepared: canSubmit ? "已保存，尚未提交" : "原线路已失效，尚未提交"
         case .unknown: "提交结果待确认"
         case .accepted: archiveConfirmed ? "通道已接受，未确认送达" : "通道已接受，本机历史未确认"
         }
     }
     func matches(_ request: DeviceSMSIntentRequest) -> Bool {
-        clientRequestID == request.clientRequestID && phone == request.phone && message == request.message
+        version == (request.identityVersion ?? 1) && clientRequestID == request.clientRequestID && phone == request.phone && message == request.message
             && device == request.device
-            && (request.expectedSubscriptionID == nil || subscriptionID == request.expectedSubscriptionID)
+            && (request.expectedSubscriptionID == nil || request.expectedSubscriptionID == "" || subscriptionID == request.expectedSubscriptionID)
     }
     enum CodingKeys: String, CodingKey {
         case phone, message, device, state, segments
         case clientRequestID = "client_request_id", subscriptionID = "subscription_id"
         case archiveConfirmed = "archive_confirmed", canSubmit = "can_submit"
         case createdAtMS = "created_at_ms", updatedAtMS = "updated_at_ms"
+        case identityVersion = "identity_version", intentNonce = "intent_nonce"
+        case expectedSubscriptionID = "expected_subscription_id"
     }
 }
 
@@ -66,6 +76,12 @@ struct DeviceSMSIntentPage: Decodable {
     func prepare(_ request: DeviceSMSIntentRequest) async throws -> DeviceSMSIntent
     func submit(_ request: DeviceSMSIntentRequest) async throws
     func reconcileArchive(_ request: DeviceSMSIntentRequest) async throws
+    func authority() async throws -> DeviceSMSAuthorityStatus
+    func reserve(bytes: Data) async throws -> DeviceSMSIntent
+    func prepareV2(bytes: Data) async throws -> DeviceSMSIntent
+    func submitV2(bytes: Data) async throws
+    func reconcileArchiveV2(bytes: Data) async throws
+    func cancelReservation(bytes: Data) async throws -> DeviceSMSIntent
 }
 
 struct DeviceSMSPendingError: LocalizedError {
