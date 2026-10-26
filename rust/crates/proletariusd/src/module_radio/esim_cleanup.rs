@@ -50,7 +50,8 @@ impl Service {
     /// Only finite native metadata and startup overview reads may opt into
     /// USB-net waiting. Ordinary eSIM operations keep immediate busy admission.
     pub(crate) async fn reserve_esim_read(&self) -> Result<EsimReservation, Failure> {
-        self.reserve_esim_kind(self.capture_esim_acquire_binding(), true).await
+        self.reserve_esim_kind(self.capture_esim_acquire_binding(), true)
+            .await
     }
 
     async fn reserve_esim_kind(
@@ -79,8 +80,7 @@ impl Service {
         } else {
             Job::Reservation(request)
         };
-        self.submit_bound(job, &captured.binding)
-        .await?;
+        self.submit_bound(job, &captured.binding).await?;
         Ok(EsimReservation {
             producer_id: captured.producer_id,
             epoch: captured.epoch,

@@ -509,7 +509,8 @@ impl Job {
             Self::Configure(v) => Some(&v.producer_id),
             Self::ConfigureNativeSerial { input, .. } => Some(&input.producer_id),
             Self::BootstrapNativeSerial { input, .. } => Some(&input.producer_id),
-            Self::Reservation(v) | Self::NativeEsimReadReservation(v)
+            Self::Reservation(v)
+            | Self::NativeEsimReadReservation(v)
             | Self::RestoreReservation(v) => Some(&v.producer_id),
             Self::Intent(v) => Some(&v.producer_id),
             Self::NativeIntent(v) => Some(&v.input.producer_id),
@@ -3351,7 +3352,9 @@ impl Service {
         restore_required: bool,
         waitable_read: bool,
     ) -> Result<Value, Failure> {
-        if waitable_read && (input.purpose != Purpose::Esim || input.action != "acquire" || restore_required) {
+        if waitable_read
+            && (input.purpose != Purpose::Esim || input.action != "acquire" || restore_required)
+        {
             return Err(Failure::invalid());
         }
         let id = identity(&input.token, input.sequence)?;

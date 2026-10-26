@@ -4583,7 +4583,7 @@
         {
           "kind": "reviewed_dynamic_dispatch",
           "file": "rust/crates/proletariusd/src/module_radio.rs",
-          "line": 5072,
+          "line": 5100,
           "function": "handle_internal",
           "note": "Iteration503: Authenticated compatibility declaration remains; native-managed USB rejects this physical prefix on both normal/shutdown ingress. Serial/nonmanaged callers retain the existing route contract. Iteration096/122/123/124/125: Strict private-token and current-producer native RF service with bounded typed actions, reservation identity, operation_id no-replay authority, USB/serial owner and shutdown rules. Call-mode voice writes and USBCFG compare-and-write are restricted to CallMode; read-only voice and USBCFG actions also allow Call. USBCFG writes verify an expected snapshot and typed readback; uncertainty blocks follow-up actions. Go retains lifecycle, ADB/helper and reboot recovery orchestration."
         }
@@ -4604,7 +4604,7 @@
         {
           "kind": "reviewed_dynamic_dispatch",
           "file": "rust/crates/proletariusd/src/module_radio.rs",
-          "line": 5072,
+          "line": 5100,
           "function": "handle_internal",
           "note": "Iteration503: Authenticated compatibility declaration remains; native-managed USB rejects this physical prefix on both normal/shutdown ingress. Serial/nonmanaged callers retain the existing route contract. Iteration096: Strict private-token and current-producer native RF service. Bounded action-specific DTOs; original token/sequence and operation_id authority, no physical replay. Shutdown admits only query and existing-authority observe/restore/release. Go remains the transport-configuration/business lifecycle caller."
         }
@@ -4625,7 +4625,7 @@
         {
           "kind": "reviewed_dynamic_dispatch",
           "file": "rust/crates/proletariusd/src/module_radio.rs",
-          "line": 5072,
+          "line": 5100,
           "function": "handle_internal",
           "note": "Iteration503: Authenticated compatibility declaration remains; native-managed USB rejects this physical prefix on both normal/shutdown ingress. Serial/nonmanaged callers retain the existing route contract. Iteration096: Strict private-token and current-producer native RF service. Bounded action-specific DTOs; original token/sequence and operation_id authority, no physical replay. Shutdown admits only query and existing-authority observe/restore/release. Go remains the transport-configuration/business lifecycle caller."
         }
@@ -4646,7 +4646,7 @@
         {
           "kind": "reviewed_dynamic_dispatch",
           "file": "rust/crates/proletariusd/src/module_radio.rs",
-          "line": 5072,
+          "line": 5100,
           "function": "handle_internal",
           "note": "Iteration503: Authenticated compatibility declaration remains; native-managed USB rejects this physical prefix on both normal/shutdown ingress. Serial/nonmanaged callers retain the existing route contract. Iteration096: Strict private-token and current-producer native RF service. Bounded action-specific DTOs; original token/sequence and operation_id authority, no physical replay. Shutdown admits only query and existing-authority observe/restore/release. Go remains the transport-configuration/business lifecycle caller."
         }
@@ -4667,7 +4667,7 @@
         {
           "kind": "reviewed_dynamic_dispatch",
           "file": "rust/crates/proletariusd/src/module_radio.rs",
-          "line": 5072,
+          "line": 5100,
           "function": "handle_internal",
           "note": "Iteration503: Authenticated compatibility declaration remains; native-managed USB rejects this physical prefix on both normal/shutdown ingress. Serial/nonmanaged callers retain the existing route contract. Iteration096: Strict private-token and current-producer native RF service. Bounded action-specific DTOs; original token/sequence and operation_id authority, no physical replay. Shutdown admits only query and existing-authority observe/restore/release. Go remains the transport-configuration/business lifecycle caller."
         }
@@ -4688,7 +4688,7 @@
         {
           "kind": "reviewed_dynamic_dispatch",
           "file": "rust/crates/proletariusd/src/module_radio.rs",
-          "line": 5072,
+          "line": 5100,
           "function": "handle_internal",
           "note": "Iteration503: Authenticated compatibility declaration remains; native-managed USB rejects this physical prefix on both normal/shutdown ingress. Serial/nonmanaged callers retain the existing route contract. Iteration096: Strict private-token and current-producer native RF service. Bounded action-specific DTOs; original token/sequence and operation_id authority, no physical replay. Shutdown admits only query and existing-authority observe/restore/release. Go remains the transport-configuration/business lifecycle caller."
         }
@@ -4709,7 +4709,7 @@
         {
           "kind": "reviewed_dynamic_dispatch",
           "file": "rust/crates/proletariusd/src/module_radio.rs",
-          "line": 5072,
+          "line": 5100,
           "function": "handle_internal",
           "note": "Iteration503: Authenticated compatibility declaration remains; native-managed USB rejects this physical prefix on both normal/shutdown ingress. Serial/nonmanaged callers retain the existing route contract. Iteration096: Strict private-token and current-producer native RF service. Bounded action-specific DTOs; original token/sequence and operation_id authority, no physical replay. Shutdown admits only query and existing-authority observe/restore/release. Go remains the transport-configuration/business lifecycle caller."
         }
@@ -11226,7 +11226,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/module_radio.rs",
-        "line": 4628
+        "line": 4656
       },
       "value": "/api/at"
     },
@@ -11234,7 +11234,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/module_radio.rs",
-        "line": 4673
+        "line": 4701
       },
       "value": "/api/at"
     },
@@ -11242,7 +11242,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/module_radio.rs",
-        "line": 4746
+        "line": 4774
       },
       "value": "/api/esim/module-notes"
     },
@@ -11250,7 +11250,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/module_radio.rs",
-        "line": 4765
+        "line": 4793
       },
       "value": "/api/esim/module-notes"
     },
@@ -11258,7 +11258,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/module_radio.rs",
-        "line": 4787
+        "line": 4815
       },
       "value": "/api/esim/module-notes"
     },
@@ -11266,7 +11266,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/module_radio.rs",
-        "line": 4795
+        "line": 4823
       },
       "value": "/api/esim/module-notes"
     },
@@ -11274,7 +11274,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/module_radio.rs",
-        "line": 4812
+        "line": 4840
       },
       "value": "/api/esim/phonebook/probe"
     },
@@ -11282,7 +11282,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/module_radio.rs",
-        "line": 4828
+        "line": 4856
       },
       "value": "/api/network"
     },
@@ -11290,7 +11290,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/module_radio.rs",
-        "line": 4902
+        "line": 4930
       },
       "value": "/api/network/usbnet"
     },
@@ -11298,7 +11298,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/module_radio.rs",
-        "line": 4938
+        "line": 4966
       },
       "value": "/api/network/usbnet"
     },
@@ -11306,7 +11306,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/module_radio.rs",
-        "line": 4951
+        "line": 4979
       },
       "value": "/api/module/flight-mode"
     },
@@ -11314,7 +11314,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/module_radio.rs",
-        "line": 4970
+        "line": 4998
       },
       "value": "/api/module/flight-mode"
     },
@@ -11322,7 +11322,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/module_radio.rs",
-        "line": 4984
+        "line": 5012
       },
       "value": "/api/module/flight-mode"
     },
@@ -11330,7 +11330,7 @@
       "language": "rust",
       "source": {
         "file": "rust/crates/proletariusd/src/module_radio.rs",
-        "line": 4985
+        "line": 5013
       },
       "value": "/api/network/reboot-module"
     },
@@ -21820,8 +21820,8 @@
     },
     {
       "file": "rust/crates/proletariusd/src/module_radio.rs",
-      "sha256": "1a7959ecf13d5850ac00db87f31bf35292866ab5aaf22375e7cea29e913bdc5f",
-      "review": "Iteration512: Final-only cleanup receipt retention, preflight and exit funnel, independent drains, archive worker ledger and cleanup admission barrier, best-effort diagnostics; ordinary public routes/DTOs/codecs/carrier resources unchanged. Full hardware acceptance remains pending. Iteration480: Native call reservations, callback/capture polling, producer retirement and confirmed release receipts share the existing radio owner. Read-only/cellular call plans preserve RF projection rather than falsely clearing suppression. Callback sequence publication runs outside state locks; old producer/session is fenced. Iteration499: Adds typed NativeIntent dispatch with exact producer/epoch/binding validation before the existing RF workflow. Restore/observe remain admitted during orderly shutdown; existing wire callers and RF policy are preserved. Iteration500: Adds a typed idle CFUN observation job on the existing serialized RF owner. It revalidates producer/epoch/binding and rejects any intent/reservation overlap; only a complete verified physical observation projects mode. Existing radio jobs and compatibility policies remain. Iteration502: Adds read-only configured-transport choice and exact USB eSIM-route bootstrap receipt. Receipt is recorded only after actual verified bootstrap and invalidated on binding/producer replacement; available requires the same currently valid physical USB binding. This does not migrate Go startup/configure orchestration or infer SIM contents from USB presence.\n\nIteration503: Registers native startup adapter for the existing retained RF owner. Native configure/bootstrap/warmup use typed in-process jobs and actual reservation release; serial compatibility and private route shapes remain.\n\nIteration504 lock follow-up: Reservation and CallModeVoiceGuard now retain Arc<OperationFileLock>. Existing cloned Arc retention, identity/epoch checks, active voice pins, release exclusion and physical-worker lifetime remain; the new explicit unlock runs only after the final Arc owner drops. No eager unlock is added to reservation release or voice admission.\n\nIteration506: serial_transport_session reports only an active configured serial binding. submit_device_sms now receives owner_epoch/session/SIM capability, waits for reservation then rechecks configured transport, exact session and no VoWiFi/stopping/retiring state before actor submission. The retained caller keeps physical execution, reservation release and ledger finalization alive after HTTP timeout. Actor rechecks the complete capability before physical writes; failed release is unknown, not success. This is SMS admission, not native serial lifecycle retirement.\n\nIteration508: ConfigureNativeSerial and BootstrapNativeSerial carry the original physical session through queued work, revalidate after actor waits and require actual policy/physical receipts. Full native eSIM admission requires that exact bootstrap receipt without making SMS/PDU readiness a card capability prerequisite. Physical radio and transaction cleanup retain original identity fences.\n\nIteration509: Typed native module intent captures exact serial actor epoch/session/SIM binding and RF producer/epoch/binding before awaits. RF prepare/restore uses matching actor hold facts and tagged retained RF workers rather than USB inhibit for serial. Retirement repeats its hold check under the radio state mutex before changing epoch. Exact serial physical-close and settled-worker proof may retire only the captured RF owner; stale generations alone are insufficient. Native serial selection remains authoritative before readiness and cannot use a USB or Go fallback. Iteration556 reviewed module recovery Gate and isolation projection; 294 Rust routes, 127 Swift HTTP calls and 54 HEAD aliases unchanged. This does not certify historical physical restore or unwrapped downgrade. Iteration579: New jobs require shared live admission; exact accepted reservation/intent/jobs retain finite guards through restore/release. Narrow active voice obligation right may obtain cleanup pin despite unknown RF status without admitting new business. Typed prequeue rejection alone is not physical settlement. Offline software evidence only; hardware/carrier and complete P0-P6 acceptance remain pending. Iteration582: Preserve authenticated internal action shape and replay/error handling. Mint commit proof only after typed validation and actual pending attempt registration in the exact call-mode reservation; use actual weak Guard/right, original lock, true Gate RootProof, sealed action/target and binding. Store failed mint as the real attempt result. Non-call-mode RF and accepted cleanup retain their original scopes. Metadata-to-kernel I/O is not atomic; hardware and full P0-P6 acceptance remain separate. Iteration584: Capture an actual operation-bound USB reconnect anchor before the first persistent call-mode write; preserve registered attempts and unknown results. Record the exact actually submitted non-rejected reboot ID. Count actual reconnect worker pins in jobs and prevent release/concurrent writes until their real drop. Initial new-business open is separate. Metadata-to-kernel I/O is not atomic; hardware and full P0-P6 acceptance remain separate. Iteration585: Mint typed restore reservations with required journal from actual admission, preserving ordinary enable behavior. Store only exact operation-bound journal/reboot token; original lock, guard, pending attempt, actual cleanup and known/unknown semantics remain authoritative. Metadata-to-kernel I/O is not atomic; hardware and full P0-P6 acceptance remain separate. Iteration586: Add finite CaptureRestorePhysicalBinding job to actual accepted job dispatch and exact restore lease admission. No public route, default factory, ordinary-right relaxation or persistent mutation is added. Full physical startup recovery, real-device and P0-P6 acceptance remain pending.\n\nIteration663 manual source-scope review: Radio-facing module recovery isolation is reflected in status and admission; source review does not certify hardware response. Existing P0-P6 product acceptance remains open.\n\nIteration666: Reviewed Rust-owned network recovery GET/HEAD/POST, retained operation IDs, monotonic wake delay/cooldown, structured traffic admission, and finite readback. Recovery uses the existing module-radio actor reservation with same-owner USB-mode and strict CLCC observations followed by the existing reboot plan fresh call guard. A lost HTTP/UI waiter cannot cancel the admitted worker. No DNS/proxy path is changed; offline tests are not hardware or carrier acceptance.\n\nIteration666 final review: Recovery reads only the narrow command_submitted receipt getter. Rejected USB-mode/call observations do not consume the automatic cooldown; successful or unknown submitted reboot attempts do. The legacy public reboot contract is preserved. Fake clock/transport and Swift generation-fence tests do not replace physical-device acceptance.\n\nIteration702 scoped manual source review (whole production file): 669->694 raw is unchanged. 695 introduces the shared bounded ingress helper preserving existing byte/status/code contracts and enforcing an absolute 5 s deadline even for always-ready empty frames. 698 adds only the explicit QCFG-readiness admission wait and private test observation marker; 698 raw equals current. The USBNet bound job captures one 25 s absolute deadline and original binding/epoch. It can retry only after the private marker proves rejection before reservation/write and the outcome is !submitted && !uncertain. Predicate admits only settled whitelisted CallMode read attempts with no RF intent, mutation, operation lock, restore/reboot journal, unknown, voice/reconnect pin or other owner. Notify registration precedes state recheck; shutdown notifies waiters. submit_with_binding acquires finite slot and operation admission, rejects stale binding/producer/retiring/stopping owners, and retains JobFinished+slot in the spawned real task after observer cancellation. The gate wait consumes the existing deadline; the already-admitted physical operation is not cancelled by a new outer request timeout. Actual device SMS holds the same module reservation used by other RF/card workflows; after waiting it rechecks configured transport/session and submits the exact serial binding. The release is attempted after the actor settles and release uncertainty is surfaced. Existing USB/native VoWiFi intent, physical pin, retirement, and exact old-token cleanup boundaries remain authoritative. USBNet public mutation still uses the original public receipt ID/payload/binding. Only the never-submitted temporary read-owner wait is repeated, never an AT write or uncertain outcome. Successful QCFG(usbnet,0/1) returns needs_reboot=true; it does not claim host network service disable, PDP teardown, or immediate loss of Mac connectivity. Shutdown waits job/worker facts and physical RF restore, then checks no retained intent/reservation/uncertainty/pins. The finalizer retains its task and cached unconfirmed result on observer loss; no admission wait bypasses these checks. Evidence: build/reports/stability-701/s13-sms-owner-review-forwarding.json#/scopes/5; decision approve_current, exact anchored old scope and current raw/normalized source verified. This pin records only the approved source/contract delta; it does not certify hardware, carrier interoperability, long-run behavior, or completion of S03/P6/other open acceptance. No pending scope is included.\n\nS13 independent manual semantic review 2026-10-24: class B. Add irreversible terminal seal under same mutex as jobs/pin admissions. Final receipt waits accepted jobs, rechecks physical intent/reservation/uncertainty/pins then seals. After seal only exact original completed restore/release can replay memory ACK without slot/job/disk/transport. Preserve producer/epoch/binding in NativeIntent. Lost actor reply and stale fence now propagate submitted/uncertain from both physical Ok and Err, so new generation cannot convert unknown physical submission to safe retry. Boundary: All seal and admission sites covered by whole pin; native validation helper same state lock reviewed in entry13. Existing current configured selection/reconnect guards remain; terminal ACK never enters generic handlers. Limits: 491 independent source-bound slice tests and historical679 targeted tests do not certify physical radio/CFUN or current full software gate. Exact expected/current production and normalized evidence, hashes and test provenance: build/reports/s13-manual-scope-semantic-review-20261024/scope-decisions.json#/7. No functional acceptance; P5/P6 remain OPEN; successor/cold/full gate not established.\n\nCloud reviewed preparation at a7b12205e406d215f5c4a462856804ad8410a5c1: Root review of exact phase-one diff: retained owner binding, exact retry installation, original accepted archive-only receipt; GitHub regression acceptance remains pending. No functional, device or product acceptance is awarded.\n\nDJI-354: Independently reviewed exact Rust lifecycle/framing/diagnostic repair against e964afd. Retain original-owner cleanup through transient shared pins, fence new ordinary voice observations, require complete AT status frames and preserve captured URCs, add closed-enum bounded diagnostics. No new HTTP route, Go runtime, physical authorization, carrier or hardware acceptance. Final-source cloud gates remain required.",
+      "sha256": "1e1dc33217b1c2a0c305ac849d745ab0d596cce8177929a010c6a1ffb6222e85",
+      "review": "Iteration512: Final-only cleanup receipt retention, preflight and exit funnel, independent drains, archive worker ledger and cleanup admission barrier, best-effort diagnostics; ordinary public routes/DTOs/codecs/carrier resources unchanged. Full hardware acceptance remains pending. Iteration480: Native call reservations, callback/capture polling, producer retirement and confirmed release receipts share the existing radio owner. Read-only/cellular call plans preserve RF projection rather than falsely clearing suppression. Callback sequence publication runs outside state locks; old producer/session is fenced. Iteration499: Adds typed NativeIntent dispatch with exact producer/epoch/binding validation before the existing RF workflow. Restore/observe remain admitted during orderly shutdown; existing wire callers and RF policy are preserved. Iteration500: Adds a typed idle CFUN observation job on the existing serialized RF owner. It revalidates producer/epoch/binding and rejects any intent/reservation overlap; only a complete verified physical observation projects mode. Existing radio jobs and compatibility policies remain. Iteration502: Adds read-only configured-transport choice and exact USB eSIM-route bootstrap receipt. Receipt is recorded only after actual verified bootstrap and invalidated on binding/producer replacement; available requires the same currently valid physical USB binding. This does not migrate Go startup/configure orchestration or infer SIM contents from USB presence.\n\nIteration503: Registers native startup adapter for the existing retained RF owner. Native configure/bootstrap/warmup use typed in-process jobs and actual reservation release; serial compatibility and private route shapes remain.\n\nIteration504 lock follow-up: Reservation and CallModeVoiceGuard now retain Arc<OperationFileLock>. Existing cloned Arc retention, identity/epoch checks, active voice pins, release exclusion and physical-worker lifetime remain; the new explicit unlock runs only after the final Arc owner drops. No eager unlock is added to reservation release or voice admission.\n\nIteration506: serial_transport_session reports only an active configured serial binding. submit_device_sms now receives owner_epoch/session/SIM capability, waits for reservation then rechecks configured transport, exact session and no VoWiFi/stopping/retiring state before actor submission. The retained caller keeps physical execution, reservation release and ledger finalization alive after HTTP timeout. Actor rechecks the complete capability before physical writes; failed release is unknown, not success. This is SMS admission, not native serial lifecycle retirement.\n\nIteration508: ConfigureNativeSerial and BootstrapNativeSerial carry the original physical session through queued work, revalidate after actor waits and require actual policy/physical receipts. Full native eSIM admission requires that exact bootstrap receipt without making SMS/PDU readiness a card capability prerequisite. Physical radio and transaction cleanup retain original identity fences.\n\nIteration509: Typed native module intent captures exact serial actor epoch/session/SIM binding and RF producer/epoch/binding before awaits. RF prepare/restore uses matching actor hold facts and tagged retained RF workers rather than USB inhibit for serial. Retirement repeats its hold check under the radio state mutex before changing epoch. Exact serial physical-close and settled-worker proof may retire only the captured RF owner; stale generations alone are insufficient. Native serial selection remains authoritative before readiness and cannot use a USB or Go fallback. Iteration556 reviewed module recovery Gate and isolation projection; 294 Rust routes, 127 Swift HTTP calls and 54 HEAD aliases unchanged. This does not certify historical physical restore or unwrapped downgrade. Iteration579: New jobs require shared live admission; exact accepted reservation/intent/jobs retain finite guards through restore/release. Narrow active voice obligation right may obtain cleanup pin despite unknown RF status without admitting new business. Typed prequeue rejection alone is not physical settlement. Offline software evidence only; hardware/carrier and complete P0-P6 acceptance remain pending. Iteration582: Preserve authenticated internal action shape and replay/error handling. Mint commit proof only after typed validation and actual pending attempt registration in the exact call-mode reservation; use actual weak Guard/right, original lock, true Gate RootProof, sealed action/target and binding. Store failed mint as the real attempt result. Non-call-mode RF and accepted cleanup retain their original scopes. Metadata-to-kernel I/O is not atomic; hardware and full P0-P6 acceptance remain separate. Iteration584: Capture an actual operation-bound USB reconnect anchor before the first persistent call-mode write; preserve registered attempts and unknown results. Record the exact actually submitted non-rejected reboot ID. Count actual reconnect worker pins in jobs and prevent release/concurrent writes until their real drop. Initial new-business open is separate. Metadata-to-kernel I/O is not atomic; hardware and full P0-P6 acceptance remain separate. Iteration585: Mint typed restore reservations with required journal from actual admission, preserving ordinary enable behavior. Store only exact operation-bound journal/reboot token; original lock, guard, pending attempt, actual cleanup and known/unknown semantics remain authoritative. Metadata-to-kernel I/O is not atomic; hardware and full P0-P6 acceptance remain separate. Iteration586: Add finite CaptureRestorePhysicalBinding job to actual accepted job dispatch and exact restore lease admission. No public route, default factory, ordinary-right relaxation or persistent mutation is added. Full physical startup recovery, real-device and P0-P6 acceptance remain pending.\n\nIteration663 manual source-scope review: Radio-facing module recovery isolation is reflected in status and admission; source review does not certify hardware response. Existing P0-P6 product acceptance remains open.\n\nIteration666: Reviewed Rust-owned network recovery GET/HEAD/POST, retained operation IDs, monotonic wake delay/cooldown, structured traffic admission, and finite readback. Recovery uses the existing module-radio actor reservation with same-owner USB-mode and strict CLCC observations followed by the existing reboot plan fresh call guard. A lost HTTP/UI waiter cannot cancel the admitted worker. No DNS/proxy path is changed; offline tests are not hardware or carrier acceptance.\n\nIteration666 final review: Recovery reads only the narrow command_submitted receipt getter. Rejected USB-mode/call observations do not consume the automatic cooldown; successful or unknown submitted reboot attempts do. The legacy public reboot contract is preserved. Fake clock/transport and Swift generation-fence tests do not replace physical-device acceptance.\n\nIteration702 scoped manual source review (whole production file): 669->694 raw is unchanged. 695 introduces the shared bounded ingress helper preserving existing byte/status/code contracts and enforcing an absolute 5 s deadline even for always-ready empty frames. 698 adds only the explicit QCFG-readiness admission wait and private test observation marker; 698 raw equals current. The USBNet bound job captures one 25 s absolute deadline and original binding/epoch. It can retry only after the private marker proves rejection before reservation/write and the outcome is !submitted && !uncertain. Predicate admits only settled whitelisted CallMode read attempts with no RF intent, mutation, operation lock, restore/reboot journal, unknown, voice/reconnect pin or other owner. Notify registration precedes state recheck; shutdown notifies waiters. submit_with_binding acquires finite slot and operation admission, rejects stale binding/producer/retiring/stopping owners, and retains JobFinished+slot in the spawned real task after observer cancellation. The gate wait consumes the existing deadline; the already-admitted physical operation is not cancelled by a new outer request timeout. Actual device SMS holds the same module reservation used by other RF/card workflows; after waiting it rechecks configured transport/session and submits the exact serial binding. The release is attempted after the actor settles and release uncertainty is surfaced. Existing USB/native VoWiFi intent, physical pin, retirement, and exact old-token cleanup boundaries remain authoritative. USBNet public mutation still uses the original public receipt ID/payload/binding. Only the never-submitted temporary read-owner wait is repeated, never an AT write or uncertain outcome. Successful QCFG(usbnet,0/1) returns needs_reboot=true; it does not claim host network service disable, PDP teardown, or immediate loss of Mac connectivity. Shutdown waits job/worker facts and physical RF restore, then checks no retained intent/reservation/uncertainty/pins. The finalizer retains its task and cached unconfirmed result on observer loss; no admission wait bypasses these checks. Evidence: build/reports/stability-701/s13-sms-owner-review-forwarding.json#/scopes/5; decision approve_current, exact anchored old scope and current raw/normalized source verified. This pin records only the approved source/contract delta; it does not certify hardware, carrier interoperability, long-run behavior, or completion of S03/P6/other open acceptance. No pending scope is included.\n\nS13 independent manual semantic review 2026-10-24: class B. Add irreversible terminal seal under same mutex as jobs/pin admissions. Final receipt waits accepted jobs, rechecks physical intent/reservation/uncertainty/pins then seals. After seal only exact original completed restore/release can replay memory ACK without slot/job/disk/transport. Preserve producer/epoch/binding in NativeIntent. Lost actor reply and stale fence now propagate submitted/uncertain from both physical Ok and Err, so new generation cannot convert unknown physical submission to safe retry. Boundary: All seal and admission sites covered by whole pin; native validation helper same state lock reviewed in entry13. Existing current configured selection/reconnect guards remain; terminal ACK never enters generic handlers. Limits: 491 independent source-bound slice tests and historical679 targeted tests do not certify physical radio/CFUN or current full software gate. Exact expected/current production and normalized evidence, hashes and test provenance: build/reports/s13-manual-scope-semantic-review-20261024/scope-decisions.json#/7. No functional acceptance; P5/P6 remain OPEN; successor/cold/full gate not established.\n\nCloud reviewed preparation at a7b12205e406d215f5c4a462856804ad8410a5c1: Root review of exact phase-one diff: retained owner binding, exact retry installation, original accepted archive-only receipt; GitHub regression acceptance remains pending. No functional, device or product acceptance is awarded.\n\nDJI-354: Independently reviewed exact Rust lifecycle/framing/diagnostic repair against e964afd. Retain original-owner cleanup through transient shared pins, fence new ordinary voice observations, require complete AT status frames and preserve captured URCs, add closed-enum bounded diagnostics. No new HTTP route, Go runtime, physical authorization, carrier or hardware acceptance. Final-source cloud gates remain required.\n\nDJI-354: Independently reviewed exact Rust lifecycle/framing/diagnostic repair against e964afd. Retain original-owner cleanup through transient shared pins, fence new ordinary voice observations, require complete AT status frames and preserve captured URCs, add closed-enum bounded diagnostics; permit bounded same-binding USB-net waiting only for typed internal metadata/warmup reads, never normal eSIM writes or calls. No new HTTP route, Go runtime, physical authorization, carrier or hardware acceptance. Final-source cloud gates remain required.",
       "source": {
         "file": "rust/crates/proletariusd/src/module_radio.rs",
         "line": 1
@@ -21835,7 +21835,7 @@
       "line": 597,
       "source": {
         "file": "rust/crates/proletariusd/src/module_radio.rs",
-        "line": 1506
+        "line": 1511
       }
     },
     {
@@ -24172,8 +24172,8 @@
     },
     {
       "file": "rust/crates/proletariusd/src/device_status_projection/native.rs",
-      "sha256": "58c669eb163cf847f5830a64da720bd4b318e630a53329d3c748b47eef5007b2",
-      "review": "Iteration510 supersedes runtime Go dependency portions of earlier reviews: production child startup/monitor/restart and fallback dispatch are retired; native exact-session ownership, durable journal and retained physical cleanup stay authoritative. Iteration502: Idle selected USB status now uses a retained native RF/USB observation; native IMS metadata still wins. Recheck selection after late Go replies and carry exact DeviceObservation/hardware token through the worker join to synchronous publication. Busy/error fallback exposes no stale SIM identity. Non-USB/unconfigured snapshots and initial discovery/configuration remain Go-dependent. Exact observation token survives JoinHandle await; the final synchronous publisher rejects replaced/deselected devices. Explicitly lost read/cache never fabricates SIM identity.",
+      "sha256": "84d4cf47e3ac118662257bdb96665ab9271d80dce2e80abe1270237b9fdf5b5d",
+      "review": "Iteration510 supersedes runtime Go dependency portions of earlier reviews: production child startup/monitor/restart and fallback dispatch are retired; native exact-session ownership, durable journal and retained physical cleanup stay authoritative. Iteration502: Idle selected USB status now uses a retained native RF/USB observation; native IMS metadata still wins. Recheck selection after late Go replies and carry exact DeviceObservation/hardware token through the worker join to synchronous publication. Busy/error fallback exposes no stale SIM identity. Non-USB/unconfigured snapshots and initial discovery/configuration remain Go-dependent. Exact observation token survives JoinHandle await; the final synchronous publisher rejects replaced/deselected devices. Explicitly lost read/cache never fabricates SIM identity.\n\nDJI-354: Independently reviewed exact Rust lifecycle/framing/diagnostic repair against e964afd. Retain original-owner cleanup through transient shared pins, fence new ordinary voice observations, require complete AT status frames and preserve captured URCs, add closed-enum bounded diagnostics; permit bounded same-binding USB-net waiting only for typed internal metadata/warmup reads, never normal eSIM writes or calls. No new HTTP route, Go runtime, physical authorization, carrier or hardware acceptance. Final-source cloud gates remain required.",
       "source": {
         "file": "rust/crates/proletariusd/src/device_status_projection/native.rs",
         "line": 1
@@ -24253,8 +24253,8 @@
     },
     {
       "file": "rust/crates/proletariusd/src/module_radio/native_startup.rs",
-      "sha256": "febe6f4e2de6cd31d9b4fde8643cef9d896a61f5d04839f25aca2d9dd96c15c9",
-      "review": "Iteration503: Typed native configure reuses only matching current USB binding; bootstrap requires confirmed RF/eSIM route receipt. Best-effort eSIM warmup retains native RF reservation and must confirm its release even when the card is not eUICC. Unconfirmed cleanup blocks SMS readiness.\n\nIteration508: ConfigureNativeSerial and BootstrapNativeSerial carry the original physical session through queued work, revalidate after actor waits and require actual policy/physical receipts. Full native eSIM admission requires that exact bootstrap receipt without making SMS/PDU readiness a card capability prerequisite. Physical radio and transaction cleanup retain original identity fences.",
+      "sha256": "6cf80e8676ce578d7d664db8651403533ba7811533ac2ed0efd01eccca9e28fe",
+      "review": "Iteration503: Typed native configure reuses only matching current USB binding; bootstrap requires confirmed RF/eSIM route receipt. Best-effort eSIM warmup retains native RF reservation and must confirm its release even when the card is not eUICC. Unconfirmed cleanup blocks SMS readiness.\n\nIteration508: ConfigureNativeSerial and BootstrapNativeSerial carry the original physical session through queued work, revalidate after actor waits and require actual policy/physical receipts. Full native eSIM admission requires that exact bootstrap receipt without making SMS/PDU readiness a card capability prerequisite. Physical radio and transaction cleanup retain original identity fences.\n\nDJI-354: Independently reviewed exact Rust lifecycle/framing/diagnostic repair against e964afd. Retain original-owner cleanup through transient shared pins, fence new ordinary voice observations, require complete AT status frames and preserve captured URCs, add closed-enum bounded diagnostics; permit bounded same-binding USB-net waiting only for typed internal metadata/warmup reads, never normal eSIM writes or calls. No new HTTP route, Go runtime, physical authorization, carrier or hardware acceptance. Final-source cloud gates remain required.",
       "source": {
         "file": "rust/crates/proletariusd/src/module_radio/native_startup.rs",
         "line": 1
@@ -26803,6 +26803,7 @@
     "rust/crates/proletariusd/src/module_quarantine_tests.rs",
     "rust/crates/proletariusd/src/module_radio/bootstrap_projection_tests.rs",
     "rust/crates/proletariusd/src/module_radio/call_mode_commit_tests.rs",
+    "rust/crates/proletariusd/src/module_radio/esim_cleanup/read_wait_tests.rs",
     "rust/crates/proletariusd/src/module_radio/esim_cleanup/tests.rs",
     "rust/crates/proletariusd/src/module_radio/quarantine_tests.rs",
     "rust/crates/proletariusd/src/module_radio/reconnect/tests.rs",
