@@ -46,6 +46,7 @@ jobs:
     timeout-minutes: 15
     outputs:
       artifact_name: ${{ steps.identity.outputs.artifact_name }}
+      complete: ${{ steps.snapshot.outputs.complete }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -70,6 +71,7 @@ jobs:
           python3 control/scripts/ci/test-compact-release.py
           echo "artifact_name=Switch-release-audit-$APP_VERSION-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
       - name: Verify retained DMG and preserve audit files
+        id: snapshot
         env:
           GH_TOKEN: ${{ github.token }}
           APP_VERSION: ${{ inputs.version }}
@@ -79,6 +81,7 @@ jobs:
           PYTHONDONTWRITEBYTECODE: '1'
         run: python3 control/scripts/ci/compact-release.py prepare --version "$APP_VERSION" --app-sha "$APP_SHA" --packaging-run-id "$PACKAGING_RUN" --packaging-attempt "$PACKAGING_ATTEMPT" --directory "$GITHUB_WORKSPACE/audit-snapshot"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: steps.snapshot.outputs.complete != 'true'
         with:
           name: ${{ steps.identity.outputs.artifact_name }}
           path: audit-snapshot/
@@ -87,6 +90,7 @@ jobs:
   prune:
     name: Release compact prune
     needs: verify
+    if: needs.verify.outputs.complete != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:

@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Pure deletion-plan fixtures; no network or real Release mutations."""
 import copy
+import json
+import tempfile
+from types import SimpleNamespace
+from unittest import mock
 import importlib.util
 from pathlib import Path
 import unittest
@@ -107,6 +111,57 @@ class CompactFixtures(unittest.TestCase):
         rows = compact.asset_map(api.rows)
         with self.assertRaises(RuntimeError):
             compact.verify_retained(api, rows, {row["name"]: b"other" for row in keep}, VERSION)
+
+    def test_prepare_requires_complete_five_or_completed_marker(self):
+        keep, remove = fixture()
+        self.assertEqual(compact.require_snapshot_state(compact.asset_map(API(keep + remove).rows), "", VERSION, COMMIT),
+                         compact.audit_names(VERSION, COMMIT))
+        for count in range(1, 5):
+            with self.subTest(remaining=count), self.assertRaises(RuntimeError):
+                compact.require_snapshot_state(compact.asset_map(API(keep + remove[:count]).rows), "", VERSION, COMMIT)
+        with self.assertRaises(RuntimeError):
+            compact.require_snapshot_state(compact.asset_map(API(keep).rows), "", VERSION, COMMIT)
+        body = "<!-- switch-compact:v1 -->complete snapshot link<!-- /switch-compact:v1 -->"
+        self.assertEqual(compact.require_snapshot_state(compact.asset_map(API(keep).rows), body, VERSION, COMMIT), set())
+        with self.assertRaises(RuntimeError):
+            compact.require_snapshot_state(compact.asset_map(API(keep).rows), body + body, VERSION, COMMIT)
+
+    def backup_gate(self, mismatch):
+        with tempfile.TemporaryDirectory() as folder:
+            directory = Path(folder)
+            plan = {"schema_version": 1, "kind": "compact-release-plan", "controller": "c" * 40,
+                    "run_id": "123", "run_attempt": "1", "version": VERSION, "app_sha": COMMIT}
+            (directory / "cleanup-plan.json").write_text(json.dumps(plan))
+            (directory / "packaging-proof.json").write_bytes(b"proof")
+            saved = {p.name: p.read_bytes() for p in directory.iterdir()}
+            class BackupAPI:
+                def __init__(self):
+                    self.mutations = []
+                def pages(self, path, key=None):
+                    if path.endswith("/jobs"):
+                        return [{"name": "Release compact verify", "conclusion": "failure",
+                                 "steps": [{"name": "Verify retained DMG and preserve audit files", "conclusion": "failure"}]}]
+                    return []
+                def artifact(self, artifacts, name, run_id, commit):
+                    return saved | ({"packaging-proof.json": b"changed"} if mismatch else {})
+                def api(self, method, path, *args, **kwargs):
+                    if method != "GET":
+                        self.mutations.append((method, path))
+                    raise AssertionError("backup gate must precede further API operations")
+            api = BackupAPI()
+            args = SimpleNamespace(directory=directory, version=VERSION, app_sha=COMMIT)
+            with mock.patch.dict(compact.os.environ, {"GITHUB_SHA": "c" * 40, "GITHUB_RUN_ID": "123"}):
+                with mock.patch.object(compact, "original_dmg") as downstream:
+                    with self.assertRaises(RuntimeError):
+                        compact.prune(api, args)
+                    downstream.assert_not_called()
+            self.assertEqual(api.mutations, [])
+
+    def test_snapshot_readback_mismatch_prevents_any_delete(self):
+        self.backup_gate(True)
+
+    def test_failed_verify_job_prevents_any_delete(self):
+        self.backup_gate(False)
 
     def test_failure_is_not_successful_publish_evidence(self):
         jobs = [{"name": "dmg / DMG publish", "conclusion": "failure",

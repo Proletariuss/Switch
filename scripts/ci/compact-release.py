@@ -108,10 +108,25 @@ def verify_retained(api, rows, files, version, expected=None):
         result.append(current)
     return result
 
+def require_snapshot_state(rows, body, version, commit):
+    present = set(rows) & audit_names(version, commit)
+    if present == audit_names(version, commit):
+        return present
+    start, end = "<!-- switch-compact:v1 -->", "<!-- /switch-compact:v1 -->"
+    if not present and body.count(start) == body.count(end) == 1 and body.index(start) < body.index(end):
+        return present
+    raise RuntimeError("incomplete audit state: rerun the original failed prune job with its complete archived snapshot")
+
 def prepare(api, args):
     files, proof = original_dmg(api, args.version, args.app_sha, args.packaging_run_id, args.packaging_attempt)
     release, rows = context(api, args.version, args.app_sha, proof)
     keep = verify_retained(api, rows, files, args.version)
+    present = require_snapshot_state(rows, release.get("body", ""), args.version, args.app_sha)
+    with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+        output.write("complete=" + ("false" if present else "true") + "\n")
+    if not present:
+        print("PASS: already compacted; original DMG verified, no writes or replacement audit snapshot", flush=True)
+        return
     args.directory.mkdir(parents=True, exist_ok=False)
     audit = args.directory / "audit"
     audit.mkdir()
