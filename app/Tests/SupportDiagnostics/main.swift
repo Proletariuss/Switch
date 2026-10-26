@@ -242,7 +242,49 @@ private func expect(_ condition: @autoclosure () throws -> Bool, _ message: Stri
         }
         print("PASS safe failure: directory/ancestor/segment symlinks and oversized files preserve external bytes")
     }
-    static func main() throws {
+    static func exportLeaseOutlivesCancellation() async throws {
+        guard let lease = SupportExportLease.acquire() else {
+            throw CheckFailure(description: "initial export lease unavailable")
+        }
+        let entered = DispatchSemaphore(value: 0)
+        let finish = DispatchSemaphore(value: 0)
+        let owner = Task {
+            defer { lease.release() }
+            await Task.detached(priority: .utility) {
+                entered.signal()
+                // Stand in only for blocked filesystem IO; actual Task and lease
+                // lifetime/cancellation semantics remain production Swift code.
+                finish.wait()
+            }.value
+        }
+        do {
+            try expect(entered.wait(timeout: .now() + 5) == .success, "detached export did not start")
+            try expect(SupportExportLease.acquire() == nil, "concurrent export bypassed active lease")
+            owner.cancel()
+            try expect(owner.isCancelled, "fixture did not cancel export waiter")
+            try expect(SupportExportLease.acquire() == nil, "cancelled waiter released still-running filesystem work")
+        } catch {
+            finish.signal()
+            await owner.value
+            throw error
+        }
+        finish.signal()
+        await owner.value
+        guard let successor = SupportExportLease.acquire() else {
+            throw CheckFailure(description: "retired export retained its lease")
+        }
+        defer { successor.release() }
+        lease.release()
+        try expect(SupportExportLease.acquire() == nil, "old release cleared successor's active lease")
+        successor.release()
+        guard let final = SupportExportLease.acquire() else {
+            throw CheckFailure(description: "successor did not release after retirement")
+        }
+        final.release()
+        print("PASS export lease: cancelled waiter remains busy until actual detached work retires; stale release cannot unlock successor")
+    }
+    static func main() async throws {
+        try await exportLeaseOutlivesCancellation()
         try rotationAndRestart()
         try clientSchemaAndExport()
         try bundles()
