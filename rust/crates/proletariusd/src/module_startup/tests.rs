@@ -93,6 +93,12 @@ impl Transport for Port {
         if command == "AT+CPMS?" {
             return Ok("+CPMS: \"SM\",0,50,\"SM\",0,50,\"SM\",0,50\r\nOK\r\n".into());
         }
+        if command == "ATI" {
+            return Ok("Startup fixture firmware\r\nOK\r\n".into());
+        }
+        if command == "AT+CPIN?" {
+            return Ok("+CPIN: READY\r\nOK\r\n".into());
+        }
         Ok("OK\r\n".into())
     }
 }
@@ -609,7 +615,7 @@ async fn inbox_binding_retry_cannot_reselect_serial_after_confirmed_usb_choice()
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn warm_release_failure_keeps_sms_unready_after_actual_channel_close() {
+async fn warm_cleanup_contention_recovers_sms_and_metadata_after_actual_channel_close() {
     let fixture = Fixture::new();
     let gate = fixture.warm_close_gate();
     fixture.usb.claim_native_management().unwrap();
@@ -624,8 +630,12 @@ async fn warm_release_failure_keeps_sms_unready_after_actual_channel_close() {
     assert!(fixture.radio.sim_channel_busy());
     assert!(!fixture.usb.native_sms_ready());
 
-    // Use the public retained cleanup guard to make the real reservation
-    // release fail with busy. No internal reservation/epoch state is written.
+    // Ordinary Status cannot overlap the eSIM owner; a mandatory retained
+    // cleanup still can. Neither path writes internal reservation/epoch state.
+    assert_eq!(
+        fixture.radio.borrow_shared_voice_operation(PRODUCER, false).err().unwrap().code,
+        "module_radio_busy"
+    );
     let shared_cleanup = tokio::time::timeout(Duration::from_secs(5), async {
         loop {
             if let Ok(guard) = fixture.radio.borrow_shared_voice_operation(PRODUCER, true) {
@@ -637,10 +647,8 @@ async fn warm_release_failure_keeps_sms_unready_after_actual_channel_close() {
     .await
     .unwrap();
     gate.release();
-    assert_eq!(
-        bootstrap.await.unwrap(),
-        Err("module_startup_warm_cleanup_unconfirmed")
-    );
+    until(|| fixture.radio.esim_release_pending_for_test()).await;
+    assert!(!bootstrap.is_finished());
     let opened = fixture.physical.channels_opened.load(Ordering::SeqCst);
     assert!(opened > 0);
     assert_eq!(
@@ -649,18 +657,21 @@ async fn warm_release_failure_keeps_sms_unready_after_actual_channel_close() {
     );
     assert!(!fixture.usb.native_sms_ready());
     assert!(fixture.usb.sms_poll_binding(PRODUCER).unwrap().is_none());
+    assert!(fixture.radio.sim_channel_busy());
     drop(shared_cleanup);
-    assert!(
-        fixture.radio.sim_channel_busy(),
-        "dropping the competing guard does not forge eSIM release confirmation"
-    );
-    let command_count = fixture.physical.commands.lock().unwrap().len();
-    assert!(fixture.radio.bootstrap_native_usb().await.is_err());
-    assert_eq!(
-        fixture.physical.commands.lock().unwrap().len(),
-        command_count
-    );
-    assert!(!fixture.usb.native_sms_ready());
+    tokio::time::timeout(Duration::from_secs(5), bootstrap)
+        .await.unwrap().unwrap().unwrap();
+    assert!(fixture.usb.native_sms_ready());
+    assert!(fixture.usb.sms_poll_binding(PRODUCER).unwrap().is_some());
+    assert!(!fixture.radio.sim_channel_busy());
+    // Use the real metadata plan after the same startup has recovered.
+    let session = fixture.radio.usb_transport_session().unwrap();
+    let reservation = fixture.radio.reserve_esim().await.unwrap();
+    let observation = fixture.usb.native_device_observation(&session).await.unwrap();
+    fixture.radio.release_esim(reservation).await.unwrap();
+    assert_eq!(observation.status["firmware"], "Startup fixture firmware");
+    assert_eq!(observation.status["sim_inserted"], true);
+    assert!(fixture.physical.commands.lock().unwrap().iter().any(|command| command == "ATI"));
     fixture.radio.finish_shutdown().await.unwrap();
     fixture.usb.shutdown().await.unwrap();
     fixture

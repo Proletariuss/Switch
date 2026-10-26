@@ -21,6 +21,7 @@ use tokio::task::JoinHandle;
 pub(crate) const PREFIX: &str = "/api/internal/module-radio/";
 #[cfg(test)]
 mod bootstrap_projection_tests;
+mod esim_cleanup;
 mod native_startup;
 mod native_vowifi;
 mod reconnect;
@@ -72,6 +73,7 @@ struct State {
     preference_error: bool,
     observed: Outcome,
     reservation: Option<Reservation>,
+    esim_release_pending: Option<(u64, Identity)>,
     profile_notes_unknown: bool,
     call_mode_backup_delete_in_flight: bool,
     waters: BTreeMap<Purpose, Water>,
@@ -224,6 +226,7 @@ impl Drop for CallModeVoiceGuard {
 }
 pub(crate) struct EsimReservation {
     producer_id: String,
+    epoch: u64,
     token: String,
     sequence: u64,
 }
@@ -702,6 +705,7 @@ impl Service {
                 preference_error: false,
                 observed: Outcome::default(),
                 reservation: None,
+                esim_release_pending: None,
                 profile_notes_unknown: false,
                 call_mode_backup_delete_in_flight: false,
                 waters: BTreeMap::new(),
@@ -1013,7 +1017,9 @@ impl Service {
         if state.jobs != 0
             || state.active_shared_voice_pins != 0
             || state.reservation.as_ref().is_some_and(|reservation| {
-                reservation.operation_lock.is_some() || reservation.active_voice_pins != 0
+                reservation.operation_lock.is_some()
+                    || reservation.active_voice_pins != 0
+                    || !cleanup && reservation.purpose == Purpose::Esim
             })
         {
             return Err(Failure::busy());
@@ -1115,7 +1121,10 @@ impl Service {
                 "eSIM 模块事务序号不可用",
             ));
         }
-        let producer_id = self.0.state.lock().unwrap().producer.clone();
+        let (producer_id, epoch) = {
+            let state = self.0.state.lock().unwrap();
+            (state.producer.clone(), state.epoch)
+        };
         let token = format!("rust-esim-{sequence}");
         self.submit(Job::Reservation(ReservationRequest {
             producer_id: producer_id.clone(),
@@ -1127,6 +1136,7 @@ impl Service {
         .await?;
         Ok(EsimReservation {
             producer_id,
+            epoch,
             token,
             sequence,
         })
@@ -1507,17 +1517,6 @@ impl Service {
             deadline: Instant::now() + Duration::from_secs(24),
         })
         .await
-    }
-    pub(crate) async fn release_esim(&self, reservation: EsimReservation) -> Result<(), Failure> {
-        self.submit(Job::Reservation(ReservationRequest {
-            producer_id: reservation.producer_id,
-            action: "release".into(),
-            purpose: Purpose::Esim,
-            token: reservation.token,
-            sequence: reservation.sequence,
-        }))
-        .await
-        .map(|_| ())
     }
     /// Lightly reinitialize the module radio after an eUICC profile switch.
     /// The caller must retain the same eSIM reservation across the switch and
