@@ -131,7 +131,8 @@ fn ordered_crash_family_matrix_preserves_all_legacy_phases_and_exact_raw_bytes()
     f.put(ACTIVE, &p.prepared_bytes);
     assert_eq!(step(&f), RecoveryStep::V2Present);
     f.remove(PREPARED);
-    assert_eq!(step(&f), RecoveryStep::V2Present);
+    assert!(inspect(&f.0).is_err());
+    f.put(PREPARED, &p.prepared_bytes);
     let before = f.snapshot();
     assert!(
         inspect(&f.0)
@@ -168,7 +169,7 @@ fn every_partial_or_orphan_family_is_classified_or_rejected_without_repair() {
                 (false, 4) => Some(RecoveryStep::FreezeLegacy),
                 (false, 5) => Some(RecoveryStep::PrepareV2),
                 (false, 7) => Some(RecoveryStep::ReplaceActive),
-                (true, 5 | 7) => Some(RecoveryStep::V2Present),
+                (true, 7) => Some(RecoveryStep::V2Present),
                 _ => None,
             };
             assert_eq!(got.ok(), expected, "active_v2={active_v2} mask={mask}");
@@ -457,4 +458,31 @@ fn full_ten_thousand_record_family_is_frozen_without_paging_or_losing_last_fence
     stage(&f, &p);
     f.put(ACTIVE, &p.prepared_bytes);
     assert_eq!(step(&f), RecoveryStep::V2Present);
+}
+
+
+#[test]
+fn legacy_overlay_allows_only_recovery_and_archive_ack_monotonic_progress() {
+    let f = Fixture::new();
+    let p = f.proposal();
+    stage(&f, &p);
+    let mut current = decode_snapshot_bytes(&p.prepared_bytes).unwrap();
+    for item in &mut current.legacy_overlay {
+        if item.original_state == LegacyPhase::Submitting {
+            item.original_state = LegacyPhase::Unknown;
+        }
+        if item.original_state == LegacyPhase::Accepted {
+            item.archive_confirmed = true;
+        }
+    }
+    let progressed = encode_checked(&current).unwrap();
+    f.put(ACTIVE, &progressed);
+    assert_eq!(step(&f), RecoveryStep::V2Present);
+    assert!(validate_transition(&p.prepared_bytes, &progressed).is_ok());
+    assert!(validate_transition(&progressed, &p.prepared_bytes).is_err());
+    let accepted = current.legacy_overlay.iter_mut()
+        .find(|fence| fence.original_state == LegacyPhase::Accepted).unwrap();
+    accepted.original_attempt = "different-attempt".into();
+    f.put(ACTIVE, &encode_checked(&current).unwrap());
+    assert!(inspect(&f.0).is_err());
 }

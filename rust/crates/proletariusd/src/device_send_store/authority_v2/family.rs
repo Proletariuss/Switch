@@ -1,12 +1,12 @@
-//! Read-only whole-family migration prerequisite. No migration executor exists.
+//! Whole-family migration validation and original-lock execution plan.
 //!
 //! The proposed ordered protocol is journal -> frozen raw v1 -> initial v2
 //! prepared -> atomic replacement of the ORIGINAL active path. Each step needs
 //! file + directory durability before the next, under the original writer lock.
 //! Recovery derives progress from exact bytes, never from a claimed journal
 //! phase. Frozen v1 and the journal remain required after replacement. This
-//! module only inspects/proposes: executing a returned step after releasing the
-//! lock is unsafe. A future reviewed executor must revalidate under that lock.
+//! planner is called by the sealed kernel under that same original lock;
+//! detached proposals remain diagnostic and never authorize a later write.
 use super::*;
 use proletarius_store::{ArchiveStore, raw::FamilyInspectionError};
 use std::path::Path;
@@ -222,7 +222,8 @@ pub(super) fn inspect_bytes(
         let current = decode_snapshot_bytes(active)?;
         if current.authority_id != journal.authority_id
             || current.legacy.sha256 != legacy.digest
-            || current.legacy_overlay != initial.legacy_overlay
+            || !overlay_preserves_legacy(&current.legacy_overlay, &initial.legacy_overlay)
+            || prepared.is_none()
         {
             return Err(CodecError::LegacyUnavailable);
         }
@@ -234,6 +235,64 @@ pub(super) fn inspect_bytes(
         next_step,
         active_bytes: active.to_vec(),
     })
+}
+
+fn overlay_preserves_legacy(current: &[LegacyFence], original: &[LegacyFence]) -> bool {
+    if current.len() != original.len() { return false; }
+    let original: BTreeMap<_, _> = original.iter().map(|entry| (&entry.client_request_id, entry)).collect();
+    current.iter().all(|now| original.get(&now.client_request_id).is_some_and(|before| {
+        now.original_attempt == before.original_attempt
+            && now.segments == before.segments
+            && (now.original_state == before.original_state
+                || before.original_state == LegacyPhase::Submitting
+                    && now.original_state == LegacyPhase::Unknown)
+            && (now.archive_confirmed == before.archive_confirmed
+                || before.original_state == LegacyPhase::Accepted
+                    && !before.archive_confirmed && now.archive_confirmed)
+    }))
+}
+
+/// A valid standalone snapshot must also preserve progress acknowledged in the
+/// immediately preceding active snapshot, not merely the original frozen v1.
+pub(super) fn validate_transition(previous: &[u8], next: &[u8]) -> Result<()> {
+    let previous = decode_snapshot_bytes(previous)?;
+    let next = decode_snapshot_bytes(next)?;
+    if previous.authority_id != next.authority_id
+        || previous.epoch.0 != next.epoch.0
+        || previous.legacy.sha256 != next.legacy.sha256
+        || next.issued_high_water.0 < previous.issued_high_water.0
+        || !overlay_preserves_legacy(&next.legacy_overlay, &previous.legacy_overlay)
+    {
+        return Err(CodecError::InvalidSnapshot);
+    }
+    Ok(())
+}
+
+/// Called only inside Kernel::open_or_migrate's original-lock transaction.
+pub(super) fn migration_step(
+    active: &[u8], siblings: &[Option<Vec<u8>>], authority: &str,
+) -> Result<proletarius_store::device_sms_seal::MigrationStep> {
+    use proletarius_store::device_sms_seal::MigrationStep;
+    let inspected = inspect_bytes_for_authority(active, siblings, authority)?;
+    match inspected.next_step() {
+        RecoveryStep::ProposeMigration => {
+            let proposed = inspected.propose_migration(authority)?;
+            Ok(MigrationStep::WriteSibling { index: 2, bytes: proposed.journal_bytes })
+        }
+        RecoveryStep::FreezeLegacy => {
+            Ok(MigrationStep::WriteSibling { index: 0, bytes: active.to_vec() })
+        }
+        RecoveryStep::PrepareV2 => {
+            let journal = read_journal(siblings[2].as_deref().ok_or(CodecError::LegacyUnavailable)?)?;
+            let legacy = CompleteLegacyIndex::from_snapshot(active, &journal.legacy_sha256.0)?;
+            let initial = initial_snapshot(&legacy, &journal.authority_id)?;
+            Ok(MigrationStep::WriteSibling { index: 1, bytes: encode_checked(&initial)? })
+        }
+        RecoveryStep::ReplaceActive => Ok(MigrationStep::ReplaceActive(
+            siblings[1].clone().ok_or(CodecError::LegacyUnavailable)?,
+        )),
+        RecoveryStep::V2Present => Ok(MigrationStep::Complete),
+    }
 }
 
 #[cfg(test)]
