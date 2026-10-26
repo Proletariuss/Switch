@@ -42,11 +42,13 @@ Der Tag `v3.51` bleibt unverändert dem eingefrorenen Quellstand des historische
 
 ## Download
 
-[Neueste veröffentlichte Version](https://github.com/Proletariuss/Switch/releases/latest) · [Alle Releases](https://github.com/Proletariuss/Switch/releases)
+[Neueste veröffentlichte Version](https://github.com/Proletariuss/Switch/releases/latest) · [Release 3.52](https://github.com/Proletariuss/Switch/releases/tag/v3.52)
 
-Das bevorzugte Installationspaket heißt `Switch_<version>.dmg`. Es wird auf einem GitHub-macOS-Runner aus dem bereits geprüften App-Tarball derselben Version abgeleitet. Die enthaltenen App-Dateien, Rechte und symbolischen Links müssen unverändert bleiben; die App wird beim Verpacken weder neu gebaut noch neu signiert. Eine Version ist erst freigegeben, wenn ihre geprüften Anlagen im Release erscheinen. Der Quellstand allein bestätigt keine erfolgte Veröffentlichung.
+Das Installationspaket heißt `Switch_<version>.dmg`. Für 3.52 stehen [Switch_3.52.dmg](https://github.com/Proletariuss/Switch/releases/download/v3.52/Switch_3.52.dmg) und [Switch_3.52.dmg.sha256](https://github.com/Proletariuss/Switch/releases/download/v3.52/Switch_3.52.dmg.sha256) bereit. Das DMG wurde auf einem GitHub-macOS-Runner aus dem bereits geprüften App-Tarball des Commits `d17eca3305bd2204cc895fc13af8ee0e91173f8b` abgeleitet. App-Dateien, Rechte und symbolische Links wurden abgeglichen; die App wurde weder neu gebaut noch neu signiert.
 
-Die vier bisherigen Audit-Anlagen bleiben erhalten: `Switch-<Version>-candidate-<Commit-SHA>-macOS27-arm64.app.tar.gz`, `candidate-manifest.json`, `test-reports.tar.gz` und `SHA256SUMS`. Hinzu kommen das DMG, `Switch_<version>.dmg.sha256` und `dmg-provenance.json`. Der Herkunftsnachweis unterscheidet den ursprünglichen App-Quellstand vom Commit und GitHub-Lauf der Verpackungssteuerung. Der Release-Workflow schließt den DMG-Schritt an die erfolgreiche App-Veröffentlichung an.
+Der vorgesehene Endzustand des Release enthält nur diese beiden hochgeladenen Dateien. Vor der Bereinigung werden die fünf Audit-Anlagen — App-Tarball, `candidate-manifest.json`, `test-reports.tar.gz`, `SHA256SUMS` und `dmg-provenance.json` — unverändert als Actions-Artefakt gesichert und zurückgeprüft. Ihre Aufbewahrungsfrist richtet sich nach den tatsächlichen GitHub-Einstellungen und dem angezeigten Ablaufdatum. Die von GitHub automatisch angebotenen „Source code“-Archive bleiben sichtbar; sie sind keine hochgeladenen Installationspakete.
+
+Die [App-Prüfung](https://github.com/Proletariuss/Switch/actions/runs/40314576638) und die [DMG-Prüfung](https://github.com/Proletariuss/Switch/actions/runs/40325760479) dokumentieren die getrennte Herkunft von App und Verpackung. Nach der Bereinigung ist dieses Release abgeschlossen: Alte App-Publisher oder DMG-Packläufe dürfen die entfernten Audit-Anlagen nicht erneut veröffentlichen. Die Bereinigung selbst darf sicher wiederholt werden. Neue Tags durchlaufen vollständig Softwareprüfung, App-Build, DMG-Prüfung und abschließende Reduktion auf die beiden Installationsdateien.
 
 ### Historisches Installationspaket 3.51
 
@@ -58,8 +60,8 @@ Die vier bisherigen Audit-Anlagen bleiben erhalten: `Switch-<Version>-candidate-
 
 ## Installation
 
-1. Das angebotene `Switch_<version>.dmg`, `Switch_<version>.dmg.sha256` und `dmg-provenance.json` aus demselben Release herunterladen und die DMG-Prüfsumme wie unten beschrieben kontrollieren.
-2. Das DMG öffnen und `Switch.app` in den Ordner „Programme“ ziehen. Bis die DMG-Ergänzung veröffentlicht ist, bleibt der geprüfte App-Tarball verfügbar: zusammen mit den drei Audit-Begleitdateien herunterladen, `SHA256SUMS` prüfen, entpacken und die App nach „Programme“ kopieren.
+1. `Switch_3.52.dmg` und `Switch_3.52.dmg.sha256` aus demselben Release herunterladen und die DMG-Prüfsumme wie unten beschrieben kontrollieren.
+2. Das DMG öffnen und `Switch.app` in den Ordner „Programme“ ziehen.
 3. Bei Bedarf die von macOS angeforderten Berechtigungen für Bluetooth, Mitteilungen und Mikrofon erteilen.
 4. Das Paket ist ad hoc signiert und **nicht von Apple notarisiert**. Falls Gatekeeper den Start blockiert, zunächst Herkunft und Prüfsumme kontrollieren und die Freigabe anschließend unter „Systemeinstellungen → Datenschutz & Sicherheit“ vornehmen.
 
@@ -147,7 +149,7 @@ Die Skripte setzen die im Projekt festgelegte Anordnung mit benachbarten `build/
 
 Für 3.53 gelten ausschließlich die GitHub-Prüfberichte des endgültigen Release-Commits. Geräte, Netzbetreiberregistrierungen, SMS-Zustellung, Telefonie, Audio, Ruhezustand und Dauerbetrieb benötigen eigene Nachweise mit der jeweiligen Hardware, Karte und Netzwerkumgebung. Erfolgreiche Softwareprüfungen ersetzen diese Nachweise nicht.
 
-Die veröffentlichten App-Anlagen für 3.52 stammen aus dem geprüften Commit `d17eca3305bd2204cc895fc13af8ee0e91173f8b` und [GitHub-Lauf 40314576638](https://github.com/Proletariuss/Switch/actions/runs/40314576638). Die DMG-Ableitung erhält eine eigene Prüfung: Dateisystemkontrolle, schreibgeschütztes Einhängen, vollständiger Abgleich des App-Inventars einschließlich Rechten und Links sowie strenge Signaturprüfung. Erst die zugehörigen Berichte und zurückgelesenen Release-Anlagen bestätigen deren Erfolg. Eine neue Verpackung erweitert die Geräte- oder Laufzeitabnahme nicht; frühere 3.51-Läufe ersetzen keinen versionsbezogenen Nachweis.
+Die App für 3.52 stammt aus dem geprüften Commit `d17eca3305bd2204cc895fc13af8ee0e91173f8b` und [GitHub-Lauf 40314576638](https://github.com/Proletariuss/Switch/actions/runs/40314576638). Die [DMG-Prüfung 40325760479](https://github.com/Proletariuss/Switch/actions/runs/40325760479) mit Verpackungssteuerung `0f3e9277071cc942382586b677d0c52fc5413115` bestätigte Dateisystemkontrolle, schreibgeschütztes Einhängen, vollständigen Abgleich des App-Inventars einschließlich Rechten und Links, strenge Signaturprüfung und das Zurücklesen der veröffentlichten Dateien. Die Berichte und Herkunftsdaten werden bei der Bereinigung in Actions gesichert. Diese Verpackungsprüfung erweitert die Geräte- oder Laufzeitabnahme nicht; frühere 3.51-Läufe ersetzen keinen versionsbezogenen Nachweis.
 
 Für die **historischen veröffentlichten 3.51-Artefakte** wurden folgende Prüfungen dokumentiert:
 
@@ -169,13 +171,7 @@ Für das bevorzugte DMG die gleichnamige Release-Anlage und `Switch_3.52.dmg.sha
 shasum -a 256 -c Switch_3.52.dmg.sha256
 ```
 
-`dmg-provenance.json` bindet die DMG-Prüfung an das ursprüngliche App-Manifest und den gesonderten Verpackungslauf. Für die unveränderten Audit-Anlagen App-Tarball, Originalmanifest, Testarchiv und `SHA256SUMS` gemeinsam herunterladen:
-
-```bash
-shasum -a 256 -c SHA256SUMS
-```
-
-Die veröffentlichungsbezogene Datei prüft App-Tarball, Originalmanifest und Testarchiv anhand ihrer flachen Dateinamen. Die ursprüngliche Candidate-Prüfsummendatei bleibt zusätzlich als `test-reports/candidate-SHA256SUMS` im Testarchiv erhalten. Das Manifest bindet die Originalberichte, Version, Build, Quell-SHA, Git-Tree, Quell-Digest und Werkzeugversionen. Actions-Zwischenartefakte laufen nach sieben Tagen ab; Release-Anlagen haben diese automatische Ablaufzeit nicht.
+Die Audit-Sicherung in Actions enthält `dmg-provenance.json`, das ursprüngliche App-Manifest, App-Tarball, Testarchiv und `SHA256SUMS`. Der Herkunftsnachweis unterscheidet App-Quellstand und Verpackungslauf; das Manifest bindet Berichte, Version, Build, Quell-SHA, Git-Tree, Quell-Digest und Werkzeugversionen. Diese Dateien sind nach der Bereinigung keine Release-Anlagen mehr. Verfügbarkeit und Aufbewahrung der Actions-Nachweise richten sich nach den tatsächlichen GitHub-Einstellungen; das jeweilige Ablaufdatum ist maßgeblich.
 
 Nur für das historische 3.51-DMG:
 
