@@ -46,3 +46,26 @@ Do not reuse the historical P0–P6/person-week ledger as a current percentage.
 Device, carrier, macOS 27 runtime and long-run acceptance remain unverified
 until supported by new evidence. Only successful final-source cloud jobs
 can close the corresponding software acceptance item.
+
+## Pull requests and releases
+
+Use the shared GitHub gates in `.github/workflows/software-gates.yml`; do not
+replace them with an older monolithic workflow or weaken locked dependencies,
+isolated test assertions, upload verification, or acceptance boundaries.
+Follow `docs/PR_REVIEW_POLICY.md` and `docs/CLOUD_RELEASE_CONTRACT.md`.
+Draft PRs keep lightweight checks but are not merge-ready. Marking a PR ready
+must run every gate selected by the changed paths. Check names reserved for PRs
+must not be emitted by manual, scheduled or development runs.
+
+Review findings outside the user's approved scope require confirmation before
+implementation; do not treat an audit request alone as authorization to repair
+business logic. Existing explicit authorization remains valid. Do not configure
+Codex login, automatic code review or auto-merge. Merge manually only after the
+user-authorized change has passed all required checks.
+
+Ordinary releases use an explicit workflow dispatch from `main` with its exact
+commit SHA. A release never merges or rewrites a source branch, retags a version,
+or replaces published assets. The one-time reviewed preparation workflow is
+retired; its retained script and authorization file are historical evidence,
+not a normal maintenance entry point. Changes to repository protection settings
+need their own authorized deployment and read-back verification.

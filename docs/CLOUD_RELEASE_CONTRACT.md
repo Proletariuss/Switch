@@ -5,9 +5,12 @@ gemeinsam. Auf 3.51 / 351 / 3.51.0 folgt 3.52 / 352 / 3.52.0. Beide Cargo-Lockfi
 müssen die lokalen Workspace-Versionen enthalten; externe Abhängigkeiten bleiben
 unverändert. Bestehende Tags und Releases werden weder umgehängt noch überschrieben.
 
-Der manuelle Einstieg ist .github/workflows/release.yml mit candidate_sha. Dieser
-SHA muss dem ausgewählten Branch-Stand entsprechen. Die vollständigen gemeinsamen
-Software-Prüfungen und der App-Build laufen für genau diesen Stand erneut.
+Der manuelle Einstieg ist .github/workflows/release.yml mit candidate_sha und
+ausschließlich dem ausgewählten Branch `main`. Dieser SHA muss genau dem
+Workflow-Stand von main entsprechen. Identity- und Publish-Job prüfen den Branch;
+der Publisher prüft unabhängig GITHUB_REF und head_branch der Run-API, bevor
+Schreibzugriffe möglich sind. Die vollständigen gemeinsamen Software-Prüfungen
+und der App-Build laufen für genau diesen Stand erneut.
 Ein älterer erfolgreicher Lauf ist keine Freigabe für eine neue Versionsnummer.
 
 Vor dem Packen prüft verify-app-identity.py das App-Plist und die eingebettete
@@ -52,3 +55,15 @@ Die finale Anlagenliste muss genau den vier zuvor zurückgelesenen Asset-IDs
 entsprechen. API-Zustandsfixtures decken Teil-Upload, Publish-only-Wiederholung,
 veraltete Entwürfe, Build-Wiederverwendung, Konflikte und fehlerhafte Rücklesedaten ab.
 Marketing-Minor 00/09 wird für Rust normalisiert (4.00 → 4.0.0; 4.09 → 4.9.0).
+
+Die Release-Fixtures prüfen zusätzlich, dass ein anderer Branch, Tag, PR-Ref
+oder fehlender Branch-Kontext vor jeder API-Anfrage abgewiesen wird. Eine
+abweichende head_branch-Angabe der Run-API wird vor jedem Schreibzugriff
+abgewiesen. Ein während des Builds fortgeschrittenes main ändert nicht den
+bereits gebundenen Quell-SHA dieses Runs.
+
+Der einmalige schreibende reviewed-prepare-Workflow ist aus dem aktuellen
+Workflow-Bestand entfernt. Frühere Autorisierung und Skript bleiben nur als
+historische Nachweise erhalten. Alte Branches können weiterhin historische
+Workflow-Versionen enthalten; dieser Vertrag ändert sie nicht rückwirkend.
+Sie sind kein regulärer Veröffentlichungseinstieg.

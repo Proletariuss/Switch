@@ -1,59 +1,68 @@
-# GitHub-only four-batch execution
+# Vier Ausführungsblöcke ausschließlich auf GitHub
 
-Approved 2026-10-26. Baseline: dedaf50a94e1475883db80f2381a1b42ee15846b.
-Tree: eab6f5d08ac2bd5224b5ab37b0fdde42ac8182f4.
+Genehmigt am 26.10.2026. Ausgangscommit:
+`dedaf50a94e1475883db80f2381a1b42ee15846b`.
+Tree: `eab6f5d08ac2bd5224b5ab37b0fdde42ac8182f4`.
 
-Source changes use GitHub APIs. Tests, fixes applied by jobs, compilation and
-artifact generation run on GitHub-hosted runners. The maintainer's Mac is only
-a read-only source/API control plane; no local repair, build or test commands.
+Quelländerungen verwenden GitHub-APIs. Tests, durch Jobs ausgeführte Korrekturen,
+Kompilierung und Artefakterstellung laufen auf GitHub-gehosteten Runnern. Der
+lokale Mac dient nur als lesende Quelle/API-Steuerung; dort laufen keine
+Projekt-Reparaturen, Builds oder Tests.
 
-## Frozen completion criteria
+## Festgelegte Abschlusskriterien
 
-1. Shared cloud gates: both locked graphs checked on Linux; complete Rust
-   and offline Swift gates; workflow upload smoke; exact-SHA App artifact.
-2. Runtime: original module binding survives reboot admission; installing
-   N-standby retry cannot be consumed; ePDG aliases preserve receipt semantics.
-3. SMS: archive-only recovery never resends; bounded durable authority,
-   v1 migration, safe terminal retirement and durable Swift issuance.
-4. Three review passes, final-source software gates, App identity and blank
-   forwarding defaults, immutable checksums, GitHub links and acceptance scope.
+1. Gemeinsame Cloud-Gates: beide gesperrten Abhängigkeitsgraphen auf Linux,
+   vollständige Rust- und Offline-Swift-Prüfungen, Upload-Rücklesetest und
+   App-Artefakt für den exakten SHA.
+2. Laufzeit: ursprüngliche Modulbindung bleibt beim Neustart erhalten;
+   ein N-Standby-Installationsretry wird nicht verbraucht; ePDG-Aliase bewahren
+   die Semantik der Rückmeldungen.
+3. SMS: reine Archivwiederherstellung sendet nichts erneut; begrenzte dauerhafte
+   Zuständigkeit, v1-Migration, sichere Endzustände und dauerhafte Swift-Ausgabe.
+4. Drei Prüfrunden, Software-Gates des abschließenden Quellstands, App-Identität
+   und leere Weiterleitungsdefaults, unveränderliche Prüfsummen, GitHub-Nachweise
+   und benannte Abnahmegrenzen.
 
-Each batch needs final-source evidence. v3.51 tag/release remain immutable.
-This delivery is an ad-hoc CI App snapshot, not product-final or a new DMG.
+Jeder Block benötigt Nachweise für den abschließenden Quellstand. Bereits
+veröffentlichte Tags/Releases einschließlich v3.51 und v3.52 bleiben unverändert.
+Die Lieferung ist eine ad-hoc signierte CI-App, keine vollständige Produktabnahme
+und kein neu erzeugtes DMG.
 
-## Dependency decision
+## Abhängigkeiten
 
-PR #3 changes a linked main manifest without its lockfile; #5 requires an
-API migration; sha1 0.11 removes the existing IKE compress feature. Retain the
-compiled hash family for this stability delivery and hold incompatible version
-updates for coordinated migration. Review by 2026-11-25. RustSec and security
-alerts stay enabled without advisory ignores; new alerts require fresh triage.
+PR #3 ändert ein verknüpftes Hauptmanifest ohne Lockfile; #5 benötigt eine
+API-Migration; sha1 0.11 entfernt das verwendete IKE-compress-Feature.
+Die kompilierte Hash-Familie bleibt für diese Stabilitätslieferung erhalten;
+inkompatible Versionswechsel benötigen eine koordinierte Migration. Erneut
+prüfen bis 25.11.2026. RustSec und Sicherheitsmeldungen bleiben ohne Advisory-
+Ausnahmen aktiv; neue Meldungen benötigen eine neue Bewertung.
 
-## Acceptance boundary
+## Abnahmegrenze
 
-Artifacts bind commit, tree/source digest, run/attempt, actual toolchain and
-archive SHA. Historical local receipts cannot become a cloud PASS.
-Offline tests do not prove physical card/carrier/provider, real Keychain,
-notification/audio, macOS 27 runtime or continuous 24/72-hour operation.
-No Developer ID/notary credentials are configured. Current runners are macos-26.
+Artefakte binden Commit, Tree/Quell-Digest, Run/Versuch, tatsächliche Toolchain
+und Archiv-SHA. Historische lokale Nachweise ergeben kein Cloud-PASS.
+Offline-Tests belegen keine physische Karte, Betreiber-/Provider-Verbindung,
+reale Keychain, Benachrichtigung/Audio, macOS-27-Ausführung oder einen
+24-/72-Stunden-Dauerlauf. Es sind keine Developer-ID-/Notary-Zugangsdaten
+eingerichtet; die Runner verwenden macos-26.
 
-## Status
+## Nachgewiesener Softwarestand
 
-All planned code changes are integrated in PR #6; final-source software and
-artifact acceptance remain pending. Three static review rounds completed:
-initial implementation review; cross-component review; independent review of
-the fixes and integrated boundaries. Findings corrected include exact v2
-payload/nonce matching, shared Store ownership, startup SMS isolation,
-nonblocking journal locking and directory identity, full v1+v2 pagination,
-report selection across attempts, and valid retry fixture timestamps.
+[PR #6](https://github.com/Proletariuss/Switch/pull/6) ist zusammengeführt.
+`main` wurde am 26.10.2026 ohne Force-Push auf den bereits veröffentlichten
+Commit `d17eca3305bd2204cc895fc13af8ee0e91173f8b` fortgeschrieben.
+Der [Release-Lauf 40314576638](https://github.com/Proletariuss/Switch/actions/runs/40314576638)
+ist erfolgreich; [v3.52](https://github.com/Proletariuss/Switch/releases/tag/v3.52)
+enthält App-Tarball, Originalmanifest, SHA256SUMS und Testnachweise.
+Diese Nachweise gelten für d17eca3 und werden nicht auf spätere Änderungen
+übertragen.
 
-The isolated Swift candidate 6b06ee8be8f1cffcb2b4c3c012f0d9adad815bff passed
-29 groups in GitHub run 40275765127. The first integrated Rust run
-40273933310 passed 3684 daemon tests but failed two fixtures and did not reach
-all isolated groups; those two fixtures are corrected in the integration.
-Neither preliminary run is final acceptance. The final run must test and
-build one exact source commit and successfully verify the uploaded App.
+Die drei vorherigen statischen Prüfrunden sowie vorläufige Läufe bleiben
+historische Zwischenstände. Der isolierte Swift-Stand 6b06ee8 bestand 29 Gruppen
+in Lauf 40275765127. Lauf 40273933310 bestand 3684 daemon-Tests, scheiterte aber
+an zwei später korrigierten Fixtures und erreichte nicht alle isolierten Gruppen;
+er war keine abschließende Abnahme.
 
-Final evidence and links will be recorded in PR #6 to avoid changing the
-already tested source commit just to add its own run URL. This plan and its
-static review do not award functional, hardware or product acceptance.
+Neue Governance- und Funktionskorrekturen benötigen ihre eigenen integrierten
+GitHub-Nachweise gemäß [PR-Regeln](PR_REVIEW_POLICY.md). Der erfolgreiche
+Softwarestand vergibt weiterhin keine Geräte-, Betreiber- oder Produktabnahme.
