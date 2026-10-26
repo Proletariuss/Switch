@@ -142,7 +142,6 @@ mod reader_session_lease;
 mod reader_task;
 mod request_body_budget;
 mod safe_events;
-mod support_diagnostics;
 #[cfg(test)]
 mod serial_esim_gateway_tests;
 mod serial_module_identity;
@@ -161,6 +160,7 @@ mod sms_store_health;
 mod snapshot;
 mod socket_lifetime;
 mod startup_recovery;
+mod support_diagnostics;
 mod system_proxy;
 mod transport_selection;
 mod unified_call_control;
@@ -2019,7 +2019,10 @@ async fn handle_request(
         support_diagnostics::api_span(
             request.method().as_str(),
             request.uri().path(),
-            request.headers().get("x-switch-diagnostic-id").and_then(|value| value.to_str().ok()),
+            request
+                .headers()
+                .get("x-switch-diagnostic-id")
+                .and_then(|value| value.to_str().ok()),
         )
     } else {
         None

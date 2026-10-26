@@ -29,6 +29,8 @@
 		34B80C5145390A7F7EA19371 /* MenuBarViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60452FB47AF635F48454A999 /* MenuBarViews.swift */; };
 		372EF370303F700BADD36127 /* AttentionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C45D6294DCC8D072E43AB46 /* AttentionStore.swift */; };
 		3799F8A98462C66F31772C7E /* ESIMModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7514443E618C9D5812DACC7C /* ESIMModels.swift */; };
+		3B778335BE3529815F425EC5 /* SupportBundleBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD143E3FC76191774594EACB /* SupportBundleBuilder.swift */; };
+		3D957C330399DFE05E63C761 /* ClientDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0812D24D3F95AAAC70ABEA0E /* ClientDiagnostics.swift */; };
 		3DBDA57C9D287322582D7D93 /* MultiStandbyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 497CC379C936E446CD5491A3 /* MultiStandbyStore.swift */; };
 		3E121C63294E1025924214DC /* CallRuntimeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10AFAE6F1780457B8F28F642 /* CallRuntimeStore.swift */; };
 		3FC7619C7214B7F0EDCB61EB /* ReaderVoWiFiAudioBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 420B5764F552956F6C6EE646 /* ReaderVoWiFiAudioBridge.swift */; };
@@ -72,6 +74,7 @@
 		9DD96F85C94994F592038F62 /* IncomingCallCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19837C11A46CE5E24339A458 /* IncomingCallCard.swift */; };
 		9E4CC9ED5846633F9055A055 /* SMSExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E27AC88BF9B1402406759435 /* SMSExportView.swift */; };
 		9EF5B488FDA0DA82587E7D45 /* ReaderCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF288656D3DC9AE774E7564A /* ReaderCardView.swift */; };
+		A3875E9803CD892D0B8F0EA0 /* SupportDiagnosticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B8AE5543AD3678716AEE87B /* SupportDiagnosticsView.swift */; };
 		A3FA2E074E99A73CF949A95A /* SMSForwardingSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B6A2E55AB40D378B61E6EB /* SMSForwardingSettingsView.swift */; };
 		A55DED59BC9CF66899ACEC9C /* Ringtone.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05B92019B741382AB38D32A2 /* Ringtone.swift */; };
 		ACCF6EC3E5A62E779F03F2D4 /* AcceptanceCompanionPhaseA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15BC028691A575975E9D4366 /* AcceptanceCompanionPhaseA.swift */; };
@@ -95,6 +98,7 @@
 		D712B668E1578040EFC3A68A /* AcceptanceContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BD0CC75A490FE5F1FF3CED5 /* AcceptanceContext.swift */; };
 		D88E33F5EB27885D63906C57 /* DiagnosticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6BE8439E8A3DAFD7F136D20 /* DiagnosticsView.swift */; };
 		DB604E86CBFDF0258C97EA58 /* CarrierDisplayMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65EAEAB87016301697410D6D /* CarrierDisplayMetadata.swift */; };
+		DC470D8D14C3C905E3F16B80 /* DeviceSMSIssuance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FB3105485AA0F3127838C08 /* DeviceSMSIssuance.swift */; };
 		DC7BCF2FD06EBA6611482A2B /* ReaderBLEOperationLedger.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6ADF2CE9B596CE663813901 /* ReaderBLEOperationLedger.swift */; };
 		E08A35382FA611957FAE8927 /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41911272E76D65B344CB0C3E /* ActivityView.swift */; };
 		E2170612724DE2B10D9E2756 /* MultiStandbyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9837AA17390E54A21681FDD /* MultiStandbyModels.swift */; };
@@ -118,6 +122,7 @@
 		012C242E2BDB3B8F60D9E9EA /* NetworkServicesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkServicesStore.swift; sourceTree = "<group>"; };
 		0242CF383E163B39326C09DA /* Ringtones */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Ringtones; path = app/Resources/Ringtones; sourceTree = SOURCE_ROOT; };
 		05B92019B741382AB38D32A2 /* Ringtone.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ringtone.swift; sourceTree = "<group>"; };
+		0812D24D3F95AAAC70ABEA0E /* ClientDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientDiagnostics.swift; sourceTree = "<group>"; };
 		098EF72D66EE7EACD2DB13B9 /* BackendProcess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendProcess.swift; sourceTree = "<group>"; };
 		0B4AAAFD3B9609E6AACA2F80 /* SMSArchiveExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMSArchiveExport.swift; sourceTree = "<group>"; };
 		0B95C8DC3D4CF27749BE0132 /* BLEPhaseDeadline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEPhaseDeadline.swift; sourceTree = "<group>"; };
@@ -141,6 +146,7 @@
 		3536037299A0DCEB8D8D9EC9 /* ModuleRecoveryStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModuleRecoveryStatusView.swift; sourceTree = "<group>"; };
 		36786160875C3D05ED7630C9 /* Brand */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Brand; path = app/Resources/Brand; sourceTree = SOURCE_ROOT; };
 		36DE03DF82A85377A6805FBC /* CallModeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallModeStore.swift; sourceTree = "<group>"; };
+		3FB3105485AA0F3127838C08 /* DeviceSMSIssuance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceSMSIssuance.swift; sourceTree = "<group>"; };
 		403DC3C2E3544A5C07AA4D6D /* ReaderRuntimeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderRuntimeStore.swift; sourceTree = "<group>"; };
 		41911272E76D65B344CB0C3E /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
 		420B5764F552956F6C6EE646 /* ReaderVoWiFiAudioBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderVoWiFiAudioBridge.swift; sourceTree = "<group>"; };
@@ -148,6 +154,7 @@
 		4896B4CB370CA7E818800FD3 /* DiagnosticEventStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticEventStore.swift; sourceTree = "<group>"; };
 		497CC379C936E446CD5491A3 /* MultiStandbyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiStandbyStore.swift; sourceTree = "<group>"; };
 		4A08CD6841DE6686FD1E6A6E /* NetworkModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkModels.swift; sourceTree = "<group>"; };
+		4B8AE5543AD3678716AEE87B /* SupportDiagnosticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportDiagnosticsView.swift; sourceTree = "<group>"; };
 		5256751E0E901F30AAD72EE8 /* UnifiedStateRevision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedStateRevision.swift; sourceTree = "<group>"; };
 		5B16D3503CF73F512FF17166 /* DashboardStore+Module.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DashboardStore+Module.swift"; sourceTree = "<group>"; };
 		5CDC67916E22F414EEBD94A5 /* DashboardStore+Network.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DashboardStore+Network.swift"; sourceTree = "<group>"; };
@@ -218,6 +225,7 @@
 		EDCB1D6F1672CA93CBD55D90 /* SMSView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMSView.swift; sourceTree = "<group>"; };
 		F864E18D5D42C9E7625065C3 /* ModuleESIMView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModuleESIMView.swift; sourceTree = "<group>"; };
 		F9B7B41DAE6BBD90DDF7A100 /* DashboardStore+Call.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DashboardStore+Call.swift"; sourceTree = "<group>"; };
+		FD143E3FC76191774594EACB /* SupportBundleBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportBundleBuilder.swift; sourceTree = "<group>"; };
 		FEBFEC127CE13F0EF646DDC6 /* ReaderESIMStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderESIMStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -261,6 +269,7 @@
 				42B6A2E55AB40D378B61E6EB /* SMSForwardingSettingsView.swift */,
 				34D80FC00B3E4E7E8DC0B93F /* SMSStoreHealthView.swift */,
 				EDCB1D6F1672CA93CBD55D90 /* SMSView.swift */,
+				4B8AE5543AD3678716AEE87B /* SupportDiagnosticsView.swift */,
 				8E6CC00A3F9EBA3B5BD2492A /* TelegramPlaneIcon.swift */,
 				2A2841B216B51A85A22A38F3 /* UDPProxyDiagnosticView.swift */,
 			);
@@ -290,12 +299,14 @@
 				36DE03DF82A85377A6805FBC /* CallModeStore.swift */,
 				10AFAE6F1780457B8F28F642 /* CallRuntimeStore.swift */,
 				65EAEAB87016301697410D6D /* CarrierDisplayMetadata.swift */,
+				0812D24D3F95AAAC70ABEA0E /* ClientDiagnostics.swift */,
 				CDB80934C464CC6C998FD84D /* DashboardStore.swift */,
 				F9B7B41DAE6BBD90DDF7A100 /* DashboardStore+Call.swift */,
 				5B16D3503CF73F512FF17166 /* DashboardStore+Module.swift */,
 				5CDC67916E22F414EEBD94A5 /* DashboardStore+Network.swift */,
 				29C356EE14A709068952CD1D /* DashboardStore+Reader.swift */,
 				8A29BD7960E41A12D1675363 /* DeviceModels.swift */,
+				3FB3105485AA0F3127838C08 /* DeviceSMSIssuance.swift */,
 				71F00E92BE3AF186E5C5516A /* DeviceSMSSendLive.swift */,
 				14DDD3A5D3D876A84C3DD949 /* DeviceSMSSendStore.swift */,
 				246B6CA012A5CFF0DEEA437C /* DeviceSnapshotStore.swift */,
@@ -333,6 +344,7 @@
 				97B383518BEA5EEE5E3D61FF /* SMSModels.swift */,
 				9CC73D8994EF3201504D1AE8 /* SMSStore.swift */,
 				DB36DB4B1966E2DB1617B1EB /* SMSStoreHealth.swift */,
+				FD143E3FC76191774594EACB /* SupportBundleBuilder.swift */,
 				9705EC55145D9CF30368ECAE /* SwitchEntry.swift */,
 				8B0BB0430E93774C437EE0BF /* ToastItem.swift */,
 				97DBDAE5D027E5DD484B174F /* UDPProxyDiagnosticModels.swift */,
@@ -536,6 +548,7 @@
 				3E121C63294E1025924214DC /* CallRuntimeStore.swift in Sources */,
 				AF4AB5614DC902DCAD121055 /* CallView.swift in Sources */,
 				DB604E86CBFDF0258C97EA58 /* CarrierDisplayMetadata.swift in Sources */,
+				3D957C330399DFE05E63C761 /* ClientDiagnostics.swift in Sources */,
 				977791FF6397486A769ED6CD /* ContentView.swift in Sources */,
 				B72DCA39303C4A4870EE5571 /* DashboardStore+Call.swift in Sources */,
 				ED9F0AF33E9926AAC7A90FD3 /* DashboardStore+Module.swift in Sources */,
@@ -543,6 +556,7 @@
 				FB40FE79DA7868259AD94DF7 /* DashboardStore+Reader.swift in Sources */,
 				E7D665ECC96C9E0790F34D75 /* DashboardStore.swift in Sources */,
 				5F04E49AF325B56E98C8269C /* DeviceModels.swift in Sources */,
+				DC470D8D14C3C905E3F16B80 /* DeviceSMSIssuance.swift in Sources */,
 				C2834C6A0F24BAEC237B4FB8 /* DeviceSMSRecoveryView.swift in Sources */,
 				939F6D992C2BF31FD4BF5D2F /* DeviceSMSSendLive.swift in Sources */,
 				FAE420ED836FBC53B34C8031 /* DeviceSMSSendStore.swift in Sources */,
@@ -600,6 +614,8 @@
 				3051B577BBD7E6E62FF39A5A /* SMSView.swift in Sources */,
 				B7BE79E49E0D716533F64933 /* SafeDiagnosticSummary.swift in Sources */,
 				D2B6E4B5C9C2843ABC78EDA1 /* SettingsView.swift in Sources */,
+				3B778335BE3529815F425EC5 /* SupportBundleBuilder.swift in Sources */,
+				A3875E9803CD892D0B8F0EA0 /* SupportDiagnosticsView.swift in Sources */,
 				9BB304174C6850A9C77B9107 /* SwitchEntry.swift in Sources */,
 				B8391B77384D2FCF39F58EE4 /* TelegramPlaneIcon.swift in Sources */,
 				C63F62F6A2EF646F3455E210 /* ToastItem.swift in Sources */,

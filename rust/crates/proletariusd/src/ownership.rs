@@ -776,9 +776,15 @@ mod tests {
     #[test]
     fn support_snapshot_is_read_only_and_rust_owned() {
         for method in ["GET", "HEAD"] {
-            assert_eq!(route_owner(method, "/api/diagnostics/support"), RouteOwner::Rust);
+            assert_eq!(
+                route_owner(method, "/api/diagnostics/support"),
+                RouteOwner::Rust
+            );
         }
-        assert_eq!(route_owner("POST", "/api/diagnostics/support"), RouteOwner::Unknown);
+        assert_eq!(
+            route_owner("POST", "/api/diagnostics/support"),
+            RouteOwner::Unknown
+        );
     }
 
     #[test]

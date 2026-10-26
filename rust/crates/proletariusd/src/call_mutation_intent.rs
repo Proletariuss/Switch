@@ -1417,7 +1417,10 @@ mod tests {
             },
         );
         let store = Store::new(&root).unwrap();
-        assert!(matches!(store.admit(&original).unwrap(), Admission::Dispatch));
+        assert!(matches!(
+            store.admit(&original).unwrap(),
+            Admission::Dispatch
+        ));
         store.claim(&original).unwrap();
         let terminal = StoredResponse {
             status: 409,
@@ -1558,7 +1561,11 @@ mod tests {
             "invalid\nrequest",
         );
         assert_eq!(invalid_header.status(), StatusCode::INTERNAL_SERVER_ERROR);
-        assert!(!invalid_header.headers().contains_key("x-switch-call-terminal"));
+        assert!(
+            !invalid_header
+                .headers()
+                .contains_key("x-switch-call-terminal")
+        );
         fs::remove_dir_all(root).unwrap();
     }
 }

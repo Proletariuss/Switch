@@ -952,7 +952,10 @@ pub(crate) async fn archive_native_sms_event_to(
             )
             .await
             .map_err(|(_, code)| code)?;
-            if !matches!(archived["store_state"].as_str(), Some("archived" | "status_report_archived")) {
+            if !matches!(
+                archived["store_state"].as_str(),
+                Some("archived" | "status_report_archived")
+            ) {
                 return Ok(None);
             }
             archived

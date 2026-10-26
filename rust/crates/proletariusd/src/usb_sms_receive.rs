@@ -239,7 +239,9 @@ impl Service {
     ) -> Response<Full<Bytes>> {
         let archive = self.inner.archive.clone();
         let archived = match crate::archive_io::run(move || {
-            archive.load().map(|items| items.len().min(u32::MAX as usize) as u32)
+            archive
+                .load()
+                .map(|items| items.len().min(u32::MAX as usize) as u32)
         })
         .await
         {
