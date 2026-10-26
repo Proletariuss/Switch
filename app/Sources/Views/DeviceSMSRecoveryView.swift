@@ -24,6 +24,15 @@ struct DeviceSMSRecoveryView: View {
                                         .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                                 }
                                 Spacer(minLength: 4)
+                                if intent.state == .accepted && !intent.archiveConfirmed {
+                                    Button("补归档") {
+                                        Task {
+                                            if (try? await store.resume(intent)) != nil {
+                                                smsStore.refresh(force: true)
+                                            }
+                                        }
+                                    }.help("只恢复本机归档，不再次发送短信")
+                                }
                                 Button { newSend = intent } label: {
                                     Image(systemName: "arrow.clockwise").frame(width: 16, height: 16)
                                 }.help("重新发送").accessibilityLabel("重新发送")

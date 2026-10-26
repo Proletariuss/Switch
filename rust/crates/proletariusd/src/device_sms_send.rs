@@ -832,7 +832,31 @@ impl Service {
             })
             .collect()
     }
+    async fn reconcile_archive(&self, record: Record) -> Result<Value> {
+        if record.archive_confirmed {
+            return outcome(record);
+        }
+        let item = archive_item(&record).ok_or_else(unknown)?;
+        let restored = tokio::time::timeout(
+            self.io_timeout,
+            crate::message_archive::reconcile_device_send_retained(
+                self.archive.clone(), self.store.clone(), item,
+                record.attempt.clone(), self.job.clone(),
+            ),
+        ).await;
+        if !matches!(restored, Ok(Ok(_))) {
+            return outcome(record);
+        }
+        let confirmed = self.ledger("get", json!({"client_request_id":record.client_request_id})).await?;
+        outcome(confirmed)
+    }
+
     async fn submit(&self, record: Record, cancel: &AtomicBool) -> Result<Value> {
+        // This branch is archive-only: it cannot capture, validate, claim,
+        // release, or execute a physical route, including after daemon restart.
+        if record.state == "accepted" {
+            return self.reconcile_archive(record).await;
+        }
         // Existing accepted/unknown outcomes are never rewritten by quarantine.
         // A prepared module intent must be rejected before its durable claim.
         if record.state == "prepared"
@@ -1031,34 +1055,19 @@ impl Service {
             },
             Err(_) => (false, 0),
         };
-        let mut archived = false;
-        if accepted {
-            if let Some(timestamp) = time::OffsetDateTime::from_unix_timestamp_nanos(
-                i128::from(record.created_at_ms) * 1_000_000,
-            )
-            .ok()
-            .and_then(|time| {
-                time.format(&time::format_description::well_known::Rfc3339)
-                    .ok()
-            }) {
-                let mut item = json!({"sender":record.phone,"content":record.message,"timestamp":timestamp,"direction":"out","device":record.device,"send_request_id":record.client_request_id});
-                if !record.subscription_id.is_empty() {
-                    item["subscription_id"] = json!(record.subscription_id);
-                }
-                archived = matches!(
+        let archived = if accepted {
+            if let Some(item) = archive_item(&record) {
+                matches!(
                     tokio::time::timeout(
                         self.io_timeout,
                         crate::message_archive::ingest_messages_to_retained(
-                            self.archive.clone(),
-                            vec![item],
-                            self.job.clone(),
-                        )
-                    )
-                    .await,
+                            self.archive.clone(), vec![item], self.job.clone(),
+                        ),
+                    ).await,
                     Ok(Ok(_))
-                );
-            }
-        }
+                )
+            } else { false }
+        } else { false };
         // This supervisor survives the HTTP waiter. Finishing only writes a
         // result; it does not grant another send after lost network/archive ACKs.
         let finished = self.ledger("finish",json!({"client_request_id":record.client_request_id,"attempt":attempt,"state":if accepted {"accepted"} else {"unknown"},"segments":segments,"archive_confirmed":archived})).await;
@@ -1199,6 +1208,18 @@ fn matching_usb_transport_binding(
     let expected = configured_session?;
     let binding = active?;
     (binding.0 == expected && binding.1 > 0).then_some(binding)
+}
+
+fn archive_item(record: &Record) -> Option<Value> {
+    let timestamp = time::OffsetDateTime::from_unix_timestamp_nanos(
+        i128::from(record.created_at_ms) * 1_000_000,
+    ).ok()?.format(&time::format_description::well_known::Rfc3339).ok()?;
+    let mut item = json!({"sender":record.phone,"content":record.message,"timestamp":timestamp,
+        "direction":"out","device":record.device,"send_request_id":record.client_request_id});
+    if !record.subscription_id.is_empty() {
+        item["subscription_id"] = json!(record.subscription_id);
+    }
+    Some(item)
 }
 
 fn outcome(record: Record) -> Result<Value> {

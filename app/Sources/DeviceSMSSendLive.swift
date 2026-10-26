@@ -16,6 +16,11 @@ import Combine
     func submit(_ request: DeviceSMSIntentRequest) async throws {
         try await client.send("api/sms/send", body: request)
     }
+    func reconcileArchive(_ request: DeviceSMSIntentRequest) async throws {
+        // The server resolves the durable accepted record before any route
+        // admission; this same identity can only repair its local archive.
+        try await client.send("api/sms/send", body: request)
+    }
     private func encoded(_ value: String) -> String {
         value.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? ""
     }

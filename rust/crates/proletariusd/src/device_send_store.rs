@@ -156,6 +156,46 @@ impl Store {
             Ok(())
         })
     }
+    /// Called while the SMS archive lock is held. A confirmed archive is a
+    /// historical receipt (including an explicitly deleted row), not a promise
+    /// that the message remains visible. No transition here can grant dispatch.
+    pub(crate) fn archive_receipt(
+        &self,
+        item: &Value,
+        expected_attempt: Option<&str>,
+        confirm: bool,
+    ) -> Result<bool, StoreError> {
+        let id = token(item, "send_request_id")?;
+        self.0.mutate_if_changed(|items| {
+            let mut records = read(items, self.0.path().exists())?;
+            let r = records.get_mut(&id).ok_or_else(|| error("send_intent_not_found"))?;
+            let timestamp = item["timestamp"].as_str()
+                .and_then(|value| time::OffsetDateTime::parse(
+                    value, &time::format_description::well_known::Rfc3339).ok())
+                .map(|value| value.unix_timestamp_nanos());
+            if r.state != "accepted"
+                || r.attempt.is_empty()
+                || expected_attempt.is_some_and(|attempt| attempt != r.attempt)
+                || item["direction"] != "out"
+                || item["sender"] != r.phone
+                || item["content"] != r.message
+                || item["device"] != r.device
+                || item["subscription_id"].as_str().unwrap_or("") != r.subscription_id
+                || timestamp != Some(i128::from(r.created_at_ms) * 1_000_000)
+            {
+                return Err(error("send_intent_conflict"));
+            }
+            let pending = !r.archive_confirmed;
+            if confirm && pending {
+                r.archive_confirmed = true;
+                r.updated_at_ms = now();
+                write(items, records);
+                Ok((pending, true))
+            } else {
+                Ok((pending, false))
+            }
+        })
+    }
     pub(crate) fn apply(&self, action: &str, body: Value) -> Result<Value, StoreError> {
         if action == "list" {
             let cursor = body["cursor"].as_str().unwrap_or("");
