@@ -79,6 +79,7 @@ pub(super) fn decode(bytes: &[u8]) -> Result<Decoded, &'static str> {
             "proxy_port" if !value.is_null() => {
                 proxy_port = Some(value.as_str().ok_or("invalid_vowifi_request")?.to_owned());
             }
+            // Cross-alias wire order is also retained by request_fingerprint.
             "epdg" | "epdg_address" if !value.is_null() => {
                 epdg = value
                     .as_str()

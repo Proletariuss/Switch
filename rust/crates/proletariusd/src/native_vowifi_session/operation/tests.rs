@@ -547,3 +547,22 @@ fn fresh_reader_and_module_ledgers_persist_first_request_and_concurrent_access_r
         std::fs::remove_dir_all(root).unwrap();
     }
 }
+
+#[test]
+fn request_fingerprint_preserves_cross_alias_order_without_changing_single_alias_receipts() {
+    let first = request_fingerprint(
+        br#"{"enable":true,"epdg":"a.example","epdg_address":"b.example"}"#,
+    );
+    let reversed = request_fingerprint(
+        br#"{"enable":true,"epdg_address":"b.example","epdg":"a.example"}"#,
+    );
+    assert_ne!(first, reversed);
+    assert_eq!(first, request_fingerprint(
+        br#"{"EPDG":"a.example","ENABLE":true,"EPDG_ADDRESS":"b.example"}"#,
+    ));
+    // Existing unambiguous request receipts keep their original digest.
+    let single = br#"{"enable":true,"epdg_address":"b.example"}"#;
+    let sorted: BTreeMap<String, serde_json::Value> = serde_json::from_slice(single).unwrap();
+    assert_eq!(request_fingerprint(single),
+        proletarius_sms::stable_digest_hex(&serde_json::to_vec(&sorted).unwrap()));
+}

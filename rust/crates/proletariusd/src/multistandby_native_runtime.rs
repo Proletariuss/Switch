@@ -99,6 +99,8 @@ struct Entry {
     maintenance_pending: bool,
     registration_pending: bool,
     retry: Option<(String, u64, Option<i64>)>,
+    // Set before the journal can publish this unique attempt's deadline.
+    installing_retry: Option<String>,
 }
 #[derive(Clone, Copy)]
 enum Wake {
@@ -494,6 +496,7 @@ impl Manager {
                 maintenance_pending: false,
                 registration_pending: false,
                 retry: None,
+                installing_retry: None,
             },
         );
         let manager = self.clone();
@@ -556,6 +559,7 @@ impl Manager {
     fn cancel_profile(&self, id: &str) {
         if let Some(e) = self.state.lock().unwrap().entries.get_mut(id) {
             e.retry = None;
+            e.installing_retry = None;
             e.registration_pending = false;
             e.stop.send_replace(true);
             if let Some(stop) = &e.attempt_stop {
@@ -595,12 +599,20 @@ impl Manager {
         let Some(e) = state.entries.get_mut(&due.profile_id) else {
             return DueDelivery::Stale;
         };
-        if *e.stop.borrow()
-            || !e.retry.as_ref().is_some_and(|(attempt, generation, _)| {
-                attempt == &due.attempt_id && *generation == due.generation
-            })
-        {
+        if *e.stop.borrow() {
             return DueDelivery::Stale;
+        }
+        if !e.retry.as_ref().is_some_and(|(attempt, generation, _)| {
+            attempt == &due.attempt_id && *generation == due.generation
+        }) {
+            // The journal can become visible before spawn_blocking returns.
+            // Retain only this exact installing attempt, not arbitrary absent
+            // entries or old tokens. The next tick retries after installation.
+            return if e.installing_retry.as_deref() == Some(due.attempt_id.as_str()) {
+                DueDelivery::Busy
+            } else {
+                DueDelivery::Stale
+            };
         }
         match e.wake.try_send(Wake::RetryDue(due.generation)) {
             Ok(()) => {
@@ -773,6 +785,7 @@ mod tests {
                 maintenance_pending: false,
                 registration_pending: false,
                 retry: Some((attempt.clone(), 7, Some(1000))),
+                installing_retry: None,
             },
         );
         let due = RetryDue {
@@ -832,6 +845,46 @@ mod tests {
             matches!(received.try_recv(), Err(mpsc::error::TryRecvError::Empty)),
             "a stop concurrent with retry delivery must not wake a new attempt"
         );
+        // Pause the worker in the exact interval after durable scheduling and
+        // before e.retry installation; drive the production timer completion.
+        let installing = "c".repeat(48);
+        {
+            let mut state = manager.state.lock().unwrap();
+            let e = state.entries.get_mut("profile").unwrap();
+            e.stop.send_replace(false);
+            e.installing_retry = Some(installing.clone());
+        }
+        let schedule = manager.resources.journal.lock().unwrap()
+            .schedule_native_retry("profile".into(), manager.boot_id().into(), installing.clone(), 1, 0)
+            .unwrap();
+        let pending = manager.resources.journal.lock().unwrap().next_due_retry(i64::MAX).unwrap();
+        let delivery = manager.dispatch_retry_due(pending.clone());
+        assert_eq!(delivery, DueDelivery::Busy);
+        crate::multistandby_retry::complete_retry(&manager.resources.journal, &pending, delivery, 1000);
+        assert!(manager.resources.journal.lock().unwrap().next_due_retry(i64::MAX).is_some());
+        assert_eq!(manager.dispatch_retry_due(RetryDue {
+            attempt_id: "d".repeat(48), ..pending.clone()
+        }), DueDelivery::Stale);
+        {
+            let mut state = manager.state.lock().unwrap();
+            let e = state.entries.get_mut("profile").unwrap();
+            e.retry = Some((installing, schedule.generation, schedule.due_at_ms));
+            e.installing_retry = None;
+        }
+        let delivery = manager.dispatch_retry_due(pending.clone());
+        assert_eq!(delivery, DueDelivery::Accepted);
+        crate::multistandby_retry::complete_retry(&manager.resources.journal, &pending, delivery, 1000);
+        assert!(matches!(received.try_recv(), Ok(Wake::RetryDue(g)) if g == schedule.generation));
+        assert!(manager.resources.journal.lock().unwrap().next_due_retry(i64::MAX).is_none());
+        // A genuinely orphaned journal deadline still retires as stale.
+        manager.resources.journal.lock().unwrap()
+            .schedule_native_retry("profile".into(), manager.boot_id().into(), "e".repeat(48), 1, 0)
+            .unwrap();
+        let stale = manager.resources.journal.lock().unwrap().next_due_retry(i64::MAX).unwrap();
+        let delivery = manager.dispatch_retry_due(stale.clone());
+        assert_eq!(delivery, DueDelivery::Stale);
+        crate::multistandby_retry::complete_retry(&manager.resources.journal, &stale, delivery, 1000);
+        assert!(manager.resources.journal.lock().unwrap().next_due_retry(i64::MAX).is_none());
         manager.state.lock().unwrap().entries.clear();
         manager.shutdown().await.unwrap();
         physical.finish().await;

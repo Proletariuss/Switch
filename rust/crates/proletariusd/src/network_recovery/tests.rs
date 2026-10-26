@@ -20,6 +20,7 @@ struct Facts {
     identity: Mutex<String>,
     generation: AtomicU64,
     change_binding_on_sample: AtomicBool,
+    change_binding_on_reboot: AtomicBool,
 }
 
 impl Fake {
@@ -37,6 +38,7 @@ impl Fake {
             identity: Mutex::new("a".repeat(64)),
             generation: AtomicU64::new(7),
             change_binding_on_sample: AtomicBool::new(false),
+            change_binding_on_reboot: AtomicBool::new(false),
         }))
     }
 
@@ -58,9 +60,11 @@ impl Runtime for Fake {
     }
 
     fn binding(&self) -> OwnerBinding {
+        let identity = self.0.identity.lock().unwrap().clone();
         OwnerBinding {
-            identity: self.0.identity.lock().unwrap().clone(),
+            identity: identity.clone(),
             generation: self.0.generation.load(Ordering::SeqCst),
+            radio_binding: identity,
         }
     }
 
@@ -89,7 +93,16 @@ impl Runtime for Fake {
             .unwrap_or(Observation::Disconnected)
     }
 
-    async fn reboot(&self, direct: bool) -> Result<(), RebootFailure> {
+    async fn reboot(&self, direct: bool, binding: &OwnerBinding) -> Result<(), RebootFailure> {
+        if self.0.change_binding_on_reboot.swap(false, Ordering::SeqCst) {
+            self.change_owner();
+        }
+        if binding.radio_binding != self.binding().radio_binding {
+            return Err(RebootFailure {
+                reason: "radio_stale_request".into(),
+                submitted: false,
+            });
+        }
         self.0.reboots.fetch_add(1, Ordering::SeqCst);
         if direct {
             self.0.direct_reboots.fetch_add(1, Ordering::SeqCst);
@@ -475,6 +488,21 @@ async fn owner_identity_change_before_arm_never_touches_dispatcher() {
 }
 
 #[tokio::test]
+async fn owner_replacement_after_durable_arm_cannot_reboot_replacement() {
+    for trigger in [Trigger::Manual, Trigger::Reboot] {
+        let owner = Service::default();
+        let fake = Fake::new(vec![Observation::Disconnected], false);
+        fake.0.change_binding_on_reboot.store(true, Ordering::SeqCst);
+        let operation = owner.start("replace-after-arm", trigger, fake.clone()).await.unwrap();
+        let result = finished(&owner, &operation.operation_id).await;
+        assert_eq!(result.outcome.as_deref(), Some("blocked"));
+        assert_eq!(result.submission, Submission::NotSubmitted);
+        assert!(result.cooldown_until_ms.is_none());
+        assert_eq!(fake.0.reboots.load(Ordering::SeqCst), 0);
+    }
+}
+
+#[tokio::test]
 async fn rejected_submission_only_keeps_cooldown_when_commit_is_unknown() {
     for submitted in [false, true] {
         let owner = Service::default();
@@ -699,6 +727,7 @@ fn polluted_request_key_items(key: &str) -> Vec<Value> {
             &OwnerBinding {
                 identity: "a".repeat(64),
                 generation: 1,
+                radio_binding: "fixture-radio".into(),
             },
             1,
         )
@@ -1047,7 +1076,8 @@ async fn terminal_commit_true_runner_abort_still_retires_in_started_archive_work
         let service = owner.clone();
         let id = first.operation_id.clone();
         tokio::spawn(ticket.into_runner(async move {
-            match service.run(id, Trigger::Manual, runtime).await {
+            let binding = runtime.binding();
+            match service.run(id, Trigger::Manual, runtime, binding).await {
                 Ok(()) => OwnerFinish::Clean,
                 Err(_) => OwnerFinish::Uncertain,
             }
@@ -1092,7 +1122,8 @@ async fn true_runner_abort_before_terminal_keeps_unknown_runtime_fence() {
         let runtime = runtime.clone();
         let id = first.operation_id.clone();
         tokio::spawn(ticket.into_runner(async move {
-            match owner.run(id, Trigger::Reboot, runtime).await {
+            let binding = runtime.binding();
+            match owner.run(id, Trigger::Reboot, runtime, binding).await {
                 Ok(()) => OwnerFinish::Clean,
                 Err(_) => OwnerFinish::Uncertain,
             }

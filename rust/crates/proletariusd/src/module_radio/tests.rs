@@ -5267,6 +5267,26 @@ pub(crate) mod tests {
         retained_status_child_contract(true, false).await;
     }
 
+    #[tokio::test]
+    async fn recovery_reboot_binding_rejects_usb_replacement_before_physical_dispatch() {
+        let mut fixture = Fixture::new();
+        if let Some(task) = fixture.service.0.task.lock().unwrap().take() { task.abort(); }
+        fixture.configure().await;
+        let binding = fixture.service.public_mutation_binding();
+        crate::usb_at::reconnect_tests::install_default(&fixture.service.0.usb, "replacement");
+        for direct in [false, true] {
+            let failure = if direct {
+                fixture.service.reboot_module(&binding).await
+            } else {
+                fixture.service.recover_network_reboot(&binding).await
+            }.unwrap_err();
+            assert_eq!(failure.code, "radio_stale_generation");
+            assert!(!failure.command_submitted());
+            fixture.empty();
+        }
+        assert_eq!(fixture.service.0.state.lock().unwrap().jobs, 0);
+    }
+
     // The oneshot can be lost after the actor owns a physical reboot. The
     // receipt must remain unknown for the durable network recovery ledger.
     pub(crate) fn real_lost_reboot_receipt() -> Failure {
@@ -5280,7 +5300,8 @@ pub(crate) mod tests {
         fixture.preferences(Preferences { enabled: false, restore_cfun: 1, user_configured: true });
         fixture.service.0.state.lock().unwrap().observed = observed(1);
         let service = fixture.service.clone();
-        let mut observer = Box::pin(async move { service.reboot_module().await });
+        let binding = service.public_mutation_binding();
+        let mut observer = Box::pin(async move { service.reboot_module(&binding).await });
         let physical_reply = first.block_on(async {
             assert!(poll_fn(|cx| Poll::Ready(observer.as_mut().poll(cx).is_pending())).await);
             assert!(matches!(fixture.answer(1).await, Action::Observe { cellular: false }));

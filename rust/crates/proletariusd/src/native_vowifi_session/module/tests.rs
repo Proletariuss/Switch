@@ -1153,3 +1153,59 @@ async fn public_vowifi_routes_reject_identity_bypasses_before_any_dispatch() {
     drop(server);
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[tokio::test]
+async fn epdg_alias_reordering_conflicts_before_dispatch_and_legacy_receipts_fail_closed() {
+    use super::super::operation::{Clock, Facts, Receipt, RequestLedger, request_fingerprint};
+    let first = br#"{"enable":true,"epdg":"a.example","epdg_address":"b.example","observe_operation":true,"client_request_id":"alias-order"}"#;
+    let reversed = br#"{"enable":true,"epdg_address":"b.example","epdg":"a.example","observe_operation":true,"client_request_id":"alias-order"}"#;
+    assert_eq!(request::decode(first).unwrap().connection.epdg, "b.example");
+    assert_eq!(request::decode(reversed).unwrap().connection.epdg, "a.example");
+    for legacy in [false, true] {
+        let root = std::env::temp_dir().join(format!(
+            "module-alias-order-{}", crate::snapshot::new_instance_id()
+        ));
+        let mut server = crate::reader_pcsc_gateway_tests::state(&root);
+        server.usb_at = crate::usb_at::Owner::unavailable_for_tests("alias-fixture-no-device".into());
+        let now = tokio::time::Instant::now();
+        let old = Clock::start(now, Duration::from_secs(90)).project(
+            now, "old-module", 41, Facts {
+                generation: 41, phase: "submitted".into(), ready: false,
+                sms_ready: false, call_ready: false, cleanup_confirmed: false,
+                superseded: false, error: None,
+            },
+        );
+        let fingerprint = if legacy {
+            // Reproduce the old order-insensitive encoding already on disk.
+            let sorted: std::collections::BTreeMap<String, Value> =
+                serde_json::from_slice(first).unwrap();
+            proletarius_sms::stable_digest_hex(&serde_json::to_vec(&sorted).unwrap())
+        } else {
+            request_fingerprint(first)
+        };
+        let mut ledger = RequestLedger::open(server.multistandby_store.data_root(), "module").unwrap();
+        ledger.insert(Receipt::capture("alias-order", &fingerprint, &old)).unwrap();
+        drop(ledger);
+        let service = server.native_vowifi_lifecycle.module_service(&server).unwrap();
+        for (body, same) in [(first.as_slice(), true), (reversed.as_slice(), false)] {
+            let response = service.handle(Request::builder().method("POST").uri("/api/vowifi")
+                .body(http_body_util::Full::new(bytes::Bytes::copy_from_slice(body))).unwrap()).await;
+            assert_eq!(response.status(), if same && !legacy {
+                StatusCode::ACCEPTED
+            } else {
+                StatusCode::CONFLICT
+            });
+            if !same || legacy {
+                let value: Value = serde_json::from_slice(
+                    &response.into_body().collect().await.unwrap().to_bytes()).unwrap();
+                assert_eq!(value["code"], "vowifi_request_id_conflict");
+            }
+            let state = service.0.state.lock().unwrap();
+            assert_eq!(state.next, 0, "persisted request must not dispatch a second worker");
+            assert!(state.record.is_none());
+        }
+        drop(service);
+        drop(server);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+}

@@ -665,11 +665,24 @@ pub(super) fn request_fingerprint(bytes: &[u8]) -> String {
         .flatten()
         .and_then(|fields| {
             let mut grouped: BTreeMap<String, Vec<serde_json::Value>> = BTreeMap::new();
+            let mut epdg_aliases = Vec::new();
             for (key, value) in fields.0 {
-                grouped
-                    .entry(super::api::field_name(&key))
-                    .or_default()
-                    .push(canonical(value));
+                let key = super::api::field_name(&key);
+                let value = canonical(value);
+                if matches!(key.as_str(), "epdg" | "epdg_address") {
+                    epdg_aliases.push((key.clone(), value.clone()));
+                }
+                grouped.entry(key).or_default().push(value);
+            }
+            if grouped.contains_key("epdg") && grouped.contains_key("epdg_address") {
+                // The module decoder assigns both aliases to the same field
+                // in wire order. Preserve their interleaving while leaving
+                // independent property ordering and old single-alias hashes
+                // unchanged. Ambiguous legacy receipts conflict by request ID;
+                // never fall back to their order-insensitive fingerprint.
+                let mut encoded = b"switch-vowifi-epdg-alias-order-v1\0".to_vec();
+                encoded.extend(serde_json::to_vec(&(grouped, epdg_aliases)).ok()?);
+                return Some(encoded);
             }
             let duplicate = grouped.values().any(|values| values.len() > 1);
             if duplicate {
