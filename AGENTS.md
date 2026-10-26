@@ -1,6 +1,6 @@
 # Switch implementation scope
 
-The current source of truth is the private GitHub repository
+The current source of truth is the public GitHub repository
 `Proletariuss/Switch`. The user authorized cloud-only maintenance:
 source changes are made through GitHub, and all formatting, tests, repair jobs,
 compilation and artifact generation run on GitHub-hosted runners. The local Mac

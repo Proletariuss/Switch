@@ -1,25 +1,29 @@
-name: Build Switch candidate
+name: Build and publish verified Switch release
 on:
   workflow_dispatch:
     inputs:
       candidate_sha:
-        description: Exact 40-character commit SHA; must match the selected workflow ref
+        description: Exact reviewed commit SHA; must match the selected workflow ref
         required: true
         type: string
-  push:
-    tags:
-      - 'v*'
 permissions:
   contents: read
+concurrency:
+  group: switch-release-publication
+  cancel-in-progress: false
 jobs:
   identity:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       commit: ${{ steps.identity.outputs.commit }}
+      tree: ${{ steps.identity.outputs.tree }}
+      version: ${{ steps.identity.outputs.version }}
+      build: ${{ steps.identity.outputs.build }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
+          ref: ${{ inputs.candidate_sha }}
           path: src
           persist-credentials: false
       - id: identity
@@ -28,16 +32,20 @@ jobs:
           REQUESTED_SHA: ${{ inputs.candidate_sha }}
         run: |
           set -euo pipefail
-          commit="$(git rev-parse HEAD)"
-          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
-            [[ "$REQUESTED_SHA" =~ ^[0-9a-f]{40}$ ]]
-            [[ "$REQUESTED_SHA" == "$commit" ]]
-          fi
-          version="$(scripts/version.sh | cut -d ' ' -f 1)"
-          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
-            [[ "$GITHUB_REF_NAME" == "v$version" ]]
-          fi
-          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+          [[ "$GITHUB_REPOSITORY" == Proletariuss/Switch ]]
+          [[ "$GITHUB_REF_TYPE" == branch ]]
+          [[ "$REQUESTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$REQUESTED_SHA" == "$GITHUB_SHA" ]]
+          [[ "$(git rev-parse HEAD)" == "$REQUESTED_SHA" ]]
+          read -r version build < <(scripts/version.sh)
+          [[ "$version" != 3.51 ]]
+          python3 scripts/check-version-contract.py
+          {
+            echo "commit=$REQUESTED_SHA"
+            echo "tree=$(git rev-parse HEAD^{tree})"
+            echo "version=$version"
+            echo "build=$build"
+          } >> "$GITHUB_OUTPUT"
   candidate:
     permissions:
       contents: read
@@ -48,3 +56,26 @@ jobs:
       commit: ${{ needs.identity.outputs.commit }}
       native: true
       build_app: true
+  publish:
+    needs: [identity, candidate]
+    if: github.event_name == 'workflow_dispatch' && needs.candidate.result == 'success'
+    permissions:
+      contents: write
+      actions: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ needs.identity.outputs.commit }}
+          path: control
+          persist-credentials: false
+      - name: Verify original artifacts and publish identical release bytes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_COMMIT: ${{ needs.identity.outputs.commit }}
+          EXPECTED_TREE: ${{ needs.identity.outputs.tree }}
+          EXPECTED_VERSION: ${{ needs.identity.outputs.version }}
+          EXPECTED_BUILD: ${{ needs.identity.outputs.build }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 control/scripts/ci/publish-release.py
