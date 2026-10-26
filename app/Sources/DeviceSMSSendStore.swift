@@ -111,6 +111,7 @@ struct DeviceSMSPendingError: LocalizedError {
     private var dismissed: Set<String>
     private static let dismissedKey = "SwitchDismissedDeviceSendIntents"
     private let journal: DeviceSMSIssuanceJournal?
+    private var issuancePhases: [String: DeviceSMSIssuanceCheckpoint.Phase] = [:]
 
     init(api: any DeviceSMSSendAPI, preferences: UserDefaults? = nil, journal: DeviceSMSIssuanceJournal? = nil) {
         self.api = api
@@ -187,6 +188,7 @@ struct DeviceSMSPendingError: LocalizedError {
                     }
                 } else { rows.append(projection) }
             }
+            issuancePhases = try Dictionary(uniqueKeysWithValues: (journal?.entries() ?? []).map { (try $0.request.clientRequestID, $0.phase) })
             recoveryRecords = rows.filter(\.needsRecovery)
             publishRecoveryRecords()
             loaded = true
@@ -274,9 +276,8 @@ struct DeviceSMSPendingError: LocalizedError {
 
     func canResume(_ intent: DeviceSMSIntent) -> Bool {
         guard intent.version == 2, intent.state == .reserved || (intent.state == .prepared && intent.canSubmit),
-              let journal, let checkpoint = try? journal.checkpoint(id: intent.id)
-        else { return false }
-        return [.candidate, .reserved, .prepared].contains(checkpoint.phase)
+              let phase = issuancePhases[intent.id] else { return false }
+        return [.candidate, .reserved, .prepared].contains(phase)
     }
 
     /// Explicit cancellation only. Missing local journals can reconstruct this
@@ -440,6 +441,7 @@ struct DeviceSMSPendingError: LocalizedError {
 
     private func recordResult(_ record: DeviceSMSIntent) throws {
         try journal?.confirmTerminal(record)
+        issuancePhases = try Dictionary(uniqueKeysWithValues: (journal?.entries() ?? []).map { (try $0.request.clientRequestID, $0.phase) })
         queryRevision &+= 1
         loading = false
         recoveryRecords.removeAll { $0.id == record.id }

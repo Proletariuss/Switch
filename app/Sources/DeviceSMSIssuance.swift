@@ -228,6 +228,10 @@ final class DeviceSMSIssuanceJournal {
             guard dir >= 0 else { throw DeviceSMSJournalError.unavailable }
             defer { close(dir) }
             try validateFD(dir, directory: true)
+            let parent = open(directory.deletingLastPathComponent().path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+            guard parent >= 0 else { throw DeviceSMSJournalError.unavailable }
+            defer { close(parent) }
+            try checked(fsync(parent)) // Persist the newly created journal directory itself.
             var newLock = false
             var lock = openat(dir, "issuance.lock", O_RDWR | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o600)
             if lock >= 0 { newLock = true }
@@ -309,7 +313,7 @@ final class DeviceSMSIssuanceJournal {
             let checkpoint = rows[index]
             // A same-sequence CAS winner is not proof about the loser's nonce.
             guard try record.matches(checkpoint.request),
-                  record.intentNonce == checkpoint.reserve.intentNonce else { return }
+                  try record.intentNonce == checkpoint.reserve.intentNonce else { return }
             rows.remove(at: index)
         }
     }

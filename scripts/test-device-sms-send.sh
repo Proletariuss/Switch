@@ -11,4 +11,4 @@ xcrun swiftc -parse-as-library -D SWITCH_DEVICE_SMS_TESTS \
   "$SWITCH_SOURCE_ROOT/app/Sources/DeviceSMSSendStore.swift" \
   "$SWITCH_SOURCE_ROOT/app/Tests/DeviceSMSSend/main.swift" \
   -o "$DEVICE_SMS_TMP/device-sms-send-tests"
-"$DEVICE_SMS_TMP/device-sms-send-tests"
+TMPDIR="$DEVICE_SMS_TMP/" "$DEVICE_SMS_TMP/device-sms-send-tests"

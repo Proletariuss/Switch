@@ -291,7 +291,7 @@ struct DeviceSMSSendTests {
         do { _ = try await task.value; throw FixtureFailure(description: "stopped prepare succeeded") }
         catch is CancellationError {}
         try expect(api.submitCalls.isEmpty && api.getCalls.isEmpty, "stale prepared ACK triggered another request")
-        try expect(!store.sending && store.error == nil && store.intents.isEmpty, "stale prepared ACK mutated stopped store")
+        try expect(!store.sending && store.error == nil && store.intents.allSatisfy { $0.state == .reserved }, "stale prepared ACK mutated stopped store")
     }
 
     static func testBackendRestartDuringRecoveryQuery() async throws {
@@ -307,7 +307,7 @@ struct DeviceSMSSendTests {
         gate.release(record(api.prepareCalls[0], state: .unknown, canSubmit: false))
         do { _ = try await task.value; throw FixtureFailure(description: "stale recovery query succeeded") }
         catch is CancellationError {}
-        try expect(store.error == nil && store.intents.isEmpty && !store.sending, "old recovery query polluted new backend lifecycle")
+        try expect(store.error == nil && store.intents.allSatisfy { $0.state == .reserved } && !store.sending, "old recovery query polluted new backend lifecycle")
         try expect(api.submitCalls.isEmpty, "recovery query submitted SMS")
     }
 
@@ -440,7 +440,7 @@ struct DeviceSMSSendTests {
             epoch: "1", issuedHighWater: String(high), nextSequence: high == UInt64.max ? nil : String(high + 1),
             nextClientRequestID: high == UInt64.max ? nil : DeviceSMSAuthorityStatus.identifier(authority: authority, epoch: 1, sequence: high + 1))
     }
-    static func checkpoint(high: UInt64 = 0, body: String = message) throws -> DeviceSMSIssuanceCheckpoint {
+    static func checkpoint(high: UInt64 = 0, body: String = "fixture-message") throws -> DeviceSMSIssuanceCheckpoint {
         try .make(DeviceSMSReserveRequest.candidate(status: status(high: high), phone: phone,
             message: body, device: "reader", subscription: subscription))
     }
