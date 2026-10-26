@@ -1,0 +1,29 @@
+name: Handoff environment probe 353
+on:
+  push:
+    branches: [automation/handoff-probe-353]
+permissions:
+  contents: read
+jobs:
+  handoff:
+    name: Handoff development probe
+    runs-on: macos-26
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          path: src
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: 1.98.0
+      - name: Run unchanged production handoff suite
+        working-directory: src
+        run: bash scripts/ci/swift-gates.sh handoff
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: handoff-probe-reports
+          path: reports/
+          if-no-files-found: error
+          retention-days: 7
