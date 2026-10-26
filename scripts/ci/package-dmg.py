@@ -92,6 +92,18 @@ def source_identity(manifest, release, manifest_raw):
             "app_tree_sha256": manifest["app_tree_sha256"], "release_id": release["id"],
             "tag": release["tag_name"]}
 
+def require_same_assets(expected, actual):
+    if expected == actual:
+        return
+    differences = []
+    for name in sorted(set(expected) | set(actual)):
+        left, right = expected.get(name), actual.get(name)
+        if left != right:
+            def identity(raw):
+                return "missing" if raw is None else "size=" + str(len(raw)) + ",sha256=" + digest(raw)
+            differences.append(name + ": expected(" + identity(left) + ") actual(" + identity(right) + ")")
+    raise RuntimeError("accepted Release asset bytes differ: " + "; ".join(differences))
+
 def bind_original_release(api, manifest, original):
     run_id, attempt = int(manifest["run"]["id"]), int(manifest["run"]["attempt"])
     commit = manifest["commit"]
@@ -100,7 +112,7 @@ def bind_original_release(api, manifest, original):
     reports = api.artifact(artifacts, "software-report-" + str(attempt) + "-candidate-and-upload", run_id, commit)
     accepted, _ = transport.validate_payload(candidate, reports, commit, manifest["tree"], manifest["version"],
                                               manifest["build"], run_id, attempt)
-    need(accepted == original, "Release assets differ from original successful App run artifacts")
+    require_same_assets(accepted, original)
 
 def source(api, version, commit):
     need(re.fullmatch(r"[1-9][0-9]*\.[0-9]{2}", version) and version != "3.51", "invalid/protected version")
@@ -148,7 +160,7 @@ def source(api, version, commit):
     check_inventory(manifest["app_inventory"])
     rebuilt, _ = transport.validate_payload(files, reports, commit, manifest["tree"], version, manifest["build"],
                                             int(manifest["run"]["id"]), int(manifest["run"]["attempt"]))
-    need(rebuilt == original, "original accepted Release assets changed")
+    require_same_assets(rebuilt, original)
     run = api.api("GET", "/actions/runs/" + str(manifest["run"]["id"]))
     need(run["head_sha"] == commit and run["path"] == ".github/workflows/release.yml"
          and run["repository"]["full_name"] == REPO, "original App run mismatch")

@@ -140,6 +140,18 @@ class DMGFixtures(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             dmg.validate_derivative(files, source)
 
+    def test_asset_difference_diagnostic_does_not_print_contents(self):
+        with self.assertRaises(RuntimeError) as error:
+            dmg.require_same_assets({"test-reports.tar.gz": b"secret-original"},
+                                    {"test-reports.tar.gz": b"secret-changed"})
+        message = str(error.exception)
+        self.assertIn("test-reports.tar.gz", message)
+        self.assertIn(dmg.digest(b"secret-original"), message)
+        self.assertIn(dmg.digest(b"secret-changed"), message)
+        self.assertNotIn("secret-original", message)
+        self.assertNotIn("secret-changed", message)
+        dmg.require_same_assets({"same": b"ok"}, {"same": b"ok"})
+
     def test_release_matches_original_workflow_artifacts(self):
         manifest = {"run": {"id": "123", "attempt": "1"}, "commit": "a" * 40,
                     "tree": "b" * 40, "version": "3.52", "build": "352"}
