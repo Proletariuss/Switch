@@ -1,143 +1,141 @@
 {
   "schema_version": 1,
-  "baseline_commit": "dedaf50a94e1475883db80f2381a1b42ee15846b",
-  "reviewed_source_commit": "6b0fd69bca67217cbcd1e616c4d0494233a5844c",
+  "baseline_commit": "efb5e5f798c0bd1d87fb3df8c7ffe51356279e12",
+  "reviewed_source_commit": "b86f2bcdbfdef2232cc7e84bcbf1cf7d1aa40bfb",
   "reviewed_files": [
     {
-      "blob_sha": "60f5b0a803f1da064301470c00543ce1821f2116",
+      "blob_sha": "0bf1d961bd85ff52b67adb701bfe6346eac20ef8",
+      "path": "app/Sources/DeviceSMSIssuance.swift"
+    },
+    {
+      "blob_sha": "50ec42f006c05d9168dfd24a90651821ab4e2849",
       "path": "app/Sources/DeviceSMSSendLive.swift"
     },
     {
-      "blob_sha": "1232a0f97d8c573fe247eb085411e923adff2850",
+      "blob_sha": "0f1230bc8cda4ccce1dea801b4a925df937f17f6",
       "path": "app/Sources/DeviceSMSSendStore.swift"
     },
     {
-      "blob_sha": "172ccad8cefa63dcba8f174a722644d306b08530",
+      "blob_sha": "4125c86f60d3fdf45b359db617916dbb3b52f9c4",
       "path": "app/Sources/Views/DeviceSMSRecoveryView.swift"
     },
     {
-      "blob_sha": "e9f3f6fd02fcda4af4c603e533413b80caf05513",
+      "blob_sha": "aabaf1464ead93df6a4086f52268d247a26a3c85",
       "path": "app/Tests/DeviceSMSSend/main.swift"
     },
     {
-      "blob_sha": "a89ef1756167f8ebf1fe80bff61ad035b928eae4",
+      "blob_sha": "eeed44e432fe591639220911dbffe1928b7f49f0",
+      "path": "rust/crates/proletarius-store/src/device_sms_seal.rs"
+    },
+    {
+      "blob_sha": "65ffed02feeae17fcba0c3d89d48689878cde587",
+      "path": "rust/crates/proletarius-store/src/device_sms_seal/tests.rs"
+    },
+    {
+      "blob_sha": "13b9a36cba147b2fa046811fc049ff32dab0977f",
+      "path": "rust/crates/proletarius-store/src/device_sms_seal/transaction.rs"
+    },
+    {
+      "blob_sha": "8e978d2f8021392097a3e7bfa16d465836c8af00",
+      "path": "rust/crates/proletarius-store/src/raw.rs"
+    },
+    {
+      "blob_sha": "33c29cc9b57b9ca3b175471f1dbe398851b59690",
+      "path": "rust/crates/proletariusd/src/daemon_lifetime.rs"
+    },
+    {
+      "blob_sha": "3a518f95289a451a71ced8b2801e84e0f4c9d0de",
       "path": "rust/crates/proletariusd/src/device_send_store.rs"
     },
     {
-      "blob_sha": "5cafb9ee2d2f9191eb083a7924890b6104cd3fd8",
+      "blob_sha": "dbef75863f461ac2321072d13fe2d2ac82e8df5d",
+      "path": "rust/crates/proletariusd/src/device_send_store/authority_v2.rs"
+    },
+    {
+      "blob_sha": "60b71a4c9001bbfc906280e514ccfac0eeb3e8cc",
+      "path": "rust/crates/proletariusd/src/device_send_store/authority_v2/family.rs"
+    },
+    {
+      "blob_sha": "2a4e957e27a979fea0f008ac042be38f9282012f",
+      "path": "rust/crates/proletariusd/src/device_send_store/authority_v2/family/tests.rs"
+    },
+    {
+      "blob_sha": "964f0b832f5b149e869757de66cbe0826f07b09b",
+      "path": "rust/crates/proletariusd/src/device_send_store/authority_v2/production.rs"
+    },
+    {
+      "blob_sha": "4fc24774dcabdd4141e7f2d0f7cbff88b997fc44",
+      "path": "rust/crates/proletariusd/src/device_send_store/authority_v2/seal_adapter.rs"
+    },
+    {
+      "blob_sha": "7da58a20a19a7f923e47c721b1eec4c115908446",
+      "path": "rust/crates/proletariusd/src/device_send_store/authority_v2/seal_adapter/tests.rs"
+    },
+    {
+      "blob_sha": "0d6d8bfa04d6601b0133598373531da9b97bb4c5",
+      "path": "rust/crates/proletariusd/src/device_send_store/authority_v2/tests.rs"
+    },
+    {
+      "blob_sha": "5f39be514b064ee4005ba1ae1b379db9099d0798",
       "path": "rust/crates/proletariusd/src/device_sms_send.rs"
     },
     {
-      "blob_sha": "6d2b6b1dbf0c490b0a8b73b6cfce485d8e7c0c98",
+      "blob_sha": "6d0562d879fe3edaba9aaf3a69644d14c4804260",
+      "path": "rust/crates/proletariusd/src/device_sms_send/native_reader/tests.rs"
+    },
+    {
+      "blob_sha": "460269aef2cf7bb6a3a9f5cdda821f2669b6b77f",
       "path": "rust/crates/proletariusd/src/device_sms_send/tests.rs"
     },
     {
-      "blob_sha": "58c3cd0d5ba74a26c8105cfd3082bb650cc92beb",
+      "blob_sha": "2c1f11ee514254d60caa4bd0b721f45efbaad1e2",
+      "path": "rust/crates/proletariusd/src/main.rs"
+    },
+    {
+      "blob_sha": "335fa957f51b5960196a738b630485a88ee123d8",
       "path": "rust/crates/proletariusd/src/message_archive.rs"
     },
     {
-      "blob_sha": "aa30468171099a7050c01f9740cc00b5543eb0f4",
-      "path": "rust/crates/proletariusd/src/module_radio.rs"
-    },
-    {
-      "blob_sha": "7d848368e092be1d55748081abe0505506f5ffe2",
-      "path": "rust/crates/proletariusd/src/module_radio/tests.rs"
-    },
-    {
-      "blob_sha": "799f5cf09b2b06b5408a069bfc37232027988493",
+      "blob_sha": "98f18b90d1ca6edbb8c93a4b369e0bc2f802237c",
       "path": "rust/crates/proletariusd/src/multistandby_native_runtime.rs"
-    },
-    {
-      "blob_sha": "4d2b766e07e3a2aa7125e887311eb6216ba440a1",
-      "path": "rust/crates/proletariusd/src/multistandby_native_runtime/start_admission_tests.rs"
-    },
-    {
-      "blob_sha": "29ac8a4c2dc2e6b5f8e5c4f9ddb79baa8381d5b5",
-      "path": "rust/crates/proletariusd/src/multistandby_native_runtime/worker.rs"
-    },
-    {
-      "blob_sha": "e2338d2af599eac6e8e4900c41a37ced6ba2d955",
-      "path": "rust/crates/proletariusd/src/multistandby_retry.rs"
-    },
-    {
-      "blob_sha": "02bb6d4412ae9d3386a3ffb81b37b4bd1e8a8531",
-      "path": "rust/crates/proletariusd/src/native_vowifi_session/module/request.rs"
-    },
-    {
-      "blob_sha": "7b2493851d19b34c4755ceddb9aed557ca4d4052",
-      "path": "rust/crates/proletariusd/src/native_vowifi_session/module/tests.rs"
-    },
-    {
-      "blob_sha": "90cc0a41e48a1a26736f60c2088a21c5a45e3070",
-      "path": "rust/crates/proletariusd/src/native_vowifi_session/operation.rs"
-    },
-    {
-      "blob_sha": "fca9eae21451ca7ca123c313f47be799eff307b0",
-      "path": "rust/crates/proletariusd/src/native_vowifi_session/operation/tests.rs"
-    },
-    {
-      "blob_sha": "cb39c1ff6cc58da393fbf755ffb68c5cabf6bb56",
-      "path": "rust/crates/proletariusd/src/network_recovery.rs"
-    },
-    {
-      "blob_sha": "8be57cc6040f953b3249842e63edb43469d0d2db",
-      "path": "rust/crates/proletariusd/src/network_recovery/tests.rs"
     }
   ],
   "scopes": [
     {
       "file": "app/Sources/DeviceSMSSendLive.swift",
       "function": null,
-      "old_sha256": "77b91076e9238bb6091896471e52e68df1f2269df3d8a324663e0eb545b5858b",
-      "review_note": "Root review of exact phase-one diff: retained owner binding, exact retry installation, original accepted archive-only receipt; GitHub regression acceptance remains pending."
+      "old_sha256": "2066d5beda804b1145681e7bbf9016c331074021f8007c1793e2cd7a5a6f64ed",
+      "review_note": "Reviewed raw-byte v2 reserve/send transport and original nonce/payload journal recovery; no automatic fresh identity after uncertainty. Independent Swift GitHub fixtures passed 29 groups; integrated final-source gates remain required."
     },
     {
       "file": "rust/crates/proletariusd/src/device_sms_send.rs",
       "function": null,
-      "old_sha256": "b938ef5e7bcc31913e7a4832b9a564b807c0402bdd721634e4707910b881b657",
-      "review_note": "Root review of exact phase-one diff: retained owner binding, exact retry installation, original accepted archive-only receipt; GitHub regression acceptance remains pending."
+      "old_sha256": "a032c504efbb72fa79b9219c83915924ae83d553fa59143df34e3a18d0472bed",
+      "review_note": "Reviewed exact v2 payload, original expected subscription and nonce matching, strict duplicate/case validation, sealed reservation dispatch, archive-only recovery and terminal replay without hardware IO. Three static passes closed reported findings."
+    },
+    {
+      "file": "rust/crates/proletariusd/src/main.rs",
+      "function": null,
+      "old_sha256": "0ae5d81ee42912b2d9ab011368a58b27b70e1723c3b3310a38d8dfe05f415ae2",
+      "review_note": "Reviewed production lifetime RootProof wiring before Owner publication and explicit SMS-only startup isolation. Damaged authority never falls back to legacy writable storage; unrelated modules may start and status remains unavailable."
     },
     {
       "file": "rust/crates/proletariusd/src/message_archive.rs",
       "function": null,
-      "old_sha256": "a636aa7d43dc27837368ef513207cb08957633b8d241d63d124174858c76a470",
-      "review_note": "Root review of exact phase-one diff: retained owner binding, exact retry installation, original accepted archive-only receipt; GitHub regression acceptance remains pending."
+      "old_sha256": "ba57d1cd4a9a7531b017a23bb88256e6b6ec7ef28c84c1b9544e4db91b4a0cd1",
+      "review_note": "Reviewed archive-then-ledger lock order and exact archived receipt confirmation. Imported, nonissued or retired identity deletion cannot resurrect dispatch; storage corruption still fails closed."
     },
     {
-      "file": "rust/crates/proletariusd/src/module_radio.rs",
-      "function": null,
-      "old_sha256": "04692cac70b5ce577104a874d7ed5b4f03a6f92dc2502407708a88153c055744",
-      "review_note": "Root review of exact phase-one diff: retained owner binding, exact retry installation, original accepted archive-only receipt; GitHub regression acceptance remains pending."
-    },
-    {
-      "file": "rust/crates/proletariusd/src/multistandby_retry.rs",
-      "function": null,
-      "old_sha256": "9bc230794d4dcce59ceece4274e70fcb4d55e71755040d169f756919d2fb88f4",
-      "review_note": "Root review of exact phase-one diff: retained owner binding, exact retry installation, original accepted archive-only receipt; GitHub regression acceptance remains pending."
-    },
-    {
-      "file": "rust/crates/proletariusd/src/multistandby_native_runtime.rs",
-      "function": null,
-      "old_sha256": "c919a0c80cfe7f0a9e79983cc98c30ce7f82c7a486273c6e200d143f25cfb54f",
-      "review_note": "Root review of exact phase-one diff: retained owner binding, exact retry installation, original accepted archive-only receipt; GitHub regression acceptance remains pending."
-    },
-    {
-      "file": "rust/crates/proletariusd/src/multistandby_native_runtime/worker.rs",
-      "function": null,
-      "old_sha256": "2245c651e003672ad789f77014f9d052bd44a3eff69f9c4c74e135a5a4359b75",
-      "review_note": "Root review of exact phase-one diff: retained owner binding, exact retry installation, original accepted archive-only receipt; GitHub regression acceptance remains pending."
-    },
-    {
-      "file": "rust/crates/proletariusd/src/network_recovery.rs",
-      "function": null,
-      "old_sha256": "65f69efdde580a99f93fcc395c9f69d748e6b77e88c8cf29444e8baf26796553",
-      "review_note": "Root review of exact phase-one diff: retained owner binding, exact retry installation, original accepted archive-only receipt; GitHub regression acceptance remains pending."
+      "file": "rust/crates/proletariusd/src/device_send_store.rs",
+      "function": "recover_go_owned",
+      "old_sha256": "603bd7c66a8372d27992c9d062b136d8a28027fcb2886ccd2bcc75fc229a1d88",
+      "review_note": "Reviewed shared root-scoped adapter and Owner, sticky startup unavailability, original-lock v1 migration and sealed bounded transactions. Retired IDs remain burned by high water; unknown and accepted-unarchived records never evict for capacity."
     },
     {
       "file": "rust/crates/proletariusd/src/device_send_store.rs",
       "function": null,
-      "old_sha256": "da9a2f82671156a82d662f1cf1cc78af1ff4ef6f29675298e21145c692536879",
-      "review_note": "Root review of exact phase-one diff: retained owner binding, exact retry installation, original accepted archive-only receipt; GitHub regression acceptance remains pending."
+      "old_sha256": "35b47f2f01b3e91ed63c95787031358f602eed5ba73991083faf55ecd358ce8f",
+      "review_note": "Reviewed shared root-scoped adapter and Owner, sticky startup unavailability, original-lock v1 migration and sealed bounded transactions. Retired IDs remain burned by high water; unknown and accepted-unarchived records never evict for capacity."
     }
   ],
   "functional_acceptance_awarded": false
