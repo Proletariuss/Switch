@@ -313,7 +313,8 @@ final class ReaderBLEBridge {
     private func bindTemporarySocket(_ descriptor: Int32, for socketPath: String) -> String? {
         let directory = (socketPath as NSString).deletingLastPathComponent
         let maximumPathBytes = MemoryLayout<sockaddr_un>.size - 4
-        let nameBudget = maximumPathBytes - directory.utf8.count - 1
+        // Leave room for the separator and the strict candidate-length bound.
+        let nameBudget = maximumPathBytes - directory.utf8.count - 2
         // Retain at least 48 random bits; use up to the full UUID when the
         // sockaddr path budget permits it. bind(2) itself is the collision
         // arbiter and every EADDRINUSE attempt receives a fresh suffix.

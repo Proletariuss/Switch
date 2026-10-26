@@ -498,11 +498,51 @@ private func bridgeLifecycleTests(_ bridge: ReaderBLEBridge, _ path: String) {
     print("BLE Unix bridge: own-socket cleanup, restart and foreign/non-socket preservation passed")
 }
 
+private func temporarySocketPathBoundaryTests() {
+    let build = URL(fileURLWithPath: ProcessInfo.processInfo.environment["SWITCH_BUILD_DIR"]!)
+    let root = build.appendingPathComponent("tmp/bind-" + String(UUID().uuidString.prefix(8)))
+    try! FileManager.default.createDirectory(at: root, withIntermediateDirectories: true,
+                                             attributes: [.posixPermissions: 0o700])
+    defer { try! FileManager.default.removeItem(at: root) }
+    let maximum = MemoryLayout<sockaddr_un>.size - 4
+    // Full UUID, first shortened UUID, and the minimum permitted 48 random bits.
+    for directoryBytes in [maximum - 36, maximum - 35, maximum - 16] {
+        let padding = directoryBytes - root.path.utf8.count - 1
+        expect(padding > 0, "fixture root must leave room for exact socket path boundaries")
+        let directory = root.appendingPathComponent(String(repeating: "p", count: padding))
+        try! FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false,
+                                                 attributes: [.posixPermissions: 0o700])
+        expect(directory.path.utf8.count == directoryBytes, "fixture directory byte length changed")
+        let publicPath = directory.appendingPathComponent("s").path
+        let bound = DispatchSemaphore(value: 0)
+        var captured: String?
+        let bridge = ReaderBLEBridge(afterBindBeforePublish: { candidate, _ in
+            captured = candidate
+            bound.signal()
+        })
+        bridge.start(socketPath: publicPath)
+        expect(bound.wait(timeout: .now() + 2) == .success,
+               "valid long directory could not bind its private temporary socket")
+        waitForBridge(publicPath)
+        let candidate = captured!
+        let name = (candidate as NSString).lastPathComponent
+        expect(candidate.utf8.count == maximum - 1, "temporary socket violated strict pathname boundary")
+        expect(name.hasPrefix(".b") && name.utf8.count - 2 == min(32, maximum - directoryBytes - 4),
+               "temporary name lost its expected random suffix budget")
+        expect(name.utf8.count - 2 >= 12, "temporary socket reduced collision resistance below 48 bits")
+        bridge.stop()
+        waitForSocketRemoved(publicPath)
+        expect(!socketExists(candidate), "private temporary socket survived publication/stop")
+    }
+    print("BLE Unix bridge: exact full/shortened/minimum-random temporary path boundaries passed")
+}
+
 @main
 private enum ReaderBLEOperationProofTests {
     static func main() {
         setbuf(stdout, nil)
         ledgerTests()
+        temporarySocketPathBoundaryTests()
         let bridge = ReaderBLEBridge(standardRequestTimeout: 1, cardOperationTimeout: 0.01)
         let path = CommandLine.arguments[1]
         bridge.start(socketPath: path)
