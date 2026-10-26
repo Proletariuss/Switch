@@ -766,7 +766,7 @@ fn terminal_line(line: &[u8]) -> Option<bool> {
     }
     let upper = line.to_ascii_uppercase();
     if upper == "ERROR" || ["+CME ERROR:", "+CMS ERROR:"].iter().any(|prefix| {
-        upper.strip_prefix(prefix).is_some_and(|detail| !detail.trim().is_empty())
+        upper.strip_prefix(*prefix).is_some_and(|detail| !detail.trim().is_empty())
     }) {
         return Some(false);
     }
