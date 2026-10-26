@@ -1,0 +1,183 @@
+name: Shared Switch software gates
+on:
+  workflow_call:
+    inputs:
+      commit:
+        required: true
+        type: string
+      native:
+        required: true
+        type: boolean
+      build_app:
+        required: true
+        type: boolean
+permissions:
+  contents: read
+jobs:
+  portable:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ inputs.commit }}
+          path: src
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: 1.98.0
+          components: rustfmt
+      - name: Validate exact candidate and portable contracts
+        working-directory: src
+        env:
+          EXPECTED_COMMIT: ${{ inputs.commit }}
+        run: |
+          set -euo pipefail
+          [[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$(git rev-parse HEAD)" == "$EXPECTED_COMMIT" ]]
+          python3 scripts/ci/run-report.py portable bash scripts/ci/portable-gates.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: software-report-portable
+          path: reports/
+          if-no-files-found: error
+          retention-days: 7
+  rust:
+    needs: portable
+    if: inputs.native
+    runs-on: macos-26
+    # Prior complete Rust gate took ~25 minutes before cold runner variability.
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ inputs.commit }}
+          path: src
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: 1.98.0
+          components: clippy,rustfmt
+      - name: Install native dependencies
+        run: brew install libusb
+      - name: Prepare pinned ARM standard library
+        working-directory: src
+        run: python3 scripts/prepare-module-supervisor.py --fetch
+      - name: Fetch both locked workspaces into the isolated cache
+        working-directory: src
+        run: |
+          export CARGO_HOME="$GITHUB_WORKSPACE/build/cargo-home"
+          cargo +1.98.0 fetch --locked --manifest-path rust/Cargo.toml
+          cargo +1.98.0 fetch --locked --manifest-path scripts/acceptance/daemon-capsule-fixture/Cargo.toml
+      - name: Shared complete Rust gate
+        working-directory: src
+        run: python3 scripts/ci/run-report.py rust bash scripts/ci/rust-gates.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: software-report-rust
+          path: reports/
+          if-no-files-found: error
+          retention-days: 7
+  swift:
+    needs: portable
+    if: inputs.native
+    runs-on: macos-26
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [models, handoff]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ inputs.commit }}
+          path: src
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        if: matrix.suite == 'handoff'
+        with:
+          toolchain: 1.98.0
+      - name: Offline Swift fixtures
+        working-directory: src
+        env:
+          SUITE: ${{ matrix.suite }}
+        run: bash scripts/ci/swift-gates.sh "$SUITE"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: software-report-swift-${{ matrix.suite }}
+          path: reports/
+          if-no-files-found: error
+          retention-days: 7
+  candidate:
+    needs: [portable, rust, swift]
+    if: inputs.build_app && inputs.native
+    runs-on: macos-26
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ inputs.commit }}
+          path: src
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: 1.98.0
+      - name: Install app build dependencies
+        run: brew install libusb xcodegen
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: software-report-*
+          path: reports
+          merge-multiple: true
+      - name: Record source identity before build
+        working-directory: src
+        env:
+          EXPECTED_COMMIT: ${{ inputs.commit }}
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$EXPECTED_COMMIT" ]]
+          echo "EXPECTED_SOURCE_DIGEST=$(python3 scripts/source-identity.py)" >> "$GITHUB_ENV"
+      - name: Prepare pinned ARM standard library
+        working-directory: src
+        run: python3 scripts/prepare-module-supervisor.py --fetch
+      - name: Fetch locked app build dependencies
+        working-directory: src
+        run: CARGO_HOME="$GITHUB_WORKSPACE/build/cargo-home" cargo +1.98.0 fetch --locked --manifest-path rust/Cargo.toml
+      - name: Build and audit the delivered app
+        working-directory: src
+        run: |
+          set -euo pipefail
+          python3 scripts/ci/run-report.py app-build scripts/build.sh
+          python3 scripts/ci/run-report.py bundle-audit python3 scripts/audit-release-bundle.py ../dist/Switch.app
+          python3 scripts/ci/run-report.py signature codesign --verify --deep --strict ../dist/Switch.app
+      - name: Package the same audited app with provenance
+        working-directory: src
+        env:
+          EXPECTED_COMMIT: ${{ inputs.commit }}
+        run: |
+          python3 scripts/ci/package-candidate.py
+          python3 scripts/ci/package-candidate.py verify ../candidate
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: Switch-candidate-${{ inputs.commit }}
+          path: candidate/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Download the actual uploaded candidate for the roundtrip smoke check
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: Switch-candidate-${{ inputs.commit }}
+          path: uploaded-candidate
+      - name: Verify uploaded bytes and executable permissions
+        working-directory: src
+        run: python3 scripts/ci/run-report.py upload-roundtrip python3 scripts/ci/package-candidate.py verify ../uploaded-candidate
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: software-report-candidate-and-upload
+          path: reports/
+          if-no-files-found: error
+          retention-days: 7
