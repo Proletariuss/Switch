@@ -27,7 +27,16 @@ final class BoundedBLEDiagnosticLog: @unchecked Sendable {
         formatter.formatOptions = [.withInternetDateTime]
         return formatter
     }()
-    private lazy var destination = directory()
+    private let destinationLock = NSLock()
+    private var resolvedDestination: URL?
+    private func destinationURL() -> URL {
+        destinationLock.lock()
+        defer { destinationLock.unlock() }
+        if let resolvedDestination { return resolvedDestination }
+        let resolved = directory()
+        resolvedDestination = resolved
+        return resolved
+    }
 
     init(directory: @escaping () -> URL, sink: ((Data) throws -> Void)? = nil,
          maximumFileBytes: Int = BoundedBLEDiagnosticLog.maximumFileBytes,
@@ -82,6 +91,7 @@ final class BoundedBLEDiagnosticLog: @unchecked Sendable {
     }
 
     private func openDirectory() throws -> Int32 {
+        let destination = destinationURL()
         guard destination.isFileURL, destination.path.hasPrefix("/") else { throw Failure.unsafePath }
         let components = destination.standardizedFileURL.path.split(separator: "/")
         guard !components.isEmpty else { throw Failure.unsafePath }

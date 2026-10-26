@@ -8,6 +8,7 @@ struct SupportDiagnosticsView: View {
     @State private var exporting = false
     @State private var feedback: String?
     @State private var request: Task<Void, Never>?
+    @State private var exportRevision: UInt64 = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: viewport.sectionSpacing) {
@@ -30,7 +31,7 @@ struct SupportDiagnosticsView: View {
             Spacer()
         }
         .padding(viewport.cardPadding).workspaceCard()
-        .onDisappear { request?.cancel(); request = nil; exporting = false }
+        .onDisappear { exportRevision &+= 1; request?.cancel(); request = nil; exporting = false }
     }
 
     private func export() {
@@ -39,31 +40,33 @@ struct SupportDiagnosticsView: View {
         let date = ISO8601DateFormatter().string(from: Date()).replacingOccurrences(of: ":", with: "-")
         panel.nameFieldStringValue = "Switch-diagnostics-" + date + ".json"
         guard panel.runModal() == .OK, let destination = panel.url else { return }
+        exportRevision &+= 1
+        let revision = exportRevision
         exporting = true
         feedback = nil
         let isRunning = backend.state == .running
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"
         request = Task { @MainActor in
-            defer { exporting = false; request = nil }
+            defer { if revision == exportRevision { exporting = false; request = nil } }
             let runtime: Data?
             if isRunning { runtime = try? await APIClient(timeoutInterval: 6).getData("api/diagnostics/support") }
             else { runtime = nil }
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, revision == exportRevision else { return }
             do {
                 let fileData = try await Task.detached(priority: .utility) {
                     try SupportBundleBuilder.make(client: ClientDiagnostics.shared.snapshot(),
                         backend: runtime, appVersion: version, build: build)
                 }.value
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, revision == exportRevision else { return }
                 try await Task.detached(priority: .utility) {
                     try fileData.write(to: destination, options: [.atomic])
                     try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: destination.path)
                 }.value
-                guard !Task.isCancelled else { return }
-                feedback = runtime == nil ? "已导出客户端诊断包；后台记录未能获取，包内已标注。" : "诊断包已导出，可提供给维护者分析。"
+                guard !Task.isCancelled, revision == exportRevision else { return }
+                feedback = "诊断包已导出，可提供给维护者分析。缺失或跳过的记录已在包内标注。"
             } catch {
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, revision == exportRevision else { return }
                 feedback = "导出未完成，请确认目标位置可写后重试。"
             }
         }
