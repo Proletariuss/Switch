@@ -13,7 +13,7 @@ use serde_json::{Value, json};
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
-    sync::{Arc, Mutex, OnceLock, Weak},
+    sync::{Arc, Mutex, OnceLock, Weak, atomic::{AtomicBool, Ordering}},
     time::{SystemTime, UNIX_EPOCH},
 };
 
@@ -23,8 +23,7 @@ const MAX_BYTES: u64 = 32 * 1024 * 1024;
 #[derive(Clone)]
 pub(crate) struct Store(
     crate::sms_store_health::GuardedArchive,
-    crate::device_sms_send::owner::Owner,
-    Option<Arc<authority_v2::seal_adapter::Adapter>>,
+    Arc<SharedAuthority>,
 );
 /// Constructed only while open_with_authority owns an unpublished fresh Owner.
 pub(crate) struct StartupMigration {
@@ -36,8 +35,14 @@ impl StartupMigration {
     }
 }
 type Adapter = authority_v2::seal_adapter::Adapter;
-static AUTHORITIES: OnceLock<Mutex<BTreeMap<PathBuf, Weak<Adapter>>>> = OnceLock::new();
-fn registered(root: &Path) -> Result<Option<Arc<Adapter>>, StoreError> {
+#[derive(Default)]
+struct SharedAuthority {
+    adapter: Option<Arc<Adapter>>,
+    owner: crate::device_sms_send::owner::Owner,
+    unavailable: AtomicBool,
+}
+static AUTHORITIES: OnceLock<Mutex<BTreeMap<PathBuf, Weak<SharedAuthority>>>> = OnceLock::new();
+fn registered(root: &Path) -> Result<Option<Arc<SharedAuthority>>, StoreError> {
     let mut registry = AUTHORITIES.get_or_init(Default::default).lock().map_err(|_| error("sms_store_unavailable"))?;
     registry.retain(|_, authority| authority.strong_count() > 0);
     Ok(registry.get(root).and_then(Weak::upgrade))
@@ -169,36 +174,50 @@ impl Store {
     pub(crate) fn open(root: &Path) -> Result<Self, StoreError> {
         Ok(Self(
             ArchiveStore::with_limits(root.join("device-send-ledger.json"), MAX_BYTES, 1)?.into(),
-            Default::default(),
-            registered(root)?,
+            registered(root)?.unwrap_or_default(),
         ))
     }
     pub(crate) fn open_with_authority(
         root: &Path, proof: crate::daemon_lifetime::RootProof,
     ) -> Result<Self, StoreError> {
         let mut store = Self::open(root)?;
-        if store.2.is_some() { return Err(error("sms_store_unavailable")); }
+        if store.1.adapter.is_some() || store.1.unavailable.load(Ordering::Acquire) { return Err(error("sms_store_unavailable")); }
         // A virgin root gets a valid empty v1 snapshot under the existing
         // presence-aware writer. Previously missing evidence still rejects.
         if !store.0.path().exists() { store.recover()?; }
         let startup = StartupMigration { proof: proof.clone() };
         let adapter = Arc::new(Adapter::open_or_migrate(root, proof, startup)
             .map_err(|_| error("sms_store_unavailable"))?);
-        store.2 = Some(adapter.clone());
+        store.1 = Arc::new(SharedAuthority {
+            adapter: Some(adapter), owner: store.1.owner.clone(), unavailable: AtomicBool::new(false),
+        });
         AUTHORITIES.get_or_init(Default::default).lock()
             .map_err(|_| error("sms_store_unavailable"))?
-            .insert(root.to_path_buf(), Arc::downgrade(&adapter));
+            .insert(root.to_path_buf(), Arc::downgrade(&store.1));
         store.recover()?;
         Ok(store)
     }
 
-    pub(crate) fn is_v2(&self) -> bool { self.2.is_some() }
+    /// Explicit startup isolation: no fallback to writable legacy behavior.
+    pub(crate) fn unavailable(root: &Path) -> Result<Self, StoreError> {
+        let store = Self::open(root)?;
+        store.1.unavailable.store(true, Ordering::Release);
+        AUTHORITIES.get_or_init(Default::default).lock()
+            .map_err(|_|error("sms_store_unavailable"))?
+            .insert(root.to_path_buf(), Arc::downgrade(&store.1));
+        Ok(store)
+    }
+    fn check_available(&self) -> Result<(), StoreError> {
+        if self.1.unavailable.load(Ordering::Acquire) { Err(error("sms_store_unavailable")) } else { Ok(()) }
+    }
+
+    pub(crate) fn is_v2(&self) -> bool { self.1.adapter.is_some() }
 
     pub(crate) fn send_owner(&self) -> crate::device_sms_send::owner::Owner {
-        self.1.clone()
+        self.1.owner.clone()
     }
     pub(crate) fn status(&self) -> proletarius_api_contract::SmsStoreStatus {
-        if self.2.as_ref().is_some_and(|adapter| adapter.restart_required()) {
+        if self.1.unavailable.load(Ordering::Acquire) || self.1.adapter.as_ref().is_some_and(|adapter| adapter.restart_required()) {
             return proletarius_api_contract::SmsStoreStatus {
                 state: "unavailable", reason: Some("store_io_failed"), restart_required: true,
             };
@@ -206,11 +225,13 @@ impl Store {
         self.0.status()
     }
     pub(crate) fn recover(&self) -> Result<(), StoreError> {
-        if self.2.is_some() { return self.apply("recover", json!({})).map(|_|()); }
+        self.check_available()?;
+        if self.1.adapter.is_some() { return self.apply("recover", json!({})).map(|_|()); }
         self.recover_bindings(|_| true)
     }
     pub(crate) fn recover_go_owned(&self) -> Result<(), StoreError> {
-        if self.2.is_some() { return self.apply("recover_go", json!({})).map(|_|()); }
+        self.check_available()?;
+        if self.1.adapter.is_some() { return self.apply("recover_go", json!({})).map(|_|()); }
         self.recover_bindings(crate::device_sms_send::go_recovery_binding)
     }
     fn recover_bindings(&self, lost_owner: impl Fn(&str) -> bool) -> Result<(), StoreError> {
@@ -235,7 +256,8 @@ impl Store {
         expected_attempt: Option<&str>,
         confirm: bool,
     ) -> Result<bool, StoreError> {
-        if self.2.is_some() {
+        self.check_available()?;
+        if self.1.adapter.is_some() {
             return self.apply("archive_receipt", json!({"item":item,"attempt":expected_attempt,"confirm":confirm}))?
                 .as_bool().ok_or_else(||error("ledger_corrupt"));
         }
@@ -271,7 +293,8 @@ impl Store {
         })
     }
     pub(crate) fn apply(&self, action: &str, body: Value) -> Result<Value, StoreError> {
-        if let Some(adapter) = &self.2 {
+        self.check_available()?;
+        if let Some(adapter) = &self.1.adapter {
             return adapter.transact(|active, frozen| authority_v2::production::apply(active, frozen, action, &body))
                 .map_err(|failure| match failure {
                     authority_v2::seal_adapter::Error::Rejected(code) => codec_error(code),
@@ -670,7 +693,6 @@ mod tests {
                 .unwrap()
                 .into(),
             Default::default(),
-            None,
         );
         assert!(limited.apply("prepare", prepare("x")).is_err());
         assert!(!limited.0.path().exists());
@@ -681,7 +703,6 @@ mod tests {
                 .unwrap()
                 .into(),
             Default::default(),
-            None,
         );
         assert!(
             limit

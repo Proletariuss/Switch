@@ -584,10 +584,18 @@ fn initialize_sms_stores_with_authority(
         ));
     }
     let device_send_store = match proof {
-        Some(proof) => device_send_store::Store::open_with_authority(data_root, proof),
+        Some(proof) => match device_send_store::Store::open_with_authority(data_root, proof) {
+            Ok(store) => Ok(store),
+            Err(_) => {
+                crate::diagnostics::write_line(format_args!(
+                    "switchd-rs: device SMS authority unavailable; SMS isolated without legacy fallback"
+                ));
+                device_send_store::Store::unavailable(data_root)
+            }
+        },
         None => device_send_store::Store::open(data_root),
     }.map_err(|e| BackendFailure::Io(e.to_string()))?;
-    if device_send_store.recover().is_err() {
+    if !device_send_store.is_v2() && !device_send_store.status().restart_required && device_send_store.recover().is_err() {
         crate::diagnostics::write_line(format_args!(
             "switchd-rs: device send store unavailable; new submissions disabled"
         ));
@@ -3482,6 +3490,33 @@ mod tests {
             assert_eq!(fs::read(path).unwrap(), original);
             fs::remove_dir_all(root).unwrap();
         }
+    }
+
+    #[test]
+    fn production_sms_authority_failure_is_isolated_and_reopen_cannot_clear_it() {
+        let root=test_directory("sms-authority-isolated");
+        let path=root.join("device-send-ledger.json");
+        let damaged=b"{invalid-device-ledger";
+        fs::write(&path,damaged).unwrap();
+        let lease=super::daemon_lifetime::Lease::acquire(&root).unwrap();
+        let (multi,device,forwarding)=super::initialize_sms_stores_with_authority(
+            &root,Some(lease.root_proof())).expect("SMS failure must not prevent other modules starting");
+        assert!(!multi.status().restart_required);
+        assert!(device.status().restart_required);
+        assert_eq!(super::sms_store_health::rejection(device.status()).unwrap().status(),hyper::StatusCode::SERVICE_UNAVAILABLE);
+        assert_eq!(fs::read(&path).unwrap(),damaged);
+        for action in ["authority","get","list","prepare","claim","finish"] {
+            assert!(matches!(device.apply(action,serde_json::json!({})),
+                Err(proletarius_store::StoreError::Configuration(code)) if code=="sms_store_unavailable"));
+        }
+        // External bytes changing cannot reopen this lifetime's disabled lane.
+        fs::write(&path,br#"[{"schema_version":1,"records":{}}]"#).unwrap();
+        let reopened=super::device_send_store::Store::open(&root).unwrap();
+        assert!(reopened.status().restart_required);
+        assert!(reopened.apply("prepare",serde_json::json!({"client_request_id":"must-not-admit"})).is_err());
+        drop((multi,device,forwarding,reopened));
+        drop(lease);
+        fs::remove_dir_all(root).unwrap();
     }
 
     pub(super) fn test_directory(_name: &str) -> PathBuf {

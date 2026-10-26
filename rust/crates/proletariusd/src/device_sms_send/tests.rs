@@ -950,7 +950,7 @@ async fn invalid_public_write_is_rejected_without_retired_backend_recovery_gate(
 }
 
 #[tokio::test]
-async fn known_compatibility_prepared_and_accepted_posts_keep_recovery_error_without_new_io() {
+async fn compatibility_recovery_blocks_new_claim_but_replays_accepted_without_io() {
     let f = Fixture::new().await;
     f.prepare("prepared-before-recovery").await;
     f.prepare("accepted-before-recovery").await;
@@ -967,14 +967,12 @@ async fn known_compatibility_prepared_and_accepted_posts_keep_recovery_error_wit
     let validations = f.hardware.validations.load(Ordering::SeqCst);
     for id in ["prepared-before-recovery", "accepted-before-recovery"] {
         for prepare_only in [true, false] {
-            assert_eq!(
-                code(
-                    f.service
-                        .post(request(id), prepare_only, &AtomicBool::new(false))
-                        .await
-                ),
-                "go_backend_restarting_write_not_replayed"
-            );
+            let result = f.service.post(request(id), prepare_only, &AtomicBool::new(false)).await;
+            if id == "accepted-before-recovery" && !prepare_only {
+                assert_eq!(result.unwrap()["sent"], true);
+            } else {
+                assert_eq!(code(result), "go_backend_restarting_write_not_replayed");
+            }
         }
     }
     assert_eq!(f.hardware.captures.load(Ordering::SeqCst), captures);
@@ -1369,6 +1367,13 @@ async fn v2_reserved_nonce_binding_claim_and_archive_are_one_dispatch() {
     let prepared=f.service.post(body(),true,&AtomicBool::new(false)).await.unwrap_or_else(|_|panic!());
     assert_eq!(prepared["identity_version"],2);
     assert_eq!(prepared["expected_subscription_id"],"");
+    for change in ["subscription", "device"] {
+        let mut changed=body();
+        if change=="subscription" {changed.expected_subscription_id="different-subscription".into();}
+        else {changed.device=String::new();}
+        assert_eq!(code(f.service.post(changed,false,&AtomicBool::new(false)).await),"sms_intent_conflict");
+    }
+    assert_eq!(f.hardware.sends.load(Ordering::SeqCst),0);
     for _ in 0..3 {assert!(f.service.post(body(),false,&AtomicBool::new(false)).await.is_ok());}
     assert_eq!(f.hardware.sends.load(Ordering::SeqCst),1);
     assert_eq!(f.service.archive.load().unwrap().len(),1);
@@ -1390,4 +1395,30 @@ async fn v2_authority_query_rejects_mixed_or_unknown_fields_without_issuing() {
     let unchanged:Value=f.service.ledger("authority",json!({})).await.unwrap_or_else(|_|panic!());
     assert_eq!(unchanged["issued_high_water"],"0");
     assert_eq!(f.hardware.sends.load(Ordering::SeqCst),0);
+}
+
+#[tokio::test]
+async fn v2_case_aliases_and_duplicates_reject_before_any_claim() {
+    let f=Fixture::new().await;
+    for raw in [
+        r#"{"IDENTITY_VERSION":2,"client_request_id":"bad","phone":"1","phone":"2","message":"x","device":"reader","intent_nonce":"0123456789abcdef0123456789abcdef"}"#,
+        r#"{"IDENTITY_VERSION":2,"client_request_id":"bad","phone":"1","message":"x","device":"reader","intent_nonce":"0123456789abcdef0123456789abcdef"}"#,
+        r#"{"identity_version":2,"client_request_id":"bad","phone":"1","PHONE":"2","message":"x","device":"reader","intent_nonce":"0123456789abcdef0123456789abcdef"}"#,
+    ] {
+        let (status,_)=f.public_request(Method::POST,"/api/sms/send",raw,true,true).await;
+        assert_eq!(status,StatusCode::BAD_REQUEST);
+    }
+    assert_eq!(f.hardware.captures.load(Ordering::SeqCst),0);
+    assert_eq!(f.hardware.sends.load(Ordering::SeqCst),0);
+}
+
+#[tokio::test]
+async fn reopened_v2_store_shares_original_owner_shutdown() {
+    let mut f=Fixture::new().await;
+    let lease=crate::daemon_lifetime::Lease::acquire(&f.root).unwrap();
+    f.service.store=crate::device_send_store::Store::open_with_authority(&f.root,lease.root_proof()).unwrap();
+    let reopened=crate::device_send_store::Store::open(&f.root).unwrap();
+    f.service.store.send_owner().begin_shutdown();
+    assert!(reopened.send_owner().admit().is_err());
+    assert!(f.service.store.send_owner().admit().is_err());
 }

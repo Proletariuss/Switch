@@ -274,13 +274,18 @@ impl SendRequest {
                 || valid_token(&self.expected_subscription_id))
     }
     fn matches(&self, r: &Record) -> bool {
-        self.identity_version.max(1) == r.identity_version
-            && (r.identity_version == 1 || r.intent_nonce.as_deref() == Some(self.intent_nonce.as_str()))
-            && self.phone == r.phone
-            && self.message == r.message
-            && (self.device.is_empty() || self.device == r.device)
-            && (self.expected_subscription_id.is_empty()
-                || self.expected_subscription_id == r.subscription_id)
+        if self.identity_version.max(1) != r.identity_version
+            || self.phone != r.phone || self.message != r.message {
+            return false;
+        }
+        if r.identity_version == 2 {
+            self.device == r.device
+                && r.intent_nonce.as_deref() == Some(self.intent_nonce.as_str())
+                && r.expected_subscription_id.as_deref() == Some(self.expected_subscription_id.as_str())
+        } else {
+            (self.device.is_empty() || self.device == r.device)
+                && (self.expected_subscription_id.is_empty() || self.expected_subscription_id == r.subscription_id)
+        }
     }
 }
 
@@ -1428,6 +1433,17 @@ where
                 ))));
             }
         };
+        if body.identity_version == 2 {
+            let strict = crate::device_send_store::Store::strict_v2_body(&bytes);
+            let exact = strict.as_ref().ok().and_then(Value::as_object).is_some_and(|fields| {
+                fields.get("identity_version") == Some(&json!(2))
+                    && fields.keys().all(|key| matches!(key.as_str(), "identity_version" | "intent_nonce"
+                        | "client_request_id" | "phone" | "message" | "device" | "expected_subscription_id"))
+            });
+            if !exact {
+                return respond(Err(coded(StatusCode::BAD_REQUEST, "invalid_request", "v2请求字段重复或大小写无效")));
+            }
+        }
         if decoder.end().is_err() {
             return respond(Err(service.input_failure(Failure(
                 StatusCode::BAD_REQUEST,
