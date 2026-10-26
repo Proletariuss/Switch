@@ -196,6 +196,7 @@ impl ArchiveStore {
     /// without needlessly replacing the archive file again.
     pub fn confirm_directory_sync(&self) -> Result<(), StoreError> {
         self.with_exclusive_lock(|store, _, _| {
+            store.commit_fault(7)?;
             File::open(store.parent()?)
                 .and_then(|directory| directory.sync_all())
                 .map_err(StoreError::Io)
@@ -1098,6 +1099,30 @@ mod tests {
         reopened
             .confirm_directory_sync()
             .expect("retry directory durability confirmation");
+    }
+
+    #[test]
+    fn directory_sync_confirmation_failure_preserves_visible_archive_for_retry() {
+        let directory = TestDirectory::new();
+        let path = directory.archive("receipt-ledger.json");
+        let store = ArchiveStore::new(&path).require_nonempty_ledger().unwrap();
+        let receipt = json!({"id":"original-request","phase":"terminal"});
+        store.fail_commit_stage.store(4, Ordering::SeqCst);
+        assert!(store.replace(vec![receipt.clone()]).is_err());
+        let visible = fs::read(&path).unwrap();
+        assert_eq!(store.load().unwrap(), vec![receipt.clone()]);
+
+        store.fail_commit_stage.store(7, Ordering::SeqCst);
+        let error = store.confirm_directory_sync().unwrap_err();
+        assert!(error.to_string().contains("injected commit stage 7"));
+        assert_eq!(fs::read(&path).unwrap(), visible);
+        assert_eq!(store.load().unwrap(), vec![receipt.clone()]);
+
+        store.confirm_directory_sync().unwrap();
+        assert_eq!(fs::read(&path).unwrap(), visible);
+        let reopened = ArchiveStore::new(&path).require_nonempty_ledger().unwrap();
+        assert_eq!(reopened.load().unwrap(), vec![receipt]);
+        reopened.confirm_directory_sync().unwrap();
     }
 
     #[test]
