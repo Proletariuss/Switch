@@ -1,13 +1,17 @@
-//! Compile-only device-SMS dual witness fence. No issuer, migration executor,
-//! active-file writer, claim or dispatch capability exists in this module.
+//! Device-SMS dual witness fence and original-lock sealed transaction kernel.
+//! Issuance/claim policy remains in the daemon; this kernel never dispatches.
 //!
 //! This kernel requires an existing active ledger, existing original named lock
 //! and existing presence marker. It never creates an authority from absence.
 //! Marker replacement becomes durable BEFORE the held lock inode is rewritten.
 //! The current v1 decoder rejects the new magic in either original witness.
-//! Mixed/partial/missing witnesses are fenced, never automatically repaired.
+//! Mixed/partial/missing witnesses are fenced. Startup recovery requires an
+//! exact durable transaction WAL; no live caller may repair or reset them.
 //! Only inspection can attest a coherent target; staging a target never writes
 //! active bytes and does not mean the target has been committed or issued.
+mod transaction;
+pub use transaction::MigrationStep;
+
 use crate::{ArchiveStore, PRESENCE_CONTRACT, StoreError, reject_non_regular};
 use sha2::{Digest, Sha256};
 use std::{
@@ -57,6 +61,7 @@ pub enum GuardError {
 pub enum Error<S> {
     Storage(StoreError),
     Schema(S),
+    Rejected(S),
     Guard(GuardError),
     Injected(Point),
 }
@@ -72,6 +77,13 @@ pub enum Point {
     AnchorPartial,
     AnchorWritten,
     AnchorSynced,
+    JournalCommitted,
+    FrozenCommitted,
+    PreparedCommitted,
+    WalCommitted,
+    ActiveCommitted,
+    WalRemoved,
+    WalDirectorySynced,
 }
 impl Point {
     pub const ALL: [Self; 10] = [
@@ -480,8 +492,9 @@ impl Kernel {
     /// Advances an independent write-ahead floor/target seal. The proposed v2
     /// bytes are validated but NEVER written to active by this kernel. The
     /// returned view is NOT an active commit, issuance or dispatch receipt.
-    /// Until some future separately reviewed executor commits those exact bytes,
-    /// inspect rejects the older active file. No recovery executor is supplied.
+    /// Inspect rejects older active bytes. Production uses transact_family's
+    /// atomic WAL protocol; this standalone diagnostic stage is not recoverable
+    /// without its own complete independent provenance.
     pub fn stage_v2_target<S>(
         &self,
         expected: &View,

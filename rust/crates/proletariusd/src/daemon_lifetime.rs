@@ -95,8 +95,7 @@ struct LeaseInner {
     root_identity: Identity,
     lock_identity: Identity,
     active: AtomicBool,
-    // Compile-only sealed SMS adapter owner cannot be reopened to clear health.
-    #[cfg(any(test, feature = "device-send-authority-codec"))]
+    // The sealed SMS adapter owner cannot be reopened to clear health.
     device_sms_adapter_claimed: AtomicBool,
 }
 
@@ -126,7 +125,6 @@ impl RootProof {
     /// Consume this actual lease's sole sealed-SMS adapter enrollment. Clones
     /// share it; dropping an adapter never resets it. This is NOT owner drain
     /// or a device grant. Old lifetime-ignorant programs remain outside it.
-    #[cfg(any(test, feature = "device-send-authority-codec"))]
     pub(crate) fn claim_device_sms_adapter(&self, root: &Path) -> Result<(), Error> {
         let inner = self.0.upgrade().ok_or(Error::AuthorityEnded)?;
         inner.validate_for(root)?;
@@ -225,8 +223,7 @@ impl Lease {
                 root_identity,
                 lock_identity: Identity::of(&metadata),
                 active: AtomicBool::new(true),
-                #[cfg(any(test, feature = "device-send-authority-codec"))]
-                device_sms_adapter_claimed: AtomicBool::new(false),
+            device_sms_adapter_claimed: AtomicBool::new(false),
             }),
         };
         lease.validate()?;

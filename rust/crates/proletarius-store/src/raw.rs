@@ -405,3 +405,16 @@ impl<'de> Visitor<'de> for ShapeVisitor {
 
 #[cfg(test)]
 mod tests;
+
+impl ArchiveStore {
+    /// Internal sealed-family writer. The caller holds the ORIGINAL family's
+    /// writer lock across validation, WAL, witness updates and this replacement.
+    /// This deliberately does not enroll or reset the v1 presence witnesses.
+    pub(crate) fn replace_raw_locked(&self, bytes: &[u8]) -> Result<(), CommitError> {
+        self.validate_raw_bytes(bytes).map_err(|source| CommitError {
+            stage: CommitStage::BeforeRename,
+            source,
+        })?;
+        self.persist_bytes_unlocked(bytes)
+    }
+}

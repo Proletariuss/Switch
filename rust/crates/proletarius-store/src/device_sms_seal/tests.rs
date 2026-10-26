@@ -571,3 +571,87 @@ fn sealed_family_callback_cannot_replace_active_marker_or_original_lock_with_sam
         assert!(result.is_err(), "{which}");
     }
 }
+
+
+fn migration(kernel: &Kernel) -> Result<Identity, Error<&'static str>> {
+    kernel.open_or_migrate(&identity(), |active, _, _| valid(active), |active, family, _| {
+        let row: serde_json::Value = serde_json::from_slice(active).map_err(|_| "json")?;
+        if row[0]["schema_version"] == 2 { return Ok(MigrationStep::Complete); }
+        if family[2].is_none() {
+            return Ok(MigrationStep::WriteSibling { index: 2,
+                bytes: serde_json::to_vec(&json!([{"legacy":digest(active)}])).unwrap() });
+        }
+        if family[0].is_none() {
+            return Ok(MigrationStep::WriteSibling { index: 0, bytes: active.to_vec() });
+        }
+        if family[1].is_none() {
+            return Ok(MigrationStep::WriteSibling { index: 1, bytes: target(active, 0, "initial") });
+        }
+        Ok(MigrationStep::ReplaceActive(family[1].clone().unwrap()))
+    })
+}
+
+#[test]
+fn original_lock_migration_recovers_every_durable_protocol_boundary() {
+    let points = Point::ALL.into_iter().chain([
+        Point::WalCommitted, Point::ActiveCommitted, Point::WalRemoved,
+        Point::WalDirectorySynced, Point::JournalCommitted, Point::FrozenCommitted,
+        Point::PreparedCommitted,
+    ]);
+    for point in points {
+        let (dir, kernel, old) = fixture();
+        let original = fs::read(old.path()).unwrap();
+        let fault = kernel.clone().with_hook_for_test(Arc::new(move |at| at == point));
+        assert!(migration(&fault).is_err(), "{point:?}");
+        let recovered = migration(&kernel).unwrap();
+        assert_eq!(recovered, identity());
+        let current = fs::read(old.path()).unwrap();
+        assert_eq!(current, target(&original, 0, "initial"));
+        assert_eq!(fs::read(dir.archive("device-send-ledger.legacy-v1.json")).unwrap(), original);
+        assert!(!old_permission(&old));
+        assert_eq!(kernel.inspect(&identity(), valid).unwrap().issued_floor(), 0);
+        assert!(!dir.archive("device-send-ledger.v2-transaction.json").exists());
+    }
+}
+
+#[test]
+fn sealed_commit_ack_loss_never_rolls_back_an_issued_high_water() {
+    for point in Point::ALL.into_iter().chain([
+        Point::WalCommitted, Point::ActiveCommitted, Point::WalRemoved, Point::WalDirectorySynced,
+    ]) {
+        let (_dir, kernel, old) = fixture();
+        let legacy = fs::read(old.path()).unwrap();
+        migration(&kernel).unwrap();
+        let before = kernel.inspect(&identity(), valid).unwrap();
+        let fault = kernel.clone().with_hook_for_test(Arc::new(move |at| at == point));
+        let next = target(&legacy, 9, "issued-nine");
+        let outcome = fault.transact_family(
+            &identity(), &before, |active, _, _| valid(active),
+            |_, _| Ok((Some(next.clone()), ())),
+        );
+        assert!(outcome.is_err(), "{point:?}");
+        migration(&kernel).unwrap();
+        let sealed = kernel.inspect(&identity(), valid).unwrap();
+        assert_eq!(sealed.issued_floor(), 9, "{point:?}");
+        assert_eq!(fs::read(old.path()).unwrap(), next);
+        assert!(!old_permission(&old));
+        let rollback = target(&legacy, 8, "rollback");
+        assert!(matches!(kernel.transact_family(
+            &identity(), &sealed, |active, _, _| valid(active),
+            |_, _| Ok((Some(rollback), ())),
+        ), Err(Error::Guard(GuardError::Rollback))));
+    }
+}
+
+#[test]
+fn a_foreign_or_partial_transaction_wal_is_never_treated_as_a_fresh_authority() {
+    for bytes in [b"".as_slice(), b"[]", b"[{\"schema_version\":1}]", b"["] {
+        let (dir, kernel, old) = fixture();
+        migration(&kernel).unwrap();
+        let before = fs::read(old.path()).unwrap();
+        fs::write(dir.archive("device-send-ledger.v2-transaction.json"), bytes).unwrap();
+        assert!(migration(&kernel).is_err());
+        assert_eq!(fs::read(old.path()).unwrap(), before);
+        assert!(!old_permission(&old));
+    }
+}
