@@ -5,38 +5,28 @@ iteration window runs from 2026-10-25 through 2027-10-25. No workflow depends on
 the maintainer's Mac, a self-hosted runner, attached hardware, or locally saved
 credentials.
 
-## Free-plan budget
+## Public-repository runner policy
 
-GitHub Free currently includes 2,000 Actions minutes per month, 500 MB of
-Actions artifact storage, and 10 GB of cache storage per repository. macOS
-runners consume the allowance substantially faster than Linux runners, so the
-workflows use proportional gates:
+The repository became public on 2026-10-26 at the owner's explicit request.
+Standard GitHub-hosted runners for public repositories do not consume the
+private-repository monthly minute allowance. GitHub's concurrency, job time,
+storage and abuse limits still apply; larger runners are not selected.
+No billing setting or paid service was enabled.
 
-- every pull request receives a small Ubuntu source-contract check;
-- production-code changes receive the macOS Rust software gate;
-- Swift, resources, Xcode project, and packaging changes additionally build
-  `Switch.app` on the same macOS runner;
-- the macOS software gate also runs once per month to detect runner or toolchain
-  drift;
-- release builds remain manual or tag-driven;
-- pull-request checks do not upload an app or generate a DMG;
-- release artifacts produced by Actions are retained for seven days.
+All tests and compilation remain on GitHub-hosted Ubuntu/macOS runners. The
+current candidate uses shared source, both locked Rust workspaces, complete
+Rust and offline Swift gates, then builds and audits one App at the same source
+SHA. The actual uploaded archive is downloaded and verified again. See
+[cloud candidates](cloud-ci-candidates.md) for provenance and exact gate rules.
+Failure is not a pass and must not be hidden by removing tests or lock checks.
 
-Current limits and prices may change. Review GitHub's official billing page
-before changing runner frequency:
-<https://docs.github.com/en/billing/concepts/product-billing/github-actions>.
+App artifacts and reports have seven-day retention. Keep validation bounded
+and cancel superseded work deliberately; public runner availability does not
+justify infinite retries. The unused quota-resumption draft was not deployed,
+because the owner chose public GitHub execution instead of waiting for reset.
 
-The operating ceiling is planned against the private GitHub Free allowance,
-not against unlimited retries. At the currently listed baseline rates, a
-30-minute standard macOS gate costs about the same as 310 baseline Linux
-minutes. One monthly drift run plus at most four full code/dependency PR gates
-therefore keeps roughly 450 of the 2,000 included minute-equivalents available
-for one manual release attempt or unexpected rerun. Superseded runs on the same
-PR are cancelled. If account-wide usage reaches about three quarters of its
-monthly allowance, defer non-security maintenance PRs until the next billing
-window; security fixes may use the reserve after explicit review. This is an
-operational target, not a GitHub-enforced spending cap, and other private
-repositories share the same account allowance.
+Current GitHub billing rules:
+https://docs.github.com/en/billing/concepts/product-billing/github-actions
 
 ## Automatic iteration
 
@@ -104,8 +94,9 @@ require the corresponding toolchain and OS, plus separate device/carrier tests.
 
 ## Merge rules
 
-The current private Free-plan repository cannot enforce branch protection or
-required checks. Maintainers must enforce the following process manually:
+Repository visibility does not itself establish passing required checks.
+Until branch protection is configured and verified, maintainers must enforce
+the following process explicitly:
 
 1. Make changes on a branch and open a pull request.
 2. Wait for the latest commit's applicable checks to finish successfully.
