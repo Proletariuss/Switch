@@ -74,8 +74,9 @@ eingehängt. Das vollständige App-Inventar und die strenge Signaturprüfung mü
 übereinstimmen; erst nach bestätigtem Aushängen darf die Prüfung erfolgreich enden.
 
 Die vier ursprünglichen Audit-Anlagen bleiben unverändert erhalten. Ergänzt werden
-genau Switch_3.52.dmg, DMG.sha256 und dmg-provenance.json; für spätere Versionen
-ändert sich nur der Versionsanteil des DMG-Namens. Der Herkunftsnachweis bindet
+genau Switch_3.52.dmg, Switch_3.52.dmg.sha256 und dmg-provenance.json; für spätere Versionen
+ändern sich die Versionsanteile von `Switch_<version>.dmg` und
+`Switch_<version>.dmg.sha256`. Der Herkunftsnachweis bindet
 DMG-Hash, Größe, ursprüngliches App-Archiv und Manifest an deren Quell-SHA und
 Git-Tree. Davon getrennt nennt er den Commit der Verpackungssteuerung sowie ihren
 GitHub-Lauf und Versuch mit den tatsächlichen Prüfberichten. Ein neuer Steuerungs-

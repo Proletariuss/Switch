@@ -46,7 +46,7 @@ Der Tag `v3.51` bleibt unverändert dem eingefrorenen Quellstand des historische
 
 Das bevorzugte Installationspaket heißt `Switch_<version>.dmg`, für diese Version `Switch_3.52.dmg`. Es wird auf einem GitHub-macOS-Runner aus dem bereits geprüften App-Tarball des Commits `d17eca3305bd2204cc895fc13af8ee0e91173f8b` abgeleitet. Die enthaltenen App-Dateien, Rechte und symbolischen Links müssen unverändert bleiben; die App wird dabei weder neu gebaut noch neu signiert. Die DMG-Ergänzung ist erst verfügbar, wenn ihre geprüften Anlagen im Release erscheinen; diese Beschreibung bestätigt noch keine erfolgte DMG-Veröffentlichung.
 
-Die vier bisherigen Audit-Anlagen bleiben erhalten: `Switch-<Version>-candidate-<Commit-SHA>-macOS27-arm64.app.tar.gz`, `candidate-manifest.json`, `test-reports.tar.gz` und `SHA256SUMS`. Hinzu kommen das DMG, `DMG.sha256` und `dmg-provenance.json`. Der Herkunftsnachweis unterscheidet den ursprünglichen App-Quellstand vom Commit und GitHub-Lauf der Verpackungssteuerung. Künftige Releases sollen diesen DMG-Schritt automatisch an die erfolgreiche App-Veröffentlichung anschließen.
+Die vier bisherigen Audit-Anlagen bleiben erhalten: `Switch-<Version>-candidate-<Commit-SHA>-macOS27-arm64.app.tar.gz`, `candidate-manifest.json`, `test-reports.tar.gz` und `SHA256SUMS`. Hinzu kommen das DMG, `Switch_<version>.dmg.sha256` und `dmg-provenance.json`. Der Herkunftsnachweis unterscheidet den ursprünglichen App-Quellstand vom Commit und GitHub-Lauf der Verpackungssteuerung. Künftige Releases sollen diesen DMG-Schritt automatisch an die erfolgreiche App-Veröffentlichung anschließen.
 
 ### Historisches Installationspaket 3.51
 
@@ -58,7 +58,7 @@ Die vier bisherigen Audit-Anlagen bleiben erhalten: `Switch-<Version>-candidate-
 
 ## Installation
 
-1. Sobald angeboten, `Switch_3.52.dmg`, `DMG.sha256` und `dmg-provenance.json` aus demselben Release herunterladen und die DMG-Prüfsumme wie unten beschrieben kontrollieren.
+1. Sobald angeboten, `Switch_3.52.dmg`, `Switch_3.52.dmg.sha256` und `dmg-provenance.json` aus demselben Release herunterladen und die DMG-Prüfsumme wie unten beschrieben kontrollieren.
 2. Das DMG öffnen und `Switch.app` in den Ordner „Programme“ ziehen. Bis die DMG-Ergänzung veröffentlicht ist, bleibt der geprüfte App-Tarball verfügbar: zusammen mit den drei Audit-Begleitdateien herunterladen, `SHA256SUMS` prüfen, entpacken und die App nach „Programme“ kopieren.
 3. Bei Bedarf die von macOS angeforderten Berechtigungen für Bluetooth, Mitteilungen und Mikrofon erteilen.
 4. Das Paket ist ad hoc signiert und **nicht von Apple notarisiert**. Falls Gatekeeper den Start blockiert, zunächst Herkunft und Prüfsumme kontrollieren und die Freigabe anschließend unter „Systemeinstellungen → Datenschutz & Sicherheit“ vornehmen.
@@ -147,10 +147,10 @@ Die App-Pakete sind ad hoc signiert und nicht notarisiert; es ist kein von Apple
 
 ## Integrität prüfen
 
-Für das bevorzugte DMG die gleichnamige Release-Anlage und `DMG.sha256` in denselben Ordner legen:
+Für das bevorzugte DMG die gleichnamige Release-Anlage und `Switch_3.52.dmg.sha256` in denselben Ordner legen:
 
 ```bash
-shasum -a 256 -c DMG.sha256
+shasum -a 256 -c Switch_3.52.dmg.sha256
 ```
 
 `dmg-provenance.json` bindet die DMG-Prüfung an das ursprüngliche App-Manifest und den gesonderten Verpackungslauf. Für die unveränderten Audit-Anlagen App-Tarball, Originalmanifest, Testarchiv und `SHA256SUMS` gemeinsam herunterladen:
