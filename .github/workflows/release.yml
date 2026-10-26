@@ -88,3 +88,14 @@ jobs:
     with:
       version: ${{ needs.identity.outputs.version }}
       app_sha: ${{ needs.identity.outputs.commit }}
+  compact:
+    needs: [identity, dmg]
+    permissions:
+      contents: write
+      actions: read
+    uses: ./.github/workflows/compact-release.yml
+    with:
+      version: ${{ needs.identity.outputs.version }}
+      app_sha: ${{ needs.identity.outputs.commit }}
+      packaging_run_id: ${{ format('{0}', github.run_id) }}
+      packaging_attempt: '0'

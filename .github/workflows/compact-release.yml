@@ -1,0 +1,113 @@
+name: Compact verified Switch release downloads
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        required: true
+        type: string
+      app_sha:
+        required: true
+        type: string
+      packaging_run_id:
+        description: Original successful DMG workflow run
+        required: true
+        type: string
+      packaging_attempt:
+        description: Original proof attempt; 0 locates an unambiguous source-bound artifact
+        required: false
+        default: '0'
+        type: string
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      app_sha:
+        required: true
+        type: string
+      packaging_run_id:
+        required: true
+        type: string
+      packaging_attempt:
+        required: false
+        default: '0'
+        type: string
+permissions:
+  contents: read
+  actions: read
+# The release workflow already owns the publication lock.
+concurrency:
+  group: ${{ github.workflow == 'Compact verified Switch release downloads' && 'switch-release-publication' || format('switch-compact-called-{0}', github.run_id) }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    name: Release compact verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      artifact_name: ${{ steps.identity.outputs.artifact_name }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          path: control
+          persist-credentials: false
+      - name: Validate compaction inputs and fixtures
+        id: identity
+        env:
+          APP_VERSION: ${{ inputs.version }}
+          APP_SHA: ${{ inputs.app_sha }}
+          PACKAGING_RUN: ${{ inputs.packaging_run_id }}
+          PACKAGING_ATTEMPT: ${{ inputs.packaging_attempt }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          [[ "$APP_VERSION" =~ ^[1-9][0-9]*\.[0-9]{2}$ ]]
+          [[ "$APP_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$PACKAGING_RUN" =~ ^[1-9][0-9]*$ ]]
+          [[ "$PACKAGING_ATTEMPT" =~ ^[0-9]+$ ]]
+          [[ "$(git -C control rev-parse HEAD)" == "$GITHUB_SHA" ]]
+          python3 control/scripts/ci/test-compact-release.py
+          echo "artifact_name=Switch-release-audit-$APP_VERSION-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+      - name: Verify retained DMG and preserve audit files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APP_VERSION: ${{ inputs.version }}
+          APP_SHA: ${{ inputs.app_sha }}
+          PACKAGING_RUN: ${{ inputs.packaging_run_id }}
+          PACKAGING_ATTEMPT: ${{ inputs.packaging_attempt }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 control/scripts/ci/compact-release.py prepare --version "$APP_VERSION" --app-sha "$APP_SHA" --packaging-run-id "$PACKAGING_RUN" --packaging-attempt "$PACKAGING_ATTEMPT" --directory "$GITHUB_WORKSPACE/audit-snapshot"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ steps.identity.outputs.artifact_name }}
+          path: audit-snapshot/
+          retention-days: 90
+          if-no-files-found: error
+  prune:
+    name: Release compact prune
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          path: control
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ${{ needs.verify.outputs.artifact_name }}
+          path: audit-snapshot
+      - name: Remove only archived audit attachments
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APP_VERSION: ${{ inputs.version }}
+          APP_SHA: ${{ inputs.app_sha }}
+          PACKAGING_RUN: ${{ inputs.packaging_run_id }}
+          PACKAGING_ATTEMPT: ${{ inputs.packaging_attempt }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 control/scripts/ci/compact-release.py prune --version "$APP_VERSION" --app-sha "$APP_SHA" --packaging-run-id "$PACKAGING_RUN" --packaging-attempt "$PACKAGING_ATTEMPT" --directory "$GITHUB_WORKSPACE/audit-snapshot"
