@@ -1,10 +1,6 @@
-//! Compile-only device-SMS authority codec for reservation and safe retirement.
-//!
-//! No production Store, route, migration, claim, finalizer or GC calls this
-//! module. Plans are pure proposed snapshots, never dispatch grants.
-//! File adapters must validate raw JSON under their actual transaction lock;
-//! the compile-only family inspector uses original bytes under that lock.
-#![allow(dead_code)] // Intentionally unwired until the separately reviewed B batch.
+//! Device-SMS authority codec. Only a durably committed adapter transaction can
+//! grant a claim; pure plans never authorize physical dispatch.
+#![allow(dead_code)]
 
 use std::{
     cell::Cell,
@@ -21,8 +17,8 @@ const RESERVE_BYTES: usize = 1024 * 1024;
 // Complete 10,000-record v1 fixtures remain below this conservative bound.
 const MAX_JSON_VALUES: usize = 300_000;
 const SLOT_BYTES: usize = 400 * 1024;
-// Budget only. Future claim/finish schema and its worst-case bound are NOT
-// implemented or proven by this reservation; no claim transition is exposed.
+// Reserve room for the bounded execution metadata before returning a ticket.
+// Claim rights exist only after the sealed production transaction commits.
 const FINISH_HEADROOM_BYTES: usize = 4 * 1024;
 const CACHE_BYTES: usize = 4 * 1024 * 1024;
 const OVERLAY_BYTES: usize = 1024;
@@ -45,6 +41,8 @@ pub(super) enum CodecError {
     AuthorityMismatch,
     SequenceExhausted,
     Capacity,
+    UpgradeRequired,
+    NotFound,
 }
 
 type Result<T> = std::result::Result<T, CodecError>;
@@ -257,12 +255,30 @@ struct ReservedSlot {
     attempt: (),
     dispatch_count: u8,
     archive_confirmed: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    execution: Option<Execution>,
+    #[serde(default)]
+    created_at_ms: u64,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct Execution {
+    binding: String,
+    subscription_id: String,
+    state: String,
+    attempt: String,
+    segments: usize,
+    archive_confirmed: bool,
+    updated_at_ms: u64,
 }
 
 #[derive(Clone, Copy, Deserialize, Serialize)]
 enum TerminalOutcome {
     #[serde(rename = "not_dispatched")]
     NotDispatched,
+    #[serde(rename = "accepted_archived")]
+    AcceptedArchived,
 }
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -274,10 +290,14 @@ struct TerminalRecord {
     payload_fingerprint: SnapshotDigest,
     payload: Payload,
     outcome: TerminalOutcome,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    execution: Option<Execution>,
+    #[serde(default)]
+    created_at_ms: u64,
 }
 
-// A can read a frozen legacy fence but cannot mutate or claim one. Future
-// mutable overlay transitions are deliberately not accepted by this codec.
+// Frozen legacy identities never regain a claim. The overlay only recovers
+// interrupted submission to unknown or confirms an accepted archive receipt.
 #[derive(Clone, Copy, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 enum LegacyPhase {
@@ -399,6 +419,10 @@ pub(super) struct AuthoritySnapshot {
     legacy_overlay: Vec<LegacyFence>,
 }
 
+impl AuthoritySnapshot {
+    pub(super) fn issued_high_water(&self) -> u64 { self.issued_high_water.0 }
+}
+
 #[derive(Clone, Copy)]
 struct Quotas {
     live: usize,
@@ -507,6 +531,7 @@ fn encode_with_quotas(snapshot: &AuthoritySnapshot, quotas: Quotas) -> Result<Ve
             || slot.dispatch_count != 0
             || slot.archive_confirmed
             || !slot.payload.valid()
+            || !production::valid_execution(slot.execution.as_ref(), false)
             || slot.payload_fingerprint != payload_digest(slot.purpose, slot.device, &slot.payload)?
         {
             return Err(CodecError::InvalidSnapshot);
@@ -530,6 +555,7 @@ fn encode_with_quotas(snapshot: &AuthoritySnapshot, quotas: Quotas) -> Result<Ve
             || cached.sequence > snapshot.issued_high_water
             || !sequences.insert(cached.sequence)
             || !cached.payload.valid()
+            || !production::valid_terminal(cached)
             || cached.payload_fingerprint
                 != payload_digest(cached.purpose, cached.device, &cached.payload)?
         {
@@ -573,6 +599,7 @@ pub(super) enum ReserveDisposition {
     Created,
     Existing,
     TerminalNotDispatched,
+    TerminalAccepted,
 }
 /// An uncommitted proposal. No serializer, can_submit, claim or owner handle.
 pub(super) struct ReservePlan {
@@ -660,6 +687,7 @@ fn retire_with_quotas(
             });
         }
         ReserveDisposition::Created => return Err(CodecError::NotIssued),
+        ReserveDisposition::TerminalAccepted => return Err(CodecError::Conflict),
         ReserveDisposition::Existing => {}
     }
     let mut next = current.clone();
@@ -669,6 +697,7 @@ fn retire_with_quotas(
         .position(|slot| slot.sequence == request.identity.sequence)
         .ok_or(CodecError::InvalidSnapshot)?;
     let slot = next.live_slots.remove(index);
+    if slot.execution.is_some() { return Err(CodecError::Conflict); }
     next.terminal_cache.push(TerminalRecord {
         sequence: slot.sequence,
         nonce: slot.nonce,
@@ -677,6 +706,8 @@ fn retire_with_quotas(
         payload_fingerprint: slot.payload_fingerprint,
         payload: slot.payload,
         outcome: TerminalOutcome::NotDispatched,
+        execution: None,
+        created_at_ms: slot.created_at_ms,
     });
     next.terminal_cache.sort_by_key(|record| record.sequence);
     loop {
@@ -704,7 +735,7 @@ fn plan_with_quotas(
         || current
             .legacy_overlay
             .iter()
-            .any(|fence| legacy.fences.get(&fence.client_request_id) != Some(fence))
+            .any(|fence| !production::valid_overlay(fence, legacy.fences.get(&fence.client_request_id)))
     {
         return Err(CodecError::LegacyUnavailable);
     }
@@ -765,7 +796,10 @@ fn plan_with_quotas(
         }
         return Ok(ReservePlan {
             next: current.clone(),
-            disposition: ReserveDisposition::TerminalNotDispatched,
+            disposition: match cached.outcome {
+                TerminalOutcome::NotDispatched => ReserveDisposition::TerminalNotDispatched,
+                TerminalOutcome::AcceptedArchived => ReserveDisposition::TerminalAccepted,
+            },
         });
     }
     if request.identity.sequence <= current.issued_high_water {
@@ -789,6 +823,8 @@ fn plan_with_quotas(
         attempt: (),
         dispatch_count: 0,
         archive_confirmed: false,
+        execution: None,
+        created_at_ms: 0,
     });
     encode_with_quotas(&next, quotas)?;
     Ok(ReservePlan {
@@ -869,7 +905,7 @@ impl<'de> de::DeserializeSeed<'de> for StrictSeed<'_> {
         deserializer.deserialize_any(StrictVisitor(self.0))
     }
 }
-fn strict_value(bytes: &[u8], max: usize) -> Result<Value> {
+pub(super) fn strict_value(bytes: &[u8], max: usize) -> Result<Value> {
     if bytes.len() > max {
         return Err(CodecError::Capacity);
     }
@@ -889,4 +925,5 @@ mod tests;
 #[cfg(test)]
 mod seal_tests;
 
-mod seal_adapter;
+pub(super) mod seal_adapter;
+pub(super) mod production;

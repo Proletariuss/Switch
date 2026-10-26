@@ -1,14 +1,18 @@
 # Switch implementation scope
 
-Work only within the current authorized workspace
-`/Users/StatTrak/Desktop/Switch_MAC/`; the user later directed continuation
-in Switch_MAC. The editable application source is `src`, with generated
-build/test output in the sibling `build` directory. Older
-`/Users/proletarius/Desktop/Switch/` paths describe the historical seed
-workspace, not the current edit target. Do not access or modify the original
-Proletarius, Boo or 9.29 reference folders outside this workspace.
+The current source of truth is the private GitHub repository
+`Proletariuss/Switch`. The user authorized cloud-only maintenance:
+source changes are made through GitHub, and all formatting, tests, repair jobs,
+compilation and artifact generation run on GitHub-hosted runners. The local Mac
+is only a read-only source and GitHub API control plane; do not run the project,
+repair scripts, tests or builds locally, or schedule local maintenance tasks.
 
-Follow `../docs/Switch改造方案.md` V3 and its execution update. Remove fax,
+The former `Switch_MAC/src` layout is historical context, not an instruction
+to resume local work. Preserve the original Proletarius, Boo and 9.29 reference
+folders; do not access or modify them.
+
+Follow the approved cloud scope in `docs/CLOUD_FOUR_BATCHES.md` and the
+repository's retained migration specifications. Remove fax,
 preserve all other existing behavior, and add independent multi-profile
 VoWiFi SMS with a Möbius sidebar icon. New sessions are SMS-only; existing
 voice functionality remains. Do not run real card mutations or send SMS
@@ -35,8 +39,10 @@ can change `HOME`; do not download a duplicate toolchain into the test home.
 
 ## Progress reporting
 
-Include overall project progress in each progress report and final reply.
-Show the current P0–P6 stage, the newly verified work and the remaining
-acceptance requirements. A percentage needs a frozen, auditable denominator;
-label interface coverage separately from overall product completion. Do not
-reuse the inconsistent historical person-week ledger as a current percentage.
+Report progress against the frozen four-batch criteria in
+`docs/CLOUD_FOUR_BATCHES.md`. A percentage needs an auditable denominator;
+keep source/interface coverage separate from software and product acceptance.
+Do not reuse the historical P0–P6/person-week ledger as a current percentage.
+Device, carrier, macOS 27 runtime and long-run acceptance remain unverified
+until supported by new evidence. Only successful final-source cloud jobs
+can close the corresponding software acceptance item.

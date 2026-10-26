@@ -42,7 +42,7 @@ proletarius-qmi-services = { path = "../proletarius-qmi-services" }
 proletarius-reader = { path = "../proletarius-reader" }
 proletarius-sim = { path = "../proletarius-sim" }
 proletarius-sms = { path = "../proletarius-sms" }
-proletarius-store = { path = "../proletarius-store" }
+proletarius-store = { path = "../proletarius-store", features = ["device-sms-generation-seal"] }
 proletarius-vowifi = { path = "../proletarius-vowifi" }
 serde.workspace = true
 serde_json = { workspace = true, features = ["raw_value"] }
