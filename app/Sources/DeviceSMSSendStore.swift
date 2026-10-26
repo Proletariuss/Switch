@@ -51,10 +51,15 @@ struct DeviceSMSIntent: Decodable, Identifiable, Equatable {
         }
     }
     func matches(_ request: DeviceSMSIntentRequest) -> Bool {
-        version == (request.identityVersion ?? 1) && clientRequestID == request.clientRequestID && phone == request.phone && message == request.message
-            && device == request.device
-            && (request.intentNonce == nil || intentNonce == request.intentNonce)
-            && (request.expectedSubscriptionID == nil || request.expectedSubscriptionID == "" || subscriptionID == request.expectedSubscriptionID)
+        guard version == (request.identityVersion ?? 1), clientRequestID == request.clientRequestID,
+              phone == request.phone, message == request.message, device == request.device else { return false }
+        if version == 2 {
+            guard let nonce = request.intentNonce, DeviceSMSAuthorityStatus.hex32(nonce),
+                  intentNonce == nonce, let expected = request.expectedSubscriptionID,
+                  expectedSubscriptionID == expected else { return false }
+            return expected.isEmpty || subscriptionID == expected
+        }
+        return request.expectedSubscriptionID == nil || subscriptionID == request.expectedSubscriptionID
     }
     enum CodingKeys: String, CodingKey {
         case phone, message, device, state, segments
@@ -295,7 +300,8 @@ struct DeviceSMSPendingError: LocalizedError {
             guard currentRecord.state == .reserved, currentRecord.matches(intent.request) else { throw DeviceSMSIdentityRefusal() }
             let reservation: DeviceSMSReserveRequest
             let bytes: Data
-            if let checkpoint = try journal?.checkpoint(id: intent.id) {
+            let savedForCancellation = try? journal?.checkpoint(id: intent.id)
+            if let checkpoint = savedForCancellation {
                 reservation = try checkpoint.reserve
                 guard [.candidate, .reserved].contains(checkpoint.phase),
                       currentRecord.intentNonce == reservation.intentNonce else { throw DeviceSMSIdentityRefusal() }
@@ -308,7 +314,12 @@ struct DeviceSMSPendingError: LocalizedError {
             guard current(generation) else { throw CancellationError() }
             guard result.state == .cancelled, result.matches(reservation.request),
                   result.intentNonce == reservation.intentNonce else { throw DeviceSMSIdentityRefusal() }
-            try recordResult(result)
+            do { try recordResult(result) }
+            catch {
+                self.error = "服务端已确认取消；本机原日志仍需恢复，未删除任何证据。"
+                notice = "已取消原未提交记录；没有发送短信。"
+                return result
+            }
             notice = "已取消原未提交记录；没有发送短信。"
             error = nil
             return result

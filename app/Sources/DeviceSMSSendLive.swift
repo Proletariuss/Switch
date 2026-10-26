@@ -47,7 +47,7 @@ import Combine
     private func identityError(_ error: Error) -> Error {
         if let error = error as? APIError,
            error.statusCode == 404 || error.statusCode == 410 ||
-           ["send_intent_conflict", "mutation_authority_mismatch", "mutation_identity_not_issued",
+           ["send_intent_conflict", "sms_intent_conflict", "mutation_authority_mismatch", "mutation_identity_not_issued",
             "mutation_identity_upgrade_required", "mutation_identity_retired"].contains(error.code ?? "") {
             return DeviceSMSIdentityRefusal()
         }
