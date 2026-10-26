@@ -2,6 +2,7 @@
 set -eu
 SWITCH_SOURCE_ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd -P)
 . "$SWITCH_SOURCE_ROOT/scripts/workspace-env.sh"
+mkdir -p "$SWITCH_BUILD_DIR/tmp"
 TEST_DIR=$(mktemp -d "$SWITCH_BUILD_DIR/tmp/support-diagnostics.XXXXXX")
 trap 'rm -rf "$TEST_DIR"' EXIT INT TERM
 export SUPPORT_DIAGNOSTIC_TEST_ROOT="$TEST_DIR/runtime"
