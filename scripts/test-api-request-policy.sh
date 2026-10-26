@@ -14,6 +14,8 @@ if grep -Eq 'mutationTimeout|longWrite|isLongWrite' "$API_POLICY_ROOT/app/Source
 fi
 xcrun swiftc -parse-as-library \
   "$API_POLICY_ROOT/app/Sources/APIClient.swift" \
+  "$API_POLICY_ROOT/app/Sources/CallModels.swift" \
+  "$API_POLICY_ROOT/app/Sources/CallRuntimeStore.swift" \
   "$API_POLICY_ROOT/app/Sources/ESIMRefreshModels.swift" \
   "$API_POLICY_ROOT/app/Tests/APIRequestPolicy/main.swift" \
   -o "$API_POLICY_TMP/api-policy-tests"

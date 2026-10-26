@@ -439,6 +439,91 @@ func userFacingErrorMessage(_ error: Error) -> String { "fixture failure" }
         for _ in 0..<2000 { if condition() { return }; await Task.yield() }
         fatalError("test condition did not settle")
     }
+
+    static func statusReadsStayFenced() async {
+        let root = ForwardingFixture.protocolRoot("status-read-generation")
+        ForwardingFixture.alternateRoot = root
+        defer {
+            ForwardingFixture.alternateRoot = nil
+            ForwardingFixture.heldRoute = nil
+            ForwardingFixture.holdConfigure = false
+            BackendProcess.shared.state = .running
+            try! FileManager.default.removeItem(at: root)
+        }
+        let store = SMSForwardingStore()
+        precondition(store.credentialLoadFailure == nil)
+        store.admissionHandoffSubmitted = true
+        store.telegramEnabled = true
+        await store.save()
+        precondition(store.errorMessage == nil && store.status?.configurationID != nil)
+
+        for lateFailure in [false, true] {
+            ForwardingFixture.heldRoute = "GET api/sms/forwarding/status"
+            let old = Task { await store.refreshStatus() }
+            await until { ForwardingFixture.routeWaiters.count == 1 }
+            ForwardingFixture.heldRoute = nil
+            store.telegramChatID = lateFailure ? "new-failure-case" : "new-success-case"
+            await store.save()
+            let currentID = store.status?.configurationID
+            precondition(currentID == ForwardingFixture.activeConfigurationID && store.errorMessage == nil)
+            let (waiter, oldData) = ForwardingFixture.routeWaiters.removeFirst()
+            if lateFailure { waiter.resume(throwing: APIError(statusCode: 503)) }
+            else { waiter.resume(returning: oldData) }
+            await old.value
+            precondition(store.status?.configurationID == currentID && store.errorMessage == nil,
+                         "ordinary stale GET overwrote the newer configuration result")
+        }
+
+        // A poll may also begin AFTER save advanced its form generation but
+        // BEFORE configure finishes. Publication must invalidate that read too.
+        ForwardingFixture.holdConfigure = true
+        let save = Task { await store.save() }
+        await until { ForwardingFixture.waiters.count == 1 }
+        ForwardingFixture.heldRoute = "GET api/sms/forwarding/status"
+        let duringSave = Task { await store.refreshStatus() }
+        await until { ForwardingFixture.routeWaiters.count == 1 }
+        ForwardingFixture.heldRoute = nil
+        ForwardingFixture.holdConfigure = false
+        ForwardingFixture.resolve()
+        await save.value
+        let savedID = store.status?.configurationID
+        let (oldWaiter, oldData) = ForwardingFixture.routeWaiters.removeFirst()
+        oldWaiter.resume(returning: oldData)
+        await duringSave.value
+        precondition(store.status?.configurationID == savedID && store.errorMessage == nil,
+                     "read begun during configure displaced its verified snapshot")
+
+        // Exercise the production backend transition method used by Combine;
+        // the fixture replaces the publisher/IO, not its invalidation policy.
+        ForwardingFixture.heldRoute = "GET api/sms/forwarding/status"
+        let beforeRestart = Task { await store.refreshStatus() }
+        await until { ForwardingFixture.routeWaiters.count == 1 }
+        BackendProcess.shared.state = .stopped
+        store.backendStateChanged(.stopped)
+        precondition(store.status == nil && !store.isRefreshingStatus)
+        BackendProcess.shared.state = .running
+        store.backendStateChanged(.running)
+        await until { ForwardingFixture.routeWaiters.count == 2 }
+        let (restartWaiter, restartData) = ForwardingFixture.routeWaiters.remove(at: 1)
+        restartWaiter.resume(returning: restartData)
+        await until { store.confirmedConfigurationID != nil && store.status != nil }
+
+        let successor = Task { await store.refreshStatus() }
+        await until { ForwardingFixture.routeWaiters.count == 2 }
+        let (retired, _) = ForwardingFixture.routeWaiters.removeFirst()
+        retired.resume(throwing: APIError(statusCode: 503))
+        await beforeRestart.value
+        precondition(store.isRefreshingStatus && store.errorMessage == nil,
+                     "retired backend GET changed successor busy/feedback")
+        await store.refreshStatus()
+        precondition(ForwardingFixture.routeWaiters.count == 1,
+                     "retired defer allowed a duplicate successor poll")
+        ForwardingFixture.releaseRoute()
+        await successor.value
+        precondition(!store.isRefreshingStatus && store.status?.configurationID == ForwardingFixture.activeConfigurationID)
+        print("Forwarding status: late success/error, read during save, backend replacement and successor retirement passed")
+    }
+
     static func persistenceFailureKeepsAdmissionPaused() async {
         precondition(geteuid() != 0, "real permission-failure test requires a non-root process")
         let directory = ForwardingFixture.checkpointDirectory
@@ -1941,6 +2026,7 @@ func userFacingErrorMessage(_ error: Error) -> String { "fixture failure" }
         } catch { fatalError("unexpected invalid legacy error") }
         precondition(ForwardingFixture.handoffRequests.count == beforeInvalid)
         precondition(ForwardingFixture.calls.count == legacyCalls)
+        await statusReadsStayFenced()
         print("Forwarding client: production file freeze/retry/recovery/legacy migration and configuration races passed")
     }
 

@@ -44,6 +44,9 @@ struct APIClient {
         try await response(path, body: JSONEncoder().encode(body))
     }
     func send<T: Decodable>(_ path: String) async throws -> T { try await response(path) }
+    func send<T: Decodable, B: Encodable>(_ path: String, method: String, body: B) async throws -> T {
+        try await response(path, body: JSONEncoder().encode(body))
+    }
     func upload<T: Decodable>(
         _ path: String, data: Data, contentType: String = "application/json",
         as type: T.Type = T.self
@@ -61,6 +64,12 @@ struct APIClient {
         let data = try await ControlledAPI.shared.request(path, body: body)
         return try JSONDecoder().decode(T.self, from: data)
     }
+}
+
+// Production API/receipt integration is exercised separately by APIRequestPolicy.
+struct APICallTerminalError: LocalizedError {
+    let clientRequestID: String
+    var errorDescription: String? { "fixture terminal call" }
 }
 
 struct APIOperationOutcomeUnknownError: LocalizedError {
@@ -86,3 +95,5 @@ struct DeviceStatus: Decodable { let usbnetMode: Int? }
     var voiceError: String? { callRuntime.error }
     var callModeStatus: CallModeStatus? { nil }
 }
+
+struct MessageResponse: Decodable { let message: String }
