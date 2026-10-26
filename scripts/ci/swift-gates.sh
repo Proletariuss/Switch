@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 export SWITCH_SOURCE_ROOT="$PWD"
-export SWITCH_TEST_TMPDIR="$RUNNER_TEMP/switch-swift-tests/"
+export SWITCH_TEST_TMPDIR="$GITHUB_WORKSPACE/build/ci-swift-tmp/"
 . scripts/workspace-env.sh
 case "${1:-}" in
   models)
