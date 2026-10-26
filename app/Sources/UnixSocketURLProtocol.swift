@@ -253,8 +253,15 @@ final class UnixSocketURLProtocol: URLProtocol, @unchecked Sendable {
 
         // A caller-supplied InputStream may block inside read() indefinitely.
         // It cannot be interrupted safely by stopLoading or the socket deadline.
-        guard request.httpBodyStream == nil else { throw URLError(.badURL) }
-        let body = request.httpBody ?? Data()
+        // URLSession may turn APIClient's original finite Data into a stream.
+        // The private property survives that conversion; never call read() on
+        // an arbitrary InputStream or wait for its EOF on this I/O owner.
+        let preserved = URLProtocol.property(forKey: "Switch.FiniteHTTPBody.v1", in: request) as? Data
+        guard request.httpBodyStream == nil || preserved != nil else { throw URLError(.badURL) }
+        if let preserved, let current = request.httpBody, preserved != current {
+            throw URLError(.badURL)
+        }
+        let body = preserved ?? request.httpBody ?? Data()
         guard body.count <= Self.maximumRequestBodyBytes else {
             throw URLError(.dataLengthExceedsMaximum)
         }

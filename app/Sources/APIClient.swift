@@ -176,6 +176,13 @@ struct APIClient {
     private func performMutation(_ original: URLRequest) async throws -> (Data, URLResponse) {
         var request = original
         _ = try PublicRadioMutationCheckpoint.prepare(&request)
+        // URLSession can replace finite Data with httpBodyStream. Preserve the
+        // exact post-checkpoint bytes; the transport never reads an arbitrary stream.
+        if let body = request.httpBody {
+            let preserved = (request as NSURLRequest).mutableCopy() as! NSMutableURLRequest
+            URLProtocol.setProperty(body, forKey: "Switch.FiniteHTTPBody.v1", in: preserved)
+            request = preserved as URLRequest
+        }
         // This is a transport waiter budget only. Business deadlines, retry
         // admission, and terminal outcomes belong to the durable Rust owner and
         // must never be inferred from a Swift route-name table.
@@ -225,22 +232,29 @@ struct APIClient {
     }
 
     private static func validate(_ response: URLResponse, data: Data) throws {
-        guard let http = response as? HTTPURLResponse else { return }
-        guard (200..<300).contains(http.statusCode) else {
-            if let payload = try? JSONDecoder().decode(APIErrorPayload.self, from: data),
-               !payload.error.isEmpty {
-                if let refresh = payload.refresh {
-                    throw APIError.esimRefresh(http.statusCode, code: payload.code,
-                                              message: payload.error, outcome: refresh)
-                }
-                throw APIError.server(
-                    http.statusCode,
-                    code: payload.code,
-                    message: payload.error,
-                    recoverable: payload.recoverable ?? false)
+        guard let http = response as? HTTPURLResponse,
+              !(200..<300).contains(http.statusCode) else { return }
+        let failure: APIError
+        if let payload = try? JSONDecoder().decode(APIErrorPayload.self, from: data),
+           !payload.error.isEmpty {
+            if let refresh = payload.refresh {
+                failure = .esimRefresh(http.statusCode, code: payload.code,
+                                       message: payload.error, outcome: refresh)
+            } else {
+                failure = .server(http.statusCode, code: payload.code,
+                                  message: payload.error, recoverable: payload.recoverable ?? false)
             }
-            throw APIError.httpStatus(http.statusCode)
+        } else { failure = .httpStatus(http.statusCode) }
+        // Only a durable Rust finish/replay emits these headers. A recovery
+        // caller must still match the original request ID and preserve unknowns.
+        if http.value(forHTTPHeaderField: "X-Switch-Call-Terminal") == "true",
+           let id = http.value(forHTTPHeaderField: "X-Switch-Call-Request-ID"),
+           !id.isEmpty, id.utf8.count <= 128,
+           id.utf8.allSatisfy({ (48...57).contains($0) || (65...90).contains($0)
+               || (97...122).contains($0) || $0 == 45 || $0 == 95 }) {
+            throw APICallTerminalError(clientRequestID: id, underlying: failure)
         }
+        throw failure
     }
 
     private static func authorize(_ request: inout URLRequest) {
@@ -288,6 +302,12 @@ private struct ESIMAcceptedDownloadOperation: Decodable {
     }
 }
 
+struct APICallTerminalError: LocalizedError {
+    let clientRequestID: String
+    let underlying: APIError
+    var errorDescription: String? { underlying.localizedDescription }
+}
+
 struct APIOperationOutcomeUnknownError: LocalizedError {
     var reason = "等待本机服务响应时超时或连接中断"
     var errorDescription: String? {
@@ -296,6 +316,7 @@ struct APIOperationOutcomeUnknownError: LocalizedError {
 }
 
 func operationOutcomeIsUnknown(_ error: any Error) -> Bool {
+    if let terminal = error as? APICallTerminalError { return operationOutcomeIsUnknown(terminal.underlying) }
     if error is APIOperationOutcomeUnknownError { return true }
     if let apiError = error as? APIError,
        apiError.code?.hasSuffix("outcome_unknown") == true
