@@ -20,16 +20,26 @@ import Foundation
             requests.append(.init(path: path, body: body, continuation: $0))
         }
     }
-    func complete(_ index: Int, json: String) {
-        precondition(completed.insert(index).inserted)
+    func isPending(_ index: Int) -> Bool {
+        requests.indices.contains(index) && !completed.contains(index)
+    }
+    private func claim(_ index: Int, file: StaticString, line: UInt) {
+        precondition(requests.indices.contains(index),
+                     "invalid fixture request index=\(index) count=\(requests.count)", file: file, line: line)
+        precondition(completed.insert(index).inserted,
+                     "duplicate fixture completion index=\(index) path=\(requests[index].path)",
+                     file: file, line: line)
+    }
+    func complete(_ index: Int, json: String, file: StaticString = #fileID, line: UInt = #line) {
+        claim(index, file: file, line: line)
         requests[index].continuation.resume(returning: Data(json.utf8))
     }
-    func fail(_ index: Int) {
-        precondition(completed.insert(index).inserted)
+    func fail(_ index: Int, file: StaticString = #fileID, line: UInt = #line) {
+        claim(index, file: file, line: line)
         requests[index].continuation.resume(throwing: NSError(domain: "fixture", code: 1))
     }
-    func failUnknown(_ index: Int) {
-        precondition(completed.insert(index).inserted)
+    func failUnknown(_ index: Int, file: StaticString = #fileID, line: UInt = #line) {
+        claim(index, file: file, line: line)
         requests[index].continuation.resume(throwing: APIOperationOutcomeUnknownError())
     }
     func finishPending() {
