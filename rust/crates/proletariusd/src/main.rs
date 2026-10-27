@@ -2188,6 +2188,9 @@ async fn handle_request_inner(
                 ownership::route_owner(request.method().as_str(), request.uri().path()),
                 ownership::RouteOwner::Rust
             );
+            if request.uri().query() == Some("view=live") {
+                return Ok(support_diagnostics::handle_live());
+            }
             return Ok(support_diagnostics::handle().await);
         }
         (&Method::GET, "/api/diagnostics/events") => {

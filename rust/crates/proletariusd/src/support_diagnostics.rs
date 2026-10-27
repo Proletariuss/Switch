@@ -20,6 +20,7 @@ use serde::{Deserialize, Serialize};
 
 pub(crate) mod module;
 pub(crate) mod recovery;
+mod live;
 
 pub(crate) const PATH: &str = "/api/diagnostics/support";
 const DIRECTORY: &str = "support-diagnostics";
@@ -75,6 +76,8 @@ struct Counters {
     write_failures: AtomicU64,
 }
 struct Shared {
+    live: Mutex<live::Buffer>,
+    live_missed: AtomicU64,
     root: PathBuf,
     runtime_id: String,
     sequence: AtomicU64,
@@ -164,7 +167,12 @@ impl Recorder {
             time_ms: now_ms(),
             event,
         };
-        if !valid(&record) || self.sender.try_send(record).is_err() {
+        if !valid(&record) {
+            self.shared.counters.dropped.fetch_add(1, Ordering::Relaxed);
+            return;
+        }
+        live::record(&self.shared, &record);
+        if self.sender.try_send(record).is_err() {
             self.shared.counters.dropped.fetch_add(1, Ordering::Relaxed);
         } else {
             self.shared
@@ -196,6 +204,8 @@ pub(crate) fn initialize(root: &Path) {
         available: AtomicBool::new(false),
         exporting: AtomicBool::new(false),
         recovery: Mutex::new(recovery::Observation::default()),
+        live: Mutex::new(live::Buffer::default()),
+        live_missed: AtomicU64::new(0),
     });
     let (sender, receiver) = mpsc::sync_channel(QUEUE);
     let worker = shared.clone();
@@ -567,6 +577,16 @@ pub(crate) async fn handle() -> Response<Full<Bytes>> {
     .await
 }
 
+
+/// The live view is bounded current-process memory only. It never reads the
+/// rotating export files or waits for a writer, device or recovery owner.
+pub(crate) fn handle_live() -> Response<Full<Bytes>> {
+    let Some(recorder) = RECORDER.get() else {
+        return unavailable();
+    };
+    live::response(&recorder.shared)
+}
+
 // Injectable effects keep admission, thread ownership, timeout, response limits
 // and permit retirement identical in the production path and deterministic tests.
 async fn export_snapshot<ReadSnapshot, Spawn>(
@@ -641,6 +661,8 @@ mod tests {
             available: AtomicBool::new(true),
             exporting: AtomicBool::new(false),
             recovery: Mutex::new(recovery::Observation::default()),
+        live: Mutex::new(live::Buffer::default()),
+        live_missed: AtomicU64::new(0),
         })
     }
     fn record(sequence: u64) -> Record {
