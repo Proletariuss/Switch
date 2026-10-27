@@ -104,6 +104,13 @@ ausgegeben werden.
   Owner mit Originalbindung, realem Readback, Join, Freigabe und dauerhafter
   Veröffentlichung erweitern. Ein Dateinachweis ersetzt diese Schritte nicht.
 
+Die Download-Korrektur gilt nur für eine nachgewiesene reine lokale Herkunft:
+Das angeschlossene Modul muss bereits passend konfiguriert sein, sodass der
+Status direkt `needs_download` erreicht. Ein vorheriges Enable, Deployment,
+Selbsttest oder eine bereits vorhandene Gerätesicherung widerruft beziehungsweise
+verhindert diese Berechtigung. Damit ist nicht die gesamte Kette
+Enable → Download → Neustart abgenommen.
+
 Diese ersten Korrekturen lösen nicht automatisch jeden unbekannten
 2.67-Altzustand. Insbesondere darf ein erfolgreicher reiner Download nicht
 als erfolgreicher physischer Download-/Deployment-Endpunkt ausgegeben werden.
@@ -126,3 +133,21 @@ Alle Ausführung und Kompilierung bleiben auf GitHub-Runnern. Quellabdeckung,
 Softwareprüfungen und Geräteabnahme werden getrennt berichtet. Kein neuer
 Release, kein DMG und keine Aussage über reale Netz-/Sprachqualität allein
 aufgrund statischer Analyse oder Offline-Fixtures.
+
+## Einheitliches Laufzeitprotokoll
+
+Die getrennte Ansicht für Operationsereignisse wird in das Laufzeitprotokoll
+überführt; die SMS-Speicherkarte entfällt auf der Diagnoseseite. Die zugrunde
+liegenden zuverlässigen Zustands- und Operationsdaten bleiben erhalten.
+
+Die Live-Ansicht verwendet einen begrenzten Speicherpuffer des aktuellen
+Backend-Prozesses statt wiederholter Lesevorgänge über die rotierenden Dateien.
+Sie zeigt Backend-Zustand, die zuletzt beobachtete Modulquarantäne mit ihren
+Ursachencodes und die gemeinsamen technischen Ereignisse. Pausierte Anzeige,
+Prozesswechsel, nicht erreichbarer Backend-Prozess, verworfene Einträge und
+gekürzte Zeitfenster müssen erkennbar bleiben. Eine neue Snapshot-Uhrzeit ist
+kein Nachweis einer neuen physischen Geräteprüfung.
+
+Der separate Export bleibt verfügbar und enthält das begrenzte persistente
+Zeitfenster. Die Live-Ansicht darf weder Geräteoperationen auslösen noch
+SMS-Inhalte, Identitäten, Zugangsdaten oder ungeprüftes stderr übernehmen.
