@@ -9,5 +9,5 @@ description = "Single-owner authenticated supervisor for the existing module voi
 [dependencies]
 hmac.workspace = true
 sha2.workspace = true
-libc = "=0.2.190"
+libc = "=0.2.191"
 
