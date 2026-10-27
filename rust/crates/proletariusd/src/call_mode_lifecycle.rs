@@ -80,6 +80,7 @@ fn initialize_pristine_marker(root: &Path) {
 /// Revoke before the first physical mutation. A crash then leaves the lock
 /// files as conservative evidence for the next daemon.
 pub(crate) fn invalidate_pristine_marker(root: &Path) -> io::Result<()> {
+    crate::module_recovery::runtime_download::invalidate(root)?;
     crate::module_recovery::legacy_locks::invalidate(root)?;
     if pristine_marker(root)? {
         fs::remove_file(root.join(PRISTINE_MARKER))?;

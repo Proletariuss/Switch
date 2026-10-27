@@ -41,7 +41,7 @@ impl Fixture {
     }
     fn begin(&self) -> io::Result<Option<Directories>> {
         self.lease.as_ref().unwrap().root_proof()
-            .with_root(&self.root, |root| begin_in(root, &self.runtime)).unwrap()
+            .with_root(&self.root, |root| begin_in(root, &self.runtime, false)).unwrap()
     }
     fn restart(&mut self) {
         drop(self.lease.take());

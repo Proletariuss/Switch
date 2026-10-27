@@ -13,6 +13,7 @@ use std::path::Path;
 const DIRECTORY: &str = "runtime-download-lineage-v1";
 const RECEIPT: &str = "source.json";
 const COMMITTED: &str = "committed";
+const REVOKED: &str = "revoked";
 const STAGED: &str = "runtime";
 const FILES: &str = "files";
 const RUNTIME: &str = "voice-runtime";
@@ -239,11 +240,34 @@ fn verify_artifacts(version: &File, files: &[Artifact]) -> io::Result<()> {
 }
 fn verify(root: &File, store: &File, receipt: &Receipt, runtime_manifest: &RuntimeManifest)
     -> io::Result<(File, File, bool)> {
-    names(store, &[RECEIPT, COMMITTED, STAGED, FILES])?;
+    if source(root, true)? != receipt.source || stamp(store, REVOKED)?.is_some() {
+        return Err(invalid());
+    }
+    verify_layout(root, store, receipt, runtime_manifest)
+}
+fn verify_source_binding(root: &File, source: &Source) -> io::Result<()> {
+    if directory_identity(root)? != source.root
+        || [empty(root, LOCKS[0])?, empty(root, LOCKS[1])?] != source.locks {
+        return Err(invalid());
+    }
+    if source.legacy {
+        let legacy = open_dir(root, super::legacy_locks::DIRECTORY)?;
+        names(&legacy, &["provenance.json", "committed", "revoked"])?;
+        if stamp(&legacy, "revoked")?.is_some() { empty(&legacy, "revoked")?; }
+        if Some(directory_identity(&legacy)?) != source.legacy_namespace
+            || stamp(&legacy, "provenance.json")? != source.legacy_receipt
+            || Some(empty(&legacy, "committed")?) != source.legacy_commit {
+            return Err(invalid());
+        }
+    }
+    Ok(())
+}
+fn verify_layout(root: &File, store: &File, receipt: &Receipt, runtime_manifest: &RuntimeManifest)
+    -> io::Result<(File, File, bool)> {
+    names(store, &[RECEIPT, COMMITTED, STAGED, FILES, REVOKED])?;
     if receipt.policy != "controlled-runtime-download-v1"
         || receipt.version_name != runtime_manifest.version
-        || receipt.artifacts != artifacts(&runtime_manifest.files)
-        || source(root, true)? != receipt.source {
+        || receipt.artifacts != artifacts(&runtime_manifest.files) {
         return Err(invalid());
     }
     let published = stamp(root, RUNTIME)?.is_some();
@@ -304,6 +328,13 @@ pub(super) fn coverage(root: &File, artifacts: &[Artifact]) -> io::Result<Option
     let receipt = read_receipt(&store)?;
     // Physical intent invalidates data-only lineage. Leave those slots to the
     // existing recovery classifier, including a genuine published reconciliation.
+    if stamp(&store, REVOKED)?.is_some() {
+        empty(&store, REVOKED)?;
+        if receipt.source.pristine.is_some() && stamp(root, PRISTINE)?.is_some() {
+            return Err(invalid());
+        }
+        return Ok(None);
+    }
     if stamp(root, PRISTINE)? != receipt.source.pristine
         || ABSENT.iter().any(|name| !matches!(stamp(root, name), Ok(None)))
         || (receipt.source.legacy && {
@@ -330,15 +361,32 @@ pub(crate) struct Directories { pub(crate) runtime: File, pub(crate) staging: Fi
 pub(crate) fn begin(root: &Path, gate: &Gate) -> io::Result<Option<Directories>> {
     if gate.is_admission_revoked() { return Err(invalid()); }
     let proof = gate.root_proof_for(root).map_err(|_| invalid())?;
-    proof.with_root(root, |directory| begin_in(directory, manifest()))
+    proof.with_root(root, |directory| begin_in(directory, manifest(), true))
         .map_err(|_| invalid())?
 }
-fn begin_in(root: &File, runtime_manifest: &RuntimeManifest) -> io::Result<Option<Directories>> {
+fn begin_in(root: &File, runtime_manifest: &RuntimeManifest, admitted_retry: bool) -> io::Result<Option<Directories>> {
     let existing = stamp(root, DIRECTORY)?.is_some();
     if existing {
         let store = open_dir(root, DIRECTORY)?;
         if stamp(&store, COMMITTED)?.is_some() {
             let receipt = read_receipt(&store)?;
+            if stamp(&store, REVOKED)?.is_some() {
+                empty(&store, REVOKED)?;
+                if !admitted_retry { return Err(invalid()); }
+                verify_source_binding(root, &receipt.source)?;
+                if receipt.source.pristine.is_some() && stamp(root, PRISTINE)?.is_some() {
+                    return Err(invalid());
+                }
+                if receipt.source.legacy {
+                    let legacy = open_dir(root, super::legacy_locks::DIRECTORY)?;
+                    empty(&legacy, "revoked")?;
+                }
+                let (_, _, published) = verify_layout(root, &store, &receipt, runtime_manifest)?;
+                if !published { return Err(invalid()); }
+                // The original live Gate already authorized this ordinary job.
+                // Retired provenance grants nothing and never becomes active again.
+                return Ok(None);
+            }
             let (runtime, files, published) = verify(root, &store, &receipt, runtime_manifest)?;
             if !published {
                 proletarius_platform_fs::rename_directory_noreplace(&store, STAGED, root, RUNTIME)?;
@@ -391,6 +439,29 @@ fn begin_in(root: &File, runtime_manifest: &RuntimeManifest) -> io::Result<Optio
     root.sync_all()?;
     verify(root, &store, &receipt, runtime_manifest)?;
     Ok(Some(Directories { runtime, staging: files }))
+}
+
+/// Record actual physical intent before the pristine/legacy markers are revoked.
+/// This tombstone cannot certify cleanup or restore ordinary startup admission.
+pub(crate) fn invalidate(root: &Path) -> io::Result<()> {
+    use std::os::unix::fs::OpenOptionsExt;
+    let root = std::fs::OpenOptions::new().read(true)
+        .custom_flags(nix::libc::O_DIRECTORY | nix::libc::O_NOFOLLOW | nix::libc::O_CLOEXEC)
+        .open(root)?;
+    if stamp(&root, DIRECTORY)?.is_none() { return Ok(()); }
+    let store = open_dir(&root, DIRECTORY)?;
+    if stamp(&store, COMMITTED)?.is_none() {
+        // No runtime was published by an unfinished preparation transaction.
+        return Ok(());
+    }
+    let receipt = read_receipt(&store)?;
+    verify_source_binding(&root, &receipt.source)?;
+    names(&store, &[RECEIPT, COMMITTED, STAGED, FILES, REVOKED])?;
+    if stamp(&store, REVOKED)?.is_some() {
+        empty(&store, REVOKED)?;
+        return store.sync_all();
+    }
+    write_new(&store, REVOKED, &[])
 }
 
 #[cfg(test)]
