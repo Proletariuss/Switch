@@ -80,14 +80,67 @@ enum SupportBundleBuilder {
         let events = records.compactMap { sanitizeRecord($0) }
         var warnings = sourceWarnings.filter { runtimeWarnings.contains($0) }
         if events.count != records.count { warnings.append("backend_invalid_records_skipped") }
-        return [
+        var result: [String: Any] = [
             "schema_version": 1, "generated_at_ms": generated, "runtime_id": runtimeID,
             "version": version(object["version"] as? String ?? ""),
             "build": buildNumber(object["build"] as? String ?? ""),
             "source_digest": hex(object["source_digest"], count: 64) ?? "unknown",
-            "limits": limits, "counters": counters, "events": events, "warnings": warnings
+            "limits": limits, "counters": counters, "events": events
+        ]
+        // This retained observation is independent of log rotation/event caps.
+        // Older backends omit it; malformed new metadata cannot discard logs.
+        if let recovery = object["module_recovery"] {
+            if let safe = sanitizeModuleRecovery(recovery) {
+                result["module_recovery"] = safe
+            } else {
+                warnings.append("backend_module_recovery_invalid")
+            }
+        }
+        result["warnings"] = warnings
+        return result
+    }
+
+    private static let recoveryReasons: Set<String> = [
+        "legacy_execution_pending", "restore_journal_pending", "restore_journal_unreadable",
+        "reconciliation_pending", "reconciliation_unreadable", "legacy_call_mode_lock",
+        "legacy_adb_interface_lock", "legacy_lock_provenance_pending", "module_backup_present",
+        "legacy_voice_runtime", "managed_voice_control_pending", "invalid_pristine_marker",
+        "unreadable_evidence", "lifetime_authority_changed"
+    ]
+
+    private static func sanitizeModuleRecovery(_ input: Any) -> [String: Any]? {
+        guard let object = input as? [String: Any],
+              let encoded = try? JSONSerialization.data(withJSONObject: object), encoded.count <= 4096,
+              number(object["schema_version"])?.uint64Value == 1,
+              let state = object["state"] as? String,
+              ["not_observed", "open", "legacy_recovery_required"].contains(state),
+              let reasons = object["reason_codes"] as? [String], reasons.count <= 14,
+              reasons.allSatisfy(recoveryReasons.contains),
+              (state == "legacy_recovery_required") == !reasons.isEmpty,
+              let historical = object["historical_recovery_confirmed"] as? NSNumber,
+              CFGetTypeID(historical) == CFBooleanGetTypeID(), !historical.boolValue,
+              let startup = object["startup"] as? [String: Any],
+              let metadata = startup["metadata"] as? String,
+              ["not_observed", "not_needed", "inspected", "failed"].contains(metadata),
+              let reconciliation = startup["reconciliation"] as? String,
+              ["not_observed", "not_applicable", "completed", "completed_after_stop", "failed",
+               "publication_unconfirmed"].contains(reconciliation),
+              let native = startup["native_inspection"] as? String,
+              ["not_observed", "not_applicable", "inspected", "failed"].contains(native),
+              let cleanup = startup["cleanup"] as? String,
+              ["not_observed", "confirmed", "unconfirmed"].contains(cleanup) else { return nil }
+        var seen = Set<String>()
+        // Rebuild only the closed vocabulary: unknown nested fields, paths,
+        // identities and raw errors never cross this export boundary.
+        return [
+            "schema_version": 1, "state": state,
+            "reason_codes": reasons.filter { seen.insert($0).inserted },
+            "historical_recovery_confirmed": false,
+            "startup": ["metadata": metadata, "reconciliation": reconciliation,
+                        "native_inspection": native, "cleanup": cleanup]
         ]
     }
+
     private static func sanitizeRecord(_ input: Any) -> [String: Any]? {
         guard let object = input as? [String: Any],
               number(object["schema_version"])?.uint64Value == 1,

@@ -134,7 +134,6 @@ struct HomeView: View {
             subtitle: "蜂窝网络、Wi-Fi Calling 与模块配置，在同一工作区清晰呈现。",
             symbol: "antenna.radiowaves.left.and.right",
             eyebrow: "DEVICE / MODULE")
-        ModuleRecoveryStatusView()
         switch backend.state {
         case .running:
             if status != nil {
@@ -302,7 +301,7 @@ struct HomeView: View {
                     let message: String = if store.statusStale {
                         "无法确认当前 USB、AT 或 QMI 状态；请刷新后再操作模块"
                     } else if moduleIsolated {
-                        "模块因旧版恢复证据而暂停 AT/QMI；这不代表 USB 未插入。请查看上方原因码。"
+                        "模块因旧版恢复证据而暂停 AT/QMI；这不代表 USB 未插入。"
                     } else if qmiInitialized {
                         "QMI 会话已完成初始化；当前链路、SIM、注册和网络状态尚未实时确认"
                     } else {
@@ -349,6 +348,9 @@ struct HomeView: View {
                         .disabled(store.busy || store.networkRecovering)
                 }
             }
+            ModuleRecoveryStatusView(
+                embedded: true,
+                isolationReported: moduleIsolated && !store.statusStale)
             if store.statusStale {
                 ProletariusStatusBadge(title: "数据已过期", color: .orange)
             }
