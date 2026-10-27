@@ -241,9 +241,9 @@ private func expect(_ condition: @autoclosure () throws -> Bool, _ message: Stri
         }
         try check(moduleEvent(), accepted: true)
         let choices: [String: [String]] = [
-            "stage": ["startup","serial_probe","usb_open","transport_claim","inbox_bind","session_open","serial_initialize","radio_configure","radio_bootstrap","esim_warmup","metadata_refresh","sms_ready","reservation_acquire","reservation_release","admission","physical","shutdown"],
+            "stage": ["startup","serial_probe","usb_open","transport_claim","inbox_bind","session_open","serial_initialize","radio_configure","radio_bootstrap","esim_warmup","metadata_refresh","sms_ready","reservation_acquire","reservation_release","admission","physical","shutdown","call_query_admission","call_query_physical"],
             "result": ["started","succeeded","failed","deferred","waiter_ended"],
-            "code": ["none","busy","no_device","timeout","stale","stopped","invalid","transport_failed","policy_unavailable","archive_unavailable","inbox_unavailable","worker_failed","cleanup_unconfirmed","initialization_incomplete","admission_revoked","reservation_conflict","shared_voice_pin","voice_pin","reconnect_pin","queue_full","gate_timeout","binding_missing","outcome_unknown","other"],
+            "code": ["none","busy","no_device","timeout","stale","stopped","invalid","transport_failed","policy_unavailable","archive_unavailable","inbox_unavailable","worker_failed","cleanup_unconfirmed","initialization_incomplete","admission_revoked","reservation_conflict","shared_voice_pin","voice_pin","reconnect_pin","queue_full","gate_timeout","binding_missing","outcome_unknown","call_voice_idle","call_voice_present","call_unconfirmed","other"],
             "transport": ["unknown","serial","usb"]
         ]
         for (field, values) in choices {
