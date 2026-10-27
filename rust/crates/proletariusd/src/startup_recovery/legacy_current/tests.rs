@@ -597,3 +597,82 @@ fn retained_failure_projection_is_closed_and_never_accepts_transport_text() {
         Failure::CleanupUnconfirmed
     );
 }
+
+#[test]
+fn metadata_read_cancellation_and_timeout_keep_their_cause_before_and_after_real_locks() {
+    use std::sync::atomic::AtomicUsize;
+    for held_locks in [false, true] {
+        for cancel in [true, false] {
+            let f = Fixture::new(3);
+            let gate = f.gate();
+            let claim = held_locks.then(|| gate.begin_legacy_current(&f.root).unwrap());
+            let mut locks = claim.as_ref().map(|claim| Locks::acquire(&f.root, claim).unwrap());
+            let proof = f.lease.as_ref().unwrap().root_proof();
+            let original = fs::read(f.root.join("module-backups").join(BACKUP)).unwrap();
+            // Count the actual file-tree fences for this same captured shape,
+            // then end the interval partway through a second real metadata read.
+            let healthy_calls = AtomicUsize::new(0);
+            proof.with_root(&f.root, |root| Evidence::capture_checked(root, &|| {
+                healthy_calls.fetch_add(1, Ordering::SeqCst);
+                Ok(())
+            })).unwrap().unwrap();
+            let interrupt_at = healthy_calls.load(Ordering::SeqCst) / 2;
+            assert!(interrupt_at > 1);
+            let cancelled = AtomicBool::new(false);
+            let deadline = Instant::now() + if cancel {
+                Duration::from_secs(30)
+            } else {
+                Duration::from_millis(20)
+            };
+            let calls = AtomicUsize::new(0);
+            let result = proof.with_root(&f.root, |root| Evidence::capture_checked(root, &|| {
+                let call = calls.fetch_add(1, Ordering::SeqCst) + 1;
+                if call == interrupt_at {
+                    if cancel {
+                        cancelled.store(true, Ordering::Release);
+                    } else {
+                        std::thread::sleep(deadline.saturating_duration_since(Instant::now())
+                            + Duration::from_millis(1));
+                    }
+                }
+                if cancelled.load(Ordering::Acquire) || Instant::now() >= deadline {
+                    Err(io::Error::other("metadata fixture interval ended"))
+                } else {
+                    Ok(())
+                }
+            })).unwrap();
+            let failure = result.err().expect("real metadata capture continued after its interval ended");
+            // This is the same classification boundary used by both production
+            // captures. A held-lock failure retires both actual locks first.
+            if let Some(locks) = locks.as_mut() { locks.release().unwrap(); }
+            let failure = metadata_failure(&cancelled, deadline, failure);
+            let expected = if cancel { Failure::Cancelled } else { Failure::Timeout };
+            assert_eq!(failure, expected);
+            assert_eq!(serde_json::to_value(failure.retained()).unwrap(), expected.code());
+            assert!(calls.load(Ordering::SeqCst) > 0);
+            assert_eq!(fs::read(f.root.join("module-backups").join(BACKUP)).unwrap(), original);
+            assert!(gate.is_quarantined());
+            if held_locks {
+                for kind in [RecoveryLockKind::Operation, RecoveryLockKind::AdbInterface] {
+                    acquire_bound_recovery_lock(&f.root, &proof, kind, false).unwrap().release().unwrap();
+                }
+            } else {
+                assert!(!f.root.join("call-mode-operation.lock").exists());
+                assert!(!f.root.join(".module-adb-interface.lock").exists());
+            }
+        }
+    }
+}
+
+#[test]
+fn metadata_interval_classification_never_masks_cleanup_or_changes_live_ineligibility() {
+    let cancelled = AtomicBool::new(true);
+    for failure in [Failure::CleanupUnconfirmed, Failure::WorkerFailed] {
+        assert_eq!(metadata_failure(&cancelled, Instant::now(), failure), failure);
+    }
+    let live = AtomicBool::new(false);
+    let deadline = Instant::now() + Duration::from_secs(30);
+    for failure in [Failure::Ineligible, Failure::EvidenceChanged] {
+        assert_eq!(metadata_failure(&live, deadline, failure), failure);
+    }
+}

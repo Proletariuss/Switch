@@ -110,6 +110,20 @@ fn io_failure<T>(_: T) -> Failure {
     Failure::EvidenceChanged
 }
 
+// Metadata fences return io::Error internally. Restore the original bounded
+// interval cause at the owner boundary; uncertain cleanup always takes priority.
+fn metadata_failure(cancelled: &AtomicBool, deadline: Instant, failure: Failure) -> Failure {
+    if failure.cleanup_unconfirmed() {
+        failure
+    } else if cancelled.load(Ordering::Acquire) {
+        Failure::Cancelled
+    } else if Instant::now() >= deadline {
+        Failure::Timeout
+    } else {
+        failure
+    }
+}
+
 fn require_absent(root: &File) -> io::Result<()> {
     use nix::fcntl::AtFlags;
     for name in ABSENT {
@@ -556,11 +570,12 @@ impl super::Coordinator {
                 }
             };
             fence().map_err(|_| ended())?;
-            let proof = gate.root_proof_for(&root).map_err(io_failure)?;
+            let proof = gate.root_proof_for(&root)
+                .map_err(|error| metadata_failure(&cancelled, deadline, io_failure(error)))?;
             let eligible = proof
                 .with_root(&root, |root| Evidence::capture_checked(root, &fence))
-                .map_err(io_failure)?;
-            let original = match eligible {
+                .map_err(|error| metadata_failure(&cancelled, deadline, io_failure(error)))?;
+            let original = match eligible.map_err(|error| metadata_failure(&cancelled, deadline, error)) {
                 Ok(value) => value,
                 Err(Failure::Ineligible) => return Ok(None),
                 Err(error) => return Err(error),
@@ -577,7 +592,7 @@ impl super::Coordinator {
                 _ => {
                     let mut locks = locks;
                     locks.release()?;
-                    return Err(Failure::EvidenceChanged);
+                    return Err(metadata_failure(&cancelled, deadline, Failure::EvidenceChanged));
                 }
             };
             let scope = ReadScope(Arc::new(ReadState {
