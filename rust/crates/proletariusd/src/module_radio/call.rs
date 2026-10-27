@@ -526,27 +526,14 @@ pub(super) fn call_lease_matches(state: &State, lease: &CallReservation) -> bool
         })
 }
 pub(crate) fn call_snapshot(response: String) -> CallStateSnapshot {
-    let terminal = response
-        .lines()
-        .map(str::trim)
-        .filter(|line| !line.is_empty())
-        .next_back();
-    let safe_idle = terminal == Some("OK")
-        && !response.lines().any(|line| {
-            let line = line.trim();
-            line.starts_with("+CLCC")
-                || matches!(line, "ERROR" | "RING" | "CONNECT" | "MO CONNECTED")
-                || line.starts_with("+CME ERROR")
-                || line.starts_with("+CMS ERROR")
-                || line.starts_with("+CLIP:")
-        });
-    let display = crate::modem_actor::project_call_state(&response);
+    let (display, safe_idle) = crate::modem_actor::project_call_observation(&response);
     CallStateSnapshot {
         response,
         display,
         safe_idle,
     }
 }
+
 fn call_urc(text: &str) -> Option<(&'static str, String)> {
     let line = text.trim();
     match line {
