@@ -1,6 +1,7 @@
 //! Cellular call ownership uses the same radio gate and physical workers as RF
 //! policy. A dropped HTTP waiter never drops an admitted physical transaction.
 use super::*;
+use crate::support_diagnostics::module::{Code, ResultKind, Stage};
 
 pub(crate) type CallAdmission = Arc<dyn Fn() -> bool + Send + Sync>;
 pub(crate) type CallCapture = Arc<dyn Fn(Binding, &str) -> bool + Send + Sync>;
@@ -275,7 +276,9 @@ impl Service {
         let service = self.clone();
         let (send, receive) = oneshot::channel();
         tokio::spawn(async move {
+            let started = Instant::now();
             let result = service.reserve_call_inner().await;
+            service.record_call_result(Stage::ReservationAcquire, &result, started.elapsed());
             if let Err(Ok(lease)) = send.send(result) {
                 while service.release_call(&lease).await.is_err() {
                     tokio::time::sleep(Duration::from_millis(100)).await;
@@ -330,6 +333,15 @@ impl Service {
         Ok(lease)
     }
     pub(crate) async fn release_call(&self, lease: &CallReservation) -> Result<(), Failure> {
+        let started = Instant::now();
+        let result = self.release_call_inner(lease).await;
+        // A borrowed read lease has no physical release obligation to report.
+        if lease.owned {
+            self.record_call_result(Stage::ReservationRelease, &result, started.elapsed());
+        }
+        result
+    }
+    async fn release_call_inner(&self, lease: &CallReservation) -> Result<(), Failure> {
         if !lease.owned {
             return Ok(());
         }
@@ -393,10 +405,18 @@ impl Service {
         &self,
         lease: Option<CallReservation>,
     ) -> Result<CallStateSnapshot, Failure> {
+        let started = Instant::now();
         let (borrowed, owned) = if let Some(lease) = lease {
             (lease, false)
         } else {
-            let read = self.reserve_call_mode_read().await?;
+            let read = match self.reserve_call_mode_read().await {
+                Ok(read) => read,
+                Err(error) => {
+                    let result = Err(error);
+                    self.record_call_query(Stage::CallQueryAdmission, &result, started.elapsed());
+                    return result;
+                }
+            };
             let binding = self
                 .0
                 .state
@@ -405,6 +425,13 @@ impl Service {
                 .binding
                 .clone();
             let Some(binding) = binding else {
+                self.record_module_snapshot(
+                    Stage::CallQueryAdmission,
+                    ResultKind::Failed,
+                    Code::BindingMissing,
+                    self.module_diagnostic_snapshot(),
+                    started.elapsed(),
+                );
                 while self.release_call_mode_operation(&read).await.is_err() {
                     tokio::time::sleep(Duration::from_millis(100)).await;
                 }
@@ -423,13 +450,22 @@ impl Service {
                 read.owned,
             )
         };
-        let result = self
-            .submit(Job::CellularCall(CallRequest {
+        let submitted = self
+            .submit_with_receipt(Job::CellularCall(CallRequest {
                 lease: borrowed.clone(),
                 action: Action::CellularCallRead,
             }))
-            .await
+            .await;
+        // Admission here means the actor accepted the job; it does not prove
+        // physical I/O occurred. A successful snapshot is the read completion.
+        let stage = match &submitted {
+            Err(error) if !error.admitted => Stage::CallQueryAdmission,
+            _ => Stage::CallQueryPhysical,
+        };
+        let result = submitted
+            .map_err(|error| error.failure)
             .and_then(|value| serde_json::from_value(value).map_err(|_| Failure::unavailable()));
+        self.record_call_query(stage, &result, started.elapsed());
         if owned {
             while self.release_call(&borrowed).await.is_err() {
                 tokio::time::sleep(Duration::from_millis(100)).await;
@@ -526,27 +562,14 @@ pub(super) fn call_lease_matches(state: &State, lease: &CallReservation) -> bool
         })
 }
 pub(crate) fn call_snapshot(response: String) -> CallStateSnapshot {
-    let terminal = response
-        .lines()
-        .map(str::trim)
-        .filter(|line| !line.is_empty())
-        .next_back();
-    let safe_idle = terminal == Some("OK")
-        && !response.lines().any(|line| {
-            let line = line.trim();
-            line.starts_with("+CLCC")
-                || matches!(line, "ERROR" | "RING" | "CONNECT" | "MO CONNECTED")
-                || line.starts_with("+CME ERROR")
-                || line.starts_with("+CMS ERROR")
-                || line.starts_with("+CLIP:")
-        });
-    let display = crate::modem_actor::project_call_state(&response);
+    let (display, safe_idle) = crate::modem_actor::project_call_observation(&response);
     CallStateSnapshot {
         response,
         display,
         safe_idle,
     }
 }
+
 fn call_urc(text: &str) -> Option<(&'static str, String)> {
     let line = text.trim();
     match line {
@@ -840,5 +863,261 @@ mod tests {
         assert!(worker.await.unwrap().unwrap_err().public_submitted());
         retiring.await.unwrap().unwrap();
         service.release_call(&lease).await.unwrap();
+    }
+
+    fn diagnostic_events(
+        receiver: &mut tokio::sync::mpsc::Receiver<crate::support_diagnostics::module::Event>,
+    ) -> Vec<crate::support_diagnostics::module::Event> {
+        let mut events = Vec::new();
+        while let Ok(event) = receiver.try_recv() {
+            events.push(event);
+        }
+        events
+    }
+    fn finish_diagnostic_fixture(service: &Service) {
+        service.begin_shutdown();
+        service.0.modem.shutdown().unwrap();
+        let _ = std::fs::remove_dir_all(&service.0.data_root);
+    }
+
+    #[tokio::test]
+    async fn call_diagnostics_use_typed_snapshot_and_exact_lease_results_without_private_text() {
+        use crate::support_diagnostics::module::Owner;
+        let (service, mut requests) = fixture();
+        let mut events = service.module_diagnostics_for_test();
+        let lease = service.reserve_call().await.unwrap();
+        let acquired = diagnostic_events(&mut events);
+        assert!(
+            acquired
+                .iter()
+                .any(|event| event.stage == Stage::ReservationAcquire
+                    && event.result == ResultKind::Succeeded
+                    && event.owner.owner == Owner::Call)
+        );
+
+        for (response, expected) in [
+            ("+CLCC: 1,0,0,1,0,\"\",128\r\nOK", Code::CallVoiceIdle),
+            (
+                "+CLCC: 1,0,0,0,0,\"private-number\",129\r\nOK",
+                Code::CallVoicePresent,
+            ),
+            ("+CLCC: broken\r\nOK", Code::CallUnconfirmed),
+        ] {
+            let worker = service.clone();
+            let current = lease.clone();
+            let query = tokio::spawn(async move { worker.query_call_state(Some(&current)).await });
+            let (action, reply) = tokio::time::timeout(Duration::from_secs(3), requests.recv())
+                .await
+                .unwrap()
+                .unwrap();
+            assert!(matches!(action, Action::CellularCallRead));
+            reply
+                .send(Ok(Outcome {
+                    complete: true,
+                    verified: true,
+                    response: response.into(),
+                    ..Outcome::default()
+                }))
+                .unwrap();
+            let snapshot = query.await.unwrap().unwrap();
+            assert_eq!(snapshot.safe_idle, expected == Code::CallVoiceIdle);
+            let records = diagnostic_events(&mut events);
+            let evidence = records
+                .iter()
+                .find(|event| event.stage == Stage::CallQueryPhysical)
+                .unwrap();
+            assert_eq!(evidence.result, ResultKind::Succeeded);
+            assert_eq!(evidence.code, expected);
+            assert_eq!(evidence.owner.owner, Owner::Call);
+            let encoded = serde_json::to_string(evidence).unwrap();
+            for secret in [
+                "private-number",
+                "+CLCC",
+                lease.token.as_str(),
+                "response",
+                "number",
+            ] {
+                assert!(!encoded.contains(secret), "{encoded}");
+            }
+        }
+
+        let mut stale = lease.clone();
+        stale.sequence += 1;
+        assert!(service.release_call(&stale).await.is_err());
+        let failed = diagnostic_events(&mut events);
+        assert!(
+            failed
+                .iter()
+                .any(|event| event.stage == Stage::ReservationRelease
+                    && event.result == ResultKind::Failed
+                    && event.code == Code::Stale
+                    && event.owner.owner == Owner::Call)
+        );
+        assert!(service.call_reservation_current(&lease));
+        service.release_call(&lease).await.unwrap();
+        let released = diagnostic_events(&mut events);
+        assert!(
+            released
+                .iter()
+                .any(|event| event.stage == Stage::ReservationRelease
+                    && event.result == ResultKind::Succeeded
+                    && event.owner.owner == Owner::None)
+        );
+        assert!(requests.try_recv().is_err());
+        finish_diagnostic_fixture(&service);
+    }
+
+    #[tokio::test]
+    async fn call_diagnostics_capture_conflicting_owner_and_query_admission_without_io() {
+        use crate::support_diagnostics::module::Owner;
+        let (service, mut requests) = fixture();
+        let lease = service.reserve_esim().await.unwrap();
+        let mut events = service.module_diagnostics_for_test();
+        assert_eq!(
+            service.query_call_state(None).await.unwrap_err().code,
+            "module_radio_busy"
+        );
+        assert_eq!(
+            service.reserve_call().await.unwrap_err().code,
+            "module_radio_busy"
+        );
+        let records = diagnostic_events(&mut events);
+        assert!(records.iter().any(|event| event.stage == Stage::Admission
+            && event.result == ResultKind::Deferred
+            && event.code == Code::ReservationConflict
+            && event.owner.owner == Owner::Esim));
+        assert!(
+            records
+                .iter()
+                .any(|event| event.stage == Stage::CallQueryAdmission
+                    && event.result == ResultKind::Failed
+                    && event.code == Code::Busy
+                    && event.owner.owner == Owner::Esim)
+        );
+        assert!(
+            records
+                .iter()
+                .any(|event| event.stage == Stage::ReservationAcquire
+                    && event.result == ResultKind::Failed
+                    && event.code == Code::Busy
+                    && event.owner.owner == Owner::Esim)
+        );
+        assert!(
+            !records
+                .iter()
+                .any(|event| event.stage == Stage::CallQueryPhysical)
+        );
+        assert!(requests.try_recv().is_err());
+        service.release_esim(lease).await.unwrap();
+        finish_diagnostic_fixture(&service);
+    }
+
+    #[tokio::test]
+    async fn call_diagnostics_do_not_call_actor_admission_physical_io_or_success() {
+        let (service, mut requests) = fixture();
+        let lease = service.reserve_call().await.unwrap();
+        let mut events = service.module_diagnostics_for_test();
+        let mut stale = lease.clone();
+        stale.epoch += 1;
+        assert_eq!(
+            service
+                .query_call_state(Some(&stale))
+                .await
+                .unwrap_err()
+                .code,
+            "radio_stale_generation"
+        );
+        let records = diagnostic_events(&mut events);
+        assert!(
+            records
+                .iter()
+                .any(|event| event.stage == Stage::CallQueryPhysical
+                    && event.result == ResultKind::Failed
+                    && event.code == Code::Stale)
+        );
+        // The actor accepted the job, but rejected its lease before physical I/O.
+        assert!(requests.try_recv().is_err());
+        service.release_call(&lease).await.unwrap();
+        diagnostic_events(&mut events);
+        service.begin_shutdown();
+        assert!(service.query_call_state(Some(&lease)).await.is_err());
+        let records = diagnostic_events(&mut events);
+        assert!(
+            records
+                .iter()
+                .any(|event| event.stage == Stage::CallQueryAdmission
+                    && event.result == ResultKind::Failed)
+        );
+        assert!(
+            !records
+                .iter()
+                .any(|event| event.stage == Stage::CallQueryPhysical)
+        );
+        assert!(requests.try_recv().is_err());
+        finish_diagnostic_fixture(&service);
+    }
+
+    #[tokio::test]
+    async fn cancelled_call_query_keeps_completion_evidence_and_temporary_release() {
+        let (service, mut requests) = fixture();
+        let mut events = service.module_diagnostics_for_test();
+        let worker = service.clone();
+        let query = tokio::spawn(async move { worker.query_call_state(None).await });
+        let (action, reply) = tokio::time::timeout(Duration::from_secs(3), requests.recv())
+            .await
+            .unwrap()
+            .unwrap();
+        assert!(matches!(action, Action::CellularCallRead));
+        query.abort();
+        assert!(query.await.unwrap_err().is_cancelled());
+        reply
+            .send(Ok(Outcome {
+                complete: true,
+                verified: true,
+                response: "+CLCC: 1,0,0,1,0,\"\",128\r\nOK".into(),
+                ..Outcome::default()
+            }))
+            .unwrap();
+        tokio::time::timeout(Duration::from_secs(3), async {
+            let mut completed = false;
+            let mut released = false;
+            while !(completed && released) {
+                let event = events.recv().await.unwrap();
+                completed |= event.stage == Stage::CallQueryPhysical
+                    && event.result == ResultKind::Succeeded
+                    && event.code == Code::CallVoiceIdle;
+                released |= event.stage == Stage::ReservationRelease
+                    && event.result == ResultKind::Succeeded;
+            }
+        })
+        .await
+        .unwrap();
+        assert!(service.0.state.lock().unwrap().reservation.is_none());
+        let next = service.reserve_call().await.unwrap();
+        service.release_call(&next).await.unwrap();
+        assert!(requests.try_recv().is_err());
+        finish_diagnostic_fixture(&service);
+    }
+
+    #[tokio::test]
+    async fn saturated_call_diagnostic_channel_does_not_delay_lease_release() {
+        let (service, mut requests) = fixture();
+        let lease = service.reserve_call().await.unwrap();
+        let mut events = service.module_diagnostics_for_test();
+        for _ in 0..128 {
+            service.record_call_result(
+                Stage::ReservationAcquire,
+                &Ok::<_, Failure>(()),
+                Duration::ZERO,
+            );
+        }
+        tokio::time::timeout(Duration::from_secs(3), service.release_call(&lease))
+            .await
+            .unwrap()
+            .unwrap();
+        assert!(!service.call_reservation_current(&lease));
+        assert_eq!(diagnostic_events(&mut events).len(), 64);
+        assert!(requests.try_recv().is_err());
+        finish_diagnostic_fixture(&service);
     }
 }

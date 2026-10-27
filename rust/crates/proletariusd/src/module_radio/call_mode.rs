@@ -162,6 +162,17 @@ impl Service {
             let state = self.0.state.lock().unwrap_or_else(|e| e.into_inner());
             if let Some(reservation) = state.reservation.as_ref() {
                 if !matches!(reservation.purpose, Purpose::Call | Purpose::CallMode) {
+                    // Copy the actual rejecting owner under the same lock; the
+                    // best-effort recorder never runs while holding that lock.
+                    let snapshot = diagnostics::Snapshot::capture(&state);
+                    drop(state);
+                    self.record_module_snapshot(
+                        crate::support_diagnostics::module::Stage::Admission,
+                        crate::support_diagnostics::module::ResultKind::Deferred,
+                        crate::support_diagnostics::module::Code::ReservationConflict,
+                        snapshot,
+                        Duration::ZERO,
+                    );
                     return Err(Failure::busy());
                 }
                 return Ok(CallModeReservation {

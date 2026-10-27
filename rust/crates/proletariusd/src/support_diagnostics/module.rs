@@ -7,7 +7,7 @@ use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};
 
 const WINDOW: Duration = Duration::from_secs(30);
-const STAGES: usize = 17;
+const STAGES: usize = 19;
 const RESULTS: usize = 5;
 const SLOTS: usize = STAGES * RESULTS;
 
@@ -31,6 +31,8 @@ pub(crate) enum Stage {
     Admission,
     Physical,
     Shutdown,
+    CallQueryAdmission,
+    CallQueryPhysical,
 }
 impl Stage {
     fn index(self) -> usize {
@@ -94,6 +96,9 @@ pub(crate) enum Code {
     GateTimeout,
     BindingMissing,
     OutcomeUnknown,
+    CallVoiceIdle,
+    CallVoicePresent,
+    CallUnconfirmed,
     Other,
 }
 impl Code {
@@ -451,5 +456,27 @@ mod tests {
         )
         .await;
         assert_eq!(result, Ok(17));
+    }
+
+    #[test]
+    fn call_query_vocabulary_has_bounded_independent_limiter_slots() {
+        assert_eq!(Stage::CallQueryPhysical.index() + 1, STAGES);
+        let mut limiter = Limiter::default();
+        let now = Instant::now();
+        for stage in [Stage::CallQueryAdmission, Stage::CallQueryPhysical] {
+            for code in [
+                Code::CallVoiceIdle,
+                Code::CallVoicePresent,
+                Code::CallUnconfirmed,
+            ] {
+                let mut sample = event(ResultKind::Succeeded, code);
+                sample.stage = stage;
+                assert!(limiter.observe(sample, now).is_some());
+                assert!(limiter.observe(sample, now).is_none());
+                let encoded = serde_json::to_value(sample).unwrap();
+                assert_eq!(serde_json::from_value::<Event>(encoded).unwrap(), sample);
+            }
+        }
+        assert_eq!(limiter.slots.len(), 19 * RESULTS);
     }
 }

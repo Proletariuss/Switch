@@ -7243,6 +7243,15 @@ mod tests {
     }
 }
 
+/// The display and voice-idle proof are derived from the same typed CLCC rows.
+pub(crate) fn project_call_observation(response: &str) -> (serde_json::Value, bool) {
+    let (display, safe_voice_idle) = call_state_projection::observe(response);
+    (
+        serde_json::to_value(display).expect("typed call state is serializable"),
+        safe_voice_idle,
+    )
+}
+
 pub(crate) fn project_call_state(response: &str) -> serde_json::Value {
     serde_json::to_value(call_state_projection::project(response))
         .unwrap_or_else(|_| serde_json::json!({"state":"unknown","incoming":false,"active":false}))
