@@ -271,7 +271,8 @@ impl Gate {
                 && s.reason_codes.iter().all(|reason| matches!(reason,
                     Reason::LegacyCallModeLock | Reason::LegacyAdbInterfaceLock
                     | Reason::LegacyLockProvenancePending | Reason::ModuleBackupPresent
-                    | Reason::LegacyVoiceRuntime | Reason::ReconciliationPending)))
+                    | Reason::LegacyVoiceRuntime | Reason::ReconciliationPending
+                    | Reason::UnreadableEvidence)))
     }
     pub(crate) fn begin_legacy_current(&self, root: &Path) -> Result<LegacyCurrentClaim, ()> {
         let _admission = self.0.admission.lock().unwrap_or_else(|e| e.into_inner());

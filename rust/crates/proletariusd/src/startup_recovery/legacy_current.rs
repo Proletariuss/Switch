@@ -82,6 +82,7 @@ struct Evidence {
     targets: Vec<UsbComposition>,
 }
 impl Evidence {
+    #[cfg(test)]
     fn capture(root: &File) -> Result<Self, Failure> { Self::capture_checked(root, &|| Ok(())) }
     fn capture_checked(root: &File, fence: &impl Fn() -> io::Result<()>) -> Result<Self, Failure> {
         fence().map_err(io_failure)?;
@@ -366,6 +367,12 @@ impl super::Coordinator {
             let final_check = scope.check();
             let released = scope.0.locks.lock().unwrap_or_else(|e| e.into_inner()).release();
             let witnesses = released?;
+            match &checked {
+                Err(_) => return Err(Failure::WorkerFailed),
+                Ok(Err(error)) if error.uncertain => return Err(Failure::CleanupUnconfirmed),
+                _ => {}
+            }
+            if final_check.is_err() { return Err(scope.failure()); }
             let device = match checked {
                 Ok(Ok(device)) => device,
                 Ok(Err(error)) if error.uncertain => return Err(Failure::CleanupUnconfirmed),
@@ -377,7 +384,6 @@ impl super::Coordinator {
                 Ok(Err(_)) => return Err(Failure::ReadbackUnconfirmed),
                 Err(_) => return Err(Failure::WorkerFailed),
             };
-            final_check.map_err(|_| Failure::EvidenceChanged)?;
             Ok(Some(Completed { deadline, claim, root, evidence, witnesses, device, #[cfg(test)] fixture_reopen: None }))
         }).await.map_err(|_| Failure::WorkerFailed)?
     }
