@@ -29,6 +29,7 @@ impl Gate {
 }
 #[derive(Default)]
 struct Physical {
+    current_cfun: Mutex<Option<u8>>,
     commands: Mutex<Vec<String>>,
     open_gate: Mutex<Option<Arc<Gate>>>,
     open_error: Mutex<Option<TransportError>>,
@@ -68,7 +69,8 @@ impl Transport for Port {
             if let Some(gate) = gate {
                 gate.wait();
             }
-            return Ok("+CFUN: 4\r\nOK\r\n".into());
+            let cfun = self.0.current_cfun.lock().unwrap().unwrap_or(4);
+            return Ok(format!("+CFUN: {cfun}\r\nOK\r\n"));
         }
         // An ordinary SIM rejecting a logical eUICC channel is an expected,
         // best-effort warmup failure, not permission to skip RF bootstrap.
@@ -858,4 +860,39 @@ async fn usbnet_http_waits_for_real_startup_warm_channel_cleanup_before_one_writ
         .modem
         .shutdown()
         .expect("final modem close acknowledgement");
+}
+
+#[tokio::test]
+async fn verified_usb_startup_never_probes_serial_or_applies_startup_flight_policy() {
+    for cfun in [0, 1, 4] {
+        let fixture = Fixture::new();
+        *fixture.physical.current_cfun.lock().unwrap() = Some(cfun);
+        fixture.radio.preserve_current_startup_cfun();
+        let service = fixture.start(Probe::VerifiedUsb);
+        until(|| fixture.usb.native_sms_ready()).await;
+        assert_eq!(*service.selection().borrow(), Selection::NativeUsb);
+        assert_eq!(fixture.physical.opens.load(Ordering::SeqCst), 1);
+        assert!(fixture.physical.commands.lock().unwrap().iter()
+            .all(|command| !command.starts_with("AT+CFUN=")),
+            "current-baseline startup observes the mode; it cannot apply old preferences");
+        fixture.close(&service).await;
+    }
+}
+
+#[tokio::test]
+async fn verified_usb_first_open_failure_never_falls_back_or_retries_discovery() {
+    let fixture = Fixture::new();
+    *fixture.physical.open_error.lock().unwrap() = Some(TransportError {
+        code: "legacy_current_device_unconfirmed", message: "fixed fixture".into(),
+        response: String::new(), uncertain: false,
+    });
+    let service = fixture.start(Probe::VerifiedUsb);
+    until(|| service.last_error().is_some()).await;
+    assert_eq!(fixture.physical.opens.load(Ordering::SeqCst), 1);
+    assert_eq!(*service.selection().borrow(), Selection::Failed { code: "legacy_current_device_unconfirmed" });
+    assert!(service.shutdown().await.is_err());
+    fixture.radio.begin_shutdown();
+    fixture.radio.finish_shutdown().await.unwrap();
+    fixture.usb.shutdown().await.unwrap();
+    fixture.modem.shutdown().unwrap();
 }

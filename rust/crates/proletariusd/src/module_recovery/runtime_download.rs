@@ -264,6 +264,10 @@ fn verify_source_binding(root: &File, source: &Source) -> io::Result<()> {
 }
 fn verify_layout(root: &File, store: &File, receipt: &Receipt, runtime_manifest: &RuntimeManifest)
     -> io::Result<(File, File, bool)> {
+    verify_layout_inner(root, store, receipt, runtime_manifest, true)
+}
+fn verify_layout_inner(root: &File, store: &File, receipt: &Receipt, runtime_manifest: &RuntimeManifest,
+    check_artifacts: bool) -> io::Result<(File, File, bool)> {
     names(store, &[RECEIPT, COMMITTED, STAGED, FILES, REVOKED])?;
     if receipt.policy != "controlled-runtime-download-v1"
         || receipt.version_name != runtime_manifest.version
@@ -282,7 +286,17 @@ fn verify_layout(root: &File, store: &File, receipt: &Receipt, runtime_manifest:
         return Err(invalid());
     }
     names(&runtime, &[&receipt.version_name, ".download.lock"])?;
-    verify_artifacts(&version, &runtime_manifest.files)?;
+    if check_artifacts {
+        verify_artifacts(&version, &runtime_manifest.files)?;
+    } else {
+        for name in proletarius_platform_fs::directory_names(&version, runtime_manifest.files.len())? {
+            if !runtime_manifest.files.iter().any(|a| name == a.name.as_str()) { return Err(invalid()); }
+            let entry = stamp(&version, name.to_str().ok_or_else(invalid)?)?.ok_or_else(invalid)?;
+            if !regular(&entry) || entry.size < 0 || entry.size > crate::call_mode_runtime_manifest::MAX_ARTIFACT_BYTES as i64 {
+                return Err(invalid());
+            }
+        }
+    }
     // Scratch bytes never appear in the runtime tree or establish permission.
     validate_scratch(&files, &runtime_manifest.files, false)?;
     Ok((runtime, files, published))
@@ -479,10 +493,13 @@ pub(crate) fn invalidate(root: &Path) -> io::Result<()> {
     write_new(&store, REVOKED, &[])
 }
 
-/// A complete retained download is data for the separate fixed physical read.
+/// Retained known cache bytes are data for the separate fixed physical read.
 /// An empty revoked fence denotes intent, not proof of a completed mutation.
 /// Nothing here suppresses pending_intent or authorizes ordinary work.
 pub(crate) fn legacy_current_source(root: &File) -> io::Result<bool> {
+    legacy_current_source_with_manifest(root, manifest())
+}
+fn legacy_current_source_with_manifest(root: &File, runtime_manifest: &RuntimeManifest) -> io::Result<bool> {
     let Some(before) = stamp(root, DIRECTORY)? else { return Ok(false); };
     let store = open_dir(root, DIRECTORY)?;
     let receipt = read_receipt(&store)?;
@@ -500,9 +517,8 @@ pub(crate) fn legacy_current_source(root: &File) -> io::Result<bool> {
     // A missing pristine source requires the actual immutable intent fence.
     if receipt.source.pristine.is_some() && current_pristine.is_none()
         && stamp(&store, REVOKED)?.is_none() { return Err(invalid()); }
-    let (_, files, published) = verify_layout(root, &store, &receipt, manifest())?;
-    if !published || !proletarius_platform_fs::directory_names(&files, 1)?.is_empty()
-        || stamp(root, DIRECTORY)? != Some(before) { return Err(invalid()); }
+    let (_, _, published) = verify_layout_inner(root, &store, &receipt, runtime_manifest, false)?;
+    if !published || stamp(root, DIRECTORY)? != Some(before) { return Err(invalid()); }
     Ok(true)
 }
 

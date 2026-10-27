@@ -241,3 +241,32 @@ fn retired_download_obligation_survives_removal_of_original_slots() {
         assert!(gate.admit_operation("normal").is_err());
     }
 }
+
+#[test]
+fn revoked_known_partial_cache_is_only_input_for_physical_baseline_and_never_data_permission() {
+    for legacy in [false, true] {
+        let f = Fixture::new(legacy);
+        drop(f.begin().unwrap().unwrap());
+        let artifact = f.root.join(RUNTIME).join(&f.runtime.version).join("fixture.bin");
+        fs::write(&artifact, b"bad").unwrap();
+        fs::set_permissions(&artifact, fs::Permissions::from_mode(0o644)).unwrap();
+        crate::call_mode_lifecycle::invalidate_pristine_marker(&f.root).unwrap();
+        let gate = f.gate();
+        assert!(gate.is_quarantined());
+        f.lease.as_ref().unwrap().root_proof().with_root(&f.root, |root| {
+            assert!(legacy_current_source_with_manifest(root, &f.runtime).unwrap());
+            assert!(pending_intent(root).unwrap());
+            let runtime = open_dir(root, RUNTIME).unwrap();
+            let version = open_dir(&runtime, &f.runtime.version).unwrap();
+            assert!(verify_artifacts(&version, &f.runtime.files).is_err(),
+                "real deployment integrity remains required");
+        }).unwrap();
+        assert!(gate.admit_operation("metadata-only-must-not-open").is_err());
+        assert_eq!(fs::read(&artifact).unwrap(), b"bad");
+        assert!(f.root.join(DIRECTORY).join(REVOKED).exists());
+        fs::write(f.root.join(DIRECTORY).join(RECEIPT), b"{}").unwrap();
+        f.lease.as_ref().unwrap().root_proof().with_root(&f.root, |root| {
+            assert!(legacy_current_source_with_manifest(root, &f.runtime).is_err());
+        }).unwrap();
+    }
+}

@@ -400,6 +400,9 @@ impl EvidenceTree {
                 .map_err(|_| invalid("legacy backup data"))
         }).collect()
     }
+    pub(super) fn has_legacy_current_data(&self) -> bool {
+        self.entries[4].is_some() || self.entries[5].is_some()
+    }
     pub(super) fn verify_legacy_current_runtime(&self) -> io::Result<()> {
         for index in [0, 6, 7] {
             if self.entries[index].is_some() { return Err(invalid("pending current baseline obligation")); }
@@ -414,26 +417,26 @@ impl EvidenceTree {
         let Some(runtime) = &self.entries[5] else { return Ok(()); };
         let manifest = crate::call_mode_runtime_manifest::manifest();
         if !runtime.stamp.directory() { return Err(invalid("legacy runtime shape")); }
-        let version = runtime.children.iter().find(|n| n.name == manifest.version.as_str())
-            .ok_or_else(|| invalid("legacy runtime version"))?;
-        if !version.stamp.directory() || version.children.len() != manifest.files.len() {
-            return Err(invalid("legacy runtime artifact set"));
-        }
         for node in &runtime.children {
-            if node.name == manifest.version.as_str() { continue; }
-            if node.name != ".download.lock" || !node.stamp.regular()
-                || !node.bytes.is_empty() || node.stamp.mode & 0o7133 != 0 {
-                return Err(invalid("legacy runtime extra entry"));
+            if node.name == ".download.lock" {
+                if !node.stamp.regular() || !node.bytes.is_empty() || node.stamp.mode & 0o7133 != 0 {
+                    return Err(invalid("legacy runtime lock"));
+                }
+                continue;
             }
-        }
-        for artifact in &manifest.files {
-            let node = version.children.iter().find(|n| n.name == artifact.name.as_str())
-                .ok_or_else(|| invalid("legacy runtime missing artifact"))?;
-            if !node.stamp.regular() || node.stamp.mode & 0o7777 != artifact.mode {
-                return Err(invalid("legacy runtime artifact mode"));
+            if node.name != manifest.version.as_str() || !node.stamp.directory()
+                || node.children.len() > manifest.files.len() {
+                return Err(invalid("legacy runtime unknown entry"));
             }
-            crate::call_mode_runtime::verify_artifact_bytes(artifact, &node.bytes)
-                .map_err(|_| invalid("legacy runtime artifact bytes"))?;
+            for artifact in &node.children {
+                if !artifact.stamp.regular()
+                    || !manifest.files.iter().any(|known| artifact.name == known.name.as_str()) {
+                    return Err(invalid("legacy runtime unknown artifact"));
+                }
+                // Known cache bytes may be absent, partial or corrupt. They
+                // remain pinned data and are never executed by this reader.
+                // The existing deploy/download path retains full hash checks.
+            }
         }
         Ok(())
     }

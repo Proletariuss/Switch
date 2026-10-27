@@ -15,7 +15,7 @@ use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-const BUDGET: Duration = Duration::from_secs(60);
+const BUDGET: Duration = Duration::from_secs(30);
 const ABSENT: &[&str] = &[
     crate::module_recovery::LEGACY_EXECUTION_PENDING,
     crate::call_mode_restore_journal::ACTIVE_NAME,
@@ -25,7 +25,7 @@ const ABSENT: &[&str] = &[
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum Failure {
-    Ineligible, EvidenceChanged, Busy, Cancelled, DeviceUnconfirmed,
+    Ineligible, EvidenceChanged, Busy, Cancelled, Timeout, DeviceUnconfirmed,
     ReadbackUnconfirmed, HelperUnconfirmed, CleanupUnconfirmed, WorkerFailed,
 }
 impl Failure {
@@ -35,6 +35,7 @@ impl Failure {
             Self::EvidenceChanged => "legacy_current_evidence_changed",
             Self::Busy => "legacy_current_busy",
             Self::Cancelled => "legacy_current_cancelled",
+            Self::Timeout => "legacy_current_timeout",
             Self::DeviceUnconfirmed => "legacy_current_device_unconfirmed",
             Self::ReadbackUnconfirmed => "legacy_current_readback_unconfirmed",
             Self::HelperUnconfirmed => "legacy_current_helper_unconfirmed",
@@ -49,6 +50,7 @@ impl Failure {
             Self::EvidenceChanged => Code::Stale,
             Self::Busy => Code::Busy,
             Self::Cancelled => Code::Stopped,
+            Self::Timeout => Code::Timeout,
             Self::DeviceUnconfirmed => Code::BindingMissing,
             Self::ReadbackUnconfirmed => Code::OutcomeUnknown,
             Self::HelperUnconfirmed => Code::CallUnconfirmed,
@@ -80,14 +82,16 @@ struct Evidence {
     targets: Vec<UsbComposition>,
 }
 impl Evidence {
-    fn capture(root: &File) -> Result<Self, Failure> {
+    fn capture(root: &File) -> Result<Self, Failure> { Self::capture_checked(root, &|| Ok(())) }
+    fn capture_checked(root: &File, fence: &impl Fn() -> io::Result<()>) -> Result<Self, Failure> {
+        fence().map_err(io_failure)?;
         require_absent(root).map_err(|_| Failure::Ineligible)?;
-        let tree = EvidenceTree::capture_legacy_current(root, &|| Ok(())).map_err(io_failure)?;
+        let tree = EvidenceTree::capture_legacy_current(root, fence).map_err(io_failure)?;
         let legacy = crate::module_recovery::legacy_locks::legacy_current_source(root).map_err(|_| Failure::Ineligible)?;
         let download = crate::module_recovery::runtime_download::legacy_current_source(root).map_err(|_| Failure::Ineligible)?;
         let data = crate::startup_recovery::reconcile::backup_lifecycle::legacy_current_data_only(root).map_err(|_| Failure::Ineligible)?;
         let backups = tree.legacy_current_backups().map_err(|_| Failure::Ineligible)?;
-        if backups.is_empty() && !legacy && !download && !data { return Err(Failure::Ineligible); }
+        if !tree.has_legacy_current_data() && !legacy && !download && !data { return Err(Failure::Ineligible); }
         let imei = backups.first().map(|first| zeroize::Zeroizing::new(first.module.imei.clone()));
         let mut targets = Vec::new();
         for backup in backups {
@@ -99,6 +103,7 @@ impl Evidence {
         }
         tree.verify_legacy_current_runtime().map_err(|_| Failure::Ineligible)?;
         require_absent(root).map_err(io_failure)?;
+        tree.verify(fence).map_err(io_failure)?;
         Ok(Self { tree, imei, targets })
     }
     fn verify(&self, root: &File, fence: &impl Fn() -> io::Result<()>) -> io::Result<()> {
@@ -173,13 +178,23 @@ impl ReadScope {
         valid.map_err(|_| io::Error::other("legacy current authority ended"))?;
         self.0.locks.lock().map_err(|_| io::Error::other("legacy locks poisoned"))?.validate()
     }
+    fn failure(&self) -> Failure {
+        if self.0.cancelled.load(Ordering::Acquire) { Failure::Cancelled }
+        else if Instant::now() >= self.0.deadline { Failure::Timeout }
+        else { Failure::EvidenceChanged }
+    }
+    pub(crate) fn io_fence(&self) -> Result<(), TransportError> {
+        self.cheap().and_then(|()| self.0.claim.root_proof()
+            .with_root(&self.0.root, |_| ()).map_err(|_| io::Error::other("legacy root changed")))
+            .map_err(|_| Self::error(self.failure()))
+    }
     pub(crate) fn check(&self) -> Result<(), TransportError> {
         let result = self.cheap().and_then(|()| {
             self.0.claim.root_proof().with_root(&self.0.root, |root| {
                 self.0.evidence.verify(root, &|| self.cheap())
             }).map_err(|_| io::Error::other("legacy current root changed"))?
         });
-        result.map_err(|_| Self::error(Failure::EvidenceChanged))
+        result.map_err(|_| Self::error(self.failure()))
     }
     pub(crate) fn error(failure: Failure) -> TransportError {
         TransportError {
@@ -189,19 +204,21 @@ impl ReadScope {
     }
     pub(crate) fn admission(&self) -> crate::module_radio::CallAdmission {
         let scope = self.clone();
-        Arc::new(move || scope.check().is_ok())
+        Arc::new(move || scope.io_fence().is_ok())
     }
     pub(crate) fn deadline(&self) -> Instant { self.0.deadline }
     pub(crate) fn expected_imei(&self) -> Option<&str> { self.0.evidence.imei.as_ref().map(|id| id.as_str()) }
     pub(crate) fn accepts_usb(&self, usb: UsbComposition) -> bool {
-        usb.valid() && usb.flags[5] == 1 && usb.flags[6] == 1
-            && (self.0.evidence.targets.is_empty() || self.0.evidence.targets.contains(&usb))
+        usb.valid() && (self.0.evidence.targets.is_empty()
+            || self.0.evidence.targets.iter().any(|known|
+                known.vendor_id == usb.vendor_id && known.product_id == usb.product_id))
     }
 }
 
 /// An opaque current observation, bound to one original Gate/root and device.
 /// It is deliberately not serializable and is never accepted across lifetimes.
 pub(crate) struct Completed {
+    deadline: Instant,
     claim: Arc<LegacyCurrentClaim>,
     root: PathBuf,
     evidence: Arc<Evidence>,
@@ -213,6 +230,7 @@ pub(crate) struct Completed {
 impl Completed {
     pub(crate) fn claim(&self) -> &LegacyCurrentClaim { &self.claim }
     pub(crate) fn verify(&self, gate: &Gate) -> Result<(), ()> {
+        if Instant::now() >= self.deadline { return Err(()); }
         self.claim.validate(gate)?;
         self.claim.root_proof().with_root(&self.root, |root| {
             for witness in &self.witnesses { witness.validate()?; }
@@ -220,13 +238,14 @@ impl Completed {
         }).map_err(|_| ())?.map_err(|_| ())
     }
     pub(crate) fn into_seed(self) -> Seed {
-        Seed { claim: self.claim, root: self.root, evidence: self.evidence, device: self.device, opened: AtomicBool::new(false), #[cfg(test)] fixture_reopen: self.fixture_reopen }
+        Seed { deadline: self.deadline, claim: self.claim, root: self.root, evidence: self.evidence, device: self.device, opened: AtomicBool::new(false), #[cfg(test)] fixture_reopen: self.fixture_reopen }
     }
 }
 
 /// The ordinary opener must re-check the same retained physical Device before
 /// publishing its session. It cannot enumerate another module or a serial port.
 pub(crate) struct Seed {
+    deadline: Instant,
     opened: AtomicBool,
     claim: Arc<LegacyCurrentClaim>,
     root: PathBuf,
@@ -241,6 +260,7 @@ impl Seed {
         if let Err(error) = &result {
             self.claim.revoke(gate);
             if error.uncertain { Failure::CleanupUnconfirmed.record(); }
+            else if error.code == Failure::Timeout.code() { Failure::Timeout.record(); }
             else { Failure::DeviceUnconfirmed.record(); }
         }
         result
@@ -255,7 +275,7 @@ impl Seed {
         let scope = ReadScope(Arc::new(ReadState {
             gate: gate.clone(), claim: self.claim.clone(), root: self.root.clone(),
             evidence: self.evidence.clone(), locks: Mutex::new(locks),
-            deadline: Instant::now() + BUDGET, cancelled: Arc::new(AtomicBool::new(false)), activated: true,
+            deadline: self.deadline, cancelled: Arc::new(AtomicBool::new(false)), activated: true,
         }));
         #[cfg(test)]
         let result = match self.fixture_reopen {
@@ -306,21 +326,29 @@ impl super::Coordinator {
         inspect: fn(&ReadScope) -> Result<crate::usb_at_transport::legacy_current::VerifiedDevice, TransportError>,
     ) -> Result<Option<Completed>, Failure> {
         if !gate.legacy_current_eligible() { return Ok(None); }
-        let proof = gate.root_proof_for(root).map_err(io_failure)?;
-        let eligible = proof.with_root(root, Evidence::capture).map_err(io_failure)?;
-        let original = match eligible {
-            Ok(value) => value,
-            Err(Failure::Ineligible) => return Ok(None),
-            Err(error) => return Err(error),
-        };
-        drop(original);
-        let claim = Arc::new(gate.begin_legacy_current(root).map_err(io_failure)?);
-        let root = root.to_owned();
         let gate = gate.clone();
+        let root = root.to_owned();
+        let deadline = Instant::now() + BUDGET;
         tokio::task::spawn_blocking(move || {
-            if cancelled.load(Ordering::Acquire) { return Err(Failure::Cancelled); }
+            let fence = || {
+                if cancelled.load(Ordering::Acquire) || Instant::now() >= deadline {
+                    Err(io::Error::other("legacy current interval ended"))
+                } else { Ok(()) }
+            };
+            let ended = || if cancelled.load(Ordering::Acquire) { Failure::Cancelled } else { Failure::Timeout };
+            fence().map_err(|_| ended())?;
+            let proof = gate.root_proof_for(&root).map_err(io_failure)?;
+            let eligible = proof.with_root(&root, |root| Evidence::capture_checked(root, &fence)).map_err(io_failure)?;
+            let original = match eligible {
+                Ok(value) => value,
+                Err(Failure::Ineligible) => return Ok(None),
+                Err(error) => return Err(error),
+            };
+            drop(original);
+            fence().map_err(|_| ended())?;
+            let claim = Arc::new(gate.begin_legacy_current(&root).map_err(io_failure)?);
             let locks = Locks::acquire(&root, &claim)?;
-            let evidence = match claim.root_proof().with_root(&root, Evidence::capture) {
+            let evidence = match claim.root_proof().with_root(&root, |root| Evidence::capture_checked(root, &fence)) {
                 Ok(Ok(evidence)) => Arc::new(evidence),
                 _ => {
                     let mut locks = locks;
@@ -330,7 +358,7 @@ impl super::Coordinator {
             };
             let scope = ReadScope(Arc::new(ReadState {
                 gate, claim: claim.clone(), root: root.clone(), evidence: evidence.clone(),
-                locks: Mutex::new(locks), deadline: Instant::now() + BUDGET, cancelled, activated: false,
+                locks: Mutex::new(locks), deadline, cancelled, activated: false,
             }));
             let checked = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 inspect(&scope)
@@ -343,11 +371,14 @@ impl super::Coordinator {
                 Ok(Err(error)) if error.uncertain => return Err(Failure::CleanupUnconfirmed),
                 Ok(Err(error)) if error.code == Failure::HelperUnconfirmed.code() =>
                     return Err(Failure::HelperUnconfirmed),
+                Ok(Err(error)) if error.code == Failure::Timeout.code() => return Err(Failure::Timeout),
+                Ok(Err(error)) if error.code == Failure::Cancelled.code() => return Err(Failure::Cancelled),
+                Ok(Err(error)) if error.code == Failure::DeviceUnconfirmed.code() => return Err(Failure::DeviceUnconfirmed),
                 Ok(Err(_)) => return Err(Failure::ReadbackUnconfirmed),
                 Err(_) => return Err(Failure::WorkerFailed),
             };
             final_check.map_err(|_| Failure::EvidenceChanged)?;
-            Ok(Some(Completed { claim, root, evidence, witnesses, device, #[cfg(test)] fixture_reopen: None }))
+            Ok(Some(Completed { deadline, claim, root, evidence, witnesses, device, #[cfg(test)] fixture_reopen: None }))
         }).await.map_err(|_| Failure::WorkerFailed)?
     }
 }
