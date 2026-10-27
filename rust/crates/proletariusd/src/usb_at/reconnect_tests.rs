@@ -6,6 +6,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 pub(crate) const IMEI: &str = "123456789012345";
 pub(crate) struct Trace {
     pub(crate) commands: Mutex<Vec<String>>,
+    pub(crate) clcc_response: Mutex<String>,
     pub(crate) drops: AtomicUsize,
     pub(crate) anchor_enabled: AtomicBool,
     pub(crate) reboot_uncertain: AtomicBool,
@@ -20,6 +21,7 @@ impl Default for Trace {
     fn default() -> Self {
         Self {
             commands: Mutex::new(Vec::new()),
+            clcc_response: Mutex::new("\r\nOK\r\n".into()),
             drops: AtomicUsize::new(0),
             anchor_enabled: AtomicBool::new(true),
             reboot_uncertain: AtomicBool::new(false),
@@ -99,7 +101,7 @@ impl Transport for TestTransport {
                 });
             }
             "ATI" => "test firmware\r\nOK\r\n".into(),
-            "AT+CLCC" => "\r\nOK\r\n".into(),
+            "AT+CLCC" => self.trace.clcc_response.lock().unwrap().clone(),
             "AT+CFUN?" => "+CFUN: 1\r\nOK\r\n".into(),
             "AT+QCFG=\"ims\"" => format!("+QCFG: \"ims\",{},1\r\nOK\r\n", voice.0),
             "AT+QCFG=\"volte_disable\"" => {

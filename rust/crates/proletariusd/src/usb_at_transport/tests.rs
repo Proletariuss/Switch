@@ -1120,4 +1120,6 @@ mod tests {
         }
     }
 
+    include!("clcc_wire_tests.rs");
+
 }

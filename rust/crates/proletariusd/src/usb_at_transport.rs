@@ -749,7 +749,12 @@ impl Transport for NativeTransport {
         timeout: Duration,
         max_bytes: usize,
     ) -> Result<String, TransportError> {
-        self.execute_command(command, follow_up, timeout, max_bytes, false)
+        // CLCC proves voice-idle for call ownership and call-mode admission.
+        // Preserve its wire terminal before normalization can turn a deadline
+        // fragment ending in "OK" into an apparently confirmed observation.
+        // Other ordinary commands retain their partial-response compatibility.
+        let require_terminal = command.trim() == "AT+CLCC";
+        self.execute_command(command, follow_up, timeout, max_bytes, require_terminal)
     }
     fn status_command(
         &mut self,
