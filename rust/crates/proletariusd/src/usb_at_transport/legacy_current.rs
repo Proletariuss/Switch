@@ -163,10 +163,22 @@ fn settle<T>(result: Result<T, TransportError>, closed: Result<(), TransportErro
     closed?;
     result
 }
+// This private fixed AT probe distinguishes complete submission followed by
+// empty read exhaustion from a write timeout/partial write. Generic transport
+// error codes deliberately cannot grant permission to try another candidate.
+fn probe_at(port: &mut NativeTransport, timeout: Duration) -> Result<Option<String>, TransportError> {
+    let deadline = port.io.now().checked_add(timeout).ok_or_else(timeout_error)?;
+    port.drain(deadline, 4096)?;
+    port.write_once(b"AT\r", deadline, &[], false)?;
+    match port.collect(None, deadline, 4096, true) {
+        Err(error) if error.code == "usb_at_timeout" && error.response.is_empty() => Ok(None),
+        result => result.map(Some),
+    }
+}
 // Probe only AT on already claimed interfaces of the same captured Device.
-// Only complete ERROR or an empty wire timeout permits another candidate.
+// Only complete ERROR or confirmed empty read exhaustion permits another candidate.
 fn select_candidate(scope: &impl Authority, candidates: &[Candidate], fixed: Option<u8>,
-    mut probe: impl FnMut(Candidate, Duration) -> Result<String, TransportError>)
+    mut probe: impl FnMut(Candidate, Duration) -> Result<Option<String>, TransportError>)
     -> Result<Candidate, TransportError> {
     for candidate in candidates {
         if fixed.is_some_and(|interface| interface != candidate.interface) { continue; }
@@ -177,10 +189,10 @@ fn select_candidate(scope: &impl Authority, candidates: &[Candidate], fixed: Opt
             return Err(error);
         }
         match response {
-            Ok(response) if probe_succeeded(&response) => return Ok(*candidate),
-            Ok(response) if response.lines().any(|line| line.trim() == "ERROR")
+            Ok(Some(response)) if probe_succeeded(&response) => return Ok(*candidate),
+            Ok(Some(response)) if response.lines().any(|line| line.trim() == "ERROR")
                 && response.lines().all(|line| matches!(line.trim(), "" | "AT" | "ERROR")) => {},
-            Err(error) if error.code == "usb_at_timeout" && error.response.is_empty() => {},
+            Ok(None) => {},
             Err(error) => return Err(if error.uncertain { cleanup_error() } else { read_error() }),
             _ => return Err(read_error()),
         }
@@ -414,7 +426,7 @@ mod native {
                 let index = expected.iter().position(|value| *value == candidate).ok_or_else(device_error)?;
                 selected.store(index, Ordering::Release);
                 port.command_guard = Some(scope.admission());
-                let result = port.execute_command("AT", None, timeout, 4096, true);
+                let result = probe_at(&mut port, timeout);
                 port.command_guard = None;
                 result
             })

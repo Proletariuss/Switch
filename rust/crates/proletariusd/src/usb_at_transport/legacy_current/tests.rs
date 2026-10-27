@@ -40,6 +40,8 @@ impl Io for Wire {
             "AT" if first && self.probe_reply == 2 => "ERROR\r\n".to_owned(),
             "AT" if first && self.probe_reply == 3 => return Err(IoError::Other),
             "AT" if first && self.probe_reply == 4 => "AT\r\nERROR\r\n".to_owned(),
+            "AT" if first && self.probe_reply == 5 => return Err(IoError::Timeout),
+            "AT" if first && self.probe_reply == 6 => return Ok(1),
             "AT" => "OK\r\n".to_owned(),
             "AT+CGSN" => "123456789012345\r\nOK\r\n".to_owned(),
             "ATI" => "Quectel fixture\r\nOK\r\n".to_owned(),
@@ -245,7 +247,7 @@ fn ordinary_startup_fixture_is_limited_to_known_aids_and_fixed_reads() {
 fn real_wire_probe_selects_only_same_owner_candidates_and_seals_first_open_interface() {
     let candidates = [2,3].map(|interface| Candidate {
         interface, alternate: 0, endpoint_in: 0x81, endpoint_out: 1 });
-    for mode in [1,2,3,4] {
+    for mode in [1,2,3,4,5,6] {
         let selected = Arc::new(std::sync::atomic::AtomicUsize::new(0));
         let trace = Arc::new(Mutex::new(Trace::default()));
         let mut transport = NativeTransport::new(Box::new(Wire {
@@ -258,10 +260,15 @@ fn real_wire_probe_selects_only_same_owner_candidates_and_seals_first_open_inter
         let mut run = |fixed| select_candidate(&Scope::new(), &candidates, fixed, |candidate, timeout| {
             attempted.push(candidate.interface);
             selected.store(usize::from(candidate.interface == 3), Ordering::Release);
-            transport.execute_command("AT", None, timeout, 4096, true)
+            probe_at(&mut transport, timeout)
         });
         let result = run(None);
-        if mode == 3 { assert!(result.is_err()); assert_eq!(attempted, [2]); }
+        if matches!(mode, 3 | 5 | 6) {
+            let error = result.unwrap_err();
+            assert!(error.uncertain);
+            assert_eq!(error.code, "legacy_current_cleanup_unconfirmed");
+            assert_eq!(attempted, [2]);
+        }
         else {
             assert_eq!(result.unwrap().interface, 3);
             assert_eq!(attempted, [2,3]);
@@ -270,7 +277,7 @@ fn real_wire_probe_selects_only_same_owner_candidates_and_seals_first_open_inter
             let result = select_candidate(&Scope::new(), &candidates, Some(2), |candidate, timeout| {
                 attempted.push(candidate.interface);
                 selected.store(0, Ordering::Release);
-                transport.execute_command("AT", None, timeout, 4096, true)
+                probe_at(&mut transport, timeout)
             });
             assert!(result.is_err());
             assert_eq!(attempted, [2]);
@@ -294,7 +301,7 @@ fn candidate_probe_revocation_deadline_and_uncertain_callback_never_fall_through
     let error = select_candidate(&scope, &candidates, None, |_, _| {
         calls += 1;
         scope.valid.store(false, Ordering::Release);
-        Ok("ERROR".into())
+        Ok(Some("ERROR".into()))
     }).unwrap_err();
     assert_eq!(calls, 1);
     assert_eq!(error.code, "legacy_current_readback_unconfirmed");
