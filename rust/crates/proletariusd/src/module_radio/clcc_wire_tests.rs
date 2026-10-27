@@ -48,8 +48,7 @@ impl Fixture {
         .with_recovery_gate_for_tests(gate.clone());
         let trace = reconnect_tests::install_default(&usb, SESSION);
         *trace.clcc_response.lock().unwrap() = response.into();
-        let modem =
-            crate::modem_actor::ModemActor::new_with_module_recovery(gate.clone()).unwrap();
+        let modem = crate::modem_actor::ModemActor::new_with_module_recovery(gate.clone()).unwrap();
         let radio = Service::new(
             root.clone(),
             usb.clone(),
@@ -94,15 +93,9 @@ impl Fixture {
             proletarius_store::ArchiveStore::new(root.join("calls.json")),
             PRODUCER.into(),
         );
-        let calls = crate::module_call::Service::new(
-            root.clone(),
-            radio.clone(),
-            inbox,
-            usb,
-            mode,
-            facts,
-        )
-        .unwrap();
+        let calls =
+            crate::module_call::Service::new(root.clone(), radio.clone(), inbox, usb, mode, facts)
+                .unwrap();
         Self {
             radio,
             calls,
@@ -140,7 +133,10 @@ impl Fixture {
             assert!(owner.operation_lock.is_some());
         }
         self.radio.call_mode_ensure_idle(&lease).await.unwrap();
-        self.radio.release_call_mode_operation(&lease).await.unwrap();
+        self.radio
+            .release_call_mode_operation(&lease)
+            .await
+            .unwrap();
         assert!(self.radio.0.state.lock().unwrap().reservation.is_none());
     }
 
@@ -195,7 +191,11 @@ async fn usb_packet_data_http_polling_and_idle_hangup_never_acquire_call_owner()
     let f = Fixture::new(DATA_ONLY).await;
     for _ in 0..3 {
         let value = f.status("idle").await;
-        assert!(!value["number"].as_str().is_some_and(|number| !number.is_empty()));
+        assert!(
+            !value["number"]
+                .as_str()
+                .is_some_and(|number| !number.is_empty())
+        );
         let state = f.radio.0.state.lock().unwrap();
         assert!(state.reservation.is_none());
         assert!(!state.waters.contains_key(&Purpose::Call));
@@ -210,9 +210,25 @@ async fn usb_packet_data_http_polling_and_idle_hangup_never_acquire_call_owner()
     let value = body(reply).await;
     assert_eq!(value["accepted"], true);
     assert_eq!(value["already_idle"], true);
-    assert!(!f.radio.0.state.lock().unwrap().waters.contains_key(&Purpose::Call));
+    assert!(
+        !f.radio
+            .0
+            .state
+            .lock()
+            .unwrap()
+            .waters
+            .contains_key(&Purpose::Call)
+    );
     f.mode_idle().await;
-    assert!(!f.radio.0.state.lock().unwrap().waters.contains_key(&Purpose::Call));
+    assert!(
+        !f.radio
+            .0
+            .state
+            .lock()
+            .unwrap()
+            .waters
+            .contains_key(&Purpose::Call)
+    );
     f.only_read_commands();
     f.finish().await;
 }
@@ -221,7 +237,11 @@ async fn usb_packet_data_http_polling_and_idle_hangup_never_acquire_call_owner()
 async fn usb_anonymous_voice_owner_blocks_mode_until_data_only_releases_exact_lease() {
     let f = Fixture::new(VOICE).await;
     let value = f.status("active").await;
-    assert!(!value["number"].as_str().is_some_and(|number| !number.is_empty()));
+    assert!(
+        !value["number"]
+            .as_str()
+            .is_some_and(|number| !number.is_empty())
+    );
     until(|| {
         f.radio
             .0

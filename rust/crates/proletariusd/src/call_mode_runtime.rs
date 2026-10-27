@@ -405,7 +405,10 @@ mod tests {
                 if !linked {
                     assert_eq!(fs::read(&entry).unwrap(), b"existing entry");
                 }
-                assert_eq!(fs::read(root.join("outside/sentinel")).unwrap(), b"untouched");
+                assert_eq!(
+                    fs::read(root.join("outside/sentinel")).unwrap(),
+                    b"untouched"
+                );
                 fs::remove_file(&entry).unwrap();
             }
         }

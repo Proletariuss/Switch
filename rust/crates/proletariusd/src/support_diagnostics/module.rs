@@ -464,7 +464,11 @@ mod tests {
         let mut limiter = Limiter::default();
         let now = Instant::now();
         for stage in [Stage::CallQueryAdmission, Stage::CallQueryPhysical] {
-            for code in [Code::CallVoiceIdle, Code::CallVoicePresent, Code::CallUnconfirmed] {
+            for code in [
+                Code::CallVoiceIdle,
+                Code::CallVoicePresent,
+                Code::CallUnconfirmed,
+            ] {
                 let mut sample = event(ResultKind::Succeeded, code);
                 sample.stage = stage;
                 assert!(limiter.observe(sample, now).is_some());

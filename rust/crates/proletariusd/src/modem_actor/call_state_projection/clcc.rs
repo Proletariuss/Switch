@@ -63,7 +63,11 @@ fn fields(text: &str) -> Option<Vec<Field>> {
             }
         } else if character == ',' {
             result.push(Field {
-                value: if was_quoted { value } else { value.trim().into() },
+                value: if was_quoted {
+                    value
+                } else {
+                    value.trim().into()
+                },
                 quoted: was_quoted,
             });
             if result.len() >= 8 {
@@ -97,7 +101,11 @@ fn fields(text: &str) -> Option<Vec<Field>> {
         return None;
     }
     result.push(Field {
-        value: if was_quoted { value } else { value.trim().into() },
+        value: if was_quoted {
+            value
+        } else {
+            value.trim().into()
+        },
         quoted: was_quoted,
     });
     Some(result)
@@ -119,7 +127,9 @@ fn row(text: &str) -> Option<Row> {
     Some(Row {
         status,
         mode,
-        number: fields.get(5).map_or_else(String::new, |field| field.value.clone()),
+        number: fields
+            .get(5)
+            .map_or_else(String::new, |field| field.value.clone()),
         complete: fields.len() != 6,
     })
 }
@@ -143,7 +153,11 @@ pub(super) fn observe(response: &str) -> Observation {
     let mut incoming = false;
     let mut active = false;
     let mut selected: Option<Row> = None;
-    for line in response.lines().map(str::trim).filter(|line| !line.is_empty()) {
+    for line in response
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+    {
         terminal = Some(line);
         if line == "OK" {
             terminal_count += 1;
@@ -195,7 +209,8 @@ pub(super) fn observe(response: &str) -> Observation {
                 3 => "alerting",
                 2 => "dialing",
                 _ => unreachable!("only live voice rows are selected"),
-            }.into(),
+            }
+            .into(),
             number: row.number,
             incoming,
             active,
@@ -206,7 +221,10 @@ pub(super) fn observe(response: &str) -> Observation {
             ..CallState::default()
         }
     };
-    Observation { display, safe_voice_idle }
+    Observation {
+        display,
+        safe_voice_idle,
+    }
 }
 
 #[cfg(test)]

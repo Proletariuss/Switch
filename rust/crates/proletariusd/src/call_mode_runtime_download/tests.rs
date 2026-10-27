@@ -146,7 +146,11 @@ fn downloads_all_six_pinned_artifacts_with_permissions_and_reuses_verified_cache
     .unwrap();
     assert_eq!(transport.calls.lock().unwrap().len(), 6);
     assert_eq!(
-        std::fs::metadata(root.version()).unwrap().permissions().mode() & 0o777,
+        std::fs::metadata(root.version())
+            .unwrap()
+            .permissions()
+            .mode()
+            & 0o777,
         0o700
     );
     assert_eq!(

@@ -53,7 +53,11 @@ fn full_standard_fields_and_quoted_alpha_do_not_leak_into_number() {
         assert_eq!(observed.display["incoming"], true);
         assert_eq!(
             observed.display["number"],
-            if suffix.starts_with("\"+") { "+123" } else { "123" }
+            if suffix.starts_with("\"+") {
+                "+123"
+            } else {
+                "123"
+            }
         );
     }
 }
@@ -61,7 +65,14 @@ fn full_standard_fields_and_quoted_alpha_do_not_leak_into_number() {
 #[test]
 fn data_rows_before_or_after_real_voice_never_override_voice_state_or_number() {
     let data = "+CLCC: 1,0,0,1,0,\"\",128";
-    for (status, expected) in [(0, "active"), (1, "active"), (2, "dialing"), (3, "alerting"), (4, "incoming"), (5, "incoming")] {
+    for (status, expected) in [
+        (0, "active"),
+        (1, "active"),
+        (2, "dialing"),
+        (3, "alerting"),
+        (4, "incoming"),
+        (5, "incoming"),
+    ] {
         let voice = format!("+CLCC: 2,1,{status},0,0,\"123\",129");
         for lines in [format!("{data}\r\n{voice}"), format!("{voice}\r\n{data}")] {
             let observed = snapshot(&format!("{lines}\r\nOK"));
@@ -70,7 +81,9 @@ fn data_rows_before_or_after_real_voice_never_override_voice_state_or_number() {
             assert_eq!(observed.display["number"], "123");
         }
     }
-    let observed = snapshot("+CLCC: 1,1,4,0,0,\"123\",129\r\n+CLCC: 2,0,0,0,0,\"456\",129\r\n+CLCC: 3,0,0,1,0,\"\",128\r\nOK");
+    let observed = snapshot(
+        "+CLCC: 1,1,4,0,0,\"123\",129\r\n+CLCC: 2,0,0,0,0,\"456\",129\r\n+CLCC: 3,0,0,1,0,\"\",128\r\nOK",
+    );
     assert_eq!(observed.display["state"], "active");
     assert_eq!(observed.display["number"], "456");
     assert_eq!(observed.display["incoming"], true);
@@ -148,7 +161,10 @@ fn call_urcs_and_unrecognized_tail_cannot_clear_existing_voice() {
         }
     }
     assert!(snapshot("AT+CLCC\r\nOK").safe_idle);
-    assert!(snapshot("OK").safe_idle, "the transport returns normalized terminal text");
+    assert!(
+        snapshot("OK").safe_idle,
+        "the transport returns normalized terminal text"
+    );
 }
 
 #[test]
@@ -157,5 +173,11 @@ fn parser_row_and_field_limits_never_turn_truncation_into_idle() {
     assert!(snapshot(&(data.repeat(MAX_ROWS) + "OK")).safe_idle);
     assert!(!snapshot(&(data.repeat(MAX_ROWS + 1) + "OK")).safe_idle);
     assert!(!snapshot(&(" ".repeat(MAX_BYTES + 1) + "OK")).safe_idle);
-    assert!(!snapshot(&format!("+CLCC: 1,0,0,1,0,\"{}\",128\r\nOK", "x".repeat(MAX_FIELD_BYTES + 1))).safe_idle);
+    assert!(
+        !snapshot(&format!(
+            "+CLCC: 1,0,0,1,0,\"{}\",128\r\nOK",
+            "x".repeat(MAX_FIELD_BYTES + 1)
+        ))
+        .safe_idle
+    );
 }

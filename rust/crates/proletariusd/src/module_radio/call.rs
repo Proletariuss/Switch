@@ -426,8 +426,11 @@ impl Service {
                 .clone();
             let Some(binding) = binding else {
                 self.record_module_snapshot(
-                    Stage::CallQueryAdmission, ResultKind::Failed, Code::BindingMissing,
-                    self.module_diagnostic_snapshot(), started.elapsed(),
+                    Stage::CallQueryAdmission,
+                    ResultKind::Failed,
+                    Code::BindingMissing,
+                    self.module_diagnostic_snapshot(),
+                    started.elapsed(),
                 );
                 while self.release_call_mode_operation(&read).await.is_err() {
                     tokio::time::sleep(Duration::from_millis(100)).await;
@@ -866,7 +869,9 @@ mod tests {
         receiver: &mut tokio::sync::mpsc::Receiver<crate::support_diagnostics::module::Event>,
     ) -> Vec<crate::support_diagnostics::module::Event> {
         let mut events = Vec::new();
-        while let Ok(event) = receiver.try_recv() { events.push(event); }
+        while let Ok(event) = receiver.try_recv() {
+            events.push(event);
+        }
         events
     }
     fn finish_diagnostic_fixture(service: &Service) {
@@ -882,31 +887,56 @@ mod tests {
         let mut events = service.module_diagnostics_for_test();
         let lease = service.reserve_call().await.unwrap();
         let acquired = diagnostic_events(&mut events);
-        assert!(acquired.iter().any(|event| event.stage == Stage::ReservationAcquire
-            && event.result == ResultKind::Succeeded && event.owner.owner == Owner::Call));
+        assert!(
+            acquired
+                .iter()
+                .any(|event| event.stage == Stage::ReservationAcquire
+                    && event.result == ResultKind::Succeeded
+                    && event.owner.owner == Owner::Call)
+        );
 
         for (response, expected) in [
             ("+CLCC: 1,0,0,1,0,\"\",128\r\nOK", Code::CallVoiceIdle),
-            ("+CLCC: 1,0,0,0,0,\"private-number\",129\r\nOK", Code::CallVoicePresent),
+            (
+                "+CLCC: 1,0,0,0,0,\"private-number\",129\r\nOK",
+                Code::CallVoicePresent,
+            ),
             ("+CLCC: broken\r\nOK", Code::CallUnconfirmed),
         ] {
             let worker = service.clone();
             let current = lease.clone();
             let query = tokio::spawn(async move { worker.query_call_state(Some(&current)).await });
             let (action, reply) = tokio::time::timeout(Duration::from_secs(3), requests.recv())
-                .await.unwrap().unwrap();
+                .await
+                .unwrap()
+                .unwrap();
             assert!(matches!(action, Action::CellularCallRead));
-            reply.send(Ok(Outcome { complete: true, verified: true, response: response.into(),
-                ..Outcome::default() })).unwrap();
+            reply
+                .send(Ok(Outcome {
+                    complete: true,
+                    verified: true,
+                    response: response.into(),
+                    ..Outcome::default()
+                }))
+                .unwrap();
             let snapshot = query.await.unwrap().unwrap();
             assert_eq!(snapshot.safe_idle, expected == Code::CallVoiceIdle);
             let records = diagnostic_events(&mut events);
-            let evidence = records.iter().find(|event| event.stage == Stage::CallQueryPhysical).unwrap();
+            let evidence = records
+                .iter()
+                .find(|event| event.stage == Stage::CallQueryPhysical)
+                .unwrap();
             assert_eq!(evidence.result, ResultKind::Succeeded);
             assert_eq!(evidence.code, expected);
             assert_eq!(evidence.owner.owner, Owner::Call);
             let encoded = serde_json::to_string(evidence).unwrap();
-            for secret in ["private-number", "+CLCC", lease.token.as_str(), "response", "number"] {
+            for secret in [
+                "private-number",
+                "+CLCC",
+                lease.token.as_str(),
+                "response",
+                "number",
+            ] {
                 assert!(!encoded.contains(secret), "{encoded}");
             }
         }
@@ -915,14 +945,24 @@ mod tests {
         stale.sequence += 1;
         assert!(service.release_call(&stale).await.is_err());
         let failed = diagnostic_events(&mut events);
-        assert!(failed.iter().any(|event| event.stage == Stage::ReservationRelease
-            && event.result == ResultKind::Failed && event.code == Code::Stale
-            && event.owner.owner == Owner::Call));
+        assert!(
+            failed
+                .iter()
+                .any(|event| event.stage == Stage::ReservationRelease
+                    && event.result == ResultKind::Failed
+                    && event.code == Code::Stale
+                    && event.owner.owner == Owner::Call)
+        );
         assert!(service.call_reservation_current(&lease));
         service.release_call(&lease).await.unwrap();
         let released = diagnostic_events(&mut events);
-        assert!(released.iter().any(|event| event.stage == Stage::ReservationRelease
-            && event.result == ResultKind::Succeeded && event.owner.owner == Owner::None));
+        assert!(
+            released
+                .iter()
+                .any(|event| event.stage == Stage::ReservationRelease
+                    && event.result == ResultKind::Succeeded
+                    && event.owner.owner == Owner::None)
+        );
         assert!(requests.try_recv().is_err());
         finish_diagnostic_fixture(&service);
     }
@@ -933,19 +973,40 @@ mod tests {
         let (service, mut requests) = fixture();
         let lease = service.reserve_esim().await.unwrap();
         let mut events = service.module_diagnostics_for_test();
-        assert_eq!(service.query_call_state(None).await.unwrap_err().code, "module_radio_busy");
-        assert_eq!(service.reserve_call().await.unwrap_err().code, "module_radio_busy");
+        assert_eq!(
+            service.query_call_state(None).await.unwrap_err().code,
+            "module_radio_busy"
+        );
+        assert_eq!(
+            service.reserve_call().await.unwrap_err().code,
+            "module_radio_busy"
+        );
         let records = diagnostic_events(&mut events);
         assert!(records.iter().any(|event| event.stage == Stage::Admission
-            && event.result == ResultKind::Deferred && event.code == Code::ReservationConflict
+            && event.result == ResultKind::Deferred
+            && event.code == Code::ReservationConflict
             && event.owner.owner == Owner::Esim));
-        assert!(records.iter().any(|event| event.stage == Stage::CallQueryAdmission
-            && event.result == ResultKind::Failed && event.code == Code::Busy
-            && event.owner.owner == Owner::Esim));
-        assert!(records.iter().any(|event| event.stage == Stage::ReservationAcquire
-            && event.result == ResultKind::Failed && event.code == Code::Busy
-            && event.owner.owner == Owner::Esim));
-        assert!(!records.iter().any(|event| event.stage == Stage::CallQueryPhysical));
+        assert!(
+            records
+                .iter()
+                .any(|event| event.stage == Stage::CallQueryAdmission
+                    && event.result == ResultKind::Failed
+                    && event.code == Code::Busy
+                    && event.owner.owner == Owner::Esim)
+        );
+        assert!(
+            records
+                .iter()
+                .any(|event| event.stage == Stage::ReservationAcquire
+                    && event.result == ResultKind::Failed
+                    && event.code == Code::Busy
+                    && event.owner.owner == Owner::Esim)
+        );
+        assert!(
+            !records
+                .iter()
+                .any(|event| event.stage == Stage::CallQueryPhysical)
+        );
         assert!(requests.try_recv().is_err());
         service.release_esim(&lease).await.unwrap();
         finish_diagnostic_fixture(&service);
@@ -958,11 +1019,22 @@ mod tests {
         let mut events = service.module_diagnostics_for_test();
         let mut stale = lease.clone();
         stale.epoch += 1;
-        assert_eq!(service.query_call_state(Some(&stale)).await.unwrap_err().code,
-            "radio_stale_generation");
+        assert_eq!(
+            service
+                .query_call_state(Some(&stale))
+                .await
+                .unwrap_err()
+                .code,
+            "radio_stale_generation"
+        );
         let records = diagnostic_events(&mut events);
-        assert!(records.iter().any(|event| event.stage == Stage::CallQueryPhysical
-            && event.result == ResultKind::Failed && event.code == Code::Stale));
+        assert!(
+            records
+                .iter()
+                .any(|event| event.stage == Stage::CallQueryPhysical
+                    && event.result == ResultKind::Failed
+                    && event.code == Code::Stale)
+        );
         // The actor accepted the job, but rejected its lease before physical I/O.
         assert!(requests.try_recv().is_err());
         service.release_call(&lease).await.unwrap();
@@ -970,9 +1042,17 @@ mod tests {
         service.begin_shutdown();
         assert!(service.query_call_state(Some(&lease)).await.is_err());
         let records = diagnostic_events(&mut events);
-        assert!(records.iter().any(|event| event.stage == Stage::CallQueryAdmission
-            && event.result == ResultKind::Failed));
-        assert!(!records.iter().any(|event| event.stage == Stage::CallQueryPhysical));
+        assert!(
+            records
+                .iter()
+                .any(|event| event.stage == Stage::CallQueryAdmission
+                    && event.result == ResultKind::Failed)
+        );
+        assert!(
+            !records
+                .iter()
+                .any(|event| event.stage == Stage::CallQueryPhysical)
+        );
         assert!(requests.try_recv().is_err());
         finish_diagnostic_fixture(&service);
     }
@@ -984,23 +1064,34 @@ mod tests {
         let worker = service.clone();
         let query = tokio::spawn(async move { worker.query_call_state(None).await });
         let (action, reply) = tokio::time::timeout(Duration::from_secs(3), requests.recv())
-            .await.unwrap().unwrap();
+            .await
+            .unwrap()
+            .unwrap();
         assert!(matches!(action, Action::CellularCallRead));
         query.abort();
         assert!(query.await.unwrap_err().is_cancelled());
-        reply.send(Ok(Outcome { complete: true, verified: true,
-            response: "+CLCC: 1,0,0,1,0,\"\",128\r\nOK".into(),
-            ..Outcome::default() })).unwrap();
+        reply
+            .send(Ok(Outcome {
+                complete: true,
+                verified: true,
+                response: "+CLCC: 1,0,0,1,0,\"\",128\r\nOK".into(),
+                ..Outcome::default()
+            }))
+            .unwrap();
         tokio::time::timeout(Duration::from_secs(3), async {
             let mut completed = false;
             let mut released = false;
             while !(completed && released) {
                 let event = events.recv().await.unwrap();
                 completed |= event.stage == Stage::CallQueryPhysical
-                    && event.result == ResultKind::Succeeded && event.code == Code::CallVoiceIdle;
-                released |= event.stage == Stage::ReservationRelease && event.result == ResultKind::Succeeded;
+                    && event.result == ResultKind::Succeeded
+                    && event.code == Code::CallVoiceIdle;
+                released |= event.stage == Stage::ReservationRelease
+                    && event.result == ResultKind::Succeeded;
             }
-        }).await.unwrap();
+        })
+        .await
+        .unwrap();
         assert!(service.0.state.lock().unwrap().reservation.is_none());
         let next = service.reserve_call().await.unwrap();
         service.release_call(&next).await.unwrap();
@@ -1014,10 +1105,16 @@ mod tests {
         let lease = service.reserve_call().await.unwrap();
         let mut events = service.module_diagnostics_for_test();
         for _ in 0..128 {
-            service.record_call_result(Stage::ReservationAcquire, &Ok::<_, Failure>(()), Duration::ZERO);
+            service.record_call_result(
+                Stage::ReservationAcquire,
+                &Ok::<_, Failure>(()),
+                Duration::ZERO,
+            );
         }
         tokio::time::timeout(Duration::from_secs(3), service.release_call(&lease))
-            .await.unwrap().unwrap();
+            .await
+            .unwrap()
+            .unwrap();
         assert!(!service.call_reservation_current(&lease));
         assert_eq!(diagnostic_events(&mut events).len(), 64);
         assert!(requests.try_recv().is_err());

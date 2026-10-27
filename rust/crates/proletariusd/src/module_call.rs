@@ -442,10 +442,7 @@ impl Service {
                         let observed = self.0.driver.query(Some(lease.clone())).await;
                         self.sync_binding(self.0.driver.binding());
                         match observed {
-                            Ok(value)
-                                if value.safe_idle
-                                    && self.0.driver.lease_current(&lease) =>
-                            {
+                            Ok(value) if value.safe_idle && self.0.driver.lease_current(&lease) => {
                                 self.0.state.end(revision, OffsetDateTime::now_utc())
                             }
                             Ok(value) if self.0.driver.lease_current(&lease) => {

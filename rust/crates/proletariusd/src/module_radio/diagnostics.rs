@@ -115,7 +115,13 @@ impl Service {
             Ok(_) => (ResultKind::Succeeded, Code::None),
             Err(error) => (ResultKind::Failed, Code::from_error(error.code)),
         };
-        self.record_module_snapshot(stage, result, code, self.module_diagnostic_snapshot(), elapsed);
+        self.record_module_snapshot(
+            stage,
+            result,
+            code,
+            self.module_diagnostic_snapshot(),
+            elapsed,
+        );
     }
 
     pub(super) fn record_call_query(
@@ -125,17 +131,28 @@ impl Service {
         elapsed: Duration,
     ) {
         let (result, code) = match result {
-            Ok(snapshot) => (ResultKind::Succeeded, if snapshot.safe_idle {
-                Code::CallVoiceIdle
-            } else if matches!(snapshot.display.get("state").and_then(Value::as_str),
-                Some("active" | "dialing" | "alerting" | "incoming")) {
-                Code::CallVoicePresent
-            } else {
-                Code::CallUnconfirmed
-            }),
+            Ok(snapshot) => (
+                ResultKind::Succeeded,
+                if snapshot.safe_idle {
+                    Code::CallVoiceIdle
+                } else if matches!(
+                    snapshot.display.get("state").and_then(Value::as_str),
+                    Some("active" | "dialing" | "alerting" | "incoming")
+                ) {
+                    Code::CallVoicePresent
+                } else {
+                    Code::CallUnconfirmed
+                },
+            ),
             Err(error) => (ResultKind::Failed, Code::from_error(error.code)),
         };
-        self.record_module_snapshot(stage, result, code, self.module_diagnostic_snapshot(), elapsed);
+        self.record_module_snapshot(
+            stage,
+            result,
+            code,
+            self.module_diagnostic_snapshot(),
+            elapsed,
+        );
     }
 
     pub(super) async fn submit_usbnet_with_diagnostics(

@@ -41,13 +41,29 @@ async fn confirmed_data_only_observation_releases_exact_prior_call_without_repla
     *fake.0.default_state.lock().unwrap() = wire(VOICE);
     assert_eq!(data(service.status().await).await["state"], "active");
     lease_present(&service, true).await;
-    let token = service.0.physical.lock().await.lease.as_ref().unwrap().token.clone();
+    let token = service
+        .0
+        .physical
+        .lock()
+        .await
+        .lease
+        .as_ref()
+        .unwrap()
+        .token
+        .clone();
     fake.0.release_failures.store(1, Ordering::Release);
     *fake.0.default_state.lock().unwrap() = wire(DATA_ONLY);
     assert_eq!(data(service.status().await).await["state"], "idle");
     lease_present(&service, false).await;
     assert!(fake.0.releases.lock().unwrap().len() >= 2);
-    assert!(fake.0.releases.lock().unwrap().iter().all(|value| value == &token));
+    assert!(
+        fake.0
+            .releases
+            .lock()
+            .unwrap()
+            .iter()
+            .all(|value| value == &token)
+    );
     assert_eq!(data(service.status().await).await["state"], "idle");
     assert_eq!(fake.0.reserve_count.load(Ordering::Acquire), 1);
     assert!(fake.0.actions.lock().unwrap().is_empty());
@@ -60,7 +76,10 @@ async fn standard_anonymous_voice_held_and_mixed_calls_keep_radio_protection() {
         ("anonymous", VOICE),
         ("held", "+CLCC: 1,0,1,0,0,\"\",128\r\nOK\r\n"),
         ("incoming", "+CLCC: 1,1,4,0,0,\"\",128\r\nOK\r\n"),
-        ("mixed", "+CLCC: 1,0,0,0,0,\"\",128\r\n+CLCC: 2,0,0,1,0,\"\",128\r\nOK\r\n"),
+        (
+            "mixed",
+            "+CLCC: 1,0,0,0,0,\"\",128\r\n+CLCC: 2,0,0,1,0,\"\",128\r\nOK\r\n",
+        ),
     ] {
         let (service, fake, root) = fixture(name);
         *fake.0.default_state.lock().unwrap() = wire(response);
@@ -83,7 +102,11 @@ async fn ath_ok_without_voice_idle_never_claims_hangup_or_stops_audio() {
         ("incomplete", "+CLCC: 1,0,0,1,0,\"\",128\r\n"),
     ] {
         let (service, fake, root) = fixture(name);
-        fake.0.queries.lock().unwrap().extend([wire(VOICE), wire(VOICE), wire(after)]);
+        fake.0
+            .queries
+            .lock()
+            .unwrap()
+            .extend([wire(VOICE), wire(VOICE), wire(after)]);
         *fake.0.default_state.lock().unwrap() = wire(after);
         let response = service.execute(Action::Hangup, String::new()).await;
         assert_eq!(response.status(), StatusCode::OK);
@@ -94,7 +117,10 @@ async fn ath_ok_without_voice_idle_never_claims_hangup_or_stops_audio() {
         assert!(!value["warning"].as_str().unwrap().is_empty());
         assert!(service.0.state.snapshot().desired_active);
         assert!(service.0.physical.lock().await.lease.is_some());
-        assert_eq!(fake.0.actions.lock().unwrap().as_slice(), &[(Action::Hangup, String::new())]);
+        assert_eq!(
+            fake.0.actions.lock().unwrap().as_slice(),
+            &[(Action::Hangup, String::new())]
+        );
         assert_eq!(fake.0.audio_stops.load(Ordering::Acquire), 0);
         finish(service, root).await;
     }
@@ -103,7 +129,11 @@ async fn ath_ok_without_voice_idle_never_claims_hangup_or_stops_audio() {
 #[tokio::test]
 async fn ath_ack_then_confirmed_data_only_query_ends_voice_and_cleans_audio_once() {
     let (service, fake, root) = fixture("hangup-confirmed");
-    fake.0.queries.lock().unwrap().extend([wire(VOICE), wire(VOICE), wire(DATA_ONLY)]);
+    fake.0
+        .queries
+        .lock()
+        .unwrap()
+        .extend([wire(VOICE), wire(VOICE), wire(DATA_ONLY)]);
     *fake.0.default_state.lock().unwrap() = wire(DATA_ONLY);
     let value = data(service.execute(Action::Hangup, String::new()).await).await;
     assert_eq!(value["confirmed"], true);
@@ -111,7 +141,10 @@ async fn ath_ack_then_confirmed_data_only_query_ends_voice_and_cleans_audio_once
     assert_eq!(service.0.state.snapshot().display["state"], "idle");
     lease_present(&service, false).await;
     assert_eq!(fake.0.audio_stops.load(Ordering::Acquire), 1);
-    assert_eq!(fake.0.actions.lock().unwrap().as_slice(), &[(Action::Hangup, String::new())]);
+    assert_eq!(
+        fake.0.actions.lock().unwrap().as_slice(),
+        &[(Action::Hangup, String::new())]
+    );
     assert_eq!(data(service.status().await).await["state"], "idle");
     assert_eq!(fake.0.reserve_count.load(Ordering::Acquire), 1);
     finish(service, root).await;
@@ -120,7 +153,11 @@ async fn ath_ack_then_confirmed_data_only_query_ends_voice_and_cleans_audio_once
 #[tokio::test]
 async fn ring_during_hangup_confirmation_cannot_be_ended_by_late_data_query() {
     let (service, fake, root) = fixture("hangup-confirmation-ring");
-    fake.0.queries.lock().unwrap().extend([wire(VOICE), wire(VOICE), wire(DATA_ONLY)]);
+    fake.0
+        .queries
+        .lock()
+        .unwrap()
+        .extend([wire(VOICE), wire(VOICE), wire(DATA_ONLY)]);
     fake.0.execute_wait.store(true, Ordering::Release);
     let observer = tokio::spawn(service.execute(Action::Hangup, String::new()));
     signal(&fake.0.execute_entered).await;
@@ -167,7 +204,10 @@ async fn unknown_initial_hangup_keeps_protection_until_terminal_evidence() {
     let lease = service.0.physical.lock().await.lease.clone().unwrap();
     assert_hangup_queries_keep_lease(&fake, &lease);
     assert!(fake.0.releases.lock().unwrap().is_empty());
-    assert_eq!(fake.0.actions.lock().unwrap().as_slice(), &[(Action::Hangup, String::new())]);
+    assert_eq!(
+        fake.0.actions.lock().unwrap().as_slice(),
+        &[(Action::Hangup, String::new())]
+    );
     assert_eq!(fake.0.audio_stops.load(Ordering::Acquire), 0);
     finish(service, root).await;
 }
@@ -193,7 +233,10 @@ async fn unknown_initial_hangup_with_failed_confirmation_keeps_exact_lease() {
     let lease = service.0.physical.lock().await.lease.clone().unwrap();
     assert_hangup_queries_keep_lease(&fake, &lease);
     assert!(fake.0.releases.lock().unwrap().is_empty());
-    assert_eq!(fake.0.actions.lock().unwrap().as_slice(), &[(Action::Hangup, String::new())]);
+    assert_eq!(
+        fake.0.actions.lock().unwrap().as_slice(),
+        &[(Action::Hangup, String::new())]
+    );
     assert_eq!(fake.0.audio_stops.load(Ordering::Acquire), 0);
     finish(service, root).await;
 }
@@ -227,7 +270,10 @@ async fn failed_hangup_confirmation_cannot_replace_newer_ring_or_terminal() {
             lease_present(&service, false).await;
         }
         assert_hangup_queries_keep_lease(&fake, &lease);
-        assert_eq!(fake.0.actions.lock().unwrap().as_slice(), &[(Action::Hangup, String::new())]);
+        assert_eq!(
+            fake.0.actions.lock().unwrap().as_slice(),
+            &[(Action::Hangup, String::new())]
+        );
         assert_eq!(fake.0.audio_stops.load(Ordering::Acquire), 0);
         finish(service, root).await;
     }
