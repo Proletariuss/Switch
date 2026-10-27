@@ -651,7 +651,7 @@ private final class ObservationClock {
 @MainActor
 private func checkObservationBudget(root: URL) async throws {
     require(BackendStartupObservation.budget == 210, "finite recovery observation budget changed")
-    for readyAt: TimeInterval in [6, 200] {
+    for readyAt in [TimeInterval(6), TimeInterval(200)] {
         let clock = ObservationClock()
         let fixture = try Fixture(root: root, name: "observed-\(Int(readyAt))",
                                   mode: "owned-idle", observation: clock.observation)
