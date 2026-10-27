@@ -168,6 +168,9 @@ impl Observation {
     }
 
     pub(super) fn legacy_current(&mut self, result: LegacyCurrent) {
+        if matches!(result, LegacyCurrent::CleanupUnconfirmed | LegacyCurrent::WorkerFailed) {
+            self.cleanup(Cleanup::Unconfirmed);
+        }
         if !matches!(self.startup.legacy_current,
             LegacyCurrent::CleanupUnconfirmed | LegacyCurrent::WorkerFailed) {
             self.startup.legacy_current = result;
@@ -420,6 +423,7 @@ mod tests {
                 LegacyCurrent::DeviceUnconfirmed, LegacyCurrent::Started] {
                 observation.legacy_current(later);
                 assert_eq!(observation.snapshot().startup.legacy_current, sticky);
+                assert_eq!(observation.snapshot().startup.cleanup, Cleanup::Unconfirmed);
             }
         }
     }
