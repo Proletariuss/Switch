@@ -1,0 +1,272 @@
+name: Einmalige Normalisierung Live-Diagnose 356
+on:
+  push:
+    branches:
+      - automation/dji-live-prepare-356
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: switch-dji-live-prepare-356
+  cancel-in-progress: false
+
+jobs:
+  normalize:
+    if: github.repository == 'Proletariuss/Switch' && github.ref == 'refs/heads/automation/dji-live-prepare-356'
+    runs-on: macos-26
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+      bundle_sha256: ${{ steps.generate.outputs.bundle_sha256 }}
+    steps:
+      - name: Kontrollcode des genauen Workflow-Commits lesen
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          path: control
+          persist-credentials: false
+      - name: Gepruefte Quellen unveraendert lesen
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 0fb7591d2922c220209e5934bef31c4adccb0e12
+          path: src
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: 1.98.0
+          components: rustfmt
+      - name: XcodeGen fuer die gepruefte Projektspezifikation installieren
+        run: brew install xcodegen
+      - name: Nur genehmigte Formatierung, Projektdatei und Vertragsmetadaten erzeugen
+        id: generate
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/automation/dji-live-prepare-356
+          test "$(git -C control rev-parse HEAD)" = "$GITHUB_SHA"
+          python3 control/scripts/ci/dji-live-prepare-356.py "$GITHUB_WORKSPACE/src" "$GITHUB_WORKSPACE/out"
+      - name: Quellengebundene Aenderungen hochladen
+        id: upload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: dji-live-normalized-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/changes.json
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: normalize
+    if: needs.normalize.result == 'success' && github.repository == 'Proletariuss/Switch' && github.ref == 'refs/heads/automation/dji-live-prepare-356'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Ausschliesslich das Artefakt dieses Laufs lesen
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          artifact-ids: ${{ needs.normalize.outputs.artifact_id }}
+          path: normalized
+          merge-multiple: true
+      - name: Daten pruefen und nur den temporaeren Branch fortschreiben
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ needs.normalize.outputs.artifact_id }}
+          BUNDLE_SHA256: ${{ needs.normalize.outputs.bundle_sha256 }}
+          ARTIFACT_DIRECTORY: ${{ github.workspace }}/normalized
+        run: |
+          python3 - <<'PY'
+          import base64
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import stat
+          import urllib.request
+          
+          REPOSITORY = "Proletariuss/Switch"
+          BRANCH = "automation/dji-live-prepare-356"
+          SOURCE_SHA = "0fb7591d2922c220209e5934bef31c4adccb0e12"
+          SOURCE_TREE = "beed012caa44c7d7f55ae786ffdee446644fd15a"
+          WORKFLOW_PATH = ".github/workflows/dji-live-prepare-356.yml"
+          GENERATOR_PATH = "scripts/ci/dji-live-prepare-356.py"
+          ALLOWED = set([
+              "rust/crates/proletariusd/src/main.rs",
+              "rust/crates/proletariusd/src/support_diagnostics.rs",
+              "rust/crates/proletariusd/src/support_diagnostics/live.rs",
+              "docs/optimization/all-rust/api-contract-review.json",
+              "docs/optimization/all-rust/api-contract-inventory.json",
+              "Switch.xcodeproj/project.pbxproj"
+          ])
+          LIMITS = {path: 524288 for path in ALLOWED}
+          LIMITS["docs/optimization/all-rust/api-contract-review.json"] = 2097152
+          LIMITS["docs/optimization/all-rust/api-contract-inventory.json"] = 4194304
+          
+          def require(condition, message):
+              if not condition:
+                  raise RuntimeError(message)
+          
+          def unique(pairs):
+              value = {}
+              for key, item in pairs:
+                  require(key not in value, "duplicate JSON key")
+                  value[key] = item
+              return value
+          
+          def parse(data):
+              return json.loads(data, object_pairs_hook=unique)
+          
+          def sha(data):
+              return hashlib.sha256(data).hexdigest()
+          
+          def blob_sha(data):
+              return hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+          
+          def request(path, data=None, method=None):
+              url = "https://api.github.com/repos/" + REPOSITORY + "/" + path
+              body = None if data is None else json.dumps(data).encode()
+              headers = {"Authorization": "Bearer " + os.environ["GH_TOKEN"],
+                         "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28",
+                         "User-Agent": "switch-reviewed-live-normalizer"}
+              req = urllib.request.Request(url, data=body, headers=headers, method=method)
+              with urllib.request.urlopen(req, timeout=60) as response:
+                  payload = response.read(16777217)
+                  require(len(payload) <= 16777216, "API response too large")
+                  return parse(payload)
+          
+          def branch_head():
+              return request("git/ref/heads/" + BRANCH)["object"]["sha"]
+          
+          def read_blob(identity, maximum):
+              row = request("git/blobs/" + identity)
+              require(row["sha"] == identity and row["encoding"] == "base64", "blob identity mismatch")
+              raw = base64.b64decode(row["content"], validate=False)
+              require(0 < len(raw) <= maximum and row["size"] == len(raw), "blob size mismatch")
+              require(blob_sha(raw) == identity, "blob readback hash mismatch")
+              return raw
+          
+          tree_cache = {}
+          def leaf(tree_sha, path):
+              parts = path.split("/")
+              for index, part in enumerate(parts):
+                  if tree_sha not in tree_cache:
+                      value = request("git/trees/" + tree_sha)
+                      require(value["sha"] == tree_sha and not value.get("truncated"), "tree unavailable")
+                      entries = {item["path"]: item for item in value["tree"]}
+                      require(len(entries) == len(value["tree"]), "duplicate tree entry")
+                      tree_cache[tree_sha] = entries
+                  require(part in tree_cache[tree_sha], "source path missing")
+                  node = tree_cache[tree_sha][part]
+                  if index == len(parts) - 1:
+                      require(node["type"] == "blob" and node["mode"] == "100644", "unexpected file mode")
+                      return node["sha"]
+                  require(node["type"] == "tree" and node["mode"] == "040000", "non-directory ancestor")
+                  tree_sha = node["sha"]
+          
+          require(os.environ.get("GITHUB_ACTIONS") == "true", "workflow only")
+          require(os.environ["GITHUB_REPOSITORY"] == REPOSITORY, "wrong repository")
+          require(os.environ["GITHUB_REF"] == "refs/heads/" + BRANCH, "wrong publication branch")
+          workflow_sha = os.environ["GITHUB_SHA"]
+          run_id = os.environ["GITHUB_RUN_ID"]
+          attempt = os.environ["GITHUB_RUN_ATTEMPT"]
+          artifact_id = os.environ["ARTIFACT_ID"]
+          require(re.fullmatch(r"[0-9a-f]{40}", workflow_sha), "invalid workflow identity")
+          require(all(re.fullmatch(r"[1-9][0-9]*", value) for value in [run_id, attempt, artifact_id]),
+                  "invalid run identity")
+          run = request("actions/runs/" + run_id)
+          require(run["head_sha"] == workflow_sha and run["head_branch"] == BRANCH
+                  and run["path"] == WORKFLOW_PATH and str(run["run_attempt"]) == attempt,
+                  "workflow run binding changed")
+          require(branch_head() == workflow_sha, "automation branch advanced")
+          workflow = request("git/commits/" + workflow_sha)
+          require([p["sha"] for p in workflow["parents"]] == [SOURCE_SHA], "unexpected workflow parent")
+          source = request("git/commits/" + SOURCE_SHA)
+          require(source["tree"]["sha"] == SOURCE_TREE, "source tree changed")
+          comparison = request("compare/" + SOURCE_SHA + "..." + workflow_sha)
+          require(comparison["total_commits"] == 1, "workflow is not one isolated source child")
+          require({f["filename"] for f in comparison["files"]} == {WORKFLOW_PATH, GENERATOR_PATH}
+                  and all(f["status"] == "added" for f in comparison["files"]),
+                  "temporary control commit altered reviewed source")
+          artifact = request("actions/artifacts/" + artifact_id)
+          require(not artifact["expired"]
+                  and artifact["name"] == "dji-live-normalized-" + run_id + "-" + attempt
+                  and str(artifact["workflow_run"]["id"]) == run_id
+                  and artifact["workflow_run"]["head_sha"] == workflow_sha, "artifact origin mismatch")
+          
+          directory = Path(os.environ["ARTIFACT_DIRECTORY"])
+          require(directory.is_dir() and not directory.is_symlink(), "unsafe artifact directory")
+          require([p.name for p in directory.iterdir()] == ["changes.json"], "unexpected artifact entries")
+          bundle_path = directory / "changes.json"
+          require(stat.S_ISREG(bundle_path.lstat().st_mode) and bundle_path.stat().st_nlink == 1,
+                  "unsafe artifact file")
+          require(0 < bundle_path.stat().st_size <= 16777216, "artifact size exceeded")
+          payload = bundle_path.read_bytes()
+          require(sha(payload) == os.environ["BUNDLE_SHA256"], "artifact SHA256 mismatch")
+          bundle = parse(payload)
+          require(set(bundle) == {"schema", "source_sha", "source_tree", "workflow_sha", "run_id", "run_attempt", "files"},
+                  "unexpected bundle schema")
+          require(bundle["schema"] == 1 and bundle["source_sha"] == SOURCE_SHA
+                  and bundle["source_tree"] == SOURCE_TREE and bundle["workflow_sha"] == workflow_sha
+                  and bundle["run_id"] == run_id and bundle["run_attempt"] == attempt, "bundle identity mismatch")
+          files = bundle["files"]
+          require(isinstance(files, list) and 0 < len(files) <= len(ALLOWED), "invalid file count")
+          paths = [row["path"] for row in files]
+          require(paths == sorted(set(paths)) and set(paths) <= ALLOWED, "file allowlist mismatch")
+          verified = []
+          total = 0
+          for row in files:
+              require(set(row) == {"path", "mode", "base_blob_sha", "before_sha256", "size", "sha256", "content_base64"},
+                      "unexpected file schema")
+              path = row["path"]
+              require(row["mode"] == "100644" and type(row["size"]) is int
+                      and 0 < row["size"] <= LIMITS[path], "file mode or size invalid")
+              require(re.fullmatch(r"[0-9a-f]{40}", row["base_blob_sha"])
+                      and re.fullmatch(r"[0-9a-f]{64}", row["sha256"])
+                      and re.fullmatch(r"[0-9a-f]{64}", row["before_sha256"]), "invalid file hash")
+              content = base64.b64decode(row["content_base64"], validate=True)
+              require(len(content) == row["size"] and sha(content) == row["sha256"], "content hash mismatch")
+              content.decode("utf-8")
+              require(leaf(SOURCE_TREE, path) == row["base_blob_sha"], "wrong source file")
+              original = read_blob(row["base_blob_sha"], LIMITS[path])
+              require(sha(original) == row["before_sha256"] and original != content, "before hash or delta mismatch")
+              verified.append((row, content))
+              total += len(content)
+          require(total <= 8388608, "aggregate output bound exceeded")
+          # No write is attempted before all rows, origins and exact parent/tree pass.
+          require(branch_head() == workflow_sha, "branch changed before publication")
+          entries = []
+          for row, content in verified:
+              stored = request("git/blobs", {"encoding": "base64", "content": row["content_base64"]})
+              require(stored["sha"] == blob_sha(content), "uploaded blob SHA mismatch")
+              require(read_blob(stored["sha"], LIMITS[row["path"]]) == content, "uploaded bytes differ")
+              entries.append({"path": row["path"], "mode": "100644", "type": "blob", "sha": stored["sha"]})
+          tree = request("git/trees", {"base_tree": SOURCE_TREE, "tree": entries})
+          for row in entries:
+              require(leaf(tree["sha"], row["path"]) == row["sha"], "published tree file differs")
+          # Base tree is the reviewed source, so neither temporary control file survives.
+          commit = request("git/commits", {
+              "message": "Normalisiere Live-Diagnose und synchronisiere das gepruefte Xcode-Projekt",
+              "tree": tree["sha"], "parents": [workflow_sha],
+          })
+          confirmed = request("git/commits/" + commit["sha"])
+          require(confirmed["tree"]["sha"] == tree["sha"]
+                  and [p["sha"] for p in confirmed["parents"]] == [workflow_sha], "commit readback differs")
+          require(branch_head() == workflow_sha, "branch changed before update")
+          request("git/refs/heads/" + BRANCH, {"sha": commit["sha"], "force": False}, "PATCH")
+          require(branch_head() == commit["sha"], "branch readback differs")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              print("Reviewed source: " + SOURCE_SHA + "\n", file=summary)
+              print("Normalized commit: " + commit["sha"] + "\n", file=summary)
+              print("Tree: " + tree["sha"] + "\n", file=summary)
+              print("Formatting, exact Xcode source references and bounded metadata only; final software gates remain required.", file=summary)
+          print(json.dumps({"source_sha": SOURCE_SHA, "commit": commit["sha"], "tree": tree["sha"],
+                            "files": paths}, indent=2))
+          
+          PY
