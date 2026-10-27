@@ -5,33 +5,143 @@ import UniformTypeIdentifiers
 struct SupportDiagnosticsView: View {
     @EnvironmentObject private var backend: BackendProcess
     @Environment(\.workspaceViewport) private var viewport
+    @StateObject private var live: LiveDiagnosticStore
+    @State private var visible = false
+    @State private var followLatest = true
+    @State private var warningsOnly = true
     @State private var exporting = false
     @State private var feedback: String?
     @State private var request: Task<Void, Never>?
     @State private var exportRevision: UInt64 = 0
 
+    @MainActor init(store: LiveDiagnosticStore? = nil) {
+        _live = StateObject(wrappedValue: store ?? LiveDiagnosticStore())
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: viewport.sectionSpacing) {
-            HStack(spacing: 12) {
-                WorkspaceSymbol(systemName: "doc.text.magnifyingglass", tint: WorkspaceColors.accent, size: 40)
-                WorkspaceSectionHeader(title: "运行日志与导出", detail: "默认持续记录，重启后保留最近日志。")
-                Spacer()
-                Button { export() } label: {
-                    Label(exporting ? "正在导出" : "导出诊断包", systemImage: "square.and.arrow.up")
-                }.disabled(exporting).controlSize(.small)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 12) { heading; Spacer(); actions }
+                VStack(alignment: .leading, spacing: 10) { heading; actions }
             }
-            Text("记录本机请求、错误码、恢复阶段、后台启动与退出。请求关联号用于串联界面与后台记录。")
-                .font(.callout).foregroundStyle(.secondary)
-            Text("日志自动轮转：后台最多 8 MiB，客户端最多 3 MiB。导出包不包含短信正文、电话号码、号卡身份、Bot 密钥或代理密码。")
+            Text("后台：\(backendState) · \(live.status)")
+                .font(.callout).foregroundStyle(live.updatedAt == nil ? Color.secondary : WorkspaceColors.accent)
+            if let updated = live.updatedAt {
+                Text("最近读取 \(updated.formatted(date: .omitted, time: .standard))")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            if let recovery = live.recovery {
+                Text(recovery + "。这是最近一次观察，不代表重新核验或完成历史恢复。")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text("模块恢复状态：当前未知，尚未取得有效的本次后台观察。")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Picker("显示记录", selection: $warningsOnly) {
+                Text("仅警告与错误").tag(true)
+                Text("全部记录").tag(false)
+            }.pickerStyle(.segmented).frame(maxWidth: 300)
+            ForEach(live.notices, id: \.self) { message in
+                Text(message).font(.caption).foregroundStyle(.orange)
+            }
+            Text("合并客户端、后台、模块与安全操作事件；最多显示最近 500 项。实时窗口只属于当前会话，隐藏此页后停止轮询；导出仍包含有界持久日志。")
                 .font(.caption).foregroundStyle(.secondary)
-            Text("后台不可用时仍可导出客户端记录；未获取、已轮转或写入失败的部分会在诊断包中明确标注。旧版本没有记录的历史无法补回。")
+                .fixedSize(horizontal: false, vertical: true)
+            if !followLatest {
+                Text("自动滚动已暂停，记录仍在更新；较早记录可能移出窗口。")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            if let feedback {
+                Text(feedback).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+            }
+            Divider()
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 8) {
+                        if displayedRows.isEmpty {
+                            Text(warningsOnly ? "当前筛选没有警告或错误，可切换到全部记录。" : "当前实时窗口还没有可显示的记录。")
+                                .foregroundStyle(.secondary).padding(.vertical, 16)
+                        }
+                        ForEach(displayedRows) { row in
+                            VStack(alignment: .leading, spacing: 5) {
+                                HStack(alignment: .firstTextBaseline) {
+                                    Text(row.source).font(.caption.weight(.semibold))
+                                    Text(row.title).font(.system(size: 12, weight: .medium, design: .monospaced))
+                                    Spacer(minLength: 8)
+                                    Text(row.date.formatted(date: .omitted, time: .standard))
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                                Text(row.detail).font(.system(size: 11, design: .monospaced))
+                                    .foregroundStyle(row.warning ? Color.orange : Color.secondary)
+                            }
+                            .textSelection(.enabled)
+                            .padding(10).frame(maxWidth: .infinity, alignment: .leading)
+                            .background(WorkspaceColors.inset, in: RoundedRectangle(cornerRadius: 8))
+                            .id(row.id)
+                        }
+                        Color.clear.frame(height: 1).id("live-log-bottom")
+                    }.frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .scrollIndicators(.visible)
+                .compatibleOnChange(of: displayedRows.last?.id ?? "") { _ in
+                    if followLatest { proxy.scrollTo("live-log-bottom", anchor: .bottom) }
+                }
+                .compatibleOnChange(of: followLatest) { follow in
+                    if follow { proxy.scrollTo("live-log-bottom", anchor: .bottom) }
+                }
+            }
+            Text("仅显示闭集技术字段，不含号码、短信正文、密钥或原始通信全文。诊断包的缺失、丢弃和写入失败会明确标注。")
                 .font(.caption).foregroundStyle(.secondary)
-            if let feedback { Text(feedback).font(.callout).foregroundStyle(.secondary).textSelection(.enabled) }
-            if exporting { ProgressView().controlSize(.small) }
-            Spacer()
         }
         .padding(viewport.cardPadding).workspaceCard()
-        .onDisappear { exportRevision &+= 1; request?.cancel(); request = nil; exporting = false }
+        .onAppear {
+            visible = true
+            live.setLifecycle(visible: true, running: backend.state == .running, instance: backend.childPID)
+        }
+        .onDisappear {
+            visible = false
+            live.setLifecycle(visible: false, running: backend.state == .running, instance: backend.childPID)
+            exportRevision &+= 1; request?.cancel(); request = nil; exporting = false
+        }
+        .compatibleOnChange(of: backend.state) { state in
+            live.setLifecycle(visible: visible, running: state == .running, instance: backend.childPID)
+        }
+        .compatibleOnChange(of: backend.childPID) { child in
+            live.setLifecycle(visible: visible, running: backend.state == .running, instance: child)
+        }
+    }
+
+    private var displayedRows: [LiveDiagnosticRow] {
+        warningsOnly ? live.rows.filter(\.warning) : live.rows
+    }
+
+    private var backendState: String {
+        switch backend.state {
+        case .running: return "运行中"
+        case .starting: return "启动中"
+        case .stopping: return "退出中"
+        case .stopped: return "已停止"
+        case .failed: return "启动或运行失败"
+        }
+    }
+
+    private var heading: some View {
+        HStack(spacing: 12) {
+            WorkspaceSymbol(systemName: "doc.text.magnifyingglass", tint: WorkspaceColors.accent, size: 40)
+            WorkspaceSectionHeader(title: "运行日志", detail: "实时查看安全状态、请求阶段与操作事件。")
+        }
+    }
+
+    private var actions: some View {
+        HStack(spacing: 10) {
+            Toggle("跟随最新", isOn: $followLatest).toggleStyle(.checkbox)
+                .help("关闭后暂停自动滚动，后台记录仍持续更新。")
+            Button { export() } label: {
+                Label(exporting ? "正在导出" : "导出诊断包", systemImage: "square.and.arrow.up")
+            }.disabled(exporting)
+            if exporting { ProgressView().controlSize(.small) }
+        }.controlSize(.small)
     }
 
     private func export() {

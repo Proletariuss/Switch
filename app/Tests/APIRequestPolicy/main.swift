@@ -161,6 +161,11 @@ private final class SafeDiagnosticRecorder: @unchecked Sendable {
         try expect(captured.take().allSatisfy { $0["request_id"] == nil }, "arbitrary request ID entered diagnostics")
         _ = try await APIClient().getData("api/diagnostics/support")
         try expect(captured.take().isEmpty, "support export recursively logged its own request")
+        _ = try await APIClient().getData("api/diagnostics/support?view=live")
+        try expect(UnixSocketURLProtocol.requests.last?.url?.path == "/api/diagnostics/support"
+            && UnixSocketURLProtocol.requests.last?.url?.query == "view=live",
+            "live diagnostics query was lost or became part of the path")
+        try expect(captured.take().isEmpty, "live diagnostics polling recursively logged itself")
         print("PASS production API observations: bounded correlation, safe routes/IDs/numeric errors, no bodies/query/credentials and no export recursion")
     }
 

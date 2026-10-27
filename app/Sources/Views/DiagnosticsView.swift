@@ -7,16 +7,15 @@ import UniformTypeIdentifiers
 /// 后续新增调试功能时新增一个 tab 及对应子视图即可，互不影响。
 struct DiagnosticsView: View {
     enum DebugTab: String, CaseIterable, Identifiable {
+        case support = "运行日志"
         case network = "网络诊断"
         case at = "AT 调试"
         case notify = "通知调试"
-        case events = "操作事件"
-        case support = "运行日志"
 
         var id: String { rawValue }
     }
 
-    @State private var tab: DebugTab = .network
+    @State private var tab: DebugTab = .support
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.workspaceViewport) private var viewport
 
@@ -39,15 +38,11 @@ struct DiagnosticsView: View {
             ModuleRecoveryStatusView()
                 .padding(.horizontal, viewport.pageInset)
 
-            SMSStoreHealthView()
-                .padding(.horizontal, viewport.pageInset)
-
             Group {
                 switch tab {
                 case .network: DiagnosticNetworkWorkspaceView()
                 case .at: DiagnosticATView()
                 case .notify: DiagnosticNotifyView()
-                case .events: DiagnosticEventsView()
                 case .support: SupportDiagnosticsView()
                 }
             }
@@ -71,12 +66,12 @@ struct DiagnosticsView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("DEVELOPER TOOLS · 调试与诊断")
                         .font(.system(size: 17, weight: .semibold))
-                    Text("网络验证、AT 指令、通知与安全操作记录。")
+                    Text("实时运行日志、网络验证、AT 指令与通知测试。")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
         } else {
-            WorkspaceHero(title: "调试与诊断", subtitle: "网络验证、AT 指令、通知与安全操作记录。", symbol: "stethoscope", eyebrow: "DEVELOPER TOOLS")
+            WorkspaceHero(title: "调试与诊断", subtitle: "实时运行日志、网络验证、AT 指令与通知测试。", symbol: "stethoscope", eyebrow: "DEVELOPER TOOLS")
         }
     }
 
