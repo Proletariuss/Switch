@@ -973,7 +973,8 @@ mod tests {
         let (owner, session) = crate::usb_at::Owner::native_module_fixture(Arc::new(move || {
             Ok(Box::new(slot.lock().unwrap().take().expect("no replacement open")))
         })).await;
-        owner.set_cellular_suppressed(true);
+        // Keep native_module_fixture's SMS admission enabled. The status
+        // transcript's actual CFUN=4 selects the RF-off collection plan.
         (owner, session, trace)
     }
 
@@ -1032,6 +1033,11 @@ mod tests {
         sms_identity_steps(&mut actions);
         status_steps(&mut actions, b"\r\n+CPIN: READY\r\nOK\r\n", true);
         let (owner, session, trace) = byte_owner(actions).await;
+        // The framing fixture must not bypass the real SMS policy guard.
+        owner.set_cellular_suppressed(true);
+        assert_eq!(owner.capture_native_sms(&session).await.unwrap_err().code, "usb_at_busy");
+        assert!(trace.lock().unwrap().writes.is_empty());
+        owner.set_cellular_suppressed(false);
         let (_, generation) = owner.capture_native_sms(&session).await.unwrap();
         assert!(owner.native_sms_binding_current(&session, generation));
         let observation = owner.native_device_observation(&session).await.unwrap();
@@ -1058,6 +1064,7 @@ mod tests {
             status_steps(&mut actions, cpin, false);
             let (owner, session, trace) = byte_owner(actions).await;
             let (_, generation) = owner.capture_native_sms(&session).await.unwrap();
+            assert!(owner.native_sms_binding_current(&session, generation));
             let observation = owner.native_device_observation(&session).await.unwrap();
             assert_eq!(observation.status["sim_inserted"], ready);
             assert_eq!(observation.status["imei"], "123456789012345");
