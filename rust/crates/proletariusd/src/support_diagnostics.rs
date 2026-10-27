@@ -708,20 +708,35 @@ mod tests {
             sender,
             shared: shared.clone(),
         };
-        recorder.emit(Event::Lifecycle { phase: "startup".into() });
+        recorder.emit(Event::Lifecycle {
+            phase: "startup".into(),
+        });
         assert_eq!(shared.counters.dropped.load(Ordering::Relaxed), 1);
         let value = snapshot(&shared);
-        assert_eq!(value["module_recovery"]["state"], "legacy_recovery_required");
+        assert_eq!(
+            value["module_recovery"]["state"],
+            "legacy_recovery_required"
+        );
         assert_eq!(
             value["module_recovery"]["reason_codes"],
             serde_json::json!(["legacy_call_mode_lock"])
         );
-        assert_eq!(value["module_recovery"]["startup"]["cleanup"], "not_observed");
-        assert_eq!(value["module_recovery"]["historical_recovery_confirmed"], false);
+        assert_eq!(
+            value["module_recovery"]["startup"]["cleanup"],
+            "not_observed"
+        );
+        assert_eq!(
+            value["module_recovery"]["historical_recovery_confirmed"],
+            false
+        );
         let events = value["events"].as_array().unwrap();
         assert!(!events.is_empty());
         assert!(events.len() < 40);
-        assert!(events.iter().all(|event| event["event"]["kind"] != "module"));
+        assert!(
+            events
+                .iter()
+                .all(|event| event["event"]["kind"] != "module")
+        );
         assert!(!value.to_string().contains(root.0.to_str().unwrap()));
     }
 
@@ -738,7 +753,12 @@ mod tests {
         let value = snapshot(&shared);
         assert_eq!(value["events"].as_array().unwrap().len(), EXPORT_EVENTS);
         assert_eq!(value["module_recovery"]["state"], "open");
-        assert!(value["warnings"].as_array().unwrap().contains(&"export_truncated".into()));
+        assert!(
+            value["warnings"]
+                .as_array()
+                .unwrap()
+                .contains(&"export_truncated".into())
+        );
         gate.revoke_for_tests();
         let value = snapshot(&shared);
         assert_eq!(value["events"].as_array().unwrap().len(), EXPORT_EVENTS);
@@ -746,7 +766,10 @@ mod tests {
             value["module_recovery"]["reason_codes"],
             serde_json::json!(["legacy_execution_pending"])
         );
-        assert_eq!(value["module_recovery"]["state"], "legacy_recovery_required");
+        assert_eq!(
+            value["module_recovery"]["state"],
+            "legacy_recovery_required"
+        );
     }
 
     #[test]

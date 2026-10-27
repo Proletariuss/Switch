@@ -178,13 +178,14 @@ fn inspect_with_hook(
     };
     let journal_present = matches!(&journal, Ok(Some(_)));
     let journal_unreadable = journal.is_err();
-    let mut runtime =
-        if matches!(before[1], Ok(Some(stamp)) if stamp.marker()) && present(before[5])
-            && download.as_ref().is_ok_and(Option::is_none) {
-            RuntimeEvidence::capture(directory, artifacts, &mut hook).ok()
-        } else {
-            None
-        };
+    let mut runtime = if matches!(before[1], Ok(Some(stamp)) if stamp.marker())
+        && present(before[5])
+        && download.as_ref().is_ok_and(Option::is_none)
+    {
+        RuntimeEvidence::capture(directory, artifacts, &mut hook).ok()
+    } else {
+        None
+    };
     let control = if present(before[7]) {
         ControlEvidence::capture(directory).ok()
     } else {
@@ -197,7 +198,8 @@ fn inspect_with_hook(
     let download_after = super::runtime_download::coverage(directory, artifacts);
     let download_intent_after = super::runtime_download::pending_intent(directory);
     let download_stable = download.as_ref().ok() == download_after.as_ref().ok()
-        && download.is_ok() && download_after.is_ok();
+        && download.is_ok()
+        && download_after.is_ok();
     let fresh_backups_valid = fresh_backups
         .as_ref()
         .ok()
@@ -214,8 +216,11 @@ fn inspect_with_hook(
     let root_stable = Stamp::of(directory).is_ok_and(|stamp| stamp == root_before);
     let pristine = before[1] == after[1] && matches!(before[1], Ok(Some(stamp)) if stamp.marker());
     let mut reasons = Vec::new();
-    if !download_stable || download_intent.is_err() || download_intent_after.is_err()
-        || download_intent.as_ref().ok() != download_intent_after.as_ref().ok() {
+    if !download_stable
+        || download_intent.is_err()
+        || download_intent_after.is_err()
+        || download_intent.as_ref().ok() != download_intent_after.as_ref().ok()
+    {
         add(&mut reasons, Reason::UnreadableEvidence);
     }
     // A pending/revoked migration namespace cannot disappear merely because
@@ -226,8 +231,10 @@ fn inspect_with_hook(
             && classification.covers_original_slot(".module-adb-interface.lock")
     });
     if download_intent.as_ref().is_ok_and(|pending| *pending)
-        && !(locks_reconciled && reconciliation.as_ref().is_ok_and(|classification|
-            classification.covers_original_slot("voice-runtime")))
+        && !(locks_reconciled
+            && reconciliation
+                .as_ref()
+                .is_ok_and(|classification| classification.covers_original_slot("voice-runtime")))
     {
         add(&mut reasons, Reason::ReconciliationPending);
     }
@@ -237,7 +244,9 @@ fn inspect_with_hook(
         }
         if present(legacy_namespace)
             && !legacy_locks.as_ref().is_ok_and(|covered| *covered)
-            && !download.as_ref().is_ok_and(|coverage| *coverage == Some(true))
+            && !download
+                .as_ref()
+                .is_ok_and(|coverage| *coverage == Some(true))
         {
             add(&mut reasons, Reason::LegacyLockProvenancePending);
         }
@@ -314,7 +323,8 @@ fn inspect_with_hook(
                 .is_ok_and(|classification| classification.covers_original_slot(NAMES[index]));
         let download_valid = before[index] == after[index]
             && download.as_ref().is_ok_and(|coverage| {
-                coverage.is_some() && (index == 5 || matches!(index, 2 | 3) && *coverage == Some(true))
+                coverage.is_some()
+                    && (index == 5 || matches!(index, 2 | 3) && *coverage == Some(true))
             })
             && download_stable;
         let allowed = covered

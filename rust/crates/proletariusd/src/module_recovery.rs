@@ -325,7 +325,8 @@ impl Gate {
                     runtime_download::coverage(
                         directory,
                         &crate::call_mode_runtime_manifest::manifest().files,
-                    ).map(|coverage| coverage == Some(true))
+                    )
+                    .map(|coverage| coverage == Some(true))
                 })
                 .is_ok_and(|result| result.unwrap_or(false))
         })
@@ -372,7 +373,8 @@ impl Gate {
 
     pub(crate) fn inspect_with_lifetime(lease: &crate::daemon_lifetime::Lease) -> Self {
         Self::inspect_with_lifetime_and_artifacts(
-            lease, &crate::call_mode_runtime_manifest::manifest().files,
+            lease,
+            &crate::call_mode_runtime_manifest::manifest().files,
         )
     }
 

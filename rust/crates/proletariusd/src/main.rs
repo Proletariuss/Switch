@@ -800,9 +800,11 @@ async fn run_with_sms_stores(
                 StartupInspectionFailure::Inspection(_) => recovery_diagnostics::native_inspection(
                     recovery_diagnostics::NativeInspection::Failed,
                 ),
-                StartupInspectionFailure::Reconciliation(_) => recovery_diagnostics::reconciliation(
-                    recovery_diagnostics::Reconciliation::Failed,
-                ),
+                StartupInspectionFailure::Reconciliation(_) => {
+                    recovery_diagnostics::reconciliation(
+                        recovery_diagnostics::Reconciliation::Failed,
+                    )
+                }
             }
             if error.cleanup_unconfirmed() {
                 recovery_diagnostics::cleanup(recovery_diagnostics::Cleanup::Unconfirmed);
