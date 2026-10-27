@@ -11,6 +11,7 @@ mod tests;
 
 pub(crate) struct VerifiedDevice {
     target: PhysicalTarget,
+    interface: u8,
     facts: Facts,
     idle: crate::call_mode_adb::legacy_current::IdleEvidence,
 }
@@ -40,6 +41,7 @@ fn error(code: &'static str, uncertain: bool) -> TransportError {
 fn device_error() -> TransportError { error("legacy_current_device_unconfirmed", false) }
 fn read_error() -> TransportError { error("legacy_current_readback_unconfirmed", false) }
 fn cleanup_error() -> TransportError { error("legacy_current_cleanup_unconfirmed", true) }
+fn timeout_error() -> TransportError { error("legacy_current_timeout", false) }
 
 // This private seam permits byte-level tests, never a caller-defined authority.
 trait Authority {
@@ -59,7 +61,7 @@ impl Authority for ReadScope {
 fn remaining(scope: &impl Authority) -> Result<Duration, TransportError> {
     scope.check()?;
     let left = scope.deadline().saturating_duration_since(Instant::now());
-    if left < MIN_TIMEOUT { return Err(read_error()); }
+    if left < MIN_TIMEOUT { return Err(timeout_error()); }
     Ok(left)
 }
 fn read_command(port: &mut NativeTransport, scope: &impl Authority,
@@ -74,8 +76,8 @@ fn read_command(port: &mut NativeTransport, scope: &impl Authority,
     // identity; ordinary partial-response compatibility is not baseline proof.
     let result = port.execute_command(command, None, timeout, 4096, true);
     port.command_guard = None;
-    scope.check()?;
-    result.map_err(|_| read_error())
+    let result = result.map_err(|error| if error.uncertain { cleanup_error() } else { read_error() });
+    settle(result, scope.check())
 }
 fn read_plan(port: &mut NativeTransport, scope: &impl Authority, action: Action)
     -> Result<Outcome, TransportError> {
@@ -94,10 +96,11 @@ fn read_plan(port: &mut NativeTransport, scope: &impl Authority, action: Action)
         let reply = read_command(port, scope, &step.command, step.timeout)?;
         plan.accept(Reply::response(reply));
     }
-    if plan.retire_transport() { return Err(read_error()); }
+    if plan.retire_transport() { return Err(cleanup_error()); }
     let result = plan.finish();
     scope.check()?;
-    if !result.complete || !result.verified || result.uncertain { return Err(read_error()); }
+    if result.uncertain { return Err(cleanup_error()); }
+    if !result.complete || !result.verified { return Err(read_error()); }
     Ok(result)
 }
 fn read_facts(port: &mut NativeTransport, scope: &impl Authority) -> Result<Facts, TransportError> {
@@ -160,6 +163,32 @@ fn settle<T>(result: Result<T, TransportError>, closed: Result<(), TransportErro
     closed?;
     result
 }
+// Probe only AT on already claimed interfaces of the same captured Device.
+// Only complete ERROR or an empty wire timeout permits another candidate.
+fn select_candidate(scope: &impl Authority, candidates: &[Candidate], fixed: Option<u8>,
+    mut probe: impl FnMut(Candidate, Duration) -> Result<String, TransportError>)
+    -> Result<Candidate, TransportError> {
+    for candidate in candidates {
+        if fixed.is_some_and(|interface| interface != candidate.interface) { continue; }
+        let timeout = remaining(scope)?.min(PROBE_TIMEOUT);
+        let response = probe(*candidate, timeout);
+        if let Err(mut error) = scope.check() {
+            error.uncertain |= response.as_ref().err().is_some_and(|error| error.uncertain);
+            return Err(error);
+        }
+        match response {
+            Ok(response) if probe_succeeded(&response) => return Ok(*candidate),
+            Ok(response) if response.lines().any(|line| line.trim() == "ERROR")
+                && response.lines().all(|line| matches!(line.trim(), "" | "AT" | "ERROR")) => {},
+            Err(error) if error.code == "usb_at_timeout" && error.response.is_empty() => {},
+            Err(error) => return Err(if error.uncertain { cleanup_error() } else { read_error() }),
+            _ => return Err(read_error()),
+        }
+        // A sealed first-open interface can never drift to another candidate.
+        if fixed.is_some() { return Err(read_error()); }
+    }
+    Err(read_error())
+}
 fn checked_close(port: NativeTransport) -> Result<(), TransportError> {
     match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| Box::new(port).checked_close())) {
         Ok(Ok(CloseDisposition::ReleasedAndHandleDropped)) => Ok(()),
@@ -189,14 +218,14 @@ fn examine(port: &mut NativeTransport, scope: &ReadScope,
     scope.check()?;
     Ok((target, second, idle))
 }
-fn inspect_port(mut port: NativeTransport, scope: &ReadScope,
+fn inspect_port(mut port: NativeTransport, interface: u8, scope: &ReadScope,
     idle: impl FnOnce(&ReadScope, &PhysicalTarget) -> Result<crate::call_mode_adb::legacy_current::IdleEvidence, TransportError>)
     -> Result<VerifiedDevice, TransportError> {
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| examine(&mut port, scope, idle)))
         .unwrap_or_else(|_| Err(cleanup_error()));
     let (target, facts, idle) = settle(result, checked_close(port))?;
     scope.check()?;
-    Ok(VerifiedDevice { target, facts, idle })
+    Ok(VerifiedDevice { target, interface, facts, idle })
 }
 fn reopen_port(mut port: NativeTransport, scope: &ReadScope, verified: &VerifiedDevice,
     idle: impl FnOnce(&ReadScope, &PhysicalTarget) -> Result<crate::call_mode_adb::legacy_current::IdleEvidence, TransportError>)
@@ -218,7 +247,10 @@ fn reopen_port(mut port: NativeTransport, scope: &ReadScope, verified: &Verified
 pub(crate) fn inspect(scope: &ReadScope) -> Result<VerifiedDevice, TransportError> {
     scope.check()?;
     #[cfg(target_os = "macos")]
-    { inspect_port(native::open(scope, None)?, scope, crate::call_mode_adb::legacy_current::inspect) }
+    {
+        let (port, interface) = native::open(scope, None, None)?;
+        inspect_port(port, interface, scope, crate::call_mode_adb::legacy_current::inspect)
+    }
     #[cfg(not(target_os = "macos"))]
     { Err(device_error()) }
 }
@@ -226,8 +258,10 @@ pub(crate) fn reopen(scope: &ReadScope, verified: &VerifiedDevice)
     -> Result<Box<dyn Transport>, TransportError> {
     scope.check()?;
     #[cfg(target_os = "macos")]
-    { reopen_port(native::open(scope, Some(&verified.target))?, scope, verified,
-        crate::call_mode_adb::legacy_current::inspect) }
+    {
+        let (port, _) = native::open(scope, Some(&verified.target), Some(verified.interface))?;
+        reopen_port(port, scope, verified, crate::call_mode_adb::legacy_current::inspect)
+    }
     #[cfg(not(target_os = "macos"))]
     { let _ = verified; Err(device_error()) }
 }
@@ -242,9 +276,12 @@ mod native {
         handle: Option<DeviceHandle<Context>>,
         candidates: Vec<Candidate>,
         claimed: Vec<u8>,
-        selected: Candidate,
+        selected: Arc<std::sync::atomic::AtomicUsize>,
     }
     impl AllAtIo {
+        fn selected(&self) -> Candidate {
+            self.candidates[self.selected.load(Ordering::Acquire)]
+        }
         fn close(&mut self) -> Result<CloseDisposition, TransportError> {
             let result = match &self.handle {
                 Some(handle) => release_all(&mut self.claimed, |interface| {
@@ -294,15 +331,15 @@ mod native {
         fn capture_reenumeration_anchor(&mut self, deadline: Instant,
             guard: crate::module_radio::CallAdmission) -> Result<ReenumerationAnchor, TransportError> {
             reconnect::capture_native(self.handle.as_ref().ok_or_else(device_error)?,
-                self.selected, deadline, guard)
+                self.selected(), deadline, guard)
         }
         fn read(&mut self, bytes: &mut [u8], timeout: Duration) -> Result<usize, IoError> {
             self.handle.as_ref().ok_or(IoError::Disconnected)?
-                .read_bulk(self.selected.endpoint_in, bytes, timeout).map_err(io_error)
+                .read_bulk(self.selected().endpoint_in, bytes, timeout).map_err(io_error)
         }
         fn write(&mut self, bytes: &[u8], timeout: Duration) -> Result<usize, IoError> {
             self.handle.as_ref().ok_or(IoError::Disconnected)?
-                .write_bulk(self.selected.endpoint_out, bytes, timeout).map_err(io_error)
+                .write_bulk(self.selected().endpoint_out, bytes, timeout).map_err(io_error)
         }
     }
     fn candidates(device: &Device<Context>) -> Result<Vec<Candidate>, TransportError> {
@@ -330,7 +367,7 @@ mod native {
         found.sort_by_key(|value| usb_at_interface_priority(model, value.interface));
         Ok(found)
     }
-    pub(super) fn open(scope: &ReadScope, target: Option<&PhysicalTarget>) -> Result<NativeTransport, TransportError> {
+    pub(super) fn open(scope: &ReadScope, target: Option<&PhysicalTarget>, fixed: Option<u8>) -> Result<(NativeTransport, u8), TransportError> {
         scope.check()?;
         let owner = OwnerLease::acquire().map_err(|_| device_error())?;
         let device = match target {
@@ -354,7 +391,8 @@ mod native {
         scope.check()?;
         let handle = device.open().map_err(|_| device_error())?;
         if handle.device().as_raw() != device.as_raw() { return Err(device_error()); }
-        let mut io = AllAtIo { handle: Some(handle), selected: expected[0],
+        let selected = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let mut io = AllAtIo { handle: Some(handle), selected: selected.clone(),
             candidates: expected.clone(), claimed: Vec::new() };
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             let handle = io.handle.as_ref().ok_or_else(device_error)?;
@@ -370,6 +408,20 @@ mod native {
             });
             return settle(Err(error), closed);
         }
-        Ok(NativeTransport::new(Box::new(io), "Verified current USB AT owner".into(), Some(owner)))
+        let mut port = NativeTransport::new(Box::new(io), "Verified current USB AT owner".into(), Some(owner));
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            select_candidate(scope, &expected, fixed, |candidate, timeout| {
+                let index = expected.iter().position(|value| *value == candidate).ok_or_else(device_error)?;
+                selected.store(index, Ordering::Release);
+                port.command_guard = Some(scope.admission());
+                let result = port.execute_command("AT", None, timeout, 4096, true);
+                port.command_guard = None;
+                result
+            })
+        })).unwrap_or_else(|_| Err(cleanup_error()));
+        match result {
+            Ok(candidate) => Ok((port, candidate.interface)),
+            Err(error) => settle(Err(error), checked_close(port)),
+        }
     }
 }

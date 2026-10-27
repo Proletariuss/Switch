@@ -12,6 +12,8 @@ struct Wire {
     time: Instant,
     truncate_cfun: bool,
     active_call: bool,
+    probe_reply: u8,
+    selected: Option<Arc<std::sync::atomic::AtomicUsize>>,
 }
 impl Io for Wire {
     fn checked_close(self: Box<Self>) -> Result<CloseDisposition, TransportError> {
@@ -32,7 +34,12 @@ impl Io for Wire {
         let command = std::str::from_utf8(bytes).map_err(|_| IoError::Other)?
             .strip_suffix('\r').ok_or(IoError::Other)?;
         self.trace.lock().unwrap().commands.push(command.to_owned());
+        let first = self.selected.as_ref().is_none_or(|selected| selected.load(Ordering::Acquire) == 0);
         let response = match command {
+            "AT" if first && self.probe_reply == 1 => String::new(),
+            "AT" if first && self.probe_reply == 2 => "ERROR\r\n".to_owned(),
+            "AT" if first && self.probe_reply == 3 => return Err(IoError::Other),
+            "AT" if first && self.probe_reply == 4 => "AT\r\nERROR\r\n".to_owned(),
             "AT" => "OK\r\n".to_owned(),
             "AT+CGSN" => "123456789012345\r\nOK\r\n".to_owned(),
             "ATI" => "Quectel fixture\r\nOK\r\n".to_owned(),
@@ -60,7 +67,7 @@ impl Io for Wire {
 fn port(target: PhysicalTarget, cfun: u8, truncated: bool, active_call: bool,
         trace: Arc<Mutex<Trace>>) -> NativeTransport {
     NativeTransport::new(Box::new(Wire { target, cfun, trace, incoming: VecDeque::new(),
-        time: Instant::now(), truncate_cfun: truncated, active_call }),
+        time: Instant::now(), truncate_cfun: truncated, active_call, probe_reply: 0, selected: None }),
         "software byte fixture; no physical device evidence".into(), None)
 }
 struct Scope { valid: Arc<AtomicBool>, deadline: Instant }
@@ -70,7 +77,8 @@ impl Scope {
 }
 impl Authority for Scope {
     fn check(&self) -> Result<(), TransportError> {
-        if self.valid.load(Ordering::Acquire) && Instant::now() < self.deadline { Ok(()) } else { Err(read_error()) }
+        if Instant::now() >= self.deadline { return Err(timeout_error()); }
+        if self.valid.load(Ordering::Acquire) { Ok(()) } else { Err(read_error()) }
     }
     fn deadline(&self) -> Instant { self.deadline }
     fn admission(&self) -> crate::module_radio::CallAdmission {
@@ -145,7 +153,7 @@ fn actual_close_failure_is_uncertain_and_never_turns_into_success() {
 pub(crate) fn fixture_inspect(scope: &ReadScope, cfun: u8) -> Result<VerifiedDevice, TransportError> {
     let trace = Arc::new(Mutex::new(Trace::default()));
     let transport = port(PhysicalTarget::synthetic_for_tests(), cfun, false, false, trace.clone());
-    let result = inspect_port(transport, scope, crate::call_mode_adb::legacy_current::fixture_idle);
+    let result = inspect_port(transport, 2, scope, crate::call_mode_adb::legacy_current::fixture_idle);
     assert_eq!(trace.lock().unwrap().closes, 1);
     result
 }
@@ -231,4 +239,85 @@ fn ordinary_startup_fixture_is_limited_to_known_aids_and_fixed_reads() {
         assert!(transport.execute_command(command, None, Duration::from_secs(1), 4096, true).is_err());
     }
     checked_close(transport).unwrap();
+}
+
+#[test]
+fn real_wire_probe_selects_only_same_owner_candidates_and_seals_first_open_interface() {
+    let candidates = [2,3].map(|interface| Candidate {
+        interface, alternate: 0, endpoint_in: 0x81, endpoint_out: 1 });
+    for mode in [1,2,3,4] {
+        let selected = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let trace = Arc::new(Mutex::new(Trace::default()));
+        let mut transport = NativeTransport::new(Box::new(Wire {
+            target: PhysicalTarget::synthetic_for_tests(), cfun: 1,
+            trace: trace.clone(), incoming: VecDeque::new(), time: Instant::now(),
+            truncate_cfun: false, active_call: false, probe_reply: mode,
+            selected: Some(selected.clone()),
+        }), "candidate byte fixture".into(), None);
+        let mut attempted = Vec::new();
+        let mut run = |fixed| select_candidate(&Scope::new(), &candidates, fixed, |candidate, timeout| {
+            attempted.push(candidate.interface);
+            selected.store(usize::from(candidate.interface == 3), Ordering::Release);
+            transport.execute_command("AT", None, timeout, 4096, true)
+        });
+        let result = run(None);
+        if mode == 3 { assert!(result.is_err()); assert_eq!(attempted, [2]); }
+        else {
+            assert_eq!(result.unwrap().interface, 3);
+            assert_eq!(attempted, [2,3]);
+            // Reopening a sealed interface never retries its alternative.
+            attempted.clear();
+            let result = select_candidate(&Scope::new(), &candidates, Some(2), |candidate, timeout| {
+                attempted.push(candidate.interface);
+                selected.store(0, Ordering::Release);
+                transport.execute_command("AT", None, timeout, 4096, true)
+            });
+            assert!(result.is_err());
+            assert_eq!(attempted, [2]);
+            attempted.clear();
+            assert!(select_candidate(&Scope::new(), &candidates, Some(7), |_, _| {
+                panic!("missing sealed interface must not touch another interface");
+            }).is_err());
+        }
+        // One real transport/byte peer survives candidate changes, then closes once.
+        assert_eq!(trace.lock().unwrap().closes, 0);
+        checked_close(transport).unwrap();
+        assert_eq!(trace.lock().unwrap().closes, 1);
+    }
+}
+#[test]
+fn candidate_probe_revocation_deadline_and_uncertain_callback_never_fall_through() {
+    let candidates = [2,3].map(|interface| Candidate {
+        interface, alternate: 0, endpoint_in: 0x81, endpoint_out: 1 });
+    let scope = Scope::new();
+    let mut calls = 0;
+    let error = select_candidate(&scope, &candidates, None, |_, _| {
+        calls += 1;
+        scope.valid.store(false, Ordering::Release);
+        Ok("ERROR".into())
+    }).unwrap_err();
+    assert_eq!(calls, 1);
+    assert_eq!(error.code, "legacy_current_readback_unconfirmed");
+    let expired = Scope { valid: Arc::new(AtomicBool::new(true)), deadline: Instant::now() };
+    assert!(select_candidate(&expired, &candidates, None, |_, _| panic!("expired scope probed")).is_err());
+    calls = 0;
+    let error = select_candidate(&Scope::new(), &candidates, None, |_, _| {
+        calls += 1;
+        Err(cleanup_error())
+    }).unwrap_err();
+    assert!(error.uncertain);
+    assert_eq!(calls, 1);
+}
+
+#[test]
+fn incomplete_fixed_wire_read_keeps_uncertainty_and_expired_budget_keeps_timeout_code() {
+    let trace = Arc::new(Mutex::new(Trace::default()));
+    let mut transport = port(PhysicalTarget::synthetic_for_tests(), 1, true, false, trace.clone());
+    let error = read_command(&mut transport, &Scope::new(), "AT+CFUN?", Duration::from_secs(1)).unwrap_err();
+    assert!(error.uncertain);
+    assert_eq!(error.code, "legacy_current_cleanup_unconfirmed");
+    checked_close(transport).unwrap();
+    assert_eq!(trace.lock().unwrap().closes, 1);
+    let expired = Scope { valid: Arc::new(AtomicBool::new(true)), deadline: Instant::now() };
+    assert_eq!(remaining(&expired).unwrap_err().code, "legacy_current_timeout");
 }
