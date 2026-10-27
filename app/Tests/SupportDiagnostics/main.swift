@@ -335,7 +335,7 @@ private func expect(_ condition: @autoclosure () throws -> Bool, _ message: Stri
                 try expect(safe["observation"] as? String == "last_observed",
                            "export timestamp was allowed to imply a fresh recovery probe")
                 let startup = safe["startup"] as! [String: Any]
-                try expect(Set(startup.keys) == Set(["metadata", "reconciliation", "native_inspection", "cleanup"]),
+                try expect(Set(startup.keys) == Set(["metadata", "reconciliation", "native_inspection", "cleanup", "legacy_current"]),
                            "unknown startup fields survived export")
                 try expect(safe["historical_recovery_confirmed"] as? Bool == false,
                            "diagnostic observation became a historical recovery certificate")
@@ -353,7 +353,8 @@ private func expect(_ condition: @autoclosure () throws -> Bool, _ message: Stri
         try expect(phases["metadata"] as? String == "inspected"
                    && phases["reconciliation"] as? String == "failed"
                    && phases["native_inspection"] as? String == "not_applicable"
-                   && phases["cleanup"] as? String == "unconfirmed", "startup evidence was lost")
+                   && phases["cleanup"] as? String == "unconfirmed"
+                   && phases["legacy_current"] as? String == "not_observed", "startup evidence or old-backend compatibility was lost")
 
         for reason in recoveryReasons {
             var value = recoverySnapshot()
@@ -376,7 +377,12 @@ private func expect(_ condition: @autoclosure () throws -> Bool, _ message: Stri
             "reconciliation": ["not_observed", "not_applicable", "completed", "completed_after_stop",
                                "failed", "publication_unconfirmed"],
             "native_inspection": ["not_observed", "not_applicable", "inspected", "failed"],
-            "cleanup": ["not_observed", "confirmed", "unconfirmed"]
+            "cleanup": ["not_observed", "confirmed", "unconfirmed"],
+            "legacy_current": ["not_observed", "not_applicable", "started", "current_verified", "publication_unconfirmed",
+                "legacy_current_ineligible", "legacy_current_evidence_changed", "legacy_current_busy",
+                "legacy_current_cancelled", "legacy_current_timeout", "legacy_current_device_unconfirmed",
+                "legacy_current_readback_unconfirmed", "legacy_current_helper_unconfirmed",
+                "legacy_current_cleanup_unconfirmed", "legacy_current_worker_failed"]
         ]
         for (field, choices) in vocabulary {
             for choice in choices {
@@ -391,7 +397,7 @@ private func expect(_ condition: @autoclosure () throws -> Bool, _ message: Stri
             }
             var value = recoverySnapshot(), startup = value["startup"] as! [String: Any]
             startup.removeValue(forKey: field); value["startup"] = startup
-            try check(value, accepted: false)
+            try check(value, accepted: field == "legacy_current")
         }
 
         var hostile = recoverySnapshot()
@@ -429,11 +435,17 @@ private func expect(_ condition: @autoclosure () throws -> Bool, _ message: Stri
         // A full event ring must not consume the separately retained observation.
         var full = backendEnvelope()
         full["events"] = (1...4096).map { record($0, ["kind": "lifecycle", "phase": "startup"]) }
-        full["module_recovery"] = recoverySnapshot()
+        var retained = recoverySnapshot(), startupFailure = retained["startup"] as! [String: Any]
+        startupFailure["legacy_current"] = "legacy_current_helper_unconfirmed"
+        retained["startup"] = startupFailure
+        full["module_recovery"] = retained
         let fullBackend = try json(bundle(full))["backend"] as! [String: Any]
         try expect((fullBackend["events"] as? [[String: Any]])?.count == 4096
                    && fullBackend["module_recovery"] is [String: Any],
                    "event cap discarded retained module recovery reasons")
+        let retainedStartup = (fullBackend["module_recovery"] as! [String: Any])["startup"] as! [String: Any]
+        try expect(retainedStartup["legacy_current"] as? String == "legacy_current_helper_unconfirmed",
+                   "event cap discarded the actual current-baseline failure")
         print("PASS retained recovery: complete reasons/phases, 4096-byte and 14-reason limits, closed types, nested privacy, old backend compatibility and independent event retention")
     }
 

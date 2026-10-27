@@ -129,7 +129,13 @@ enum SupportBundleBuilder {
               let native = startup["native_inspection"] as? String,
               ["not_observed", "not_applicable", "inspected", "failed"].contains(native),
               let cleanup = startup["cleanup"] as? String,
-              ["not_observed", "confirmed", "unconfirmed"].contains(cleanup) else { return nil }
+              ["not_observed", "confirmed", "unconfirmed"].contains(cleanup),
+              let current = (startup["legacy_current"] ?? "not_observed") as? String,
+              ["not_observed", "not_applicable", "started", "current_verified", "publication_unconfirmed",
+               "legacy_current_ineligible", "legacy_current_evidence_changed", "legacy_current_busy",
+               "legacy_current_cancelled", "legacy_current_timeout", "legacy_current_device_unconfirmed",
+               "legacy_current_readback_unconfirmed", "legacy_current_helper_unconfirmed",
+               "legacy_current_cleanup_unconfirmed", "legacy_current_worker_failed"].contains(current) else { return nil }
         var seen = Set<String>()
         // Rebuild only the closed vocabulary: unknown nested fields, paths,
         // identities and raw errors never cross this export boundary.
@@ -138,7 +144,7 @@ enum SupportBundleBuilder {
             "reason_codes": reasons.filter { seen.insert($0).inserted },
             "historical_recovery_confirmed": false,
             "startup": ["metadata": metadata, "reconciliation": reconciliation,
-                        "native_inspection": native, "cleanup": cleanup]
+                        "native_inspection": native, "cleanup": cleanup, "legacy_current": current]
         ]
     }
 

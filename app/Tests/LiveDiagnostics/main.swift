@@ -150,6 +150,19 @@ func crowdedFixture() throws -> Data {
             && recoveryOnly.recovery?.contains("元数据 失败") == true
             && recoveryOnly.recovery?.contains("synthetic") == false,
             "recovery observation disappeared without events or exposed unknown fields")
+        let currentFailure = try LiveDiagnosticSnapshot.decode(fixture([]) { value in
+            value["module_recovery"] = [
+                "schema_version": 1, "observation": "last_observed", "state": "legacy_recovery_required",
+                "reason_codes": allRecoveryReasons, "historical_recovery_confirmed": false,
+                "startup": ["metadata": "inspected", "reconciliation": "not_applicable",
+                            "native_inspection": "failed", "cleanup": "confirmed",
+                            "legacy_current": "legacy_current_helper_unconfirmed"]
+            ]
+        })
+        let currentSummary = currentFailure.recovery?.components(separatedBy: " · ").prefix(2).joined(separator: " · ") ?? ""
+        try expect(currentFailure.rows.isEmpty && currentSummary.contains("legacy_current_helper_unconfirmed")
+            && currentSummary.contains("无法确认模块语音服务空闲"),
+            "retained failure was lost with an empty ring or hidden behind historical reason codes")
         let notices = try LiveDiagnosticSnapshot.decode(fixture { value in
             value["warnings"] = ["live_window_truncated", "live_records_missed", "synthetic-secret"]
         }).notices.joined()

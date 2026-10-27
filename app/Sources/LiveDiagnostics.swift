@@ -91,6 +91,24 @@ struct LiveDiagnosticSnapshot {
             let label = state == "legacy_recovery_required" ? "模块已隔离" :
                 (state == "open" ? "最近观察到准入开放" : "尚无恢复状态观察")
             recovery = "最近观察：\(label)"
+            if let current = startup["legacy_current"] as? String,
+               current != "not_observed", current != "not_applicable" {
+                let labels = [
+                    "started": "当前设备核对中", "current_verified": "当前状态已核对，历史恢复仍未确认",
+                    "publication_unconfirmed": "当前核对结果尚未完成接管",
+                    "legacy_current_ineligible": "旧数据不符合当前核对条件",
+                    "legacy_current_evidence_changed": "核对期间恢复数据发生变化",
+                    "legacy_current_busy": "核对所需的设备或锁正被占用",
+                    "legacy_current_cancelled": "当前设备核对已取消",
+                    "legacy_current_timeout": "当前设备核对超时",
+                    "legacy_current_device_unconfirmed": "无法确认原模块或接口",
+                    "legacy_current_readback_unconfirmed": "模块只读回执未通过核验",
+                    "legacy_current_helper_unconfirmed": "无法确认模块语音服务空闲",
+                    "legacy_current_cleanup_unconfirmed": "核对资源释放仍未确认",
+                    "legacy_current_worker_failed": "核对任务异常结束，清理仍未确认"
+                ]
+                recovery! += " · 当前核对：\(labels[current] ?? current) [\(current)]"
+            }
             if !reasons.isEmpty {
                 let labels = ["legacy_execution_pending": "旧版执行尚待确认",
                               "restore_journal_pending": "还原记录尚待确认",
