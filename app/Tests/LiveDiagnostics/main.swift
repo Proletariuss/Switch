@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import SwiftUI
+import Vision
 
 struct APIClient {
     init(timeoutInterval: TimeInterval) {}
@@ -61,7 +62,8 @@ actor ControlledAPI: LiveDiagnosticAPI {
     }).joined(separator: "\n")
 }
 
-@MainActor func saveScreenshot(_ host: NSView, named name: String) throws {
+@discardableResult
+@MainActor func saveScreenshot(_ host: NSView, named name: String) throws -> Data {
     guard let output = ProcessInfo.processInfo.environment["LIVE_DIAGNOSTIC_SCREENSHOT_DIR"],
           let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else {
         throw Failure.failed("synthetic screenshot destination or bitmap unavailable")
@@ -73,6 +75,7 @@ actor ControlledAPI: LiveDiagnosticAPI {
     let directory = URL(fileURLWithPath: output, isDirectory: true)
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     try png.write(to: directory.appendingPathComponent(name), options: [.atomic])
+    return png
 }
 
 @MainActor func scrollViews(in view: NSView) -> [NSScrollView] {
@@ -239,8 +242,9 @@ func crowdedFixture() throws -> Data {
                                                interval: 60_000_000_000)
         let defaultBackend = BackendProcess()
         _ = NSApplication.shared
+        NSApplication.shared.appearance = NSAppearance(named: .aqua)
         let defaultHost = NSHostingView(rootView: SupportDiagnosticsView(store: defaultStore)
-            .environmentObject(defaultBackend))
+            .environmentObject(defaultBackend).background(Color(nsColor: .windowBackgroundColor)))
         let defaultWindow = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 650),
                                      styleMask: [.titled], backing: .buffered, defer: false)
         defaultWindow.contentView = defaultHost
@@ -250,23 +254,36 @@ func crowdedFixture() throws -> Data {
         try await waitUntil { defaultStore.updatedAt != nil }
         try await Task.sleep(nanoseconds: 50_000_000)
         defaultHost.layoutSubtreeIfNeeded()
-        try saveScreenshot(defaultHost, named: "live-diagnostics-default-all.png")
+        let defaultPNG = try saveScreenshot(defaultHost, named: "live-diagnostics-default-all.png")
         let defaultText = accessibilityText(in: defaultHost)
         let children = (defaultHost.accessibilityChildren() ?? []).map { String(describing: type(of: $0)) }
         let evidence = "DEFAULT AX children: \(children)\nDEFAULT AX text: \(String(defaultText.prefix(4096)))\n"
         FileHandle.standardError.write(Data(evidence.utf8))
-        try expect(defaultText.contains("本次客户端会话记录"),
-                   "default all-records view hid an onscreen ordinary lifecycle event")
+        // Standalone NSHostingView can expose an empty AX tree on the runner.
+        // Verify an actually rendered ordinary client lifecycle row using the native image
+        // recognizer instead of inferring visibility from the store or AX.
+        let recognize = VNRecognizeTextRequest()
+        recognize.recognitionLevel = .accurate
+        recognize.recognitionLanguages = ["zh-Hans", "en-US"]
+        recognize.usesLanguageCorrection = false
+        try VNImageRequestHandler(data: defaultPNG, options: [:]).perform([recognize])
+        let renderedText = (recognize.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+            .joined(separator: " ")
+        FileHandle.standardError.write(Data(("DEFAULT rendered OCR: " + String(renderedText.prefix(4096)) + "\n").utf8))
+        let compactText = renderedText.filter { !$0.isWhitespace }.uppercased()
+        try expect(compactText.contains("客户端") && compactText.contains("已启动"),
+                   "default all-records screenshot hid an onscreen ordinary client lifecycle event")
         defaultWindow.contentView = nil
         defaultWindow.orderOut(nil)
         try await waitUntil { defaultStore.status == "实时读取已暂停。" }
-        print("PASS: default all-records filter visibly includes an ordinary lifecycle event")
+        print("PASS: default all-records screenshot visibly includes an ordinary client lifecycle event")
 
         let uiAPI = ControlledAPI()
         let uiStore = LiveDiagnosticStore(api: uiAPI, client: { local }, interval: 10_000_000)
         let backend = BackendProcess()
         _ = NSApplication.shared
-        let host = NSHostingView(rootView: SupportDiagnosticsView(store: uiStore).environmentObject(backend))
+        let host = NSHostingView(rootView: SupportDiagnosticsView(store: uiStore).environmentObject(backend)
+            .background(Color(nsColor: .windowBackgroundColor)))
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 650),
                               styleMask: [.titled], backing: .buffered, defer: false)
         window.contentView = host
