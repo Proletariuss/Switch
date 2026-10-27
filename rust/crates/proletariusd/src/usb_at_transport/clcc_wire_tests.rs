@@ -50,12 +50,130 @@ fn incomplete_packet_data_reply_cannot_become_idle_after_native_deadline() {
     let mut actions = vec![quiet(), write(b"AT+CLCC\r")];
     actions.extend(response.as_bytes().chunks(3).map(read));
     let (mut transport, trace) = fake(actions);
-    // Ordinary command compatibility returns partial text at the deadline.
-    // The production CLCC classifier must still require its complete OK.
-    let partial = transport
+    let error = transport
         .command("AT+CLCC", None, Duration::from_secs(3), 4096)
-        .unwrap();
-    assert!(!partial.ends_with("OK"));
-    assert!(!crate::module_radio::call_snapshot(partial).safe_idle);
+        .unwrap_err();
+    assert_eq!(error.code, "usb_at_status_incomplete_response");
+    assert!(error.uncertain);
     assert_eq!(trace.lock().unwrap().writes, vec![b"AT+CLCC\r".to_vec()]);
+}
+
+#[test]
+fn guarded_clcc_requires_the_final_line_ending_before_accepting_ok() {
+    for partial in [
+        "OK",
+        "AT+CLCC\r\n+CLCC: 1,0,0,1,0,\"\",128\r\nOK",
+    ] {
+        let (mut transport, trace) = fake(vec![
+            quiet(),
+            write(b"AT+CLCC\r"),
+            read(partial.as_bytes()),
+        ]);
+        let error = transport
+            .command_with_guard(
+                "AT+CLCC",
+                None,
+                Duration::from_millis(100),
+                4096,
+                Arc::new(|| true),
+            )
+            .unwrap_err();
+        assert_eq!(error.code, "usb_at_status_incomplete_response");
+        assert!(error.uncertain);
+        assert_eq!(trace.lock().unwrap().writes, vec![b"AT+CLCC\r".to_vec()]);
+    }
+}
+
+#[test]
+fn strict_clcc_keeps_the_guard_after_drain_and_before_the_physical_write() {
+    let (mut transport, trace) = fake(vec![read(b"RING\r\n"), quiet()]);
+    let admitted = Arc::new(AtomicBool::new(true));
+    let revoked = admitted.clone();
+    transport.set_line_capture(Arc::new(move |line| {
+        if line.trim() == "RING" {
+            revoked.store(false, Ordering::Release);
+        }
+    }));
+    let error = transport
+        .command_with_guard(
+            "AT+CLCC",
+            None,
+            Duration::from_secs(3),
+            4096,
+            Arc::new(move || admitted.load(Ordering::Acquire)),
+        )
+        .unwrap_err();
+    assert_eq!(error.code, "module_call_admission_changed");
+    assert!(!error.uncertain);
+    assert!(trace.lock().unwrap().writes.is_empty());
+}
+
+#[test]
+fn non_clcc_ordinary_commands_keep_partial_response_compatibility() {
+    let (mut transport, trace) = fake(vec![
+        quiet(),
+        write(b"AT+CSQ\r"),
+        read(b"+CSQ: 18"),
+    ]);
+    assert_eq!(
+        transport
+            .command("AT+CSQ", None, Duration::from_millis(100), 4096)
+            .unwrap(),
+        "+CSQ: 18"
+    );
+    assert_eq!(trace.lock().unwrap().writes, vec![b"AT+CSQ\r".to_vec()]);
+}
+
+#[tokio::test]
+async fn native_call_read_and_mode_idle_retire_incomplete_clcc_without_consuming_late_ok() {
+    use crate::module_radio_transport::Action as RadioAction;
+    for action in [RadioAction::CellularCallRead, RadioAction::CallModeIdleRead] {
+        for partial in [
+            "OK",
+            "AT+CLCC\r\n+CLCC: 1,0,0,1,0,\"\",128\r\nOK",
+        ] {
+            let mut actions = vec![quiet(), write(b"AT+CLCC\r"), read(partial.as_bytes())];
+            // CLCC's production plan has a four-second command budget.
+            // Five bounded reads exhaust it before the delayed line ending.
+            for _ in 0..5 {
+                actions.push(Action::Read(Err(IoError::Timeout), Duration::from_secs(4)));
+            }
+            actions.push(read(b"\r\n"));
+            let (owner, session, trace) = byte_owner(actions).await;
+            let outcome = owner
+                .radio_execute(
+                    "native-module-test".into(),
+                    session.clone(),
+                    action.clone(),
+                    None,
+                )
+                .await
+                .unwrap();
+            assert!(!outcome.complete && !outcome.verified && !outcome.submitted);
+            assert!(!outcome.error_code.is_empty());
+            assert_eq!(owner.status("native-module-test").unwrap()["open"], false);
+            {
+                let trace = trace.lock().unwrap();
+                assert!(trace.dropped, "uncertain CLCC retires the actual byte transport");
+                assert_eq!(trace.writes, vec![b"AT+CLCC\r".to_vec()]);
+                assert_eq!(trace.actions.len(), 1, "the late terminal remains unread");
+            }
+            // The old session cannot issue another command or reinterpret the
+            // delayed terminator as the response to a subsequent query.
+            assert!(
+                owner
+                    .radio_execute(
+                        "native-module-test".into(),
+                        session,
+                        RadioAction::CellularCallRead,
+                        None,
+                    )
+                    .await
+                    .is_err()
+            );
+            assert_eq!(trace.lock().unwrap().writes, vec![b"AT+CLCC\r".to_vec()]);
+            assert_eq!(trace.lock().unwrap().actions.len(), 1);
+            owner.shutdown().await.unwrap();
+        }
+    }
 }
