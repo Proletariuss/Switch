@@ -73,6 +73,7 @@ struct State {
     epoch: u64,
     binding: Option<Binding>,
     bootstrap_receipt: Option<Binding>,
+    preserve_current_cfun: bool,
     config_seq: u64,
     config: Option<Configure>,
     preferences: Option<Preferences>,
@@ -710,6 +711,7 @@ impl Service {
                 epoch: 0,
                 binding: None,
                 bootstrap_receipt: None,
+                preserve_current_cfun: false,
                 config_seq: 0,
                 config: None,
                 preferences: None,
@@ -2285,7 +2287,8 @@ impl Service {
                         Ok(self.projection())
                     };
                 }
-                if preferences.suppressed() {
+                let preserve_current = self.0.state.lock().unwrap().preserve_current_cfun;
+                if preferences.suppressed() && !preserve_current {
                     self.set(
                         SetRequest {
                             enabled: true,
@@ -2295,7 +2298,7 @@ impl Service {
                         false,
                     )
                     .await?;
-                } else if bootstrap && !preferences.suppressed() {
+                } else if bootstrap {
                     let outcome = self
                         .physical(Action::Observe { cellular: false }, epoch)
                         .await?;
@@ -2336,7 +2339,14 @@ impl Service {
                 }
                 Ok(self.projection())
             }
-            Job::PublicSet(input) => self.set(input, epoch, true).await,
+            Job::PublicSet(input) => {
+                let explicit = input.user_initiated;
+                let result = self.set(input, epoch, true).await;
+                if result.is_ok() && explicit {
+                    self.0.state.lock().unwrap().preserve_current_cfun = false;
+                }
+                result
+            },
             Job::PublicReboot => self.public_reboot(epoch).await,
             Job::PublicNetworkRecoveryReboot => self.public_reboot_inner(epoch, true).await,
             Job::PublicUSBNetMode {
@@ -4503,6 +4513,17 @@ fn status_with_block_reason(state: &State, block_reason: &str) -> Value {
         value["summary"] = json!("正在关闭蜂窝射频");
         value["detail"] =
             json!("飞行模式已启用；射频关闭确认前也不会查询信号、注册状态或扫描基站。");
+    }
+    if state.preserve_current_cfun {
+        value["owner"] = json!("external");
+        value["verified"] = json!(true);
+        if mode == 0 {
+            value["summary"] = json!("模块保持最小功能状态（CFUN=0）");
+            value["detail"] = json!("已核对当前状态，尚未应用启动飞行模式偏好。");
+        } else if mode == 1 {
+            value["summary"] = json!("模块保持当前蜂窝射频开启状态");
+            value["detail"] = json!("已核对当前状态，尚未应用启动飞行模式偏好。");
+        }
     }
     value["can_toggle"] = json!(!state.stopping && !state.retiring && block_reason.is_empty());
     if value.get("detail").is_none() && !block_reason.is_empty() {

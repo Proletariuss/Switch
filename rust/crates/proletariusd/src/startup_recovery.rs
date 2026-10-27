@@ -5,6 +5,7 @@
 //! only after checked physical/host settlement and durable publication.
 mod evidence;
 pub(crate) mod execution;
+pub(crate) mod legacy_current;
 pub(crate) mod reconcile;
 #[cfg(test)]
 mod tests;

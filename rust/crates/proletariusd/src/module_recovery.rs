@@ -13,7 +13,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 
 mod reconciliation;
-pub(crate) use reconciliation::ReconciliationTicket;
+pub(crate) use reconciliation::{ReconciliationTicket, LegacyCurrentClaim};
 
 pub(crate) const CODE: &str = "legacy_recovery_required";
 pub(crate) const MESSAGE: &str = "模块存在未确认的旧版恢复状态；读卡器功能可继续使用";

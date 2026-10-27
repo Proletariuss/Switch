@@ -479,6 +479,33 @@ pub(crate) fn invalidate(root: &Path) -> io::Result<()> {
     write_new(&store, REVOKED, &[])
 }
 
+/// A complete retained download is data for the separate fixed physical read.
+/// An empty revoked fence denotes intent, not proof of a completed mutation.
+/// Nothing here suppresses pending_intent or authorizes ordinary work.
+pub(crate) fn legacy_current_source(root: &File) -> io::Result<bool> {
+    let Some(before) = stamp(root, DIRECTORY)? else { return Ok(false); };
+    let store = open_dir(root, DIRECTORY)?;
+    let receipt = read_receipt(&store)?;
+    verify_source_binding(root, &receipt.source)?;
+    if receipt.source.legacy {
+        if !super::legacy_locks::legacy_current_source(root)? { return Err(invalid()); }
+    } else if receipt.source.legacy_namespace.is_some() || receipt.source.legacy_receipt.is_some()
+        || receipt.source.legacy_commit.is_some() || receipt.source.pristine.is_none()
+        || stamp(root, super::legacy_locks::DIRECTORY)?.is_some() {
+        return Err(invalid());
+    }
+    if stamp(&store, REVOKED)?.is_some() { empty(&store, REVOKED)?; }
+    let current_pristine = stamp(root, PRISTINE)?;
+    if current_pristine.is_some() && current_pristine != receipt.source.pristine { return Err(invalid()); }
+    // A missing pristine source requires the actual immutable intent fence.
+    if receipt.source.pristine.is_some() && current_pristine.is_none()
+        && stamp(&store, REVOKED)?.is_none() { return Err(invalid()); }
+    let (_, files, published) = verify_layout(root, &store, &receipt, manifest())?;
+    if !published || !proletarius_platform_fs::directory_names(&files, 1)?.is_empty()
+        || stamp(root, DIRECTORY)? != Some(before) { return Err(invalid()); }
+    Ok(true)
+}
+
 #[cfg(test)]
 pub(crate) fn begin_fixture(
     root: &Path,
