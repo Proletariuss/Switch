@@ -547,9 +547,23 @@ async fn esim_refresh_module_route_cleanup_pending_resumes_original_receipt_with
     assert_eq!(completed["attempts"], 1);
     assert_eq!(completed["retry_performed"], false);
     assert!(!fixture.state.module_radio.sim_channel_busy());
-    assert_eq!(fixture.trace.count(), count, "cleanup never replays the read");
+    assert_eq!(
+        fixture.trace.count(),
+        count,
+        "cleanup never replays the read"
+    );
     let lease = fixture.state.module_radio.reserve_esim().await.unwrap();
-    fixture.state.module_radio.release_esim(lease).await.unwrap();
+    fixture
+        .state
+        .module_radio
+        .release_esim(lease)
+        .await
+        .unwrap();
     assert_eq!(fixture.trace.count(), count);
-    fixture.state.module_radio.finish_shutdown_receipt().await.unwrap();
+    fixture
+        .state
+        .module_radio
+        .finish_shutdown_receipt()
+        .await
+        .unwrap();
 }
