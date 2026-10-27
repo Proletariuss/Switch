@@ -53,6 +53,14 @@ actor ControlledAPI: LiveDiagnosticAPI {
     throw Failure.failed("condition did not become true")
 }
 
+@MainActor func accessibilityText(in element: Any, depth: Int = 0) -> String {
+    guard depth < 32, let node = element as? any NSAccessibility else { return "" }
+    let text = [node.accessibilityLabel() ?? "", node.accessibilityValue() as? String ?? ""]
+    return (text + (node.accessibilityChildren() ?? []).map {
+        accessibilityText(in: $0, depth: depth + 1)
+    }).joined(separator: "\n")
+}
+
 @MainActor func scrollViews(in view: NSView) -> [NSScrollView] {
     let current = (view as? NSScrollView).map { [$0] } ?? []
     return current + view.subviews.flatMap { scrollViews(in: $0) }
@@ -216,6 +224,8 @@ func crowdedFixture() throws -> Data {
         guard let scroll = scrollViews(in: host).max(by: { $0.bounds.height < $1.bounds.height }) else {
             throw Failure.failed("actual hosted log scroll view was not found")
         }
+        try expect(accessibilityText(in: host).contains("本次客户端会话记录"),
+                   "default all-records view hid ordinary client lifecycle events")
         let viewport = host.convert(scroll.bounds, from: scroll)
         try expect(scroll.contentView.bounds.height >= 180, "crowded diagnostics collapsed the log viewport")
         try expect(viewport.minX >= -1 && viewport.minY >= -1
