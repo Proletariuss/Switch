@@ -987,6 +987,7 @@ impl Service {
         let source_owned = source.to_owned();
         crate::call_mode_runtime_download::run_native(
             &self.0.root,
+            self.0.radio.module_recovery().clone(),
             id,
             source.into(),
             Arc::new(move || current.current(&current_op).is_ok()),
@@ -1000,6 +1001,10 @@ impl Service {
         .await
         .map_err(|error| Failure::new("模块语音运行时下载失败", error))?;
         self.current(op)?;
+        // Download provenance ends before module deployment or route self-test.
+        invalidate_pristine_marker(&self.0.root)
+            .map_err(|error| Failure::new("无法记录模块部署意图", error.to_string()))?;
+        self.0.operation_started.store(true, Ordering::Release);
         self.prepare(op, lease, "", source).await
     }
 

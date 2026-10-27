@@ -144,6 +144,7 @@ fn inspect_with_hook(
     hook(Phase::RootCaptured);
     let before = snapshot(directory);
     let legacy_locks = super::legacy_locks::covered(directory);
+    let download = super::runtime_download::coverage(directory, artifacts);
     let legacy_namespace = entry(directory, OsStr::new(super::legacy_locks::DIRECTORY));
     let reconciliation_before = entry(directory, OsStr::new("module-recovery-v1"));
     // The new ledger is a separate bounded mutable namespace. It never joins
@@ -204,6 +205,9 @@ fn inspect_with_hook(
     let root_stable = Stamp::of(directory).is_ok_and(|stamp| stamp == root_before);
     let pristine = before[1] == after[1] && matches!(before[1], Ok(Some(stamp)) if stamp.marker());
     let mut reasons = Vec::new();
+    if download.is_err() {
+        add(&mut reasons, Reason::UnreadableEvidence);
+    }
     // A pending/revoked migration namespace cannot disappear merely because
     // its original locks were removed. Genuine published physical recovery
     // may supersede it only by covering both exact original lock slots.
@@ -215,7 +219,10 @@ fn inspect_with_hook(
         if legacy_locks.is_err() || legacy_namespace.is_err() {
             add(&mut reasons, Reason::UnreadableEvidence);
         }
-        if present(legacy_namespace) && !legacy_locks.as_ref().is_ok_and(|covered| *covered) {
+        if present(legacy_namespace)
+            && !legacy_locks.as_ref().is_ok_and(|covered| *covered)
+            && !download.as_ref().is_ok_and(|coverage| *coverage == Some(true))
+        {
             add(&mut reasons, Reason::LegacyLockProvenancePending);
         }
     }
@@ -289,7 +296,15 @@ fn inspect_with_hook(
             && reconciliation
                 .as_ref()
                 .is_ok_and(|classification| classification.covers_original_slot(NAMES[index]));
+        let download_valid = before[index] == after[index]
+            && download.as_ref().is_ok_and(|coverage| {
+                coverage.is_some() && (index == 5 || matches!(index, 2 | 3) && *coverage == Some(true))
+            })
+            && super::runtime_download::coverage(directory, artifacts).is_ok_and(|current| {
+                download.as_ref().is_ok_and(|original| *original == current)
+            });
         let allowed = covered
+            || download_valid
             || (matches!(index, 2 | 3)
                 && before[index] == after[index]
                 && legacy_locks.as_ref().is_ok_and(|covered| *covered)
