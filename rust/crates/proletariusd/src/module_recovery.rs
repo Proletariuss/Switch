@@ -376,6 +376,14 @@ impl Gate {
         )
     }
 
+    #[cfg(test)]
+    pub(crate) fn inspect_download_fixture_with_lifetime(
+        lease: &crate::daemon_lifetime::Lease,
+        artifacts: &[crate::call_mode_runtime_manifest::Artifact],
+    ) -> Self {
+        Self::inspect_with_lifetime_and_artifacts(lease, artifacts)
+    }
+
     fn inspect_with_lifetime_and_artifacts(
         lease: &crate::daemon_lifetime::Lease,
         artifacts: &[crate::call_mode_runtime_manifest::Artifact],

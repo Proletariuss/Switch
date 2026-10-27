@@ -480,4 +480,16 @@ pub(crate) fn invalidate(root: &Path) -> io::Result<()> {
 }
 
 #[cfg(test)]
+pub(crate) fn begin_fixture(
+    root: &Path,
+    gate: &Gate,
+    runtime: &RuntimeManifest,
+) -> io::Result<Option<Directories>> {
+    if gate.is_admission_revoked() { return Err(invalid()); }
+    gate.root_proof_for(root).map_err(|_| invalid())?
+        .with_root(root, |directory| begin_in(directory, runtime, true))
+        .map_err(|_| invalid())?
+}
+
+#[cfg(test)]
 mod tests;
