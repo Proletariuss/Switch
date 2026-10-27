@@ -5,6 +5,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::module_recovery::{Gate, Reason};
 
+// The enclosing bundle timestamp is the export time, never a new Gate probe.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum ObservationKind {
+    LastObserved,
+}
+
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 enum State {
@@ -102,6 +109,7 @@ pub(super) struct Startup {
 #[serde(deny_unknown_fields)]
 pub(super) struct Snapshot {
     schema_version: u8,
+    observation: ObservationKind,
     state: State,
     reason_codes: Vec<ReasonCode>,
     historical_recovery_confirmed: bool,
@@ -147,6 +155,7 @@ impl Observation {
         };
         Snapshot {
             schema_version: 1,
+            observation: ObservationKind::LastObserved,
             state,
             reason_codes,
             // A new sealed compensation is not proof of old execution.
@@ -208,6 +217,39 @@ mod tests {
         gate.revoke_for_tests();
         assert_eq!(observation.snapshot().state, State::LegacyRecoveryRequired);
         assert!(!observation.snapshot().historical_recovery_confirmed);
+    }
+
+    #[test]
+    fn observation_kind_is_required_closed_and_never_claims_a_fresh_probe() {
+        let mut observation = Observation::default();
+        let unobserved = observation.snapshot();
+        observation.bind(&Gate::default());
+        let open = observation.snapshot();
+        observation.bind(&Gate::quarantined_for_tests());
+        let blocked = observation.snapshot();
+        for snapshot in [unobserved, open, blocked] {
+            let value = serde_json::to_value(&snapshot).unwrap();
+            assert_eq!(value["observation"], "last_observed");
+            assert_eq!(
+                serde_json::from_value::<Snapshot>(value.clone()).unwrap(),
+                snapshot
+            );
+            for unsupported in [
+                serde_json::json!("current"),
+                serde_json::json!("freshly_verified"),
+                serde_json::json!("LastObserved"),
+                serde_json::json!(true),
+                serde_json::json!(null),
+                serde_json::json!({"last_observed": true}),
+            ] {
+                let mut changed = value.clone();
+                changed["observation"] = unsupported;
+                assert!(serde_json::from_value::<Snapshot>(changed).is_err());
+            }
+            let mut missing = value;
+            missing.as_object_mut().unwrap().remove("observation");
+            assert!(serde_json::from_value::<Snapshot>(missing).is_err());
+        }
     }
 
     #[test]
