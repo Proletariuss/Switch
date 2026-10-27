@@ -37,72 +37,15 @@ pub(super) fn handle(body: &[u8]) -> Response<Full<Bytes>> {
     crate::json_response(StatusCode::OK, &project(&request.response))
 }
 
+mod clcc;
+
+pub(super) fn observe(response: &str) -> (CallState, bool) {
+    let observation = clcc::observe(response);
+    (observation.display, observation.safe_voice_idle)
+}
+
 pub(super) fn project(response: &str) -> CallState {
-    let mut result = CallState::default();
-    let mut any_live = false;
-
-    for line in response.lines() {
-        let Some(fields) = line.trim().strip_prefix("+CLCC:") else {
-            continue;
-        };
-        let mut fields = fields.splitn(6, ',').map(str::trim);
-        let (Some(id), Some(direction), Some(status), Some(mode), Some(mpty)) = (
-            fields.next(),
-            fields.next(),
-            fields.next(),
-            fields.next(),
-            fields.next(),
-        ) else {
-            continue;
-        };
-        if [id, direction, mode, mpty]
-            .into_iter()
-            .any(|field| field.parse::<u32>().is_err())
-        {
-            continue;
-        }
-        let Ok(status) = status.parse::<u32>() else {
-            continue;
-        };
-        let number = fields
-            .next()
-            .map(|number| number.trim().trim_matches('"'))
-            .filter(|number| !number.is_empty());
-        if let Some(number) = number {
-            result.number = number.to_owned();
-        }
-
-        match status {
-            4 | 5 => {
-                result.state = "incoming".into();
-                result.incoming = true;
-                any_live = true;
-            }
-            2 => {
-                result.state = "dialing".into();
-                any_live = true;
-            }
-            3 => {
-                result.state = "alerting".into();
-                any_live = true;
-            }
-            0 if number.is_some() => {
-                result.state = "active".into();
-                result.active = true;
-                any_live = true;
-            }
-            _ => {}
-        }
-    }
-
-    if !any_live {
-        CallState {
-            state: "idle".into(),
-            ..CallState::default()
-        }
-    } else {
-        result
-    }
+    observe(response).0
 }
 
 #[cfg(test)]
@@ -110,7 +53,7 @@ mod tests {
     use super::{CallState, MAX_RESPONSE_BYTES, project};
 
     #[test]
-    fn clcc_projection_matches_legacy_call_states() {
+    fn clcc_projection_preserves_voice_states_without_using_number_presence() {
         for (input, expected) in [
             (
                 "+CLCC: 1,1,4,0,0,\"+8613800000000\"\r\nOK",
@@ -151,19 +94,19 @@ mod tests {
             (
                 "+CLCC: 1,0,0,0,0\r\n+CLCC: 2,1,6,0,0,\"123\"\r\nOK",
                 CallState {
-                    state: "idle".into(),
+                    state: "active".into(),
                     number: String::new(),
                     incoming: false,
-                    active: false,
+                    active: true,
                 },
             ),
             (
                 "+CLCC: 2,1,6,0,0,\"123\"\r\n+CLCC: 1,0,0,0,0\r\nOK",
                 CallState {
-                    state: "idle".into(),
+                    state: "active".into(),
                     number: String::new(),
                     incoming: false,
-                    active: false,
+                    active: true,
                 },
             ),
         ] {
