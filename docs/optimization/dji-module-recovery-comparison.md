@@ -216,6 +216,37 @@ Die Software-Fixtures decken virtuelle Startzeiten, veraltete Antworten,
 geschlossene Diagnosefelder, überfüllte Ereignisfenster, echte Dateileases,
 normalen Besitzerstart, Sicherungstransaktionen, bestätigten Shutdown und eine
 neue Lifetime ab. Ein isolierter 900×650-Hosting-Test prüft die Log-Unteransicht;
-er beweist nicht das Layout des gesamten App-Fensters. Diese Tests und die
-gemeinsamen finalen Gates müssen auf GitHub noch vollständig erfolgreich
-ausgeführt werden. Fehlgeschlagene Testläufe bleiben als solche sichtbar.
+er beweist nicht das Layout des gesamten App-Fensters. Der gezielte [Cloud-Lauf 40515525655](https://github.com/Proletariuss/Switch/actions/runs/40515525655)
+hat die sichtbare Live-Unteransicht, die begrenzte Startbeobachtung und die
+geschlossenen Supportexporte erfolgreich geprüft. Ein später ergänzter Test
+für Clientwarnungen bei Backend-Ausfall sowie die gemeinsamen finalen Gates
+stehen noch aus. Fehlgeschlagene Testläufe bleiben als solche sichtbar.
+
+
+## Umfang der Ereigniserfassung und bewusste Abgrenzung
+
+Die Ansicht vereinigt die bereits vorhandenen Client-, Backend-, Modul- und
+Operationsereignisse. Sie ist kein vollständiges Audit aller internen Schritte.
+Insbesondere beendet `call_mode_runtime_download.rs::run_native` einen eigenen
+Downloadworker; `call_mode_lifecycle.rs::download` kann danach die separate
+Gerätevorbereitung beginnen. Nicht jede dieser asynchronen Phasen besitzt
+bereits ein eigenes Logereignis. HTTP 202 bedeutet deshalb nur Annahme;
+vollständige Cachedateien beweisen weder die Bereitstellung im Gerät noch
+einen erfolgreichen Audiotest.
+
+Die spätere gezielte Ergänzung kann zwei getrennte geschlossene Operationen
+für Cachedownload und Gerätevorbereitung verwenden. Deren Abschluss müsste
+am tatsächlichen Worker und an der bestätigten Freigabe des bestehenden
+Besitzers gemessen werden. Die typisierten Vorbereitungs- und Freigabefehler
+lassen sich projizieren; Downloads benötigen eine feste Klassifikation am
+Fehlerursprung. Freie Fehlermeldungen werden dafür weder durchsucht noch als
+URL, Dateipfad, Identität oder Rohkommunikation gespeichert.
+
+Diese zusätzliche Instrumentierung wird nicht mit der aktuellen Umstellung
+der Anzeige verbunden: Sie verändert weitere Workergrenzen und erfordert
+eigene Negativtests. Die aktuelle Änderung erhält deren Verhalten und führt
+die vorhandenen Ereignisse zusammen. Bei einem Backend-Lesefehler bleiben
+auch die aktuellen Clientwarnungen über verworfene oder nicht gespeicherte
+Einträge sichtbar. Abbruch und Fristablauf während der Metadatenprüfung
+werden getrennt von tatsächlich veränderten Daten ausgewiesen; unbestätigte
+Ressourcenfreigabe behält Vorrang.
