@@ -675,10 +675,10 @@ private func checkObservationBudget(root: URL) async throws {
     timeout.start()
     let retainedPID = timeout.backend.childPID
     requireValue(await waitUntil { expired.attempts.count == 1 }, "timeout probe missing")
-    expired.finish(0, at: 210, ready: false)
+    expired.finish(0, at: 210, ready: true)
     requireValue(await waitUntil {
         if case .failed = timeout.backend.state { return true }; return false
-    }, "absolute observation deadline did not expire")
+    }, "late successful probe escaped the absolute observation deadline")
     guard case .failed(let message) = timeout.backend.state else { fatalError("timeout state lost") }
     require(message.contains("未确认") && !message.contains("已退出"), "timeout claimed an actual process exit")
     require(timeout.backend.childPID == retainedPID && Darwin.kill(retainedPID, 0) == 0

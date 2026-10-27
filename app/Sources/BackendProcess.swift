@@ -360,7 +360,7 @@ final class BackendProcess: ObservableObject {
                     self.state = .failed("后端进程提前退出，请查看日志")
                     return
                 }
-                if ready {
+                if ready, self.startupObservation.uptime() < deadline {
                     self.state = .running
                     return
                 }
