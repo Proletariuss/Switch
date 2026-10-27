@@ -131,12 +131,16 @@ pub(crate) async fn run_native(
     tokio::task::spawn_blocking(move || {
         let _permit = permit;
         let started = Instant::now();
-        let active = || current() && started.elapsed() < DOWNLOAD_OBSERVATION
-            && recovery.root_proof_for(&root).is_ok();
+        let active = || {
+            current()
+                && started.elapsed() < DOWNLOAD_OBSERVATION
+                && recovery.root_proof_for(&root).is_ok()
+        };
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             ensure_current(&active)?;
             let directory = match crate::module_recovery::runtime_download::begin(&root, &recovery)
-                .map_err(|error| error.to_string())? {
+                .map_err(|error| error.to_string())?
+            {
                 Some(controlled) => RuntimeDirectory {
                     parent: controlled.runtime,
                     staging: Some(controlled.staging),
@@ -334,7 +338,14 @@ where
             }
             let bytes = downloaded.ok_or_else(|| failures.join("；"))?;
             ensure_current(current)?;
-            install_file_staged(&destination, directory.staging.as_ref(), artifact, &bytes, &input.operation_id, current)?;
+            install_file_staged(
+                &destination,
+                directory.staging.as_ref(),
+                artifact,
+                &bytes,
+                &input.operation_id,
+                current,
+            )?;
         }
         completed += artifact.size;
         progress(
@@ -469,7 +480,10 @@ impl RuntimeDirectory {
         .map_err(|error| format!("运行时父目录不可用：{error}"))?;
         root.sync_all()
             .map_err(|error| format!("同步运行时父目录入口失败：{error}"))?;
-        Ok(Self { parent, staging: None })
+        Ok(Self {
+            parent,
+            staging: None,
+        })
     }
 
     fn try_lock(&self) -> Result<Flock<File>, String> {
@@ -585,7 +599,9 @@ fn install_file_staged(
     ensure_current(current)?;
     nix::fcntl::renameat(staging, from.as_c_str(), directory, to.as_c_str())
         .map_err(|error| format!("提交 {} 失败：{error}", artifact.name))?;
-    staging.sync_all().map_err(|error| format!("同步下载暂存目录失败：{error}"))?;
+    staging
+        .sync_all()
+        .map_err(|error| format!("同步下载暂存目录失败：{error}"))?;
     directory
         .sync_all()
         .map_err(|error| format!("同步 {} 安装结果失败：{error}", artifact.name))?;

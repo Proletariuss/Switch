@@ -270,13 +270,24 @@ mod tests {
         observation.bind(&Gate::quarantined_for_tests());
         let snapshot = observation.snapshot();
         let value = serde_json::to_value(&snapshot).unwrap();
-        assert_eq!(serde_json::from_value::<Snapshot>(value.clone()).unwrap(), snapshot);
-        for field in ["path", "imei", "imsi", "iccid", "backup", "journal", "command", "token", "error"] {
+        assert_eq!(
+            serde_json::from_value::<Snapshot>(value.clone()).unwrap(),
+            snapshot
+        );
+        for field in [
+            "path", "imei", "imsi", "iccid", "backup", "journal", "command", "token", "error",
+        ] {
             let mut changed = value.clone();
-            changed.as_object_mut().unwrap().insert(field.into(), "private".into());
+            changed
+                .as_object_mut()
+                .unwrap()
+                .insert(field.into(), "private".into());
             assert!(serde_json::from_value::<Snapshot>(changed).is_err());
             let mut changed = value.clone();
-            changed["startup"].as_object_mut().unwrap().insert(field.into(), "private".into());
+            changed["startup"]
+                .as_object_mut()
+                .unwrap()
+                .insert(field.into(), "private".into());
             assert!(serde_json::from_value::<Snapshot>(changed).is_err());
         }
         for field in ["state", "reason_codes"] {
@@ -299,13 +310,20 @@ mod tests {
     #[test]
     fn every_gate_reason_has_a_closed_bounded_projection() {
         let reasons = [
-            Reason::LegacyExecutionPending, Reason::RestoreJournalPending,
-            Reason::RestoreJournalUnreadable, Reason::ReconciliationPending,
-            Reason::ReconciliationUnreadable, Reason::LegacyCallModeLock,
-            Reason::LegacyAdbInterfaceLock, Reason::LegacyLockProvenancePending,
-            Reason::ModuleBackupPresent, Reason::LegacyVoiceRuntime,
-            Reason::ManagedVoiceControlPending, Reason::InvalidPristineMarker,
-            Reason::UnreadableEvidence, Reason::LifetimeAuthorityChanged,
+            Reason::LegacyExecutionPending,
+            Reason::RestoreJournalPending,
+            Reason::RestoreJournalUnreadable,
+            Reason::ReconciliationPending,
+            Reason::ReconciliationUnreadable,
+            Reason::LegacyCallModeLock,
+            Reason::LegacyAdbInterfaceLock,
+            Reason::LegacyLockProvenancePending,
+            Reason::ModuleBackupPresent,
+            Reason::LegacyVoiceRuntime,
+            Reason::ManagedVoiceControlPending,
+            Reason::InvalidPristineMarker,
+            Reason::UnreadableEvidence,
+            Reason::LifetimeAuthorityChanged,
         ];
         let mut value = Observation::default().snapshot();
         value.reason_codes = reasons.into_iter().map(ReasonCode::from).collect();
