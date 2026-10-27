@@ -7,6 +7,7 @@
 use serde::Serialize;
 mod evidence;
 pub(crate) mod legacy_locks;
+pub(crate) mod runtime_download;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
@@ -317,7 +318,15 @@ impl Gate {
         }
         self.0.root_proof.as_ref().is_some_and(|proof| {
             proof
-                .with_root(root, |directory| legacy_locks::covered(directory))
+                .with_root(root, |directory| {
+                    if legacy_locks::covered(directory)? {
+                        return Ok(true);
+                    }
+                    runtime_download::coverage(
+                        directory,
+                        &crate::call_mode_runtime_manifest::manifest().files,
+                    ).map(|coverage| coverage == Some(true))
+                })
                 .is_ok_and(|result| result.unwrap_or(false))
         })
     }
@@ -362,6 +371,15 @@ impl Gate {
     }
 
     pub(crate) fn inspect_with_lifetime(lease: &crate::daemon_lifetime::Lease) -> Self {
+        Self::inspect_with_lifetime_and_artifacts(
+            lease, &crate::call_mode_runtime_manifest::manifest().files,
+        )
+    }
+
+    fn inspect_with_lifetime_and_artifacts(
+        lease: &crate::daemon_lifetime::Lease,
+        artifacts: &[crate::call_mode_runtime_manifest::Artifact],
+    ) -> Self {
         let root = lease.root().to_path_buf();
         let root_proof = lease.root_proof();
         // Initial inspection and every later probe belong to the same actual
@@ -369,10 +387,7 @@ impl Gate {
         // cannot manufacture a new root authority.
         let initial = root_proof
             .with_root(&root, |directory| {
-                Self::from_reasons(evidence::inspect(
-                    directory,
-                    &crate::call_mode_runtime_manifest::manifest().files,
-                ))
+                Self::from_reasons(evidence::inspect(directory, artifacts))
             })
             .unwrap_or_else(|_| {
                 Self(Arc::new(Authority {

@@ -118,7 +118,13 @@ struct Provenance {
     historical_recovery_confirmed: bool,
 }
 fn capture(directory: &File) -> io::Result<Provenance> {
+    capture_with_runtime(directory, false)
+}
+fn capture_with_runtime(directory: &File, allow_runtime: bool) -> io::Result<Provenance> {
     for name in ABSENT {
+        if allow_runtime && name == "voice-runtime" {
+            continue;
+        }
         if stamp(directory, name)?.is_some() {
             return Err(invalid());
         }
@@ -144,6 +150,13 @@ fn capture(directory: &File) -> io::Result<Provenance> {
 /// Covers only the two immutable lock slots and only while all other recovery
 /// evidence is absent. A complete JSON file without the commit is insufficient.
 pub(super) fn covered(directory: &File) -> io::Result<bool> {
+    covered_download_source(directory, false)
+}
+
+/// The separate authenticated download receipt may explain only voice-runtime.
+/// This still checks the original receipt, both exact locks and every other
+/// absent slot, including all revocation and recovery evidence.
+pub(super) fn covered_download_source(directory: &File, allow_runtime: bool) -> io::Result<bool> {
     let store_stamp = stamp(directory, DIRECTORY)?;
     if store_stamp.is_none() {
         return Ok(false);
@@ -182,7 +195,7 @@ pub(super) fn covered(directory: &File) -> io::Result<bool> {
     }
     // New journals/backup/runtime/control evidence always revoke this narrow
     // exception. They retain the existing recovery paths and classifications.
-    let current = match capture(directory) {
+    let current = match capture_with_runtime(directory, allow_runtime) {
         Ok(value) => value,
         Err(_) => return Ok(false),
     };
