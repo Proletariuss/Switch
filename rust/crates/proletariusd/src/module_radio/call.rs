@@ -1008,7 +1008,7 @@ mod tests {
                 .any(|event| event.stage == Stage::CallQueryPhysical)
         );
         assert!(requests.try_recv().is_err());
-        service.release_esim(&lease).await.unwrap();
+        service.release_esim(lease).await.unwrap();
         finish_diagnostic_fixture(&service);
     }
 

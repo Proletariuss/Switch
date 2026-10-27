@@ -151,7 +151,7 @@ async fn native_call_read_and_mode_idle_retire_incomplete_clcc_without_consuming
                 .unwrap();
             assert!(!outcome.complete && !outcome.verified && !outcome.submitted);
             assert!(!outcome.error_code.is_empty());
-            assert_eq!(owner.status("native-module-test").unwrap()["open"], false);
+            assert!(owner.validate_radio_binding("native-module-test", &session).is_err());
             {
                 let trace = trace.lock().unwrap();
                 assert!(trace.dropped, "uncertain CLCC retires the actual byte transport");
