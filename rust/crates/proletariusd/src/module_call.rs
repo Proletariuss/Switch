@@ -434,12 +434,45 @@ impl Service {
                             .complete_dial(dial.expect("admitted dial"), &value, at)
                     }
                     Action::Answer => self.0.state.answer(revision, at),
-                    Action::Hangup => self.0.state.end(revision, at),
+                    Action::Hangup => {
+                        // ATH OK only acknowledges the command (CVHU may ignore
+                        // ATH). Observe once under the same retained lease; never
+                        // replay a write or terminate a newer incoming call.
+                        self.sync_binding(self.0.driver.binding());
+                        let observed = self.0.driver.query(Some(lease.clone())).await;
+                        self.sync_binding(self.0.driver.binding());
+                        match observed {
+                            Ok(value)
+                                if value.safe_idle
+                                    && self.0.driver.lease_current(&lease) =>
+                            {
+                                self.0.state.end(revision, OffsetDateTime::now_utc())
+                            }
+                            Ok(value) if self.0.driver.lease_current(&lease) => {
+                                self.0.state.apply_unconfirmed_hangup_query(
+                                    revision,
+                                    value.display,
+                                    OffsetDateTime::now_utc(),
+                                )
+                            }
+                            _ => self.0.state.apply_unconfirmed_hangup_query(
+                                revision,
+                                unknown(),
+                                OffsetDateTime::now_utc(),
+                            ),
+                        }
+                    }
                     Action::Dtmf => self.0.state.snapshot(),
                 };
                 let mut payload = json!({"accepted":true,"response":response});
                 if action == Action::Hangup {
-                    let warning = if update.applied {
+                    let confirmed =
+                        update.safe_idle && !update.desired_active && !update.pending_dial;
+                    payload["confirmed"] = json!(confirmed);
+                    let warning = if !confirmed {
+                        payload["code"] = json!("module_call_hangup_unconfirmed");
+                        "挂断指令已提交，但尚未确认通话结束；已保留通话保护并继续核对状态".into()
+                    } else if update.applied {
                         match self.0.driver.stop_audio(lease.producer_id.clone()).await {
                             Ok(()) => String::new(),
                             Err(error) => {
