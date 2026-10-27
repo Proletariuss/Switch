@@ -118,7 +118,13 @@ struct Provenance {
     historical_recovery_confirmed: bool,
 }
 fn capture(directory: &File) -> io::Result<Provenance> {
+    capture_with_runtime(directory, false)
+}
+fn capture_with_runtime(directory: &File, allow_runtime: bool) -> io::Result<Provenance> {
     for name in ABSENT {
+        if allow_runtime && name == "voice-runtime" {
+            continue;
+        }
         if stamp(directory, name)?.is_some() {
             return Err(invalid());
         }
@@ -144,6 +150,13 @@ fn capture(directory: &File) -> io::Result<Provenance> {
 /// Covers only the two immutable lock slots and only while all other recovery
 /// evidence is absent. A complete JSON file without the commit is insufficient.
 pub(super) fn covered(directory: &File) -> io::Result<bool> {
+    covered_download_source(directory, false)
+}
+
+/// The separate authenticated download receipt may explain only voice-runtime.
+/// This still checks the original receipt, both exact locks and every other
+/// absent slot, including all revocation and recovery evidence.
+pub(super) fn covered_download_source(directory: &File, allow_runtime: bool) -> io::Result<bool> {
     let store_stamp = stamp(directory, DIRECTORY)?;
     if store_stamp.is_none() {
         return Ok(false);
@@ -182,7 +195,7 @@ pub(super) fn covered(directory: &File) -> io::Result<bool> {
     }
     // New journals/backup/runtime/control evidence always revoke this narrow
     // exception. They retain the existing recovery paths and classifications.
-    let current = match capture(directory) {
+    let current = match capture_with_runtime(directory, allow_runtime) {
         Ok(value) => value,
         Err(_) => return Ok(false),
     };
@@ -281,6 +294,61 @@ pub(crate) fn invalidate(root: &Path) -> io::Result<()> {
         return store.sync_all();
     }
     write_new(&store, REVOKED, &[])
+}
+
+/// Validate provenance as immutable input to a separate physical current-state
+/// inspection. Revocation is retained, and this function never grants coverage.
+pub(crate) fn legacy_current_source(root: &File) -> io::Result<bool> {
+    let Some(before) = stamp(root, DIRECTORY)? else {
+        return Ok(false);
+    };
+    let store = open_directory(root, DIRECTORY)?;
+    let names = proletarius_platform_fs::directory_names(&store, 3)?;
+    if names.len() < 2
+        || names
+            .iter()
+            .any(|n| n != RECEIPT && n != COMMITTED && n != REVOKED)
+        || !empty_file(&store, COMMITTED)?
+    {
+        return Err(invalid());
+    }
+    if stamp(&store, REVOKED)?.is_some() && !empty_file(&store, REVOKED)? {
+        return Err(invalid());
+    }
+    let original = stamp(&store, RECEIPT)?.ok_or_else(invalid)?;
+    if !safe_regular(&original) || !(1..=4096).contains(&original.size) {
+        return Err(invalid());
+    }
+    let file = File::from(openat(
+        &store,
+        RECEIPT,
+        OFlag::O_RDONLY | OFlag::O_NOFOLLOW | OFlag::O_NONBLOCK | OFlag::O_CLOEXEC,
+        Mode::empty(),
+    )?);
+    let held = file.metadata()?;
+    if held.dev() != original.device || held.ino() != original.inode {
+        return Err(invalid());
+    }
+    let mut bytes = Vec::new();
+    file.take(4097).read_to_end(&mut bytes)?;
+    let receipt: Provenance = serde_json::from_slice(&bytes).map_err(|_| invalid())?;
+    let root_meta = root.metadata()?;
+    let locks = [
+        stamp(root, LOCKS[0])?.ok_or_else(invalid)?,
+        stamp(root, LOCKS[1])?.ok_or_else(invalid)?,
+    ];
+    if receipt.policy != POLICY
+        || receipt.historical_recovery_confirmed
+        || receipt.root_device != root_meta.dev()
+        || receipt.root_inode != root_meta.ino()
+        || receipt.locks != locks
+        || locks.iter().any(|s| !safe_regular(s) || s.size != 0)
+        || stamp(&store, RECEIPT)? != Some(original)
+        || stamp(root, DIRECTORY)? != Some(before)
+    {
+        return Err(invalid());
+    }
+    Ok(true)
 }
 
 #[cfg(test)]

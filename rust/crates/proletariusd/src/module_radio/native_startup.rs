@@ -1,6 +1,16 @@
 use super::*;
 
 impl Service {
+    /// A current baseline is an observation, not consent to apply an old
+    /// startup flight preference. Explicit public operations remain unchanged.
+    pub(crate) fn preserve_current_startup_cfun(&self) {
+        self.0
+            .state
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .preserve_current_cfun = true;
+    }
+
     /// Bind only the physical session selected by the native serial workflow.
     /// The expectation travels with the queued job; waiting cannot adopt a
     /// connection opened by an unrelated call-mode/reconnect operation.

@@ -33,6 +33,7 @@ pub(crate) fn completed_voice_control_store_fixture_for_tests()
 }
 mod recovery_binding;
 pub(crate) use recovery_binding::{DurableVoiceBinding, capture_restore_voice_binding};
+pub(crate) mod legacy_current;
 pub(crate) mod startup_recovery;
 
 pub(crate) const INTERNAL_PROBE_PATH: &str = "/api/internal/call-mode/adb/probe";

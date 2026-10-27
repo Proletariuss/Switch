@@ -294,6 +294,161 @@ private func expect(_ condition: @autoclosure () throws -> Bool, _ message: Stri
         print("PASS module support events: complete enum vocabulary, integer/Boolean bounds, nested privacy and record-only fallback")
     }
 
+
+    static let recoveryReasons = [
+        "legacy_execution_pending", "restore_journal_pending", "restore_journal_unreadable",
+        "reconciliation_pending", "reconciliation_unreadable", "legacy_call_mode_lock",
+        "legacy_adb_interface_lock", "legacy_lock_provenance_pending", "module_backup_present",
+        "legacy_voice_runtime", "managed_voice_control_pending", "invalid_pristine_marker",
+        "unreadable_evidence", "lifetime_authority_changed"
+    ]
+
+    static func recoverySnapshot() -> [String: Any] {
+        ["schema_version": 1, "observation": "last_observed", "state": "legacy_recovery_required",
+         "reason_codes": ["restore_journal_pending", "module_backup_present"],
+         "historical_recovery_confirmed": false,
+         "startup": ["metadata": "inspected", "reconciliation": "failed",
+                     "native_inspection": "not_applicable", "cleanup": "unconfirmed"]]
+    }
+
+    static func recoveryBundles() throws {
+        @discardableResult
+        func check(_ input: Any?, accepted: Bool) throws -> [String: Any]? {
+            var source = backendEnvelope()
+            if let input { source["module_recovery"] = input }
+            let bytes = try bundle(source)
+            try expect(!String(decoding: bytes, as: UTF8.self).contains(secret),
+                       "recovery metadata exported private data")
+            let backend = try json(bytes)["backend"] as? [String: Any]
+            try expect(backend != nil, "invalid recovery metadata discarded existing backend logs")
+            try expect((backend?["events"] as? [[String: Any]])?.count == 3,
+                       "recovery metadata changed retained events")
+            let safe = backend?["module_recovery"] as? [String: Any]
+            try expect((safe != nil) == accepted, "recovery closed vocabulary acceptance mismatch")
+            let warnings = backend?["warnings"] as? [String] ?? []
+            try expect(warnings.contains("backend_module_recovery_invalid") == (input != nil && !accepted),
+                       "invalid recovery metadata warning mismatch")
+            if let safe {
+                try expect(Set(safe.keys) == Set(["schema_version", "observation", "state", "reason_codes",
+                                                 "historical_recovery_confirmed", "startup"]),
+                           "unknown recovery fields survived export")
+                try expect(safe["observation"] as? String == "last_observed",
+                           "export timestamp was allowed to imply a fresh recovery probe")
+                let startup = safe["startup"] as! [String: Any]
+                try expect(Set(startup.keys) == Set(["metadata", "reconciliation", "native_inspection", "cleanup", "legacy_current"]),
+                           "unknown startup fields survived export")
+                try expect(safe["historical_recovery_confirmed"] as? Bool == false,
+                           "diagnostic observation became a historical recovery certificate")
+                try expect(try JSONSerialization.data(withJSONObject: safe).count <= 4096,
+                           "recovery export exceeded its byte budget")
+            }
+            return safe
+        }
+
+        try check(nil, accepted: false) // Existing backends have no retained observation.
+        let good = try check(recoverySnapshot(), accepted: true)!
+        try expect(good["reason_codes"] as? [String] == ["restore_journal_pending", "module_backup_present"],
+                   "actual recovery reasons were lost")
+        let phases = good["startup"] as! [String: Any]
+        try expect(phases["metadata"] as? String == "inspected"
+                   && phases["reconciliation"] as? String == "failed"
+                   && phases["native_inspection"] as? String == "not_applicable"
+                   && phases["cleanup"] as? String == "unconfirmed"
+                   && phases["legacy_current"] as? String == "not_observed", "startup evidence or old-backend compatibility was lost")
+
+        for reason in recoveryReasons {
+            var value = recoverySnapshot()
+            value["reason_codes"] = [reason, reason]
+            let safe = try check(value, accepted: true)!
+            try expect(safe["reason_codes"] as? [String] == [reason], "duplicate reasons not bounded")
+        }
+        var everyReason = recoverySnapshot()
+        everyReason["reason_codes"] = recoveryReasons
+        try check(everyReason, accepted: true)
+        for state in ["open", "not_observed"] {
+            var value = recoverySnapshot()
+            value["state"] = state; value["reason_codes"] = [String]()
+            try check(value, accepted: true)
+            value["reason_codes"] = ["legacy_call_mode_lock"]
+            try check(value, accepted: false)
+        }
+        let vocabulary: [String: [String]] = [
+            "metadata": ["not_observed", "not_needed", "inspected", "failed"],
+            "reconciliation": ["not_observed", "not_applicable", "completed", "completed_after_stop",
+                               "failed", "publication_unconfirmed"],
+            "native_inspection": ["not_observed", "not_applicable", "inspected", "failed"],
+            "cleanup": ["not_observed", "confirmed", "unconfirmed"],
+            "legacy_current": ["not_observed", "not_applicable", "started", "current_verified", "publication_unconfirmed",
+                "legacy_current_ineligible", "legacy_current_evidence_changed", "legacy_current_busy",
+                "legacy_current_cancelled", "legacy_current_timeout", "legacy_current_device_unconfirmed",
+                "legacy_current_readback_unconfirmed", "legacy_current_helper_unconfirmed",
+                "legacy_current_cleanup_unconfirmed", "legacy_current_worker_failed"]
+        ]
+        for (field, choices) in vocabulary {
+            for choice in choices {
+                var value = recoverySnapshot(), startup = value["startup"] as! [String: Any]
+                startup[field] = choice; value["startup"] = startup
+                try check(value, accepted: true)
+            }
+            for invalid in [secret, 1, false, NSNull()] as [Any] {
+                var value = recoverySnapshot(), startup = value["startup"] as! [String: Any]
+                startup[field] = invalid; value["startup"] = startup
+                try check(value, accepted: false)
+            }
+            var value = recoverySnapshot(), startup = value["startup"] as! [String: Any]
+            startup.removeValue(forKey: field); value["startup"] = startup
+            try check(value, accepted: field == "legacy_current")
+        }
+
+        var hostile = recoverySnapshot()
+        for key in ["path", "imei", "subscriber", "token", "raw_error"] { hostile[key] = secret }
+        var startup = hostile["startup"] as! [String: Any]
+        for key in ["path", "imei", "raw_error"] { startup[key] = secret }
+        hostile["startup"] = startup
+        try check(hostile, accepted: true)
+
+        for (field, invalid) in [
+            ("schema_version", 2 as Any), ("schema_version", true as Any),
+            ("schema_version", -1 as Any), ("schema_version", 1.5 as Any),
+            ("observation", "live_verified" as Any), ("observation", secret as Any),
+            ("observation", 1 as Any), ("observation", false as Any), ("observation", NSNull()),
+            ("state", secret as Any), ("state", false as Any),
+            ("reason_codes", [secret] as Any), ("reason_codes", [] as [String]),
+            ("reason_codes", [1] as Any),
+            ("reason_codes", Array(repeating: "legacy_call_mode_lock", count: 15) as Any),
+            ("historical_recovery_confirmed", true as Any),
+            ("historical_recovery_confirmed", 0 as Any),
+            ("historical_recovery_confirmed", secret as Any), ("startup", secret as Any)
+        ] {
+            var value = recoverySnapshot(); value[field] = invalid
+            try check(value, accepted: false)
+        }
+        for field in ["schema_version", "observation", "state", "reason_codes", "historical_recovery_confirmed", "startup"] {
+            var value = recoverySnapshot(); value.removeValue(forKey: field)
+            try check(value, accepted: false)
+        }
+        for invalid in [NSNull(), secret, [secret]] as [Any] { try check(invalid, accepted: false) }
+        var oversized = recoverySnapshot()
+        oversized["private_extra"] = String(repeating: "x", count: 4096)
+        try check(oversized, accepted: false)
+
+        // A full event ring must not consume the separately retained observation.
+        var full = backendEnvelope()
+        full["events"] = (1...4096).map { record($0, ["kind": "lifecycle", "phase": "startup"]) }
+        var retained = recoverySnapshot(), startupFailure = retained["startup"] as! [String: Any]
+        startupFailure["legacy_current"] = "legacy_current_helper_unconfirmed"
+        retained["startup"] = startupFailure
+        full["module_recovery"] = retained
+        let fullBackend = try json(bundle(full))["backend"] as! [String: Any]
+        try expect((fullBackend["events"] as? [[String: Any]])?.count == 4096
+                   && fullBackend["module_recovery"] is [String: Any],
+                   "event cap discarded retained module recovery reasons")
+        let retainedStartup = (fullBackend["module_recovery"] as! [String: Any])["startup"] as! [String: Any]
+        try expect(retainedStartup["legacy_current"] as? String == "legacy_current_helper_unconfirmed",
+                   "event cap discarded the actual current-baseline failure")
+        print("PASS retained recovery: complete reasons/phases, 4096-byte and 14-reason limits, closed types, nested privacy, old backend compatibility and independent event retention")
+    }
+
     static func unsafeSnapshotPaths() throws {
         for attack in ["directory", "ancestor", "segment", "oversized"] {
             let base = try directory("unsafe-" + attack), outside = base.appendingPathComponent("outside", isDirectory: true)
@@ -371,6 +526,7 @@ private func expect(_ condition: @autoclosure () throws -> Bool, _ message: Stri
         try clientSchemaAndExport()
         try bundles()
         try moduleBundles()
+        try recoveryBundles()
         try unsafeSnapshotPaths()
         print("PASS production support diagnostics; isolated files; no devices, network or real user data")
     }

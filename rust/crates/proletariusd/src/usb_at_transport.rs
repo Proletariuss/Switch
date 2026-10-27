@@ -7,6 +7,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 use zeroize::Zeroizing;
 
+pub(crate) mod legacy_current;
 mod reconnect;
 pub(crate) mod recovery;
 #[cfg(test)]

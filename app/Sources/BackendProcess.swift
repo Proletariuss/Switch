@@ -151,6 +151,19 @@ enum SwitchRuntimePaths {
     }
 }
 
+/// Observe the same owned process through the existing finite recovery window:
+/// 180 s reconciliation + 10 s metadata + 20 s scheduling/handoff allowance.
+/// This budget never terminates a child or certifies physical cleanup.
+@MainActor
+struct BackendStartupObservation {
+    static let budget: TimeInterval = 210
+    var uptime: () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
+    var check: (TimeInterval) async -> Bool = { await BackendReadiness.check(timeout: $0) }
+    var pause: (TimeInterval) async throws -> Void = { seconds in
+        try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+    }
+}
+
 /// 管理后端子进程的生命周期，并对外暴露 Unix socket 路径。
 ///
 /// 始终启动单一 Rust 后端；设备就绪状态由各原生设备服务单独报告。
@@ -181,6 +194,7 @@ final class BackendProcess: ObservableObject {
     private var startupTask: Task<Void, Never>?
     private var launchGeneration: UInt64 = 0
     private let executableURLOverride: URL?
+    private let startupObservation: BackendStartupObservation
     private var stdoutTask: Task<Void, Never>?
     private var stderrTask: Task<Void, Never>?
     private let logWriteQueue = DispatchQueue(label: "switch.backend.log-writer")
@@ -192,7 +206,9 @@ final class BackendProcess: ObservableObject {
     let bleSocketPath: String
     let logURL: URL
 
-    init(supportDirectory: URL? = nil, executableURL: URL? = nil) {
+    init(supportDirectory: URL? = nil, executableURL: URL? = nil,
+         startupObservation: BackendStartupObservation? = nil) {
+        self.startupObservation = startupObservation ?? BackendStartupObservation()
         executableURLOverride = executableURL
         let fm = FileManager.default
         let support = supportDirectory ?? SwitchRuntimePaths.dataDirectory(fileManager: fm)
@@ -328,36 +344,37 @@ final class BackendProcess: ObservableObject {
                 }
             }
             // One absolute deadline includes every health request and delay.
-            let deadline = ProcessInfo.processInfo.systemUptime + 5
-            while ProcessInfo.processInfo.systemUptime < deadline {
+            let deadline = self.startupObservation.uptime() + BackendStartupObservation.budget
+            while self.startupObservation.uptime() < deadline {
                 guard !Task.isCancelled, self.launchGeneration == generation,
                       self.process === proc else { return }
                 if !proc.isRunning {
                     self.state = .failed("后端进程提前退出，请查看日志")
                     return
                 }
-                let remaining = deadline - ProcessInfo.processInfo.systemUptime
-                let ready = await BackendReadiness.check(
-                    timeout: min(1, remaining))
+                let remaining = deadline - self.startupObservation.uptime()
+                let ready = await self.startupObservation.check(min(1, remaining))
                 guard !Task.isCancelled, self.launchGeneration == generation,
                       self.process === proc else { return }
                 guard proc.isRunning else {
                     self.state = .failed("后端进程提前退出，请查看日志")
                     return
                 }
-                if ready {
+                if ready, self.startupObservation.uptime() < deadline {
                     self.state = .running
                     return
                 }
-                let pause = min(0.1, deadline - ProcessInfo.processInfo.systemUptime)
+                let pause = min(0.1, deadline - self.startupObservation.uptime())
                 if pause > 0 {
-                    do { try await Task.sleep(nanoseconds: UInt64(pause * 1_000_000_000)) }
+                    do { try await self.startupObservation.pause(pause) }
                     catch { return }
                 }
             }
             guard !Task.isCancelled, self.launchGeneration == generation,
                   self.process === proc, self.state != .stopping else { return }
-            self.state = .failed("后端启动超时")
+            self.state = .failed(proc.isRunning
+                ? "后台启动或恢复核对结果仍未确认；进程继续保留，可再次检查"
+                : "后端进程提前退出，请查看日志")
         }
     }
 

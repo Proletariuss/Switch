@@ -45,10 +45,10 @@
 		565C2FFB4D179D1398E2BAD1 /* BackendProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 098EF72D66EE7EACD2DB13B9 /* BackendProcess.swift */; };
 		5B5691F47626561D71B487E2 /* AutoLaunch.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFE2C57CD92D5BFF11E7C49C /* AutoLaunch.swift */; };
 		5C0D9C95A3FDE9076D742496 /* ESIMRefreshModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF465B9B01E126F1070A83B6 /* ESIMRefreshModels.swift */; };
+		5DD12844B0F737B5D8905FE7 /* LiveDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B8E15DAD4D0FF407EA5ACE7 /* LiveDiagnostics.swift */; };
 		5F04E49AF325B56E98C8269C /* DeviceModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A29BD7960E41A12D1675363 /* DeviceModels.swift */; };
 		5F28332B614E8220668090A5 /* AudioIOProcRetirement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A3B17B0DCCFF28CAF5D306B /* AudioIOProcRetirement.swift */; };
 		5FFB896E93BF4AA36BF301C2 /* NetworkServicesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 012C242E2BDB3B8F60D9E9EA /* NetworkServicesStore.swift */; };
-		623C2FC85176843286596E2F /* DiagnosticEventsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12EF0E8AC8D76E0D57E5858B /* DiagnosticEventsView.swift */; };
 		6349A95ADEC3FEBF4696A4DA /* ModuleRecoveryStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3536037299A0DCEB8D8D9EC9 /* ModuleRecoveryStatusView.swift */; };
 		6456531617C62EF559978D3B /* NetworkModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A08CD6841DE6686FD1E6A6E /* NetworkModels.swift */; };
 		64AD15F9F8F1375FF8282045 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6C79019817D65DC5C4CF5A6 /* APIClient.swift */; };
@@ -129,7 +129,6 @@
 		0CBB8FB3CE90FCA0B8B2ED03 /* ReaderDownloadESIMView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderDownloadESIMView.swift; sourceTree = "<group>"; };
 		107D28AABE556A3F01501BC6 /* ProletariusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProletariusApp.swift; sourceTree = "<group>"; };
 		10AFAE6F1780457B8F28F642 /* CallRuntimeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallRuntimeStore.swift; sourceTree = "<group>"; };
-		12EF0E8AC8D76E0D57E5858B /* DiagnosticEventsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticEventsView.swift; sourceTree = "<group>"; };
 		13E43D18F35EF52924B67A11 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		14DDD3A5D3D876A84C3DD949 /* DeviceSMSSendStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceSMSSendStore.swift; sourceTree = "<group>"; };
 		15BC028691A575975E9D4366 /* AcceptanceCompanionPhaseA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AcceptanceCompanionPhaseA.swift; sourceTree = "<group>"; };
@@ -173,6 +172,7 @@
 		7A3B17B0DCCFF28CAF5D306B /* AudioIOProcRetirement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioIOProcRetirement.swift; sourceTree = "<group>"; };
 		7AF40C8E68C23D0EA00805C0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7B408F9E36AEB5C324A58DF9 /* ReaderBLEBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderBLEBridge.swift; sourceTree = "<group>"; };
+		7B8E15DAD4D0FF407EA5ACE7 /* LiveDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveDiagnostics.swift; sourceTree = "<group>"; };
 		7C766BF59FFB078DB3536B4A /* AudioPlaybackPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlaybackPolicy.swift; sourceTree = "<group>"; };
 		7F00251A1D2215E4E76C6F54 /* AudioRouteRecoveryTickets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRouteRecoveryTickets.swift; sourceTree = "<group>"; };
 		7FB24DD9702232B93BD9F017 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
@@ -250,7 +250,6 @@
 				60422194D88A577BF1E3301A /* CallView.swift */,
 				13E43D18F35EF52924B67A11 /* ContentView.swift */,
 				625DE53FB7F2D8CBA7E2D92E /* DeviceSMSRecoveryView.swift */,
-				12EF0E8AC8D76E0D57E5858B /* DiagnosticEventsView.swift */,
 				A6BE8439E8A3DAFD7F136D20 /* DiagnosticsView.swift */,
 				E21A5AD10CE0BF427F865907 /* GlassComponents.swift */,
 				B5C375CE0CE07DF6BA56A0D3 /* HomeSupportViews.swift */,
@@ -316,6 +315,7 @@
 				E10EEADBB8133A33BD9093E0 /* ESIMQRCode.swift */,
 				AF465B9B01E126F1070A83B6 /* ESIMRefreshModels.swift */,
 				19837C11A46CE5E24339A458 /* IncomingCallCard.swift */,
+				7B8E15DAD4D0FF407EA5ACE7 /* LiveDiagnostics.swift */,
 				0058FB866E6D72660FE92DA3 /* LocalBackendAuthentication.swift */,
 				9AF7A92D1A92E45E67F17F78 /* MainWindowCoordinator.swift */,
 				738304A0AB1795A4B20D7638 /* MenuBarStatusSnapshot.swift */,
@@ -563,7 +563,6 @@
 				74892CB9809CD7812527FCAF /* DeviceSnapshotStore.swift in Sources */,
 				D5F81C6CB38B77A5EEE6BE9E /* DiagnosticEventModels.swift in Sources */,
 				D3A9479A51DD56B14F5340AD /* DiagnosticEventStore.swift in Sources */,
-				623C2FC85176843286596E2F /* DiagnosticEventsView.swift in Sources */,
 				D88E33F5EB27885D63906C57 /* DiagnosticsView.swift in Sources */,
 				3799F8A98462C66F31772C7E /* ESIMModels.swift in Sources */,
 				9BA48DC731DA0735AA9FBA69 /* ESIMQRCode.swift in Sources */,
@@ -572,6 +571,7 @@
 				8DD0E80D73EE8E1B44768E92 /* HomeSupportViews.swift in Sources */,
 				F935DF918216FD34906ADEB0 /* HomeView.swift in Sources */,
 				9DD96F85C94994F592038F62 /* IncomingCallCard.swift in Sources */,
+				5DD12844B0F737B5D8905FE7 /* LiveDiagnostics.swift in Sources */,
 				0CC4AB4805B43A9D6AC24047 /* LocalBackendAuthentication.swift in Sources */,
 				E431110D1C65B856D7DD7117 /* MainWindowCoordinator.swift in Sources */,
 				9101238469919DBB90E877C3 /* MenuBarStatusSnapshot.swift in Sources */,
@@ -668,7 +668,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 355;
+				CURRENT_PROJECT_VERSION = 356;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DISPLAY_NAME = Switch;
 				ENABLE_APP_SANDBOX = NO;
@@ -684,7 +684,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 3.55;
+				MARKETING_VERSION = 3.56;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_LDFLAGS = "$(inherited) -force_load \"$(PROJECT_DIR)/../build/rust-target/release/libproletarius_audio_core.a\" -framework SystemConfiguration";
@@ -751,7 +751,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 355;
+				CURRENT_PROJECT_VERSION = 356;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DISPLAY_NAME = Switch;
 				ENABLE_APP_SANDBOX = NO;
@@ -773,7 +773,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 3.55;
+				MARKETING_VERSION = 3.56;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

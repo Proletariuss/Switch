@@ -7,12 +7,13 @@
 use serde::Serialize;
 mod evidence;
 pub(crate) mod legacy_locks;
+pub(crate) mod runtime_download;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 
 mod reconciliation;
-pub(crate) use reconciliation::ReconciliationTicket;
+pub(crate) use reconciliation::{LegacyCurrentClaim, ReconciliationTicket};
 
 pub(crate) const CODE: &str = "legacy_recovery_required";
 pub(crate) const MESSAGE: &str = "模块存在未确认的旧版恢复状态；读卡器功能可继续使用";
@@ -317,7 +318,16 @@ impl Gate {
         }
         self.0.root_proof.as_ref().is_some_and(|proof| {
             proof
-                .with_root(root, |directory| legacy_locks::covered(directory))
+                .with_root(root, |directory| {
+                    if legacy_locks::covered(directory)? {
+                        return Ok(true);
+                    }
+                    runtime_download::coverage(
+                        directory,
+                        &crate::call_mode_runtime_manifest::manifest().files,
+                    )
+                    .map(|coverage| coverage == Some(true))
+                })
                 .is_ok_and(|result| result.unwrap_or(false))
         })
     }
@@ -362,6 +372,24 @@ impl Gate {
     }
 
     pub(crate) fn inspect_with_lifetime(lease: &crate::daemon_lifetime::Lease) -> Self {
+        Self::inspect_with_lifetime_and_artifacts(
+            lease,
+            &crate::call_mode_runtime_manifest::manifest().files,
+        )
+    }
+
+    #[cfg(test)]
+    pub(crate) fn inspect_download_fixture_with_lifetime(
+        lease: &crate::daemon_lifetime::Lease,
+        artifacts: &[crate::call_mode_runtime_manifest::Artifact],
+    ) -> Self {
+        Self::inspect_with_lifetime_and_artifacts(lease, artifacts)
+    }
+
+    fn inspect_with_lifetime_and_artifacts(
+        lease: &crate::daemon_lifetime::Lease,
+        artifacts: &[crate::call_mode_runtime_manifest::Artifact],
+    ) -> Self {
         let root = lease.root().to_path_buf();
         let root_proof = lease.root_proof();
         // Initial inspection and every later probe belong to the same actual
@@ -369,10 +397,7 @@ impl Gate {
         // cannot manufacture a new root authority.
         let initial = root_proof
             .with_root(&root, |directory| {
-                Self::from_reasons(evidence::inspect(
-                    directory,
-                    &crate::call_mode_runtime_manifest::manifest().files,
-                ))
+                Self::from_reasons(evidence::inspect(directory, artifacts))
             })
             .unwrap_or_else(|_| {
                 Self(Arc::new(Authority {
@@ -494,6 +519,12 @@ impl Gate {
     }
     pub(crate) fn status(&self) -> Option<&Status> {
         self.is_admission_revoked();
+        self.observed_status()
+    }
+
+    /// Last observed state only. Support export must never probe evidence or
+    /// turn a diagnostic read into a new admission/revocation decision.
+    pub(crate) fn observed_status(&self) -> Option<&Status> {
         if self.is_quarantined() {
             self.0.startup.as_ref()
         } else {
@@ -646,6 +677,26 @@ mod tests {
         let lease = crate::daemon_lifetime::Lease::acquire(root).unwrap();
         let gate = Gate::inspect_with_lifetime(&lease);
         (lease, gate)
+    }
+
+    #[test]
+    fn support_observation_does_not_probe_or_revoke_the_gate() {
+        let root = Root::new();
+        let (_lease, gate) = live_gate(&root.0);
+        assert!(gate.observed_status().is_none());
+        root.write(LEGACY_EXECUTION_PENDING, b"private evidence");
+        // Filesystem changes are not permission for a diagnostic projection to
+        // perform the live probe. The existing status path retains that job.
+        assert!(gate.observed_status().is_none());
+        assert!(!gate.is_quarantined());
+        assert_eq!(
+            gate.status().unwrap().reason_codes,
+            vec![Reason::LegacyExecutionPending]
+        );
+        assert_eq!(
+            gate.observed_status().unwrap().reason_codes,
+            vec![Reason::LegacyExecutionPending]
+        );
     }
 
     #[test]

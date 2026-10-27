@@ -93,12 +93,12 @@ const READ_STOPPED_DSP: &str = r#"set -f; h() { v=$(od -An -v -tx1 -N "$2" "$1" 
 /// AdbProbe has already verified the random status marker and decoded
 /// its exit code. Its output deliberately retains the wrapper's separator LF.
 /// Consume exactly that LF; protocol terminators remain strict decoder input.
-fn checked_shell_protocol(output: &[u8]) -> Result<&[u8], ProbeError> {
+pub(super) fn checked_shell_protocol(output: &[u8]) -> Result<&[u8], ProbeError> {
     output
         .strip_suffix(b"\n")
         .ok_or_else(managed_control::failure)
 }
-fn read_stopped_dsp(adb: &mut impl ModuleVoiceADB) -> Result<String, ProbeError> {
+pub(super) fn read_stopped_dsp(adb: &mut impl ModuleVoiceADB) -> Result<String, ProbeError> {
     let (output, status) = adb.shell_checked_timeout(READ_STOPPED_DSP, Duration::from_secs(8))?;
     if status != 0 {
         return Err(managed_control::failure());
@@ -244,7 +244,7 @@ fn no_live_command(allowed_sessions: &[String]) -> String {
         r#"set -f; LC_ALL=C; export LC_ALL; h() {{ v=$(od -An -v -tx1 -N "$2" "$1" 2>/dev/null) || return 81; printf '%s' "$v" | tr -d ' \n'; }}; test ! -e /run/proletarius-voice-route.pid && test ! -L /run/proletarius-voice-route.pid || exit 61; test ! -L /tmp/proletarius-call || exit 62; nc=0; set +f; for d in /tmp/proletarius-call/control-*; do nc=$((nc+1)); test "$nc" -le 256 || exit 63; {allowed} test ! -e "$d" && test ! -L "$d" || exit 63; done; set -f; b=$(h /proc/sys/kernel/random/boot_id 38) || exit 64; test "${{#b}}" -eq 74 || exit 64; scan() {{ ids=; n=0; set +f; for d in /proc/[0-9]*; do set -f; test -d "$d" && test ! -L "$d" || exit 65; p=${{d#/proc/}}; case "$p" in ''|*[!0-9]*) exit 66;; esac; test "${{#p}}" -le 10 || exit 67; n=$((n+1)); test "$n" -le 256 || exit 68; test -r "$d/cmdline" || exit 69; a=$(h "$d/cmdline" 1025) || exit 70; test "${{#a}}" -le 2048 || exit 70; c=$(h "$d/cmdline" 1025) || exit 71; test "$a" = "$c" || exit 71; case "$a" in {helper}00*|{supervisor}00*) exit 72;; esac; ids="$ids$p,"; done; set -f; test "$n" -gt 0 || exit 73; true; }}; scan || exit $?; first_ids=$ids; scan || exit $?; test "$first_ids" = "$ids" || exit 74; e=$(h /proc/sys/kernel/random/boot_id 38) || exit 75; test "$b" = "$e" || exit 75; printf 'SWNOVOICE1\n%s\n%s\n%s\n' "$b" "$ids" "$e""#
     )
 }
-fn parse_no_live(output: &[u8]) -> Result<String, ProbeError> {
+pub(super) fn parse_no_live(output: &[u8]) -> Result<String, ProbeError> {
     let bad = || {
         ProbeError::new(
             "startup_voice_no_live_unconfirmed",

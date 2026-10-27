@@ -199,6 +199,17 @@ struct ClientDiagnosticSnapshot: Codable {
     let events: [ClientDiagnosticEvent]
     let warnings: [String]
 }
+struct ClientDiagnosticLiveRecord {
+    let sequence: UInt64
+    let event: ClientDiagnosticEvent
+}
+struct ClientDiagnosticLiveSnapshot {
+    let session: String
+    let records: [ClientDiagnosticLiveRecord]
+    let evicted: UInt64
+    let dropped: UInt64
+    let writeFailures: UInt64
+}
 final class ClientDiagnostics: @unchecked Sendable {
     static let shared = ClientDiagnostics()
     private let lock = NSLock()
@@ -206,6 +217,9 @@ final class ClientDiagnostics: @unchecked Sendable {
     private var observer: NSObjectProtocol?
     private var dropped: UInt64 = 0
     private var writeFailures: UInt64 = 0
+    private var liveRecords: [ClientDiagnosticLiveRecord] = []
+    private var liveSequence: UInt64 = 0
+    private var liveEvicted: UInt64 = 0
     private let session = UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
     init() {
         observer = NotificationCenter.default.addObserver(
@@ -238,12 +252,27 @@ final class ClientDiagnostics: @unchecked Sendable {
     }
     private func record(_ event: ClientDiagnosticEvent) {
         guard event.validated(), let encoded = try? JSONEncoder().encode(event) else { return }
-        lock.lock(); let target = writer; lock.unlock()
+        lock.lock()
+        liveSequence &+= 1
+        liveRecords.append(ClientDiagnosticLiveRecord(sequence: liveSequence, event: event))
+        if liveRecords.count > 256 {
+            liveRecords.removeFirst(liveRecords.count - 256)
+            liveEvicted &+= 1
+        }
+        let target = writer
+        lock.unlock()
         guard let target else { return }
         if !target.enqueue(String(decoding: encoded, as: UTF8.self)) {
             lock.lock(); dropped &+= 1; lock.unlock()
         }
     }
+    /// Current GUI session only; no filesystem reads, flushes or writer waits.
+    func liveSnapshot() -> ClientDiagnosticLiveSnapshot {
+        lock.lock(); defer { lock.unlock() }
+        return ClientDiagnosticLiveSnapshot(session: session, records: liveRecords, evicted: liveEvicted,
+                                            dropped: dropped, writeFailures: writeFailures)
+    }
+
     /// Background-only bounded read, never flushes/joins a communication owner.
     func snapshot() -> ClientDiagnosticSnapshot {
         lock.lock(); let target = writer; let dropCount = dropped; let failureCount = writeFailures; lock.unlock()
