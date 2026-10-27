@@ -13,7 +13,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 
 mod reconciliation;
-pub(crate) use reconciliation::{ReconciliationTicket, LegacyCurrentClaim};
+pub(crate) use reconciliation::{LegacyCurrentClaim, ReconciliationTicket};
 
 pub(crate) const CODE: &str = "legacy_recovery_required";
 pub(crate) const MESSAGE: &str = "模块存在未确认的旧版恢复状态；读卡器功能可继续使用";
@@ -325,7 +325,8 @@ impl Gate {
                     runtime_download::coverage(
                         directory,
                         &crate::call_mode_runtime_manifest::manifest().files,
-                    ).map(|coverage| coverage == Some(true))
+                    )
+                    .map(|coverage| coverage == Some(true))
                 })
                 .is_ok_and(|result| result.unwrap_or(false))
         })
@@ -372,7 +373,8 @@ impl Gate {
 
     pub(crate) fn inspect_with_lifetime(lease: &crate::daemon_lifetime::Lease) -> Self {
         Self::inspect_with_lifetime_and_artifacts(
-            lease, &crate::call_mode_runtime_manifest::manifest().files,
+            lease,
+            &crate::call_mode_runtime_manifest::manifest().files,
         )
     }
 

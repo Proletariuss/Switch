@@ -2346,7 +2346,7 @@ impl Service {
                     self.0.state.lock().unwrap().preserve_current_cfun = false;
                 }
                 result
-            },
+            }
             Job::PublicReboot => self.public_reboot(epoch).await,
             Job::PublicNetworkRecoveryReboot => self.public_reboot_inner(epoch, true).await,
             Job::PublicUSBNetMode {

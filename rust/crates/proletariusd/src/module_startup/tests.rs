@@ -872,9 +872,16 @@ async fn verified_usb_startup_never_probes_serial_or_applies_startup_flight_poli
         until(|| fixture.usb.native_sms_ready()).await;
         assert_eq!(*service.selection().borrow(), Selection::NativeUsb);
         assert_eq!(fixture.physical.opens.load(Ordering::SeqCst), 1);
-        assert!(fixture.physical.commands.lock().unwrap().iter()
-            .all(|command| !command.starts_with("AT+CFUN=")),
-            "current-baseline startup observes the mode; it cannot apply old preferences");
+        assert!(
+            fixture
+                .physical
+                .commands
+                .lock()
+                .unwrap()
+                .iter()
+                .all(|command| !command.starts_with("AT+CFUN=")),
+            "current-baseline startup observes the mode; it cannot apply old preferences"
+        );
         fixture.close(&service).await;
     }
 }
@@ -883,13 +890,20 @@ async fn verified_usb_startup_never_probes_serial_or_applies_startup_flight_poli
 async fn verified_usb_first_open_failure_never_falls_back_or_retries_discovery() {
     let fixture = Fixture::new();
     *fixture.physical.open_error.lock().unwrap() = Some(TransportError {
-        code: "legacy_current_device_unconfirmed", message: "fixed fixture".into(),
-        response: String::new(), uncertain: false,
+        code: "legacy_current_device_unconfirmed",
+        message: "fixed fixture".into(),
+        response: String::new(),
+        uncertain: false,
     });
     let service = fixture.start(Probe::VerifiedUsb);
     until(|| service.last_error().is_some()).await;
     assert_eq!(fixture.physical.opens.load(Ordering::SeqCst), 1);
-    assert_eq!(*service.selection().borrow(), Selection::Failed { code: "legacy_current_device_unconfirmed" });
+    assert_eq!(
+        *service.selection().borrow(),
+        Selection::Failed {
+            code: "legacy_current_device_unconfirmed"
+        }
+    );
     assert!(service.shutdown().await.is_err());
     fixture.radio.begin_shutdown();
     fixture.radio.finish_shutdown().await.unwrap();

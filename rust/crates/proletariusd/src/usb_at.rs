@@ -1451,13 +1451,19 @@ impl Owner {
     }
 
     pub(crate) fn with_legacy_current_seed(
-        producer: String, adopt: bool, gate: crate::module_recovery::Gate,
+        producer: String,
+        adopt: bool,
+        gate: crate::module_recovery::Gate,
         seed: crate::startup_recovery::legacy_current::Seed,
     ) -> Self {
         let opener_gate = gate.clone();
         let seed = Arc::new(seed);
-        Self::with_factory_adopt_recovery(producer,
-            Arc::new(move || seed.open(&opener_gate)), adopt, gate)
+        Self::with_factory_adopt_recovery(
+            producer,
+            Arc::new(move || seed.open(&opener_gate)),
+            adopt,
+            gate,
+        )
     }
 
     fn with_factory_and_adopt(producer: String, factory: Factory, adopt: bool) -> Self {

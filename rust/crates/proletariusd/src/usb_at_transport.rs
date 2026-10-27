@@ -7,9 +7,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 use zeroize::Zeroizing;
 
+pub(crate) mod legacy_current;
 mod reconnect;
 pub(crate) mod recovery;
-pub(crate) mod legacy_current;
 #[cfg(test)]
 mod restore_journal_tests;
 pub(crate) use reconnect::{DurableUsbBinding, ReenumerationAnchor, open_exact, open_successor};
