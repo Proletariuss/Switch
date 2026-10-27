@@ -649,3 +649,106 @@ fn retired_download_receipt_allows_only_current_admitted_worker_retry_and_not_re
         drop(restarted);
     }
 }
+
+fn controlled_writer_fixture(
+    legacy: bool,
+) -> (TestRoot, PathBuf, crate::daemon_lifetime::Lease, RuntimeManifest, RuntimeDirectory) {
+    let root = TestRoot::new();
+    let owned = root.0.join("controlled-writer");
+    let lease = crate::daemon_lifetime::Lease::acquire(&owned).unwrap();
+    for name in ["call-mode-operation.lock", ".module-adb-interface.lock"] {
+        std::fs::write(owned.join(name), []).unwrap();
+        std::fs::set_permissions(owned.join(name), std::fs::Permissions::from_mode(0o600)).unwrap();
+    }
+    if legacy {
+        assert!(crate::module_recovery::legacy_locks::migrate(&owned, &lease.root_proof()).unwrap());
+    } else {
+        std::fs::write(owned.join(".call-mode-pristine-v1"), []).unwrap();
+        std::fs::set_permissions(owned.join(".call-mode-pristine-v1"), std::fs::Permissions::from_mode(0o600)).unwrap();
+    }
+    let mut runtime = fixture(&[b"first", b"second"]);
+    runtime.version = manifest().version.clone();
+    let gate = crate::module_recovery::Gate::inspect_download_fixture_with_lifetime(&lease, &runtime.files);
+    let controlled = crate::module_recovery::runtime_download::begin_fixture(&owned, &gate, &runtime).unwrap().unwrap();
+    let directory = RuntimeDirectory {
+        parent: controlled.runtime,
+        staging: Some(controlled.staging),
+    };
+    (root, owned, lease, runtime, directory)
+}
+
+#[test]
+fn controlled_staging_real_writer_publishes_verified_subset_and_complete_cache_across_restart() {
+    for legacy in [false, true] {
+        for complete in [false, true] {
+            let (_root, owned, lease, runtime, directory) = controlled_writer_fixture(legacy);
+            let transport = FakeTransport::new();
+            transport.add(urls(&runtime, "github", &runtime.files[0])[0].clone(), b"first");
+            if complete {
+                transport.add(urls(&runtime, "github", &runtime.files[1])[0].clone(), b"second");
+            }
+            let lock = directory.try_lock().unwrap();
+            let result = download_runtime_fenced(
+                &directory, &runtime, &input("github"), &transport, |_, _, _| {}, &|| true,
+            );
+            assert_eq!(result.is_ok(), complete);
+            let version = owned.join("voice-runtime").join(&runtime.version);
+            assert_eq!(std::fs::read(version.join("artifact-0")).unwrap(), b"first");
+            assert_eq!(version.join("artifact-1").exists(), complete);
+            assert!(proletarius_platform_fs::directory_names(directory.staging.as_ref().unwrap(), 0).unwrap().is_empty());
+            drop(lock);
+            drop(directory);
+            drop(lease);
+            let restarted = crate::daemon_lifetime::Lease::acquire(&owned).unwrap();
+            let gate = crate::module_recovery::Gate::inspect_download_fixture_with_lifetime(&restarted, &runtime.files);
+            assert!(!gate.is_quarantined());
+            assert!(gate.admit_operation("controlled-cache-retry").is_ok());
+            let controlled = crate::module_recovery::runtime_download::begin_fixture(&owned, &gate, &runtime).unwrap().unwrap();
+            let directory = RuntimeDirectory {
+                parent: controlled.runtime,
+                staging: Some(controlled.staging),
+            };
+            let retry = FakeTransport::new();
+            if !complete {
+                retry.add(urls(&runtime, "github", &runtime.files[1])[0].clone(), b"second");
+            }
+            download_runtime_fenced(
+                &directory, &runtime, &input("github"), &retry, |_, _, _| {}, &|| true,
+            ).unwrap();
+            assert_eq!(retry.calls.lock().unwrap().len(), usize::from(!complete));
+            assert_eq!(std::fs::read(version.join("artifact-1")).unwrap(), b"second");
+            drop(directory);
+            drop(gate);
+            drop(restarted);
+        }
+    }
+}
+
+#[test]
+fn controlled_staging_cancellation_after_real_file_write_never_publishes_partial_runtime() {
+    for legacy in [false, true] {
+        let (_root, owned, lease, runtime, directory) = controlled_writer_fixture(legacy);
+        let transport = FakeTransport::new();
+        transport.add(urls(&runtime, "github", &runtime.files[0])[0].clone(), b"first");
+        let staging = directory.staging.as_ref().unwrap();
+        // Cooperatively cancel at the production pre-rename fence, after the
+        // real temporary file has been written/chmodded/synced in staging.
+        let current = || proletarius_platform_fs::directory_names(staging, 1)
+            .is_ok_and(|entries| entries.is_empty());
+        assert!(download_runtime_fenced(
+            &directory, &runtime, &input("github"), &transport, |_, _, _| {}, &current,
+        ).is_err());
+        assert_eq!(transport.calls.lock().unwrap().len(), 1);
+        assert!(proletarius_platform_fs::directory_names(staging, 0).unwrap().is_empty());
+        let version = owned.join("voice-runtime").join(&runtime.version);
+        assert!(std::fs::read_dir(version).unwrap().next().is_none());
+        drop(directory);
+        drop(lease);
+        let restarted = crate::daemon_lifetime::Lease::acquire(&owned).unwrap();
+        let gate = crate::module_recovery::Gate::inspect_download_fixture_with_lifetime(&restarted, &runtime.files);
+        assert!(!gate.is_quarantined());
+        assert!(gate.admit_operation("retry-after-cancel").is_ok());
+        drop(gate);
+        drop(restarted);
+    }
+}
