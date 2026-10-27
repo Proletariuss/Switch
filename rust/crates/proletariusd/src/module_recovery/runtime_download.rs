@@ -353,6 +353,21 @@ pub(super) fn coverage(root: &File, artifacts: &[Artifact]) -> io::Result<Option
     Ok(published.then_some(receipt.source.legacy))
 }
 
+/// A durable physical-intent tombstone cannot disappear with the runtime or
+/// original lock names. Only the existing sealed reconciliation may cover it.
+pub(super) fn pending_intent(root: &File) -> io::Result<bool> {
+    let Some(before) = stamp(root, DIRECTORY)? else { return Ok(false); };
+    let store = open_dir(root, DIRECTORY)?;
+    if stamp(&store, REVOKED)?.is_none() { return Ok(false); }
+    empty(&store, REVOKED)?;
+    let receipt = read_receipt(&store)?;
+    if directory_identity(root)? != receipt.source.root
+        || stamp(root, DIRECTORY)? != Some(before) {
+        return Err(invalid());
+    }
+    Ok(true)
+}
+
 pub(crate) struct Directories { pub(crate) runtime: File, pub(crate) staging: File }
 
 /// Called by the actual download worker before any network operation. Existing

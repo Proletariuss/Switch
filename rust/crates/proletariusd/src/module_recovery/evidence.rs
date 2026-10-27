@@ -145,6 +145,7 @@ fn inspect_with_hook(
     let before = snapshot(directory);
     let legacy_locks = super::legacy_locks::covered(directory);
     let download = super::runtime_download::coverage(directory, artifacts);
+    let download_intent = super::runtime_download::pending_intent(directory);
     let legacy_namespace = entry(directory, OsStr::new(super::legacy_locks::DIRECTORY));
     let reconciliation_before = entry(directory, OsStr::new("module-recovery-v1"));
     // The new ledger is a separate bounded mutable namespace. It never joins
@@ -194,6 +195,7 @@ fn inspect_with_hook(
     // covered slot. Each pass pins directory identities and hashes every
     // installed artifact; no successful result is cached across startups.
     let download_after = super::runtime_download::coverage(directory, artifacts);
+    let download_intent_after = super::runtime_download::pending_intent(directory);
     let download_stable = download.as_ref().ok() == download_after.as_ref().ok()
         && download.is_ok() && download_after.is_ok();
     let fresh_backups_valid = fresh_backups
@@ -212,7 +214,8 @@ fn inspect_with_hook(
     let root_stable = Stamp::of(directory).is_ok_and(|stamp| stamp == root_before);
     let pristine = before[1] == after[1] && matches!(before[1], Ok(Some(stamp)) if stamp.marker());
     let mut reasons = Vec::new();
-    if !download_stable {
+    if !download_stable || download_intent.is_err() || download_intent_after.is_err()
+        || download_intent.as_ref().ok() != download_intent_after.as_ref().ok() {
         add(&mut reasons, Reason::UnreadableEvidence);
     }
     // A pending/revoked migration namespace cannot disappear merely because
@@ -222,6 +225,12 @@ fn inspect_with_hook(
         classification.covers_original_slot("call-mode-operation.lock")
             && classification.covers_original_slot(".module-adb-interface.lock")
     });
+    if download_intent.as_ref().is_ok_and(|pending| *pending)
+        && !(locks_reconciled && reconciliation.as_ref().is_ok_and(|classification|
+            classification.covers_original_slot("voice-runtime")))
+    {
+        add(&mut reasons, Reason::ReconciliationPending);
+    }
     if !locks_reconciled {
         if legacy_locks.is_err() || legacy_namespace.is_err() {
             add(&mut reasons, Reason::UnreadableEvidence);
