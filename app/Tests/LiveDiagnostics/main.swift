@@ -54,7 +54,7 @@ actor ControlledAPI: LiveDiagnosticAPI {
 }
 
 @MainActor func accessibilityText(in element: Any, depth: Int = 0) -> String {
-    guard depth < 32, let node = element as? any NSAccessibility else { return "" }
+    guard depth < 32, let node = element as? any NSAccessibilityProtocol else { return "" }
     let text = [node.accessibilityLabel() ?? "", node.accessibilityValue() as? String ?? ""]
     return (text + (node.accessibilityChildren() ?? []).map {
         accessibilityText(in: $0, depth: depth + 1)
