@@ -139,3 +139,96 @@ async fn ring_during_hangup_confirmation_cannot_be_ended_by_late_data_query() {
     assert_eq!(fake.0.actions.lock().unwrap().len(), 1);
     finish(service, root).await;
 }
+
+fn assert_hangup_queries_keep_lease(fake: &Fake, expected: &CallReservation) {
+    let queries = fake.0.query_leases.lock().unwrap();
+    assert_eq!(queries.len(), 3);
+    assert!(queries[0].is_none());
+    for observed in &queries[1..] {
+        let observed = observed.as_ref().expect("query must borrow the call lease");
+        assert_eq!(observed.producer_id, expected.producer_id);
+        assert_eq!(observed.token, expected.token);
+        assert_eq!(observed.sequence, expected.sequence);
+        assert_eq!(observed.epoch, expected.epoch);
+        assert_eq!(observed.binding, expected.binding);
+    }
+}
+
+#[tokio::test]
+async fn unknown_initial_hangup_keeps_protection_until_terminal_evidence() {
+    let (service, fake, root) = fixture("hangup-initial-unknown");
+    *fake.0.default_state.lock().unwrap() = snapshot("unknown", false);
+    let value = data(service.execute(Action::Hangup, String::new()).await).await;
+    assert_eq!(value["confirmed"], false);
+    assert_eq!(value["code"], "module_call_hangup_unconfirmed");
+    let state = service.0.state.snapshot();
+    assert_eq!(state.display["state"], "unknown");
+    assert!(state.desired_active && !state.safe_idle);
+    let lease = service.0.physical.lock().await.lease.clone().unwrap();
+    assert_hangup_queries_keep_lease(&fake, &lease);
+    assert!(fake.0.releases.lock().unwrap().is_empty());
+    assert_eq!(fake.0.actions.lock().unwrap().as_slice(), &[(Action::Hangup, String::new())]);
+    assert_eq!(fake.0.audio_stops.load(Ordering::Acquire), 0);
+    finish(service, root).await;
+}
+
+#[tokio::test]
+async fn unknown_initial_hangup_with_failed_confirmation_keeps_exact_lease() {
+    let (service, fake, root) = fixture("hangup-initial-unknown-query-error");
+    *fake.0.default_state.lock().unwrap() = snapshot("unknown", false);
+    fake.0.execute_wait.store(true, Ordering::Release);
+    let observer = tokio::spawn(service.execute(Action::Hangup, String::new()));
+    signal(&fake.0.execute_entered).await;
+    fake.0.fail_next_query.store(true, Ordering::Release);
+    fake.0.execute_resume.add_permits(1);
+    let response = observer.await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let value = data(response).await;
+    assert_eq!(value["accepted"], true);
+    assert_eq!(value["confirmed"], false);
+    assert_eq!(value["code"], "module_call_hangup_unconfirmed");
+    let state = service.0.state.snapshot();
+    assert_eq!(state.display["state"], "unknown");
+    assert!(state.desired_active && !state.safe_idle);
+    let lease = service.0.physical.lock().await.lease.clone().unwrap();
+    assert_hangup_queries_keep_lease(&fake, &lease);
+    assert!(fake.0.releases.lock().unwrap().is_empty());
+    assert_eq!(fake.0.actions.lock().unwrap().as_slice(), &[(Action::Hangup, String::new())]);
+    assert_eq!(fake.0.audio_stops.load(Ordering::Acquire), 0);
+    finish(service, root).await;
+}
+
+#[tokio::test]
+async fn failed_hangup_confirmation_cannot_replace_newer_ring_or_terminal() {
+    for event in ["ring", "hangup"] {
+        let (service, fake, root) = fixture(event);
+        *fake.0.default_state.lock().unwrap() = snapshot("unknown", false);
+        fake.0.execute_wait.store(true, Ordering::Release);
+        let observer = tokio::spawn(service.execute(Action::Hangup, String::new()));
+        signal(&fake.0.execute_entered).await;
+        let lease = fake.0.query_leases.lock().unwrap()[1].clone().unwrap();
+        fake.0.fail_next_query.store(true, Ordering::Release);
+        fake.0.query_wait.store(true, Ordering::Release);
+        fake.0.execute_resume.add_permits(1);
+        signal(&fake.0.query_entered).await;
+        fake.emit(event);
+        fake.0.query_resume.add_permits(1);
+        let value = data(observer.await.unwrap()).await;
+        let state = service.0.state.snapshot();
+        if event == "ring" {
+            assert_eq!(value["confirmed"], false);
+            assert_eq!(state.display["state"], "incoming");
+            assert!(state.desired_active && !state.safe_idle);
+            assert!(service.0.physical.lock().await.lease.is_some());
+        } else {
+            assert_eq!(value["confirmed"], true);
+            assert_eq!(state.display["state"], "idle");
+            assert!(!state.desired_active && state.safe_idle);
+            lease_present(&service, false).await;
+        }
+        assert_hangup_queries_keep_lease(&fake, &lease);
+        assert_eq!(fake.0.actions.lock().unwrap().as_slice(), &[(Action::Hangup, String::new())]);
+        assert_eq!(fake.0.audio_stops.load(Ordering::Acquire), 0);
+        finish(service, root).await;
+    }
+}

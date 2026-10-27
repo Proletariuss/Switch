@@ -449,17 +449,15 @@ impl Service {
                                 self.0.state.end(revision, OffsetDateTime::now_utc())
                             }
                             Ok(value) if self.0.driver.lease_current(&lease) => {
-                                self.0.state.apply_query(
+                                self.0.state.apply_unconfirmed_hangup_query(
                                     revision,
                                     value.display,
-                                    false,
                                     OffsetDateTime::now_utc(),
                                 )
                             }
-                            _ => self.0.state.apply_query(
+                            _ => self.0.state.apply_unconfirmed_hangup_query(
                                 revision,
                                 unknown(),
-                                false,
                                 OffsetDateTime::now_utc(),
                             ),
                         }

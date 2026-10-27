@@ -216,8 +216,28 @@ impl State {
     pub(crate) fn apply_query(
         &self,
         revision: u64,
+        observed: Value,
+        safe_idle: bool,
+        at: OffsetDateTime,
+    ) -> Snapshot {
+        self.apply_query_inner(revision, observed, safe_idle, false, at)
+    }
+
+    pub(crate) fn apply_unconfirmed_hangup_query(
+        &self,
+        revision: u64,
+        observed: Value,
+        at: OffsetDateTime,
+    ) -> Snapshot {
+        self.apply_query_inner(revision, observed, false, true, at)
+    }
+
+    fn apply_query_inner(
+        &self,
+        revision: u64,
         mut observed: Value,
         safe_idle: bool,
+        retain_hangup_protection: bool,
         at: OffsetDateTime,
     ) -> Snapshot {
         let mut state = self.inner.lock().unwrap_or_else(|error| error.into_inner());
@@ -231,6 +251,13 @@ impl State {
         let kind = observed["state"].as_str().unwrap_or("unknown").to_owned();
         state.revision += 1;
         state.safe_idle = kind == "idle" && safe_idle && state.pending.is_none();
+        if retain_hangup_protection && !state.safe_idle {
+            // An acknowledged ATH without terminal evidence must retain its
+            // lease even if no earlier query established a live call. The
+            // revision check above keeps newer RING, terminal and binding
+            // observations authoritative.
+            state.desired_active = true;
+        }
         if live(&observed) && state.pending.is_none() {
             state.desired_active = true;
             self.push(

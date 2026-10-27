@@ -13,6 +13,8 @@ struct Fake(Arc<FakeInner>);
 struct FakeInner {
     observer: ShortMutex<Option<Observer>>,
     queries: ShortMutex<VecDeque<CallStateSnapshot>>,
+    query_leases: ShortMutex<Vec<Option<CallReservation>>>,
+    fail_next_query: AtomicBool,
     default_state: ShortMutex<CallStateSnapshot>,
     actions: ShortMutex<Vec<(Action, String)>>,
     releases: ShortMutex<Vec<String>>,
@@ -45,6 +47,8 @@ impl Fake {
         Self(Arc::new(FakeInner {
             observer: Default::default(),
             queries: Default::default(),
+            query_leases: Default::default(),
+            fail_next_query: AtomicBool::new(false),
             default_state: ShortMutex::new(snapshot("idle", true)),
             actions: Default::default(),
             releases: Default::default(),
@@ -113,9 +117,11 @@ impl Driver for Fake {
             }
         })
     }
-    fn query(&self, _: Option<CallReservation>) -> Work<Result<CallStateSnapshot, Failure>> {
+    fn query(&self, lease: Option<CallReservation>) -> Work<Result<CallStateSnapshot, Failure>> {
         let this = self.clone();
         Box::pin(async move {
+            this.0.query_leases.lock().unwrap().push(lease);
+            let fail = this.0.fail_next_query.swap(false, Ordering::AcqRel);
             let result = this
                 .0
                 .queries
@@ -126,6 +132,13 @@ impl Driver for Fake {
             if this.0.query_wait.swap(false, Ordering::AcqRel) {
                 this.0.query_entered.add_permits(1);
                 this.0.query_resume.acquire().await.unwrap().forget();
+            }
+            if fail {
+                return Err(Failure {
+                    status: StatusCode::GATEWAY_TIMEOUT,
+                    code: "query_unconfirmed".into(),
+                    message: "test query failed".into(),
+                });
             }
             Ok(result)
         })
