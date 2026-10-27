@@ -5,6 +5,7 @@ SWITCH_SOURCE_ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd -P)
 mkdir -p "$SWITCH_BUILD_DIR/tmp"
 TEST_DIR=$(mktemp -d "$SWITCH_BUILD_DIR/tmp/live-diagnostics.XXXXXX")
 trap 'rm -rf "$TEST_DIR"' EXIT INT TERM
+export LIVE_DIAGNOSTIC_SCREENSHOT_DIR="$SWITCH_BUILD_DIR/live-diagnostic-layout"
 "${SWIFT_COMPILER:-$(command -v swiftc)}" -parse-as-library -swift-version 5 \
   -D SWITCH_BLE_DIAGNOSTIC_TESTING -module-cache-path "$SWIFT_MODULECACHE_PATH" \
   "$SWITCH_SOURCE_ROOT/app/Sources/BoundedBLEDiagnosticLog.swift" \

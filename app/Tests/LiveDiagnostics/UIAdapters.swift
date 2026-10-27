@@ -1,5 +1,12 @@
 import Combine
 import SwiftUI
+import Foundation
+
+enum SwitchRuntimePaths {
+    static func dataDirectory() -> URL {
+        fatalError("The live-only fixture must not request a filesystem directory")
+    }
+}
 
 @MainActor final class BackendProcess: ObservableObject {
     enum State: Equatable { case running, stopped, starting, stopping, failed(String) }
@@ -9,6 +16,7 @@ import SwiftUI
 struct TestViewport {
     let sectionSpacing: CGFloat = 10
     let cardPadding: CGFloat = 12
+    let isCompactHeight = true
 }
 private struct TestViewportKey: EnvironmentKey { static let defaultValue = TestViewport() }
 extension EnvironmentValues {
