@@ -318,3 +318,47 @@ async fn cancellation_inside_owned_worker_preserves_cause_and_releases_both_real
         acquire_bound_recovery_lock(&f.root, &proof, kind, false).unwrap().release().unwrap();
     }
 }
+
+fn panic_reopen(_: &ReadScope, _: &crate::usb_at_transport::legacy_current::VerifiedDevice)
+    -> Result<Box<dyn Transport>, TransportError> {
+    panic!("injected fixture reopen panic before dispatch")
+}
+#[tokio::test]
+async fn seed_reopen_panic_revokes_admission_and_still_releases_real_locks() {
+    let f = Fixture::new(3);
+    let gate = f.gate();
+    let mut completed = observe(&f, &gate).await;
+    completed.fixture_reopen = Some(panic_reopen);
+    let seed = gate.consume_legacy_current(completed).unwrap();
+    let error = seed.open(&gate).err().unwrap();
+    assert!(error.uncertain);
+    assert!(gate.is_admission_revoked());
+    let proof = f.lease.as_ref().unwrap().root_proof();
+    for kind in [RecoveryLockKind::Operation, RecoveryLockKind::AdbInterface] {
+        acquire_bound_recovery_lock(&f.root, &proof, kind, false).unwrap().release().unwrap();
+    }
+}
+#[tokio::test]
+async fn completion_deadline_and_same_cancellation_cover_activation_and_first_open() {
+    for cancel_before_commit in [true, false] {
+        let f = Fixture::new(3);
+        let gate = f.gate();
+        let completed = observe(&f, &gate).await;
+        let cancelled = completed.cancelled.clone();
+        if cancel_before_commit {
+            cancelled.store(true, Ordering::Release);
+            assert!(gate.consume_legacy_current(completed).is_err());
+        } else {
+            let seed = gate.consume_legacy_current(completed).unwrap();
+            cancelled.store(true, Ordering::Release);
+            assert!(seed.open(&gate).is_err());
+            assert!(gate.is_admission_revoked());
+        }
+    }
+    let f = Fixture::new(3);
+    let gate = f.gate();
+    let mut completed = observe(&f, &gate).await;
+    completed.deadline = Instant::now();
+    assert!(gate.consume_legacy_current(completed).is_err());
+    assert!(gate.is_quarantined());
+}

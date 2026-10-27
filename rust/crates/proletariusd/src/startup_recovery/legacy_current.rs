@@ -220,6 +220,7 @@ impl ReadScope {
 /// It is deliberately not serializable and is never accepted across lifetimes.
 pub(crate) struct Completed {
     deadline: Instant,
+    cancelled: Arc<AtomicBool>,
     claim: Arc<LegacyCurrentClaim>,
     root: PathBuf,
     evidence: Arc<Evidence>,
@@ -230,16 +231,22 @@ pub(crate) struct Completed {
 }
 impl Completed {
     pub(crate) fn claim(&self) -> &LegacyCurrentClaim { &self.claim }
+    pub(crate) fn activation_live(&self) -> bool {
+        !self.cancelled.load(Ordering::Acquire) && Instant::now() < self.deadline
+    }
     pub(crate) fn verify(&self, gate: &Gate) -> Result<(), ()> {
-        if Instant::now() >= self.deadline { return Err(()); }
+        if self.cancelled.load(Ordering::Acquire) || Instant::now() >= self.deadline { return Err(()); }
         self.claim.validate(gate)?;
         self.claim.root_proof().with_root(&self.root, |root| {
             for witness in &self.witnesses { witness.validate()?; }
-            self.evidence.verify(root, &|| Ok(()))
+            self.evidence.verify(root, &|| {
+                if self.cancelled.load(Ordering::Acquire) || Instant::now() >= self.deadline { Err(io::Error::other("current baseline interval ended")) }
+                else { Ok(()) }
+            })
         }).map_err(|_| ())?.map_err(|_| ())
     }
     pub(crate) fn into_seed(self) -> Seed {
-        Seed { deadline: self.deadline, claim: self.claim, root: self.root, evidence: self.evidence, device: self.device, opened: AtomicBool::new(false), #[cfg(test)] fixture_reopen: self.fixture_reopen }
+        Seed { deadline: self.deadline, cancelled: self.cancelled, claim: self.claim, root: self.root, evidence: self.evidence, device: self.device, opened: AtomicBool::new(false), #[cfg(test)] fixture_reopen: self.fixture_reopen }
     }
 }
 
@@ -247,6 +254,7 @@ impl Completed {
 /// publishing its session. It cannot enumerate another module or a serial port.
 pub(crate) struct Seed {
     deadline: Instant,
+    cancelled: Arc<AtomicBool>,
     opened: AtomicBool,
     claim: Arc<LegacyCurrentClaim>,
     root: PathBuf,
@@ -257,7 +265,8 @@ pub(crate) struct Seed {
 }
 impl Seed {
     pub(crate) fn open(&self, gate: &Gate) -> Result<Box<dyn Transport>, TransportError> {
-        let result = self.open_inner(gate);
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| self.open_inner(gate)))
+            .unwrap_or_else(|_| Err(ReadScope::error(Failure::WorkerFailed)));
         if let Err(error) = &result {
             self.claim.revoke(gate);
             if error.uncertain { Failure::CleanupUnconfirmed.record(); }
@@ -276,20 +285,22 @@ impl Seed {
         let scope = ReadScope(Arc::new(ReadState {
             gate: gate.clone(), claim: self.claim.clone(), root: self.root.clone(),
             evidence: self.evidence.clone(), locks: Mutex::new(locks),
-            deadline: self.deadline, cancelled: Arc::new(AtomicBool::new(false)), activated: true,
+            deadline: self.deadline, cancelled: self.cancelled.clone(), activated: true,
         }));
-        #[cfg(test)]
-        let result = match self.fixture_reopen {
-            Some(reopen) => reopen(&scope, &self.device),
-            None => crate::usb_at_transport::legacy_current::reopen(&scope, &self.device),
-        };
-        #[cfg(not(test))]
-        let result = crate::usb_at_transport::legacy_current::reopen(&scope, &self.device);
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            #[cfg(test)]
+            { match self.fixture_reopen {
+                Some(reopen) => reopen(&scope, &self.device),
+                None => crate::usb_at_transport::legacy_current::reopen(&scope, &self.device),
+            } }
+            #[cfg(not(test))]
+            { crate::usb_at_transport::legacy_current::reopen(&scope, &self.device) }
+        })).unwrap_or_else(|_| Err(ReadScope::error(Failure::WorkerFailed)));
         let released = scope.0.locks.lock().unwrap_or_else(|e| e.into_inner()).release();
         match (result, released) {
             (Ok(transport), Ok(_)) => Ok(transport),
             (Ok(transport), Err(_)) => {
-                let _ = transport.checked_close();
+                let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| transport.checked_close()));
                 self.claim.revoke(gate);
                 Err(ReadScope::error(Failure::CleanupUnconfirmed))
             }
@@ -384,7 +395,7 @@ impl super::Coordinator {
                 Ok(Err(_)) => return Err(Failure::ReadbackUnconfirmed),
                 Err(_) => return Err(Failure::WorkerFailed),
             };
-            Ok(Some(Completed { deadline, claim, root, evidence, witnesses, device, #[cfg(test)] fixture_reopen: None }))
+            Ok(Some(Completed { deadline, cancelled: scope.0.cancelled.clone(), claim, root, evidence, witnesses, device, #[cfg(test)] fixture_reopen: None }))
         }).await.map_err(|_| Failure::WorkerFailed)?
     }
 }

@@ -262,6 +262,15 @@ impl LegacyCurrentClaim {
             reason_codes: vec![Reason::ReconciliationPending], historical_recovery_confirmed: false });
     }
 }
+impl Drop for LegacyCurrentClaim {
+    fn drop(&mut self) {
+        if self.consumed.load(Ordering::Acquire) { return; }
+        let Some(authority) = self.authority.upgrade() else { return; };
+        let _admission = authority.admission.lock().unwrap_or_else(|e| e.into_inner());
+        let _ = authority.revoked.set(Status { state: CODE,
+            reason_codes: vec![Reason::ReconciliationPending], historical_recovery_confirmed: false });
+    }
+}
 impl Gate {
     pub(crate) fn legacy_current_eligible(&self) -> bool {
         self.is_quarantined() && self.0.revoked.get().is_none()
@@ -291,6 +300,7 @@ impl Gate {
         completed.verify(self)?;
         let _admission = self.0.admission.lock().unwrap_or_else(|e| e.into_inner());
         completed.verify(self)?;
+        if !completed.activation_live() { return Err(()); }
         let claim = completed.claim();
         let next = claim.epoch.checked_add(1).ok_or(())?;
         self.0.reconciliation_epoch.compare_exchange(claim.epoch, next, Ordering::AcqRel, Ordering::Acquire).map_err(|_| ())?;

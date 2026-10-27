@@ -716,7 +716,13 @@ async fn run_with_sms_stores(
         if selected_port.is_none() {
             match startup_recovery::Coordinator::inspect_legacy_current(
                 &module_recovery, multistandby_store.data_root(), startup_cancel.clone()).await {
-                Ok(Some(completion)) => return Ok(StartupInspection::LegacyCurrent(completion)),
+                Ok(Some(completion)) => {
+                    let gate = module_recovery.clone();
+                    let activation = tokio::task::spawn_blocking(move ||
+                        gate.consume_legacy_current(completion)).await.unwrap_or(Err(()));
+                    return activation.map(StartupInspection::LegacyCurrent).map_err(|()|
+                        StartupInspectionFailure::LegacyCurrent(startup_recovery::legacy_current::Failure::EvidenceChanged));
+                }
                 Ok(None) => {}
                 Err(error) => return Err(StartupInspectionFailure::LegacyCurrent(error)),
             }
@@ -752,20 +758,14 @@ async fn run_with_sms_stores(
         await_startup_native(startup_operation, startup_cancel.clone(), startup_stop).await;
     let mut legacy_current_seed = None;
     let (startup_native_inspection, mut startup_native_cleanup_error) = match startup_result {
-        Ok(StartupInspection::LegacyCurrent(completed)) => {
+        Ok(StartupInspection::LegacyCurrent(seed)) => {
             recovery_diagnostics::native_inspection(recovery_diagnostics::NativeInspection::Inspected);
             recovery_diagnostics::cleanup(recovery_diagnostics::Cleanup::Confirmed);
             if !startup_stopped {
-                match module_recovery.consume_legacy_current(completed) {
-                    Ok(seed) => {
-                        legacy_current_seed = Some(seed);
-                        startup_recovery_inspection = None;
-                        diagnostics::write_line(format_args!(
-                            "switchd-rs: legacy_current_verified; current baseline only; historical_recovery_confirmed=false"));
-                    }
-                    Err(()) => diagnostics::write_line(format_args!(
-                        "switchd-rs: legacy_current_publication_unconfirmed; module quarantine retained")),
-                }
+                legacy_current_seed = Some(seed);
+                startup_recovery_inspection = None;
+                diagnostics::write_line(format_args!(
+                    "switchd-rs: legacy_current_verified; current baseline only; historical_recovery_confirmed=false"));
             }
             (None, None)
         }
@@ -1566,7 +1566,7 @@ async fn await_startup_native<T>(
 }
 
 enum StartupInspection {
-    LegacyCurrent(startup_recovery::legacy_current::Completed),
+    LegacyCurrent(startup_recovery::legacy_current::Seed),
     ReadOnly(Option<startup_recovery::execution::PhysicalInspection>),
     Reconciled(startup_recovery::reconcile::CompletedReconciliation),
 }
