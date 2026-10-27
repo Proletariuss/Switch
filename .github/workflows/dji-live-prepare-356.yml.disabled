@@ -41,6 +41,16 @@ jobs:
           components: rustfmt
       - name: XcodeGen fuer die gepruefte Projektspezifikation installieren
         run: brew install xcodegen
+      - name: Isolierte Live-Diagnose vor jeder Veroeffentlichung pruefen
+        working-directory: src
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 0fb7591d2922c220209e5934bef31c4adccb0e12
+          bash scripts/test-live-diagnostics.sh
+          git diff --exit-code
+          test -z "$(git ls-files --others --exclude-standard)"
       - name: Nur genehmigte Formatierung, Projektdatei und Vertragsmetadaten erzeugen
         id: generate
         env:
