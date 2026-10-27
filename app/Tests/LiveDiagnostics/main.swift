@@ -125,7 +125,7 @@ actor ControlledAPI: LiveDiagnosticAPI {
         try expect(store.runtimeID == nil && store.updatedAt == nil, "old backend observation survived instance change")
         await api.complete(0, try fixture([100]))
         try await waitUntil { await api.count() == 2 }
-        try expect(store.rows.allSatisfy { $0.source.hasPrefix("客户端") }, "old response published into replacement instance")
+        try expect(store.rows.allSatisfy { $0.id.hasPrefix("client:") }, "old response published into replacement instance")
         await api.complete(1, try fixture(Array(1...256).map(UInt64.init), runtime: secondRuntime))
         try await waitUntil { store.runtimeID == secondRuntime && store.rows.count == 500 }
         try expect(Set(store.rows.map(\.id)).count == store.rows.count, "merged list has duplicate IDs")
@@ -133,7 +133,7 @@ actor ControlledAPI: LiveDiagnosticAPI {
         try await waitUntil { await api.count() == 3 }
         await api.fail(2)
         try await waitUntil { store.updatedAt == nil && store.status.contains("读取失败") }
-        try expect(!store.status.contains("raw-secret") && store.rows.allSatisfy { $0.source == "客户端" },
+        try expect(!store.status.contains("raw-secret") && store.rows.allSatisfy { $0.id.hasPrefix("client:") },
                    "read failure leaked raw error or retained backend data as current")
         try await waitUntil { await api.count() == 4 }
         store.setLifecycle(visible: false, running: true, instance: 2)
