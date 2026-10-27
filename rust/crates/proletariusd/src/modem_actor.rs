@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 68554)
-Total output lines: 7249
-
 //! Single-owner serial port actor used by the supervised Go AT compatibility
 //! loop while modem command/URC semantics are migrated to Rust.
 
@@ -3436,7 +3433,371 @@ impl ActorState {
                         .and_then(|storages| storages.first().cloned())
                         .as_deref()
                         != Some(transaction.selected_storage.as_str())
-      …3554 tokens truncated…  native_shared: Arc<NativeShared>,
+                {
+                    self.restore_stored_sms_read_after_error(
+                        transaction,
+                        ActorError::new(
+                            "sms_storage_select_failed",
+                            "modem did not select the requested SMS storage",
+                        ),
+                    );
+                    return;
+                }
+                self.issue_stored_sms_read_command(transaction);
+            }
+            StoredSmsReadStep::Read => {
+                if result == "ok" {
+                    transaction.response_lines = lines.to_vec();
+                } else {
+                    transaction.primary_error = Some(ActorError::new(
+                        "sms_storage_read_failed",
+                        "modem could not read the requested SMS storage",
+                    ));
+                }
+                if transaction.selected_storage != transaction.previous_storages[0] {
+                    if let Some(command) = set_sms_storage_command(&transaction.previous_storages) {
+                        transaction.step = StoredSmsReadStep::RestoreStorage;
+                        self.issue_stored_sms_read_step(
+                            transaction,
+                            command,
+                            Duration::from_secs(5),
+                        );
+                    } else if let Some(error) = transaction.primary_error.take() {
+                        let _ = transaction.reply.send(Err(error));
+                    } else {
+                        self.finish_stored_sms_read(transaction, false);
+                    }
+                } else if let Some(error) = transaction.primary_error.take() {
+                    let _ = transaction.reply.send(Err(error));
+                } else {
+                    self.finish_stored_sms_read(transaction, true);
+                }
+            }
+            StoredSmsReadStep::RestoreStorage => {
+                if result != "ok" {
+                    if let Some(error) = transaction.primary_error.take() {
+                        let _ = transaction.reply.send(Err(error));
+                    } else {
+                        self.finish_stored_sms_read(transaction, false);
+                    }
+                    return;
+                }
+                transaction.step = StoredSmsReadStep::ConfirmRestore;
+                self.issue_stored_sms_read_step(
+                    transaction,
+                    "AT+CPMS?".to_owned(),
+                    Duration::from_secs(3),
+                );
+            }
+            StoredSmsReadStep::ConfirmRestore => {
+                let restored = result == "ok"
+                    && sms_storages(lines).as_deref()
+                        == Some(transaction.previous_storages.as_slice());
+                if let Some(error) = transaction.primary_error.take() {
+                    let _ = transaction.reply.send(Err(error));
+                } else {
+                    self.finish_stored_sms_read(transaction, restored);
+                }
+            }
+        }
+    }
+
+    fn restore_stored_sms_read_after_error(
+        &mut self,
+        mut transaction: StoredSmsReadTransaction,
+        error: ActorError,
+    ) {
+        if transaction.selected_storage != transaction.previous_storages[0]
+            && let Some(command) = set_sms_storage_command(&transaction.previous_storages)
+        {
+            transaction.primary_error = Some(error);
+            transaction.step = StoredSmsReadStep::RestoreStorage;
+            self.issue_stored_sms_read_step(transaction, command, Duration::from_secs(5));
+        } else {
+            let _ = transaction.reply.send(Err(error));
+        }
+    }
+
+    fn issue_stored_sms_read_command(&mut self, mut transaction: StoredSmsReadTransaction) {
+        let command = transaction.index.map_or_else(
+            || "AT+CMGL=4".to_owned(),
+            |index| format!("AT+CMGR={index}"),
+        );
+        let timeout = if transaction.index.is_some() {
+            Duration::from_secs(5)
+        } else {
+            Duration::from_secs(10)
+        };
+        transaction.step = StoredSmsReadStep::Read;
+        self.issue_stored_sms_read_step(transaction, command, timeout);
+    }
+
+    fn issue_stored_sms_read_step(
+        &mut self,
+        transaction: StoredSmsReadTransaction,
+        command: String,
+        timeout: Duration,
+    ) {
+        let Some(port) = self.port.as_mut() else {
+            let _ = transaction
+                .reply
+                .send(Err(ActorError::unavailable("serial port is not open")));
+            return;
+        };
+        let mut bytes = command.into_bytes();
+        bytes.extend_from_slice(b"\r\n");
+        if port.write_all(&bytes).is_err() {
+            self.retire_physical_port("serial_disconnected");
+            self.live_serial_session
+                .store(0, std::sync::atomic::Ordering::Release);
+            self.current_path = None;
+            self.current_baud = 0;
+            self.line_buffer.clear();
+            let error = ActorError::new(
+                "serial_disconnected",
+                "device disconnected: stored SMS read transaction write failed",
+            );
+            self.disconnected_error = Some(error.clone());
+            let _ = transaction.reply.send(Err(error.clone()));
+            self.fail_queued_commands("serial command failed because the device disconnected");
+            return;
+        }
+        self.release_idle_frames();
+        self.pending_command = Some(PendingCommand {
+            deadline: Instant::now() + timeout,
+            started: Instant::now(),
+            lines: Vec::new(),
+            response_bytes: 0,
+            overflow: false,
+            follow_up: None,
+            expected_sms_generation: None,
+            high_priority: false,
+            completion: CommandCompletion::ReadStoredSms(transaction),
+        });
+    }
+
+    fn finish_stored_sms_read(
+        &self,
+        transaction: StoredSmsReadTransaction,
+        storage_restored: bool,
+    ) {
+        let _ = transaction.reply.send(Ok(StoredSmsReadResult {
+            storage: transaction.selected_storage,
+            lines: transaction.response_lines,
+            storage_restored,
+        }));
+    }
+
+    fn issue_stored_sms_delete_step(
+        &mut self,
+        transaction: StoredSmsDeleteTransaction,
+        command: String,
+    ) {
+        let mut bytes = command.into_bytes();
+        bytes.extend_from_slice(b"\r\n");
+        let Some(port) = self.port.as_mut() else {
+            let _ = transaction
+                .reply
+                .send(Err(ActorError::unavailable("serial port is not open")));
+            return;
+        };
+        if port.write_all(&bytes).is_err() {
+            self.retire_physical_port("serial_disconnected");
+            self.live_serial_session
+                .store(0, std::sync::atomic::Ordering::Release);
+            self.current_path = None;
+            self.current_baud = 0;
+            self.line_buffer.clear();
+            let error = ActorError::new(
+                "serial_disconnected",
+                "device disconnected: archived SMS cleanup command write failed",
+            );
+            self.disconnected_error = Some(error.clone());
+            if matches!(transaction.step, StoredSmsDeleteStep::Delete) {
+                let _ = transaction.reply.send(Ok(StoredSmsDeleteResult {
+                    deleted: false,
+                    reason: "delete_outcome_uncertain",
+                }));
+            } else {
+                let _ = transaction.reply.send(Err(error));
+            }
+            self.fail_queued_commands("serial command failed because the device disconnected");
+            return;
+        }
+        self.release_idle_frames();
+        self.pending_command = Some(PendingCommand {
+            deadline: Instant::now() + SMS_DELETE_STEP_TIMEOUT,
+            started: Instant::now(),
+            lines: Vec::new(),
+            response_bytes: 0,
+            overflow: false,
+            follow_up: None,
+            expected_sms_generation: None,
+            high_priority: false,
+            completion: CommandCompletion::DeleteArchivedSms(transaction),
+        });
+    }
+
+    fn poll_input(&mut self, buffer: &mut [u8]) {
+        if self.port.is_none() {
+            return;
+        }
+        let buffered = self.queued_bytes.saturating_add(self.line_buffer.len());
+        if buffered >= MAX_BUFFERED_READ_BYTES {
+            self.retire_physical_port("serial_input_overflow");
+            self.live_serial_session
+                .store(0, std::sync::atomic::Ordering::Release);
+            self.current_path = None;
+            self.current_baud = 0;
+            self.line_buffer.clear();
+            self.disconnected_error = Some(ActorError::new(
+                "serial_input_overflow",
+                "serial input exceeded its bounded buffer; port closed",
+            ));
+            return;
+        }
+        let available = MAX_BUFFERED_READ_BYTES.saturating_sub(buffered);
+        let read_limit = available.min(buffer.len());
+        if read_limit == 0 {
+            return;
+        }
+        let result = self
+            .port
+            .as_mut()
+            .expect("open port was checked")
+            .read(&mut buffer[..read_limit]);
+        match result {
+            Ok(count) if count > 0 => {
+                if let Err(error) = self.frame_input(&buffer[..count]) {
+                    self.retire_physical_port(error.code);
+                    self.live_serial_session
+                        .store(0, std::sync::atomic::Ordering::Release);
+                    self.current_path = None;
+                    self.current_baud = 0;
+                    self.line_buffer.clear();
+                    self.disconnected_error = Some(error);
+                }
+            }
+            Ok(_) => {}
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    io::ErrorKind::TimedOut
+                        | io::ErrorKind::WouldBlock
+                        | io::ErrorKind::Interrupted
+                ) => {}
+            Err(_) => {
+                self.retire_physical_port("serial_disconnected");
+                self.live_serial_session
+                    .store(0, std::sync::atomic::Ordering::Release);
+                self.current_path = None;
+                self.current_baud = 0;
+                self.line_buffer.clear();
+                self.disconnected_error = Some(ActorError::new(
+                    "serial_disconnected",
+                    "device disconnected: serial read failed",
+                ));
+            }
+        }
+    }
+
+    fn finish(&mut self) {
+        if let Some(transaction) = self.deferred_radio.take() {
+            fail_radio(transaction, "serial_not_open");
+        }
+        self.cancel_initialization(ActorError::unavailable("serial actor stopped"));
+        self.sms_receive.invalidate();
+        if let Some(pending) = self.pending_read.take() {
+            let _ = pending
+                .reply
+                .send(Err(ActorError::unavailable("serial actor stopped")));
+        }
+        if let Some(mut pending) = self.pending_command.take() {
+            scrub_sensitive_pending_response(&mut pending);
+            self.fail_completion(
+                pending.completion,
+                ActorError::unavailable("serial actor stopped"),
+            );
+        }
+        if let Some(deferred) = self.deferred_sms_submit.take() {
+            let _ = deferred.transaction.reply.send(Err(ActorError::unavailable(
+                "serial actor stopped between SMS segments",
+            )));
+        }
+        self.fail_queued_commands("serial actor stopped");
+        // Dropping the sole handle is the final release path.
+        self.retire_physical_port("serial_actor_stopped");
+        self.live_serial_session
+            .store(0, std::sync::atomic::Ordering::Release);
+    }
+}
+
+fn scrub_sensitive_pending_response(pending: &mut PendingCommand) {
+    if matches!(
+        &pending.completion,
+        CommandCompletion::Radio(transaction) if transaction.plan.sensitive_in_flight()
+    ) || matches!(&pending.completion, CommandCompletion::Card(_))
+    {
+        for line in &mut pending.lines {
+            line.zeroize();
+        }
+        pending.lines.clear();
+    }
+}
+
+fn probe_serial_port_imei(port: &mut dyn serialport::SerialPort) -> Option<String> {
+    port.set_timeout(AT_DISCOVERY_READ_TIMEOUT).ok()?;
+    port.write_all(b"AT\r\n").ok()?;
+    thread::sleep(Duration::from_millis(40));
+    port.write_all(b"AT+CGSN\r\n").ok()?;
+
+    let deadline = Instant::now() + AT_DISCOVERY_PROBE_TIMEOUT;
+    let mut response = Vec::with_capacity(256);
+    let mut buffer = [0_u8; 1024];
+    while Instant::now() < deadline {
+        match port.read(&mut buffer) {
+            Ok(0) => continue,
+            Ok(count) => {
+                if response.len().saturating_add(count) > AT_DISCOVERY_MAX_RESPONSE_BYTES {
+                    return None;
+                }
+                response.extend_from_slice(&buffer[..count]);
+                if let Some(imei) = parse_probe_imei(&response) {
+                    return Some(imei);
+                }
+            }
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    io::ErrorKind::TimedOut
+                        | io::ErrorKind::WouldBlock
+                        | io::ErrorKind::Interrupted
+                ) => {}
+            Err(_) => return None,
+        }
+    }
+    parse_probe_imei(&response)
+}
+
+fn parse_probe_imei(response: &[u8]) -> Option<String> {
+    std::str::from_utf8(response)
+        .ok()?
+        .split(['\r', '\n'])
+        .map(str::trim)
+        .find(|line| line.len() == 15 && line.bytes().all(|byte| byte.is_ascii_digit()))
+        .map(str::to_owned)
+}
+
+fn run_actor(
+    receiver: Receiver<Command>,
+    opener: PortOpener,
+    wake: Arc<tokio::sync::Notify>,
+    cellular_suppressed: Arc<std::sync::atomic::AtomicBool>,
+    call_capture: Arc<std::sync::Mutex<Option<crate::module_radio::CallCapture>>>,
+    live_serial_session: Arc<std::sync::atomic::AtomicU64>,
+    owner_epoch: String,
+    card_shared: Arc<CardShared>,
+    native_shared: Arc<NativeShared>,
     module_recovery: crate::module_recovery::Gate,
 ) {
     let mut state = ActorState::new();
