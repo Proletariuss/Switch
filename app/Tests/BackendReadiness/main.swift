@@ -160,6 +160,7 @@ private func fakeBackend(_ path: String) {
             "child backend did not inherit its owner's isolated data directory")
     let mode = (try? String(contentsOf: modePath, encoding: .utf8)) ?? "healthy"
     if mode == "exit" { return }
+    if mode == "owned-idle" { while true { pause() } }
     if mode == "exit-failure" { exit(7) }
     if mode == "reject-existing" {
         // Simulate a child rejecting admission, not Rust socket reclamation.
@@ -244,12 +245,14 @@ private final class Fixture {
     let directory: URL
     let backend: BackendProcess
 
-    init(root: URL, name: String, mode: String) throws {
+    init(root: URL, name: String, mode: String,
+         observation: BackendStartupObservation? = nil) throws {
         directory = root.appendingPathComponent(name)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try mode.write(to: directory.appendingPathComponent("mode"), atomically: true, encoding: .utf8)
         backend = BackendProcess(supportDirectory: directory,
-                                 executableURL: URL(fileURLWithPath: CommandLine.arguments[0]))
+                                 executableURL: URL(fileURLWithPath: CommandLine.arguments[0]),
+                                 startupObservation: observation)
     }
 
     func start() { backend.start() }
@@ -620,6 +623,93 @@ private func checkStopAndAppTermination(root: URL) async throws {
     print("PASS ordinary stop retains overlap fence and permits actual restart after confirmed exit")
 }
 
+@MainActor
+private final class ObservationClock {
+    var now: TimeInterval = 0
+    private(set) var attempts: [TimeInterval] = []
+    private var pending: [CheckedContinuation<Bool, Never>?] = []
+
+    var observation: BackendStartupObservation {
+        BackendStartupObservation(
+            uptime: { self.now },
+            check: { timeout in
+                self.attempts.append(timeout)
+                return await withCheckedContinuation { self.pending.append($0) }
+            },
+            pause: { _ in await Task.yield() })
+    }
+
+    func finish(_ index: Int, at time: TimeInterval, ready: Bool) {
+        require(time >= now, "synthetic uptime moved backwards")
+        now = time
+        guard let continuation = pending[index] else { fatalError("probe completed twice") }
+        pending[index] = nil
+        continuation.resume(returning: ready)
+    }
+}
+
+@MainActor
+private func checkObservationBudget(root: URL) async throws {
+    require(BackendStartupObservation.budget == 210, "finite recovery observation budget changed")
+    for readyAt: TimeInterval in [6, 200] {
+        let clock = ObservationClock()
+        let fixture = try Fixture(root: root, name: "observed-\(Int(readyAt))",
+                                  mode: "owned-idle", observation: clock.observation)
+        fixture.start()
+        let pid = fixture.backend.childPID
+        requireValue(await waitUntil { clock.attempts.count == 1 }, "controlled probe did not start")
+        require(fixture.backend.state == .starting, "live startup was reported as failed before its budget")
+        clock.finish(0, at: readyAt, ready: false)
+        requireValue(await waitUntil { clock.attempts.count == 2 }, "slow startup was cut off by the old five-second budget")
+        require(fixture.backend.state == .starting, "finite recovery observation did not remain starting")
+        clock.finish(1, at: readyAt, ready: true)
+        requireValue(await waitUntil { fixture.backend.state == .running }, "finite slow startup did not become ready")
+        require(fixture.backend.childPID == pid && pid > 0, "slow readiness replaced its owned process")
+        require(clock.attempts == [1, 1], "healthy result caused another observation request")
+        await fixture.cleanup()
+    }
+
+    let expired = ObservationClock()
+    let timeout = try Fixture(root: root, name: "observed-timeout", mode: "owned-idle",
+                              observation: expired.observation)
+    timeout.start()
+    let retainedPID = timeout.backend.childPID
+    requireValue(await waitUntil { expired.attempts.count == 1 }, "timeout probe missing")
+    expired.finish(0, at: 210, ready: false)
+    requireValue(await waitUntil {
+        if case .failed = timeout.backend.state { return true }; return false
+    }, "absolute observation deadline did not expire")
+    guard case .failed(let message) = timeout.backend.state else { fatalError("timeout state lost") }
+    require(message.contains("未确认") && !message.contains("已退出"), "timeout claimed an actual process exit")
+    require(timeout.backend.childPID == retainedPID && Darwin.kill(retainedPID, 0) == 0
+            && timeout.backend.lastExit == nil, "deadline destroyed the live owner or invented an exit")
+    await Task.yield()
+    require(expired.attempts.count == 1, "deadline automatically retried observation")
+    await timeout.cleanup()
+
+    let replacementClock = ObservationClock()
+    let replacement = try Fixture(root: root, name: "observed-replacement", mode: "owned-idle",
+                                  observation: replacementClock.observation)
+    replacement.start()
+    let retiredPID = replacement.backend.childPID
+    requireValue(await waitUntil { replacementClock.attempts.count == 1 }, "old controlled probe missing")
+    let stopped = await replacement.backend.stopAndWait(timeout: 2)
+    require(stopped.ownedProcessExitConfirmed, "old actual process did not exit")
+    replacement.start()
+    let currentPID = replacement.backend.childPID
+    require(currentPID > 0 && currentPID != retiredPID, "actual replacement did not start")
+    requireValue(await waitUntil { replacementClock.attempts.count == 2 }, "new controlled probe missing")
+    replacementClock.finish(0, at: 6, ready: true)
+    for _ in 0..<10 { await Task.yield() }
+    require(replacement.backend.childPID == currentPID && replacement.backend.state == .starting,
+            "old successful probe marked the new process ready")
+    replacementClock.finish(1, at: 200, ready: true)
+    requireValue(await waitUntil { replacement.backend.state == .running }, "current process readiness was lost")
+    require(replacement.backend.childPID == currentPID, "current successful probe replaced its owner")
+    await replacement.cleanup()
+    print("PASS controlled 6/200-second readiness, 210-second owner-preserving deadline and stale generation fence")
+}
+
 @main
 private struct BackendReadinessTests {
     @MainActor
@@ -631,6 +721,7 @@ private struct BackendReadinessTests {
             return
         }
         let root = URL(fileURLWithPath: CommandLine.arguments[1])
+        try await checkObservationBudget(root: root)
         try await checkSocketAdmission(root: root)
         let rotating = root.appendingPathComponent("bounded.log")
         try Data(repeating: 88, count: 200).write(to: rotating)
@@ -713,16 +804,29 @@ private struct BackendReadinessTests {
         }
         print("PASS bound-only socket, unauthorized, malformed, ok=false, exit during health")
 
-        let silent = try Fixture(root: root, name: "silent", mode: "silent")
+        // Advance only the injected monotonic clock. Actual HTTP attempts retain
+        // their own short deadline, so this fixture never sleeps for 210 seconds.
+        var silentUptime: TimeInterval = 0
+        let silentObservation = BackendStartupObservation(
+            uptime: { silentUptime },
+            check: { timeout in
+                let ready = await BackendReadiness.check(timeout: min(timeout, 0.05))
+                if !ready { silentUptime += 30 }
+                return ready
+            },
+            pause: { _ in await Task.yield() })
+        let silent = try Fixture(root: root, name: "silent", mode: "silent",
+                                 observation: silentObservation)
         silent.start()
         let silentPID = silent.backend.childPID
         let began = ProcessInfo.processInfo.systemUptime
-        let failed = await waitUntil(seconds: 6) {
+        let failed = await waitUntil(seconds: 3) {
             if case .failed = silent.backend.state { return true }
             return false
         }
         let elapsed = ProcessInfo.processInfo.systemUptime - began
-        require(failed && elapsed < 5.7, "silent HTTP ignored the five-second startup deadline: \(elapsed)")
+        require(failed && silentUptime >= 210 && elapsed < 3,
+                "silent HTTP ignored the accelerated absolute observation deadline: \(elapsed)")
         require(Darwin.kill(silentPID, 0) == 0, "startup failure killed a live child")
         let threadsBeforeRepeatedTimeout = threadCount()
         let descriptorsBeforeRepeatedTimeout = fileDescriptorCount()

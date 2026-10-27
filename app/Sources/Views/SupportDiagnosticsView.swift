@@ -127,7 +127,7 @@ struct SupportDiagnosticsView: View {
     private var backendState: String {
         switch backend.state {
         case .running: return "运行中"
-        case .starting: return "启动中"
+        case .starting: return "后台启动或恢复核对中"
         case .stopping: return "退出中"
         case .stopped: return "已停止"
         case .failed: return "启动或运行失败"
