@@ -21,6 +21,8 @@ use tokio::task::JoinHandle;
 pub(crate) const PREFIX: &str = "/api/internal/module-radio/";
 #[cfg(test)]
 mod bootstrap_projection_tests;
+#[cfg(test)]
+mod clcc_wire_tests;
 mod diagnostics;
 mod esim_cleanup;
 mod native_startup;
