@@ -93,6 +93,27 @@ async fn ordinary_esim_write_call_and_unknown_read_keep_immediate_busy() {
     fixture.empty();
     fixture.service.release_esim(write).await.unwrap();
 
+    // A real Call lease requires both saved policy and verified CFUN evidence.
+    let service = fixture.service.clone();
+    let bootstrap = tokio::spawn(async move {
+        service
+            .submit(Job::Bootstrap(Producer {
+                producer_id: "producer-1".into(),
+            }))
+            .await
+    });
+    let (action, reply) = fixture.next().await;
+    assert!(matches!(action, Action::Observe { cellular: false }));
+    reply
+        .send(Ok(Outcome {
+            complete: true,
+            verified: true,
+            cfun: Some(1),
+            ..Outcome::default()
+        }))
+        .unwrap();
+    bootstrap.await.unwrap().unwrap();
+
     fixture
         .service
         .submit(Job::Reservation(ReservationRequest {
@@ -104,7 +125,7 @@ async fn ordinary_esim_write_call_and_unknown_read_keep_immediate_busy() {
         }))
         .await
         .unwrap();
-    let (status, _) = request_public_route(
+    let (status, body) = request_public_route(
         fixture.service.clone(),
         "POST",
         "/api/network/usbnet",
@@ -112,6 +133,7 @@ async fn ordinary_esim_write_call_and_unknown_read_keep_immediate_busy() {
     )
     .await;
     assert_eq!(status, 409);
+    assert_eq!(body["code"], "module_radio_busy");
     assert_eq!(fixture.service.0.usbnet_waiters.load(Ordering::SeqCst), 0);
     fixture.empty();
     fixture
