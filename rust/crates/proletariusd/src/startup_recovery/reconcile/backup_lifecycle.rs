@@ -679,11 +679,19 @@ pub(super) fn is_empty(root: &File) -> io::Result<bool> {
 /// Only fully settled data transactions with no physical publication qualify
 /// as input to a new physical current-state check. No repair or fsync is done.
 pub(crate) fn legacy_current_data_only(root: &File) -> io::Result<bool> {
-    let Some(parent) = storage::optional_dir(root, storage::NAME)? else { return Ok(false); };
-    if names(&parent, 2)? != vec![NAME.to_owned()] { return Err(invalid()); }
+    let Some(parent) = storage::optional_dir(root, storage::NAME)? else {
+        return Ok(false);
+    };
+    if names(&parent, 2)? != vec![NAME.to_owned()] {
+        return Err(invalid());
+    }
     let inventory = scan(root)?.ok_or_else(invalid)?;
-    if inventory.transactions.is_empty() || inventory.transactions.iter().any(|t|
-        t.intent.publication.is_some() || (t.commit.is_none() && t.abort.is_none())) {
+    if inventory.transactions.is_empty()
+        || inventory
+            .transactions
+            .iter()
+            .any(|t| t.intent.publication.is_some() || (t.commit.is_none() && t.abort.is_none()))
+    {
         return Err(invalid());
     }
     verify_finished(root, &inventory)?;

@@ -104,11 +104,21 @@ impl Service {
     /// The supplied Owner has one sealed same-device opener. Never select a
     /// serial port or enumerate a replacement after a current-state check.
     pub(crate) fn start_verified(
-        modem: ModemActor, usb: usb_at::Owner, radio: module_radio::Service,
-        inbox: InboxState, native_producer: String,
+        modem: ModemActor,
+        usb: usb_at::Owner,
+        radio: module_radio::Service,
+        inbox: InboxState,
+        native_producer: String,
     ) -> Self {
-        Self::start_inner(Probe::VerifiedUsb, modem, usb, radio, inbox,
-            native_producer, ArchiveSource::Native)
+        Self::start_inner(
+            Probe::VerifiedUsb,
+            modem,
+            usb,
+            radio,
+            inbox,
+            native_producer,
+            ArchiveSource::Native,
+        )
     }
 
     pub(crate) fn start_on_port(
@@ -303,9 +313,14 @@ impl Service {
             }
             self.0.selection.send_replace(Selection::Probing);
             if matches!(&probe, Probe::VerifiedUsb) {
-                diagnostic::startup_step(Stage::UsbOpen, Transport::Usb,
-                    usb.open_native_candidate(), |error| error.public_code())
-                    .await.map_err(|error| StartupError { code: error.code })?;
+                diagnostic::startup_step(
+                    Stage::UsbOpen,
+                    Transport::Usb,
+                    usb.open_native_candidate(),
+                    |error| error.public_code(),
+                )
+                .await
+                .map_err(|error| StartupError { code: error.code })?;
                 break;
             }
             let found = diagnostic::startup_step(

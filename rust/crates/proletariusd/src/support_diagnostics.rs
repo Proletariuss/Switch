@@ -18,9 +18,9 @@ use nix::sys::stat::{Mode, mkdirat};
 use nix::unistd::{UnlinkatFlags, geteuid, unlinkat};
 use serde::{Deserialize, Serialize};
 
+mod live;
 pub(crate) mod module;
 pub(crate) mod recovery;
-mod live;
 
 pub(crate) const PATH: &str = "/api/diagnostics/support";
 const DIRECTORY: &str = "support-diagnostics";
@@ -577,7 +577,6 @@ pub(crate) async fn handle() -> Response<Full<Bytes>> {
     .await
 }
 
-
 /// The live view is bounded current-process memory only. It never reads the
 /// rotating export files or waits for a writer, device or recovery owner.
 pub(crate) fn handle_live() -> Response<Full<Bytes>> {
@@ -661,8 +660,8 @@ mod tests {
             available: AtomicBool::new(true),
             exporting: AtomicBool::new(false),
             recovery: Mutex::new(recovery::Observation::default()),
-        live: Mutex::new(live::Buffer::default()),
-        live_missed: AtomicU64::new(0),
+            live: Mutex::new(live::Buffer::default()),
+            live_missed: AtomicU64::new(0),
         })
     }
     fn record(sequence: u64) -> Record {
@@ -720,7 +719,11 @@ mod tests {
         let shared = shared(&root);
         let gate = crate::module_recovery::Gate::quarantined_for_tests();
         shared.recovery.lock().unwrap().bind(&gate);
-        shared.recovery.lock().unwrap().legacy_current(recovery::LegacyCurrent::HelperUnconfirmed);
+        shared
+            .recovery
+            .lock()
+            .unwrap()
+            .legacy_current(recovery::LegacyCurrent::HelperUnconfirmed);
         let mut storage = Storage::open(&root.0, 512).unwrap();
         for sequence in 1..=40 {
             storage.append(&record(sequence)).unwrap();
@@ -748,7 +751,10 @@ mod tests {
             value["module_recovery"]["startup"]["cleanup"],
             "not_observed"
         );
-        assert_eq!(value["module_recovery"]["startup"]["legacy_current"], "legacy_current_helper_unconfirmed");
+        assert_eq!(
+            value["module_recovery"]["startup"]["legacy_current"],
+            "legacy_current_helper_unconfirmed"
+        );
         assert_eq!(
             value["module_recovery"]["historical_recovery_confirmed"],
             false

@@ -168,11 +168,16 @@ impl Observation {
     }
 
     pub(super) fn legacy_current(&mut self, result: LegacyCurrent) {
-        if matches!(result, LegacyCurrent::CleanupUnconfirmed | LegacyCurrent::WorkerFailed) {
+        if matches!(
+            result,
+            LegacyCurrent::CleanupUnconfirmed | LegacyCurrent::WorkerFailed
+        ) {
             self.cleanup(Cleanup::Unconfirmed);
         }
-        if !matches!(self.startup.legacy_current,
-            LegacyCurrent::CleanupUnconfirmed | LegacyCurrent::WorkerFailed) {
+        if !matches!(
+            self.startup.legacy_current,
+            LegacyCurrent::CleanupUnconfirmed | LegacyCurrent::WorkerFailed
+        ) {
             self.startup.legacy_current = result;
         }
     }
@@ -318,13 +323,24 @@ mod tests {
         observation.bind(&Gate::quarantined_for_tests());
         let snapshot = observation.snapshot();
         let value = serde_json::to_value(&snapshot).unwrap();
-        assert_eq!(serde_json::from_value::<Snapshot>(value.clone()).unwrap(), snapshot);
-        for field in ["path", "imei", "imsi", "iccid", "backup", "journal", "command", "token", "error"] {
+        assert_eq!(
+            serde_json::from_value::<Snapshot>(value.clone()).unwrap(),
+            snapshot
+        );
+        for field in [
+            "path", "imei", "imsi", "iccid", "backup", "journal", "command", "token", "error",
+        ] {
             let mut changed = value.clone();
-            changed.as_object_mut().unwrap().insert(field.into(), "private".into());
+            changed
+                .as_object_mut()
+                .unwrap()
+                .insert(field.into(), "private".into());
             assert!(serde_json::from_value::<Snapshot>(changed).is_err());
             let mut changed = value.clone();
-            changed["startup"].as_object_mut().unwrap().insert(field.into(), "private".into());
+            changed["startup"]
+                .as_object_mut()
+                .unwrap()
+                .insert(field.into(), "private".into());
             assert!(serde_json::from_value::<Snapshot>(changed).is_err());
         }
         for field in ["state", "reason_codes"] {
@@ -347,13 +363,20 @@ mod tests {
     #[test]
     fn every_gate_reason_has_a_closed_bounded_projection() {
         let reasons = [
-            Reason::LegacyExecutionPending, Reason::RestoreJournalPending,
-            Reason::RestoreJournalUnreadable, Reason::ReconciliationPending,
-            Reason::ReconciliationUnreadable, Reason::LegacyCallModeLock,
-            Reason::LegacyAdbInterfaceLock, Reason::LegacyLockProvenancePending,
-            Reason::ModuleBackupPresent, Reason::LegacyVoiceRuntime,
-            Reason::ManagedVoiceControlPending, Reason::InvalidPristineMarker,
-            Reason::UnreadableEvidence, Reason::LifetimeAuthorityChanged,
+            Reason::LegacyExecutionPending,
+            Reason::RestoreJournalPending,
+            Reason::RestoreJournalUnreadable,
+            Reason::ReconciliationPending,
+            Reason::ReconciliationUnreadable,
+            Reason::LegacyCallModeLock,
+            Reason::LegacyAdbInterfaceLock,
+            Reason::LegacyLockProvenancePending,
+            Reason::ModuleBackupPresent,
+            Reason::LegacyVoiceRuntime,
+            Reason::ManagedVoiceControlPending,
+            Reason::InvalidPristineMarker,
+            Reason::UnreadableEvidence,
+            Reason::LifetimeAuthorityChanged,
         ];
         let mut value = Observation::default().snapshot();
         value.reason_codes = reasons.into_iter().map(ReasonCode::from).collect();
@@ -367,19 +390,38 @@ mod tests {
     #[test]
     fn legacy_current_is_a_closed_optional_backward_compatible_projection() {
         let values = [
-            LegacyCurrent::NotObserved, LegacyCurrent::NotApplicable, LegacyCurrent::Started,
-            LegacyCurrent::CurrentVerified, LegacyCurrent::PublicationUnconfirmed,
-            LegacyCurrent::Ineligible, LegacyCurrent::EvidenceChanged, LegacyCurrent::Busy,
-            LegacyCurrent::Cancelled, LegacyCurrent::Timeout, LegacyCurrent::DeviceUnconfirmed,
-            LegacyCurrent::ReadbackUnconfirmed, LegacyCurrent::HelperUnconfirmed,
-            LegacyCurrent::CleanupUnconfirmed, LegacyCurrent::WorkerFailed,
+            LegacyCurrent::NotObserved,
+            LegacyCurrent::NotApplicable,
+            LegacyCurrent::Started,
+            LegacyCurrent::CurrentVerified,
+            LegacyCurrent::PublicationUnconfirmed,
+            LegacyCurrent::Ineligible,
+            LegacyCurrent::EvidenceChanged,
+            LegacyCurrent::Busy,
+            LegacyCurrent::Cancelled,
+            LegacyCurrent::Timeout,
+            LegacyCurrent::DeviceUnconfirmed,
+            LegacyCurrent::ReadbackUnconfirmed,
+            LegacyCurrent::HelperUnconfirmed,
+            LegacyCurrent::CleanupUnconfirmed,
+            LegacyCurrent::WorkerFailed,
         ];
         let names = [
-            "not_observed", "not_applicable", "started", "current_verified", "publication_unconfirmed",
-            "legacy_current_ineligible", "legacy_current_evidence_changed", "legacy_current_busy",
-            "legacy_current_cancelled", "legacy_current_timeout", "legacy_current_device_unconfirmed",
-            "legacy_current_readback_unconfirmed", "legacy_current_helper_unconfirmed",
-            "legacy_current_cleanup_unconfirmed", "legacy_current_worker_failed",
+            "not_observed",
+            "not_applicable",
+            "started",
+            "current_verified",
+            "publication_unconfirmed",
+            "legacy_current_ineligible",
+            "legacy_current_evidence_changed",
+            "legacy_current_busy",
+            "legacy_current_cancelled",
+            "legacy_current_timeout",
+            "legacy_current_device_unconfirmed",
+            "legacy_current_readback_unconfirmed",
+            "legacy_current_helper_unconfirmed",
+            "legacy_current_cleanup_unconfirmed",
+            "legacy_current_worker_failed",
         ];
         for (value, name) in values.into_iter().zip(names) {
             let mut observation = Observation::default();
@@ -387,17 +429,33 @@ mod tests {
             let snapshot = observation.snapshot();
             let encoded = serde_json::to_value(&snapshot).unwrap();
             assert_eq!(encoded["startup"]["legacy_current"], name);
-            assert_eq!(serde_json::from_value::<Snapshot>(encoded).unwrap(), snapshot);
+            assert_eq!(
+                serde_json::from_value::<Snapshot>(encoded).unwrap(),
+                snapshot
+            );
             assert!(!snapshot.historical_recovery_confirmed);
             assert!(serde_json::to_vec(&snapshot).unwrap().len() < 4096);
         }
         let mut old = serde_json::to_value(Observation::default().snapshot()).unwrap();
-        old["startup"].as_object_mut().unwrap().remove("legacy_current");
-        assert_eq!(serde_json::from_value::<Snapshot>(old.clone()).unwrap().startup.legacy_current,
-            LegacyCurrent::NotObserved);
-        for unsupported in [serde_json::json!("legacy_current_raw_AT+CGSN"),
-            serde_json::json!("CURRENT_VERIFIED"), serde_json::json!(null),
-            serde_json::json!(false), serde_json::json!({"imei":"private"}), serde_json::json!(17)] {
+        old["startup"]
+            .as_object_mut()
+            .unwrap()
+            .remove("legacy_current");
+        assert_eq!(
+            serde_json::from_value::<Snapshot>(old.clone())
+                .unwrap()
+                .startup
+                .legacy_current,
+            LegacyCurrent::NotObserved
+        );
+        for unsupported in [
+            serde_json::json!("legacy_current_raw_AT+CGSN"),
+            serde_json::json!("CURRENT_VERIFIED"),
+            serde_json::json!(null),
+            serde_json::json!(false),
+            serde_json::json!({"imei":"private"}),
+            serde_json::json!(17),
+        ] {
             let mut changed = old.clone();
             changed["startup"]["legacy_current"] = unsupported;
             assert!(serde_json::from_value::<Snapshot>(changed).is_err());
@@ -412,20 +470,29 @@ mod tests {
         observation.legacy_current(LegacyCurrent::HelperUnconfirmed);
         for _ in 0..8192 {
             let snapshot = observation.snapshot();
-            assert_eq!(snapshot.startup.legacy_current, LegacyCurrent::HelperUnconfirmed);
+            assert_eq!(
+                snapshot.startup.legacy_current,
+                LegacyCurrent::HelperUnconfirmed
+            );
             assert_eq!(snapshot.state, State::LegacyRecoveryRequired);
             assert!(!snapshot.historical_recovery_confirmed);
         }
-        for sticky in [LegacyCurrent::CleanupUnconfirmed, LegacyCurrent::WorkerFailed] {
+        for sticky in [
+            LegacyCurrent::CleanupUnconfirmed,
+            LegacyCurrent::WorkerFailed,
+        ] {
             let mut observation = Observation::default();
             observation.legacy_current(sticky);
-            for later in [LegacyCurrent::NotApplicable, LegacyCurrent::CurrentVerified,
-                LegacyCurrent::DeviceUnconfirmed, LegacyCurrent::Started] {
+            for later in [
+                LegacyCurrent::NotApplicable,
+                LegacyCurrent::CurrentVerified,
+                LegacyCurrent::DeviceUnconfirmed,
+                LegacyCurrent::Started,
+            ] {
                 observation.legacy_current(later);
                 assert_eq!(observation.snapshot().startup.legacy_current, sticky);
                 assert_eq!(observation.snapshot().startup.cleanup, Cleanup::Unconfirmed);
             }
         }
     }
-
 }

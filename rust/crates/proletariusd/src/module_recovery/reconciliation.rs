@@ -218,7 +218,6 @@ mod tests {
     }
 }
 
- 
 /// A startup current-state read claim, deliberately distinct from a recovery
 /// ticket: it never records historical compensation or creates durable permits.
 pub(crate) struct LegacyCurrentClaim {
@@ -231,9 +230,14 @@ pub(crate) struct LegacyCurrentClaim {
 impl LegacyCurrentClaim {
     fn common(&self, gate: &Gate) -> Result<Arc<Authority>, ()> {
         let authority = self.authority.upgrade().ok_or(())?;
-        if !Arc::ptr_eq(&authority, &gate.0) || authority.revoked.get().is_some()
+        if !Arc::ptr_eq(&authority, &gate.0)
+            || authority.revoked.get().is_some()
             || !authority.reconciliation_started.load(Ordering::Acquire)
-            || !authority.root_proof.as_ref().is_some_and(|p| p.same_authority(&self.proof)) {
+            || !authority
+                .root_proof
+                .as_ref()
+                .is_some_and(|p| p.same_authority(&self.proof))
+        {
             return Err(());
         }
         self.proof.with_root(&self.root, |_| ()).map_err(|_| ())?;
@@ -241,69 +245,120 @@ impl LegacyCurrentClaim {
     }
     pub(crate) fn validate(&self, gate: &Gate) -> Result<(), ()> {
         let a = self.common(gate)?;
-        if self.consumed.load(Ordering::Acquire) || a.startup.is_none()
+        if self.consumed.load(Ordering::Acquire)
+            || a.startup.is_none()
             || a.startup_reconciled.get().is_some()
-            || a.reconciliation_epoch.load(Ordering::Acquire) != self.epoch { return Err(()); }
+            || a.reconciliation_epoch.load(Ordering::Acquire) != self.epoch
+        {
+            return Err(());
+        }
         Ok(())
     }
     pub(crate) fn validate_activated(&self, gate: &Gate) -> Result<(), ()> {
         let a = self.common(gate)?;
-        if !self.consumed.load(Ordering::Acquire) || a.startup_reconciled.get().is_none()
-            || a.reconciliation_epoch.load(Ordering::Acquire) != self.epoch.checked_add(1).ok_or(())?
-            || gate.is_admission_revoked() { return Err(()); }
+        if !self.consumed.load(Ordering::Acquire)
+            || a.startup_reconciled.get().is_none()
+            || a.reconciliation_epoch.load(Ordering::Acquire)
+                != self.epoch.checked_add(1).ok_or(())?
+            || gate.is_admission_revoked()
+        {
+            return Err(());
+        }
         Ok(())
     }
-    pub(crate) fn root_proof(&self) -> &crate::daemon_lifetime::RootProof { &self.proof }
+    pub(crate) fn root_proof(&self) -> &crate::daemon_lifetime::RootProof {
+        &self.proof
+    }
     pub(crate) fn revoke(&self, gate: &Gate) {
-        let Some(a) = self.authority.upgrade() else { return; };
-        if !Arc::ptr_eq(&a, &gate.0) { return; }
+        let Some(a) = self.authority.upgrade() else {
+            return;
+        };
+        if !Arc::ptr_eq(&a, &gate.0) {
+            return;
+        }
         let _admission = a.admission.lock().unwrap_or_else(|e| e.into_inner());
-        let _ = a.revoked.set(Status { state: CODE,
-            reason_codes: vec![Reason::ReconciliationPending], historical_recovery_confirmed: false });
+        let _ = a.revoked.set(Status {
+            state: CODE,
+            reason_codes: vec![Reason::ReconciliationPending],
+            historical_recovery_confirmed: false,
+        });
     }
 }
 impl Drop for LegacyCurrentClaim {
     fn drop(&mut self) {
-        if self.consumed.load(Ordering::Acquire) { return; }
-        let Some(authority) = self.authority.upgrade() else { return; };
-        let _admission = authority.admission.lock().unwrap_or_else(|e| e.into_inner());
-        let _ = authority.revoked.set(Status { state: CODE,
-            reason_codes: vec![Reason::ReconciliationPending], historical_recovery_confirmed: false });
+        if self.consumed.load(Ordering::Acquire) {
+            return;
+        }
+        let Some(authority) = self.authority.upgrade() else {
+            return;
+        };
+        let _admission = authority
+            .admission
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let _ = authority.revoked.set(Status {
+            state: CODE,
+            reason_codes: vec![Reason::ReconciliationPending],
+            historical_recovery_confirmed: false,
+        });
     }
 }
 impl Gate {
     pub(crate) fn legacy_current_eligible(&self) -> bool {
-        self.is_quarantined() && self.0.revoked.get().is_none()
+        self.is_quarantined()
+            && self.0.revoked.get().is_none()
             && !self.0.restore_in_progress.load(Ordering::Acquire)
             && !self.0.reconciliation_started.load(Ordering::Acquire)
-            && self.0.startup.as_ref().is_some_and(|s| !s.reason_codes.is_empty()
-                && s.reason_codes.iter().all(|reason| matches!(reason,
-                    Reason::LegacyCallModeLock | Reason::LegacyAdbInterfaceLock
-                    | Reason::LegacyLockProvenancePending | Reason::ModuleBackupPresent
-                    | Reason::LegacyVoiceRuntime | Reason::ReconciliationPending
-                    | Reason::UnreadableEvidence)))
+            && self.0.startup.as_ref().is_some_and(|s| {
+                !s.reason_codes.is_empty()
+                    && s.reason_codes.iter().all(|reason| {
+                        matches!(
+                            reason,
+                            Reason::LegacyCallModeLock
+                                | Reason::LegacyAdbInterfaceLock
+                                | Reason::LegacyLockProvenancePending
+                                | Reason::ModuleBackupPresent
+                                | Reason::LegacyVoiceRuntime
+                                | Reason::ReconciliationPending
+                                | Reason::UnreadableEvidence
+                        )
+                    })
+            })
     }
     pub(crate) fn begin_legacy_current(&self, root: &Path) -> Result<LegacyCurrentClaim, ()> {
         let _admission = self.0.admission.lock().unwrap_or_else(|e| e.into_inner());
-        if !self.legacy_current_eligible() { return Err(()); }
+        if !self.legacy_current_eligible() {
+            return Err(());
+        }
         let epoch = self.0.reconciliation_epoch.load(Ordering::Acquire);
         epoch.checked_add(1).ok_or(())?;
         let proof = self.0.root_proof.as_ref().ok_or(())?;
         proof.with_root(root, |_| ()).map_err(|_| ())?;
         self.0.reconciliation_started.store(true, Ordering::Release);
-        Ok(LegacyCurrentClaim { authority: Arc::downgrade(&self.0), proof: proof.clone(),
-            root: root.to_owned(), epoch, consumed: AtomicBool::new(false) })
+        Ok(LegacyCurrentClaim {
+            authority: Arc::downgrade(&self.0),
+            proof: proof.clone(),
+            root: root.to_owned(),
+            epoch,
+            consumed: AtomicBool::new(false),
+        })
     }
     pub(crate) fn consume_legacy_current(
-        &self, completed: crate::startup_recovery::legacy_current::Completed,
+        &self,
+        completed: crate::startup_recovery::legacy_current::Completed,
     ) -> Result<crate::startup_recovery::legacy_current::Seed, ()> {
         completed.verify(self)?;
         let _admission = self.0.admission.lock().unwrap_or_else(|e| e.into_inner());
         completed.verify(self)?;
-        if !completed.activation_live() { return Err(()); }
+        if !completed.activation_live() {
+            return Err(());
+        }
         let claim = completed.claim();
         let next = claim.epoch.checked_add(1).ok_or(())?;
-        self.0.reconciliation_epoch.compare_exchange(claim.epoch, next, Ordering::AcqRel, Ordering::Acquire).map_err(|_| ())?;
+        self.0
+            .reconciliation_epoch
+            .compare_exchange(claim.epoch, next, Ordering::AcqRel, Ordering::Acquire)
+            .map_err(|_| ())?;
         self.0.startup_reconciled.set(()).map_err(|_| ())?;
         claim.consumed.store(true, Ordering::Release);
         // No file is removed or recategorized and history remains unconfirmed.
