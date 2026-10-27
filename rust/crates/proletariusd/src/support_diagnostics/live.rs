@@ -44,11 +44,12 @@ pub(super) fn record(shared: &Shared, record: &Record) {
 fn snapshot(shared: &Shared) -> Option<serde_json::Value> {
     // Clone only a bounded window under the lock, then release it before JSON
     // encoding. No root paths, stderr text, headers or raw errors are observed.
-    let (records, retained_bytes, evicted) = {
+    let (mut records, retained_bytes, evicted) = {
         let buffer = shared.live.try_lock().ok()?;
         (buffer.records.iter().map(|(record, _)| record.clone()).collect::<Vec<_>>(),
             buffer.bytes, buffer.evicted)
     };
+    records.sort_unstable_by_key(|record| record.sequence);
     let recovery = shared.recovery.try_lock().ok()?.snapshot();
     let counters = &shared.counters;
     let missed = shared.live_missed.load(Ordering::Relaxed);
@@ -178,4 +179,23 @@ mod tests {
         assert_eq!(value["module_recovery"]["historical_recovery_confirmed"], false);
         assert!(!value.to_string().contains("PRIVATE-NUMBER"));
     }
+    #[test]
+    fn concurrent_arrival_order_is_sorted_outside_the_producer_lock() {
+        let shared = shared();
+        for sequence in [3, 1, 2] { record(&shared, &event(sequence)); }
+        let value = snapshot(&shared).unwrap();
+        let sequences = value["events"].as_array().unwrap().iter()
+            .map(|record| record["sequence"].as_u64().unwrap()).collect::<Vec<_>>();
+        assert_eq!(sequences, [1, 2, 3]);
+    }
+
+    #[test]
+    fn recovery_observation_contention_returns_without_waiting() {
+        let shared = shared();
+        let held = shared.recovery.lock().unwrap();
+        assert_eq!(response(&shared).status(), StatusCode::SERVICE_UNAVAILABLE);
+        drop(held);
+        assert_eq!(response(&shared).status(), StatusCode::OK);
+    }
+
 }
