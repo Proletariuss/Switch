@@ -2869,8 +2869,8 @@
     },
     {
       "file": "rust/crates/proletariusd/src/startup_recovery/legacy_current.rs",
-      "sha256": "94b93db951339dfe929c2d3e2111d5db3df6adbae3df60bf56e6c73fee197d08",
-      "review": "DJI-356 current baseline and live diagnostics: reviewed source 388b830af1a61581056e1b270a7057caeb4c4b97. Same-device finite read-only inspection preserves current CFUN, checked release, cancellation, original evidence and same-Gate first-open binding; it never asserts historical restoration or exempts typed physical obligations. Bounded memory-only live diagnostics and owner-preserving startup observation retain closed schemas. Download provenance is local-only before Enable or physical intent. Only approved fingerprints are refreshed; full final-source cloud gates and actual device acceptance remain outstanding."
+      "sha256": "d3390c0eed8d63aa5d6f82b5f4e118314919ba6f6309f0536a0269a1f4292c82",
+      "review": "DJI-356 current baseline and live diagnostics: reviewed source 388b830af1a61581056e1b270a7057caeb4c4b97. Same-device finite read-only inspection preserves current CFUN, checked release, cancellation, original evidence and same-Gate first-open binding; it never asserts historical restoration or exempts typed physical obligations. Bounded memory-only live diagnostics and owner-preserving startup observation retain closed schemas. Download provenance is local-only before Enable or physical intent. Only approved fingerprints are refreshed; full final-source cloud gates and actual device acceptance remain outstanding.\n\nDJI-356 final reviewed correction: source 210ce5002551b3e628bf3773367f4823a023eb38. Metadata inspection retains cancellation and deadline causes after checked cleanup; the live diagnostics catch path preserves runtime ownership and closed error fields. Only these two existing whole-file fingerprints may change. No eligibility, physical recovery or API policy is expanded. Download provenance remains local-only before Enable or physical intent. Final exact-source cloud gates and device acceptance remain outstanding."
     },
     {
       "file": "rust/crates/proletariusd/src/usb_at_transport/legacy_current.rs",
@@ -2884,8 +2884,8 @@
     },
     {
       "file": "app/Sources/LiveDiagnostics.swift",
-      "sha256": "a8ebcf6681ce83c76543a65fc8e228d34cb7fd0e5ef2af979bb7ee7852ffebb4",
-      "review": "DJI-356 current baseline and live diagnostics: reviewed source 388b830af1a61581056e1b270a7057caeb4c4b97. Same-device finite read-only inspection preserves current CFUN, checked release, cancellation, original evidence and same-Gate first-open binding; it never asserts historical restoration or exempts typed physical obligations. Bounded memory-only live diagnostics and owner-preserving startup observation retain closed schemas. Download provenance is local-only before Enable or physical intent. Only approved fingerprints are refreshed; full final-source cloud gates and actual device acceptance remain outstanding."
+      "sha256": "2a994c11bd624a1aefcfad781722b4c68300e6186471f280fe14788a1121d8cd",
+      "review": "DJI-356 current baseline and live diagnostics: reviewed source 388b830af1a61581056e1b270a7057caeb4c4b97. Same-device finite read-only inspection preserves current CFUN, checked release, cancellation, original evidence and same-Gate first-open binding; it never asserts historical restoration or exempts typed physical obligations. Bounded memory-only live diagnostics and owner-preserving startup observation retain closed schemas. Download provenance is local-only before Enable or physical intent. Only approved fingerprints are refreshed; full final-source cloud gates and actual device acceptance remain outstanding.\n\nDJI-356 final reviewed correction: source 210ce5002551b3e628bf3773367f4823a023eb38. Metadata inspection retains cancellation and deadline causes after checked cleanup; the live diagnostics catch path preserves runtime ownership and closed error fields. Only these two existing whole-file fingerprints may change. No eligibility, physical recovery or API policy is expanded. Download provenance remains local-only before Enable or physical intent. Final exact-source cloud gates and device acceptance remain outstanding."
     }
   ],
   "dynamic_routes": [

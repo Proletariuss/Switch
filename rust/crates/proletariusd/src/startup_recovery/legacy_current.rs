@@ -570,16 +570,18 @@ impl super::Coordinator {
                 }
             };
             fence().map_err(|_| ended())?;
-            let proof = gate.root_proof_for(&root)
+            let proof = gate
+                .root_proof_for(&root)
                 .map_err(|error| metadata_failure(&cancelled, deadline, io_failure(error)))?;
             let eligible = proof
                 .with_root(&root, |root| Evidence::capture_checked(root, &fence))
                 .map_err(|error| metadata_failure(&cancelled, deadline, io_failure(error)))?;
-            let original = match eligible.map_err(|error| metadata_failure(&cancelled, deadline, error)) {
-                Ok(value) => value,
-                Err(Failure::Ineligible) => return Ok(None),
-                Err(error) => return Err(error),
-            };
+            let original =
+                match eligible.map_err(|error| metadata_failure(&cancelled, deadline, error)) {
+                    Ok(value) => value,
+                    Err(Failure::Ineligible) => return Ok(None),
+                    Err(error) => return Err(error),
+                };
             drop(original);
             fence().map_err(|_| ended())?;
             let claim = Arc::new(gate.begin_legacy_current(&root).map_err(io_failure)?);
@@ -592,7 +594,11 @@ impl super::Coordinator {
                 _ => {
                     let mut locks = locks;
                     locks.release()?;
-                    return Err(metadata_failure(&cancelled, deadline, Failure::EvidenceChanged));
+                    return Err(metadata_failure(
+                        &cancelled,
+                        deadline,
+                        Failure::EvidenceChanged,
+                    ));
                 }
             };
             let scope = ReadScope(Arc::new(ReadState {
