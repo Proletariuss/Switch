@@ -107,6 +107,18 @@ Die unabhängig geprüfte Änderung in `23ee8748` bestand
 Testseitige Reflection bindet die Barrieren an die aktuellen privaten Lifecycle-Felder;
 eine Änderung dieser Felder muss ausdrücklich auch die Fixture aktualisieren.
 
+Die anschließende vollständige Rust-Prüfung führte 3.747 reguläre Daemon-Tests
+aus: 3.743 bestanden, vier Fixture-Assertierungen scheiterten. Die Korrektur
+bleibt auf Tests beschränkt: Call-Belegung wird erst nach einer echten,
+verifizierten CFUN-Beobachtung geprüft; Byte-Fixtures behalten die native
+SMS-Policy und prüfen ihre Sperre ausdrücklich. Der bisherige Refresh-Test
+für eine verlorene Freigabe prüft jetzt den erhaltenen Worker: HTTP pending,
+tatsächliche Pin-Freigabe, Abschluss derselben Operation und kein erneutes
+CCHO/CGLA/CCHC-Lesen. Alle vier Fehler bleiben als fehlgeschlagener
+[Cloud-Lauf](https://github.com/Proletariuss/Switch/actions/runs/40421179618)
+nachvollziehbar. `12872514` und `7f28de8e` wurden unabhängig kreuzgeprüft;
+der endgültige Stand muss die unveränderten vollständigen Gates erneut bestehen.
+
 Die verbindlichen Testergebnisse, der endgültige Commit und das App-Artefakt
 werden im zugehörigen PR und seinen GitHub-Läufen festgehalten.
 Erforderlich bleiben die unveränderten gemeinsamen Rust-/Swift-/App-Gates,
