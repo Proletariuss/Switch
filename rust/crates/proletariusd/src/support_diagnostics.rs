@@ -6,7 +6,7 @@ use std::io::{self, Read, Write};
 use std::os::unix::fs::MetadataExt;
 use std::path::{Component, Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{Arc, OnceLock, mpsc};
+use std::sync::{Arc, Mutex, OnceLock, mpsc};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use bytes::Bytes;
@@ -19,6 +19,7 @@ use nix::unistd::{UnlinkatFlags, geteuid, unlinkat};
 use serde::{Deserialize, Serialize};
 
 pub(crate) mod module;
+pub(crate) mod recovery;
 
 pub(crate) const PATH: &str = "/api/diagnostics/support";
 const DIRECTORY: &str = "support-diagnostics";
@@ -80,6 +81,7 @@ struct Shared {
     counters: Counters,
     available: AtomicBool,
     exporting: AtomicBool,
+    recovery: Mutex<recovery::Observation>,
 }
 struct Recorder {
     sender: mpsc::SyncSender<Record>,
@@ -193,6 +195,7 @@ pub(crate) fn initialize(root: &Path) {
         counters: Counters::default(),
         available: AtomicBool::new(false),
         exporting: AtomicBool::new(false),
+        recovery: Mutex::new(recovery::Observation::default()),
     });
     let (sender, receiver) = mpsc::sync_channel(QUEUE);
     let worker = shared.clone();
@@ -522,6 +525,7 @@ fn snapshot(shared: &Shared) -> serde_json::Value {
         "counters":{"accepted":counters.accepted.load(Ordering::Relaxed),
             "written":counters.written.load(Ordering::Relaxed),"dropped":dropped,
             "write_failures":failures,"invalid_records":invalid_records,"read_failures":read_failures},
+        "module_recovery":shared.recovery.lock().unwrap_or_else(|error| error.into_inner()).snapshot(),
         "events":events,"warnings":warnings
     })
 }
@@ -636,6 +640,7 @@ mod tests {
             counters: Counters::default(),
             available: AtomicBool::new(true),
             exporting: AtomicBool::new(false),
+            recovery: Mutex::new(recovery::Observation::default()),
         })
     }
     fn record(sequence: u64) -> Record {
@@ -687,6 +692,63 @@ mod tests {
                 .any(|event| event["runtime_id"] == "b".repeat(32))
         );
     }
+    #[test]
+    fn recovery_survives_rotation_queue_failure_and_absent_module_events() {
+        let root = Root::new();
+        let shared = shared(&root);
+        let gate = crate::module_recovery::Gate::quarantined_for_tests();
+        shared.recovery.lock().unwrap().bind(&gate);
+        let mut storage = Storage::open(&root.0, 512).unwrap();
+        for sequence in 1..=40 {
+            storage.append(&record(sequence)).unwrap();
+        }
+        let (sender, receiver) = mpsc::sync_channel(1);
+        drop(receiver);
+        let recorder = Recorder {
+            sender,
+            shared: shared.clone(),
+        };
+        recorder.emit(Event::Lifecycle { phase: "startup".into() });
+        assert_eq!(shared.counters.dropped.load(Ordering::Relaxed), 1);
+        let value = snapshot(&shared);
+        assert_eq!(value["module_recovery"]["state"], "legacy_recovery_required");
+        assert_eq!(
+            value["module_recovery"]["reason_codes"],
+            serde_json::json!(["legacy_call_mode_lock"])
+        );
+        assert_eq!(value["module_recovery"]["startup"]["cleanup"], "not_observed");
+        assert_eq!(value["module_recovery"]["historical_recovery_confirmed"], false);
+        let events = value["events"].as_array().unwrap();
+        assert!(!events.is_empty());
+        assert!(events.len() < 40);
+        assert!(events.iter().all(|event| event["event"]["kind"] != "module"));
+        assert!(!value.to_string().contains(root.0.to_str().unwrap()));
+    }
+
+    #[test]
+    fn recovery_is_outside_export_event_limit_and_observes_later_revocation() {
+        let root = Root::new();
+        let shared = shared(&root);
+        let gate = crate::module_recovery::Gate::default();
+        shared.recovery.lock().unwrap().bind(&gate);
+        let mut storage = Storage::open(&root.0, SEGMENT_BYTES).unwrap();
+        for sequence in 1..=(EXPORT_EVENTS as u64 + 1) {
+            storage.append(&record(sequence)).unwrap();
+        }
+        let value = snapshot(&shared);
+        assert_eq!(value["events"].as_array().unwrap().len(), EXPORT_EVENTS);
+        assert_eq!(value["module_recovery"]["state"], "open");
+        assert!(value["warnings"].as_array().unwrap().contains(&"export_truncated".into()));
+        gate.revoke_for_tests();
+        let value = snapshot(&shared);
+        assert_eq!(value["events"].as_array().unwrap().len(), EXPORT_EVENTS);
+        assert_eq!(
+            value["module_recovery"]["reason_codes"],
+            serde_json::json!(["legacy_execution_pending"])
+        );
+        assert_eq!(value["module_recovery"]["state"], "legacy_recovery_required");
+    }
+
     #[test]
     fn corruption_and_private_data_are_never_exported() {
         let root = Root::new();

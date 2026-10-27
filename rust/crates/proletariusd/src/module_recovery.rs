@@ -494,6 +494,12 @@ impl Gate {
     }
     pub(crate) fn status(&self) -> Option<&Status> {
         self.is_admission_revoked();
+        self.observed_status()
+    }
+
+    /// Last observed state only. Support export must never probe evidence or
+    /// turn a diagnostic read into a new admission/revocation decision.
+    pub(crate) fn observed_status(&self) -> Option<&Status> {
         if self.is_quarantined() {
             self.0.startup.as_ref()
         } else {
@@ -646,6 +652,26 @@ mod tests {
         let lease = crate::daemon_lifetime::Lease::acquire(root).unwrap();
         let gate = Gate::inspect_with_lifetime(&lease);
         (lease, gate)
+    }
+
+    #[test]
+    fn support_observation_does_not_probe_or_revoke_the_gate() {
+        let root = Root::new();
+        let (_lease, gate) = live_gate(&root.0);
+        assert!(gate.observed_status().is_none());
+        root.write(LEGACY_EXECUTION_PENDING, b"private evidence");
+        // Filesystem changes are not permission for a diagnostic projection to
+        // perform the live probe. The existing status path retains that job.
+        assert!(gate.observed_status().is_none());
+        assert!(!gate.is_quarantined());
+        assert_eq!(
+            gate.status().unwrap().reason_codes,
+            vec![Reason::LegacyExecutionPending]
+        );
+        assert_eq!(
+            gate.observed_status().unwrap().reason_codes,
+            vec![Reason::LegacyExecutionPending]
+        );
     }
 
     #[test]

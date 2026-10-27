@@ -210,6 +210,7 @@ use availability::BackendAvailability;
 #[cfg(test)]
 use availability::BackendPhase;
 use gateway::{callback_socket_path, internal_socket_path};
+use support_diagnostics::recovery as recovery_diagnostics;
 
 const APP_TOKEN_ENVIRONMENT: &str = "PROLETARIUS_APP_TOKEN";
 const APP_TOKEN_HEADER: &str = "x-proletarius-app-token";
@@ -656,6 +657,7 @@ async fn run_with_sms_stores(
         )),
     }
     let module_recovery = module_recovery::Gate::inspect_with_lifetime(lifetime);
+    recovery_diagnostics::bind(&module_recovery);
     // The independent metadata owner runs before any module producer starts.
     // It releases both actual locks before returning a retained read-only
     // observation. It cannot turn historical evidence into device authority.
@@ -664,6 +666,11 @@ async fn run_with_sms_stores(
         multistandby_store.data_root(),
     ) {
         Ok(inspection) => {
+            recovery_diagnostics::metadata(if module_recovery.is_quarantined() {
+                recovery_diagnostics::Metadata::Inspected
+            } else {
+                recovery_diagnostics::Metadata::NotNeeded
+            });
             if module_recovery.is_quarantined() {
                 if let Ok(diagnostic) = serde_json::to_string(inspection.startup_logging()) {
                     diagnostics::write_line(format_args!(
@@ -674,6 +681,7 @@ async fn run_with_sms_stores(
             Some(inspection)
         }
         Err(error) => {
+            recovery_diagnostics::metadata(recovery_diagnostics::Metadata::Failed);
             diagnostics::write_line(format_args!(
                 "switchd-rs: {}; module quarantine retained",
                 error.code()
@@ -714,14 +722,19 @@ async fn run_with_sms_stores(
             // Only policy inapplicability before any recovery I/O may enter
             // the old readonly path. An attempted or failed restoration must
             // never silently reopen a device as another inspection attempt.
-            Ok(None) => startup_recovery::Coordinator::inspect_native_with_cancel(
-                &module_recovery,
-                multistandby_store.data_root(),
-                startup_cancel.clone(),
-            )
-            .await
-            .map(StartupInspection::ReadOnly)
-            .map_err(StartupInspectionFailure::Inspection),
+            Ok(None) => {
+                recovery_diagnostics::reconciliation(
+                    recovery_diagnostics::Reconciliation::NotApplicable,
+                );
+                startup_recovery::Coordinator::inspect_native_with_cancel(
+                    &module_recovery,
+                    multistandby_store.data_root(),
+                    startup_cancel.clone(),
+                )
+                .await
+                .map(StartupInspection::ReadOnly)
+                .map_err(StartupInspectionFailure::Inspection)
+            }
             Err(error) => Err(StartupInspectionFailure::Reconciliation(error)),
         }
     };
@@ -729,6 +742,10 @@ async fn run_with_sms_stores(
         await_startup_native(startup_operation, startup_cancel.clone(), startup_stop).await;
     let (startup_native_inspection, mut startup_native_cleanup_error) = match startup_result {
         Ok(StartupInspection::ReadOnly(Some(inspection))) => {
+            recovery_diagnostics::native_inspection(
+                recovery_diagnostics::NativeInspection::Inspected,
+            );
+            recovery_diagnostics::cleanup(recovery_diagnostics::Cleanup::Confirmed);
             if let Ok(diagnostic) = serde_json::to_string(inspection.startup_logging()) {
                 diagnostics::write_line(format_args!(
                     "switchd-rs: startup native inspection {diagnostic}"
@@ -736,14 +753,28 @@ async fn run_with_sms_stores(
             }
             (Some(inspection), None)
         }
-        Ok(StartupInspection::ReadOnly(None)) => (None, None),
+        Ok(StartupInspection::ReadOnly(None)) => {
+            recovery_diagnostics::native_inspection(
+                recovery_diagnostics::NativeInspection::NotApplicable,
+            );
+            (None, None)
+        }
         Ok(StartupInspection::Reconciled(completion)) => {
+            // The existing completion already requires real worker join and
+            // checked release; this observation grants no admission rights.
+            recovery_diagnostics::cleanup(recovery_diagnostics::Cleanup::Confirmed);
             if startup_stopped {
+                recovery_diagnostics::reconciliation(
+                    recovery_diagnostics::Reconciliation::CompletedAfterStop,
+                );
                 // The actual worker and finalizer have ended. Retain its
                 // durable publication for the next startup, but do not start
                 // ordinary producers after an observed stop request.
                 (None, None)
             } else if module_recovery.consume_reconciliation(&completion).is_ok() {
+                recovery_diagnostics::reconciliation(
+                    recovery_diagnostics::Reconciliation::Completed,
+                );
                 // The new owner verified the exact archived placement and
                 // published the durable completion in this same Gate. The old
                 // readonly observer is intentionally superseded, not ignored
@@ -755,6 +786,9 @@ async fn run_with_sms_stores(
                 ));
                 (None, None)
             } else {
+                recovery_diagnostics::reconciliation(
+                    recovery_diagnostics::Reconciliation::PublicationUnconfirmed,
+                );
                 diagnostics::write_line(format_args!(
                     "switchd-rs: startup_reconciliation_publication_unconfirmed; module quarantine retained"
                 ));
@@ -762,6 +796,17 @@ async fn run_with_sms_stores(
             }
         }
         Err(error) => {
+            match &error {
+                StartupInspectionFailure::Inspection(_) => recovery_diagnostics::native_inspection(
+                    recovery_diagnostics::NativeInspection::Failed,
+                ),
+                StartupInspectionFailure::Reconciliation(_) => recovery_diagnostics::reconciliation(
+                    recovery_diagnostics::Reconciliation::Failed,
+                ),
+            }
+            if error.cleanup_unconfirmed() {
+                recovery_diagnostics::cleanup(recovery_diagnostics::Cleanup::Unconfirmed);
+            }
             diagnostics::write_line(format_args!(
                 "switchd-rs: {} cleanup_unconfirmed={}; module quarantine retained",
                 error.diagnostic_code(),
