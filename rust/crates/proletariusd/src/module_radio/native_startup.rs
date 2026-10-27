@@ -121,7 +121,7 @@ impl Service {
             return Err(Failure::busy());
         }
         let _single = self.0.usb.esim_snapshot_guard().await;
-        let reservation = self.reserve_esim().await?;
+        let reservation = self.reserve_esim_read().await?;
         let result = self
             .0
             .usb

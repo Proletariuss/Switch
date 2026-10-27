@@ -1,5 +1,6 @@
 //! Retained serial-first selection and native physical lifecycle bootstrap. Compatibility
 //! process lifetime is not the lifetime of an accepted physical operation.
+use crate::support_diagnostics::module::{self as diagnostic, Code, ResultKind, Stage, Transport};
 use crate::{message_archive::InboxState, modem_actor::ModemActor, module_radio, usb_at};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -162,6 +163,12 @@ impl Service {
             completion: Mutex::new(None),
             finished: Notify::new(),
         }));
+        diagnostic::startup(
+            Stage::Startup,
+            ResultKind::Started,
+            Code::None,
+            Transport::Unknown,
+        );
         let worker_service = service.clone();
         let worker = tokio::spawn(async move {
             worker_service
@@ -202,6 +209,14 @@ impl Service {
                 .completion
                 .lock()
                 .unwrap_or_else(|e| e.into_inner()) = Some(result);
+            diagnostic::startup(
+                Stage::Startup,
+                ResultKind::WaiterEnded,
+                result
+                    .err()
+                    .map_or(Code::None, |error| Code::from_error(error.code)),
+                Transport::Unknown,
+            );
             retained.0.finished.notify_waiters();
         });
         service
@@ -220,6 +235,12 @@ impl Service {
     /// Freeze new startup/reconnect/metadata stages without closing the port.
     /// Existing radio, eSIM, SMS and call cleanup still needs its physical owner.
     pub(crate) fn begin_shutdown(&self) {
+        diagnostic::startup(
+            Stage::Shutdown,
+            ResultKind::Started,
+            Code::None,
+            Transport::Unknown,
+        );
         self.0.stop.send_replace(true);
     }
 
@@ -242,6 +263,14 @@ impl Service {
 
     fn error(&self, error: Option<&'static str>) {
         *self.0.last_error.lock().unwrap_or_else(|e| e.into_inner()) = error;
+        if let Some(code) = error {
+            diagnostic::startup(
+                Stage::Startup,
+                ResultKind::Failed,
+                Code::from_error(code),
+                Transport::Unknown,
+            );
+        }
     }
 
     async fn run(
@@ -261,7 +290,13 @@ impl Service {
                 return Ok(());
             }
             self.0.selection.send_replace(Selection::Probing);
-            let found = probe.discover().await;
+            let found = diagnostic::startup_step(
+                Stage::SerialProbe,
+                Transport::Unknown,
+                probe.discover(),
+                |error| error.code(),
+            )
+            .await;
             if *stop.borrow() {
                 return Ok(());
             }
@@ -281,7 +316,14 @@ impl Service {
                     .await;
                 }
                 Err(error) if error.code() == "at_port_not_found" => {
-                    match usb.open_native_candidate().await {
+                    match diagnostic::startup_step(
+                        Stage::UsbOpen,
+                        Transport::Usb,
+                        usb.open_native_candidate(),
+                        |error| error.public_code(),
+                    )
+                    .await
+                    {
                         Ok(_) => break,
                         Err(error) if error.code == "usb_at_not_found" && !error.uncertain => {
                             // Neither serial nor native USB has a physical AT
@@ -347,6 +389,12 @@ impl Service {
         // Both physical ownership and native call-mode source identity are
         // established before main can spawn a managed compatibility process.
         self.0.selection.send_replace(Selection::NativeUsb);
+        diagnostic::startup(
+            Stage::TransportClaim,
+            ResultKind::Succeeded,
+            Code::None,
+            Transport::Usb,
+        );
         loop {
             if *stop.borrow() {
                 return Ok(());
@@ -459,28 +507,47 @@ async fn bootstrap_usb(
     radio: &module_radio::Service,
     stop: &watch::Receiver<bool>,
 ) -> Result<(), &'static str> {
-    let session = usb
-        .open_native_session()
-        .await
-        .map_err(|e| e.public_code())?;
+    let session = diagnostic::startup_step(
+        Stage::SessionOpen,
+        Transport::Usb,
+        usb.open_native_session(),
+        |error| error.public_code(),
+    )
+    .await
+    .map_err(|e| e.public_code())?;
     if *stop.borrow() {
         return Ok(());
     }
-    radio
-        .configure_native_usb(&session)
-        .await
-        .map_err(|e| e.public_code())?;
+    diagnostic::startup_step(
+        Stage::RadioConfigure,
+        Transport::Usb,
+        radio.configure_native_usb(&session),
+        |error| error.public_code(),
+    )
+    .await
+    .map_err(|e| e.public_code())?;
     if *stop.borrow() {
         return Ok(());
     }
-    radio
-        .bootstrap_native_usb()
-        .await
-        .map_err(|e| e.public_code())?;
+    diagnostic::startup_step(
+        Stage::RadioBootstrap,
+        Transport::Usb,
+        radio.bootstrap_native_usb(),
+        |error| error.public_code(),
+    )
+    .await
+    .map_err(|e| e.public_code())?;
     if *stop.borrow() {
         return Ok(());
     }
-    if let Err(error) = radio.warm_native_esim().await {
+    if let Err(error) = diagnostic::startup_step(
+        Stage::EsimWarmup,
+        Transport::Usb,
+        radio.warm_native_esim(),
+        |error| error.public_code(),
+    )
+    .await
+    {
         // Ordinary SIMs may not expose an eUICC. Only a confirmed release makes
         // ignoring that read failure safe for subsequent SMS admission.
         if error.public_code() == "module_startup_warm_cleanup_unconfirmed" {
@@ -490,8 +557,31 @@ async fn bootstrap_usb(
     if *stop.borrow() {
         return Ok(());
     }
-    usb.commit_native_sms_ready(&session)
-        .map_err(|e| e.public_code())
+    let result = usb
+        .commit_native_sms_ready(&session)
+        .map_err(|e| e.public_code());
+    diagnostic::startup(
+        Stage::SmsReady,
+        if result.is_ok() {
+            ResultKind::Succeeded
+        } else {
+            ResultKind::Failed
+        },
+        result
+            .as_ref()
+            .err()
+            .map_or(Code::None, |code| Code::from_error(code)),
+        Transport::Usb,
+    );
+    if result.is_ok() {
+        diagnostic::startup(
+            Stage::Startup,
+            ResultKind::Succeeded,
+            Code::None,
+            Transport::Usb,
+        );
+    }
+    result
 }
 
 #[cfg(test)]

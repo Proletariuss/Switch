@@ -936,4 +936,188 @@ mod tests {
             "retirement cannot rediscover or capture another device"
         );
     }
+    fn framed_step(actions: &mut Vec<Action>, command: &str, response: &[u8]) {
+        actions.push(quiet());
+        actions.push(write(format!("{command}\r").as_bytes()));
+        actions.push(read(response));
+    }
+
+    fn sms_identity_steps(actions: &mut Vec<Action>) {
+        framed_step(actions, "AT+CPIN?", b"\r\n+CPIN: READY\r\nOK\r\n");
+        framed_step(actions, "AT+QCCID", b"\r\n+QCCID: 8988200000000000000\r\nOK\r\n");
+        framed_step(actions, "AT+CIMI", b"\r\n234150000000000\r\nOK\r\n");
+    }
+
+    fn status_steps(actions: &mut Vec<Action>, cpin: &[u8], changed: bool) {
+        framed_step(actions, "AT+CFUN?", b"\r\n+CFUN: 4\r\nOK\r\n");
+        framed_step(actions, "ATI", b"ATI\r\r\nFixture firmware\r\nOK\r\n");
+        framed_step(actions, "AT+CPIN?", cpin);
+        framed_step(actions, "AT+QCCID", if changed {
+            b"\r\n+QCCID: 8988212345678901234\r\nOK\r\n+CEREG: 0\r\n"
+        } else {
+            b"\r\n+QCCID: 8988200000000000000\r\nOK\r\n"
+        });
+        framed_step(actions, "AT+CIMI", if changed {
+            b"\r\n234150123456789\r\nOK\r\n+CEREG: 0\r\n"
+        } else {
+            b"\r\n234150000000000\r\nOK\r\n"
+        });
+        framed_step(actions, "AT+CNUM", b"\r\nERROR\r\n");
+        framed_step(actions, "AT+CGSN", b"\r\n123456789012345\r\nOK\r\n");
+        framed_step(actions, "AT+QCFG=\"usbnet\"", b"\r\n+CME ERROR: 4\r\n");
+    }
+
+    async fn byte_owner(actions: Vec<Action>) -> (crate::usb_at::Owner, String, Arc<Mutex<State>>) {
+        let (transport, trace) = fake(actions);
+        let slot = Arc::new(Mutex::new(Some(transport)));
+        let (owner, session) = crate::usb_at::Owner::native_module_fixture(Arc::new(move || {
+            Ok(Box::new(slot.lock().unwrap().take().expect("no replacement open")))
+        })).await;
+        // Keep native_module_fixture's SMS admission enabled. The status
+        // transcript's actual CFUN=4 selects the RF-off collection plan.
+        (owner, session, trace)
+    }
+
+    #[test]
+    fn status_terminal_boundary_preserves_tail_urcs_and_fragmented_error_lines() {
+        let (mut transport, trace) = fake(vec![
+            quiet(),
+            write(b"AT+QCCID\r"),
+            read(b"\r\n+QCCID: 8988212345678901234\r\nOK\r\nRI"),
+            read(b"NG\r\n"),
+            quiet(),
+            write(b"AT+CSIM=4,\"00A4\"\r"),
+            read(b"\r\n+CSIM: 4,\"9000\"\r\nOK\r\n+CEREG: 0\r\n"),
+            quiet(),
+            write(b"AT+CNUM\r"),
+            read(b"\r\n+CME ERROR:"),
+            read(b" 10\r"),
+            read(b"\nRING\r\n"),
+        ]);
+        let observed = Arc::new(Mutex::new(Vec::new()));
+        let capture = observed.clone();
+        transport.set_line_capture(Arc::new(move |line| {
+            capture.lock().unwrap().push(line.trim().to_owned());
+        }));
+        assert_eq!(transport.status_command("AT+QCCID", Duration::from_secs(3), 4096).unwrap(),
+            "+QCCID: 8988212345678901234\r\nOK");
+        assert_eq!(transport.command("AT+CSIM=4,\"00A4\"", None, Duration::from_secs(3), 4096).unwrap(),
+            "+CSIM: 4,\"9000\"\r\nOK");
+        assert_eq!(transport.status_command("AT+CNUM", Duration::from_secs(3), 4096).unwrap(),
+            "+CME ERROR: 10");
+        let lines = observed.lock().unwrap();
+        assert_eq!(lines.iter().filter(|line| line.as_str() == "RING").count(), 2);
+        assert!(lines.iter().any(|line| line == "+CEREG: 0"));
+        assert!(trace.lock().unwrap().actions.is_empty());
+    }
+
+    #[test]
+    fn strict_status_requires_wire_terminal_but_ordinary_partial_compatibility_remains() {
+        for partial in [b"OK".as_slice(), b"+CME ERROR:", b"+CMS ERROR: 500", b"+CPIN: READY"] {
+            let (mut transport, trace) = fake(vec![quiet(), write(b"AT+CPIN?\r"), read(partial)]);
+            let error = transport.status_command("AT+CPIN?", Duration::from_millis(100), 4096).unwrap_err();
+            assert_eq!(error.code, "usb_at_status_incomplete_response");
+            assert_eq!(trace.lock().unwrap().writes.len(), 1);
+        }
+        for complete in [b"\r\nERROR\r\n".as_slice(), b"\r\n+CME ERROR: 10\r\n", b"\r\n+CMS ERROR: 500\r\n"] {
+            let (mut transport, _) = fake(vec![quiet(), write(b"AT+CPIN?\r"), read(complete)]);
+            assert!(transport.status_command("AT+CPIN?", Duration::from_secs(1), 4096).is_ok());
+        }
+        let (mut transport, _) = fake(vec![quiet(), write(b"AT+CSQ\r"), read(b"+CSQ: 18")]);
+        assert_eq!(transport.command("AT+CSQ", None, Duration::from_millis(100), 4096).unwrap(), "+CSQ: 18");
+    }
+
+    #[tokio::test]
+    async fn byte_status_tail_urc_identity_change_retires_previous_sms_binding() {
+        let mut actions = Vec::new();
+        sms_identity_steps(&mut actions);
+        status_steps(&mut actions, b"\r\n+CPIN: READY\r\nOK\r\n", true);
+        let (owner, session, trace) = byte_owner(actions).await;
+        // The framing fixture must not bypass the real SMS policy guard.
+        owner.set_cellular_suppressed(true);
+        assert_eq!(owner.capture_native_sms(&session).await.unwrap_err().code, "usb_at_busy");
+        assert!(trace.lock().unwrap().writes.is_empty());
+        owner.set_cellular_suppressed(false);
+        let (_, generation) = owner.capture_native_sms(&session).await.unwrap();
+        assert!(owner.native_sms_binding_current(&session, generation));
+        let observation = owner.native_device_observation(&session).await.unwrap();
+        assert_eq!(observation.status["iccid"], "8988212345678901234");
+        assert_eq!(observation.status["imsi"], "234150123456789");
+        assert!(owner.device_observation_current(&observation));
+        assert!(!owner.native_sms_binding_current(&session, generation));
+        assert!(!owner.owns_native_sms_binding(&session, generation));
+        assert!(trace.lock().unwrap().actions.is_empty());
+        owner.shutdown().await.unwrap();
+        assert!(trace.lock().unwrap().dropped);
+    }
+
+    #[tokio::test]
+    async fn byte_status_complete_error_and_pin_absence_preserve_field_and_identity_semantics() {
+        for (cpin, ready, revoke) in [
+            (b"\r\n+CPIN: READY\r\nOK\r\n".as_slice(), true, false),
+            (b"\r\n+CPIN: SIM PIN\r\nOK\r\n+CEREG: 0\r\n", false, true),
+            (b"\r\n+CME ERROR: 10\r\n+CEREG: 0\r\n", false, true),
+            (b"\r\nERROR\r\n+CEREG: 0\r\n", false, false),
+        ] {
+            let mut actions = Vec::new();
+            sms_identity_steps(&mut actions);
+            status_steps(&mut actions, cpin, false);
+            let (owner, session, trace) = byte_owner(actions).await;
+            let (_, generation) = owner.capture_native_sms(&session).await.unwrap();
+            assert!(owner.native_sms_binding_current(&session, generation));
+            let observation = owner.native_device_observation(&session).await.unwrap();
+            assert_eq!(observation.status["sim_inserted"], ready);
+            assert_eq!(observation.status["imei"], "123456789012345");
+            assert_eq!(observation.status["iccid"], "8988200000000000000");
+            assert_eq!(observation.status["usbnet_mode"], -1);
+            assert!(observation.status.get("phone_number").is_none());
+            assert_eq!(owner.native_sms_binding_current(&session, generation), !revoke);
+            assert!(trace.lock().unwrap().actions.is_empty());
+            assert!(!trace.lock().unwrap().dropped);
+            owner.shutdown().await.unwrap();
+        }
+    }
+
+    #[tokio::test]
+    async fn byte_status_unfinished_reply_or_disconnect_retires_without_next_command() {
+        for kind in 0..3 {
+            let mut actions = Vec::new();
+            framed_step(&mut actions, "AT+CFUN?", b"\r\n+CFUN: 4\r\nOK\r\n");
+            actions.push(quiet());
+            actions.push(write(b"ATI\r"));
+            if kind == 0 {
+                actions.push(read(b"ATI\r\r\nFixture firmware\r\n"));
+                for _ in 0..4 {
+                    actions.push(Action::Read(Err(IoError::Timeout), Duration::from_secs(3)));
+                }
+                // This late terminal belongs to ATI, never to a subsequent CPIN.
+                actions.push(read(b"\r\nOK\r\n"));
+            } else if kind == 1 {
+                // Empty timeout: the optional metadata command remains unknown.
+            } else {
+                actions.push(Action::Read(Err(IoError::Disconnected), Duration::ZERO));
+            }
+            let (owner, session, trace) = byte_owner(actions).await;
+            let error = match owner.native_device_observation(&session).await {
+                Ok(_) => panic!("unfinished/disconnected status must not publish"),
+                Err(error) => error,
+            };
+            assert_eq!(error.code, match kind {
+                0 => "usb_at_status_incomplete_response",
+                1 => "usb_at_timeout",
+                _ => "usb_at_disconnected",
+            });
+            let trace = trace.lock().unwrap();
+            assert_eq!(trace.writes, vec![b"AT+CFUN?\r".to_vec(), b"ATI\r".to_vec()]);
+            assert!(trace.dropped);
+            if kind == 0 {
+                assert_eq!(trace.actions.len(), 1, "late terminal was never consumed as another reply");
+            }
+            drop(trace);
+            assert!(owner.device_observation_description().is_none());
+            assert!(owner.cached_device_observation().is_none());
+            owner.shutdown().await.unwrap();
+        }
+    }
+
 }

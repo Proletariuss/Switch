@@ -122,6 +122,28 @@ enum SupportBundleBuilder {
             }
             return ["kind": kind, "route": route, "method": method, "status": status,
                     "code": code, "duration_ms": duration, "correlation_id": correlation]
+        case "module":
+            guard Set(object.keys) == Set(["kind", "detail"]),
+                  let detail = object["detail"] as? [String: Any],
+                  Set(detail.keys) == Set(["stage", "result", "code", "transport", "owner", "duration_ms", "suppressed_repeats"]),
+                  let stage = detail["stage"] as? String, ["startup","serial_probe","usb_open","transport_claim","inbox_bind","session_open","serial_initialize","radio_configure","radio_bootstrap","esim_warmup","metadata_refresh","sms_ready","reservation_acquire","reservation_release","admission","physical","shutdown"].contains(stage),
+                  let result = detail["result"] as? String, ["started","succeeded","failed","deferred","waiter_ended"].contains(result),
+                  let code = detail["code"] as? String, ["none","busy","no_device","timeout","stale","stopped","invalid","transport_failed","policy_unavailable","archive_unavailable","inbox_unavailable","worker_failed","cleanup_unconfirmed","initialization_incomplete","admission_revoked","reservation_conflict","shared_voice_pin","voice_pin","reconnect_pin","queue_full","gate_timeout","binding_missing","outcome_unknown","other"].contains(code),
+                  let transport = detail["transport"] as? String, ["unknown","serial","usb"].contains(transport),
+                  let duration = number(detail["duration_ms"]),
+                  let repeats = number(detail["suppressed_repeats"]), repeats.uint64Value <= UInt64(UInt32.max),
+                  let owner = detail["owner"] as? [String: Any],
+                  Set(owner.keys) == Set(["owner", "shared_voice_pins", "voice_pins", "reconnect_pins", "queued_jobs", "outcome_unknown"]),
+                  let category = owner["owner"] as? String, ["none","unknown","esim","module_profile_notes","device_sms","call","call_mode","reboot","diagnostic","vowifi","shared_voice"].contains(category),
+                  let counts = numbers(owner, keys: ["shared_voice_pins", "voice_pins", "reconnect_pins", "queued_jobs"]),
+                  counts.values.allSatisfy({ (($0 as? NSNumber)?.uint64Value ?? UInt64.max) <= UInt64(UInt16.max) }),
+                  let unknown = owner["outcome_unknown"] as? NSNumber,
+                  CFGetTypeID(unknown) == CFBooleanGetTypeID() else { return nil }
+            var safeOwner = counts
+            safeOwner["owner"] = category
+            safeOwner["outcome_unknown"] = unknown.boolValue
+            return ["kind": kind, "detail": ["stage": stage, "result": result, "code": code,
+                "transport": transport, "owner": safeOwner, "duration_ms": duration, "suppressed_repeats": repeats]]
         case "safe_event":
             guard let detail = object["detail"] as? [String: Any],
                   let values = numbers(detail, keys: ["sequence","time_ms","generation","duration_ms"]),

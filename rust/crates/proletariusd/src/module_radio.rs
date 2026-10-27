@@ -21,6 +21,8 @@ use tokio::task::JoinHandle;
 pub(crate) const PREFIX: &str = "/api/internal/module-radio/";
 #[cfg(test)]
 mod bootstrap_projection_tests;
+mod diagnostics;
+mod esim_cleanup;
 mod native_startup;
 mod native_vowifi;
 mod reconnect;
@@ -60,6 +62,9 @@ struct Inner {
     timer_fixture: Mutex<Option<TimerFixture>>,
     #[cfg(test)]
     usbnet_waiters: std::sync::atomic::AtomicUsize,
+    #[cfg(test)]
+    module_diagnostic_fixture:
+        Mutex<Option<tokio::sync::mpsc::Sender<crate::support_diagnostics::module::Event>>>,
 }
 struct State {
     producer: String,
@@ -72,6 +77,7 @@ struct State {
     preference_error: bool,
     observed: Outcome,
     reservation: Option<Reservation>,
+    esim_release_pending: Option<(u64, Identity)>,
     profile_notes_unknown: bool,
     call_mode_backup_delete_in_flight: bool,
     waters: BTreeMap<Purpose, Water>,
@@ -105,6 +111,8 @@ struct Reservation {
     identity: Identity,
     attempts: BTreeMap<String, Attempt>,
     unknown: bool,
+    // Minted only by the typed native metadata/warmup acquire job.
+    waitable_read: bool,
     operation_lock: Option<Arc<crate::call_mode_backups::OperationFileLock>>,
     active_voice_pins: usize,
     active_reconnect_pins: usize,
@@ -224,6 +232,7 @@ impl Drop for CallModeVoiceGuard {
 }
 pub(crate) struct EsimReservation {
     producer_id: String,
+    epoch: u64,
     token: String,
     sequence: u64,
 }
@@ -457,6 +466,7 @@ enum Job {
     },
     Refresh(Producer),
     Reservation(ReservationRequest),
+    NativeEsimReadReservation(ReservationRequest),
     RestoreReservation(ReservationRequest),
     Intent(IntentRequest),
     NativeIntent(native_vowifi::Request),
@@ -499,7 +509,9 @@ impl Job {
             Self::Configure(v) => Some(&v.producer_id),
             Self::ConfigureNativeSerial { input, .. } => Some(&input.producer_id),
             Self::BootstrapNativeSerial { input, .. } => Some(&input.producer_id),
-            Self::Reservation(v) | Self::RestoreReservation(v) => Some(&v.producer_id),
+            Self::Reservation(v)
+            | Self::NativeEsimReadReservation(v)
+            | Self::RestoreReservation(v) => Some(&v.producer_id),
             Self::Intent(v) => Some(&v.producer_id),
             Self::NativeIntent(v) => Some(&v.input.producer_id),
             Self::NativeIdleObserve(v) => Some(&v.producer),
@@ -702,6 +714,7 @@ impl Service {
                 preference_error: false,
                 observed: Outcome::default(),
                 reservation: None,
+                esim_release_pending: None,
                 profile_notes_unknown: false,
                 call_mode_backup_delete_in_flight: false,
                 waters: BTreeMap::new(),
@@ -737,6 +750,8 @@ impl Service {
             timer_fixture: Mutex::new(None),
             #[cfg(test)]
             usbnet_waiters: std::sync::atomic::AtomicUsize::new(0),
+            #[cfg(test)]
+            module_diagnostic_fixture: Mutex::new(None),
         }))
     }
     /// True while a module SIM/radio workflow owns or reserves the shared AT
@@ -1013,7 +1028,9 @@ impl Service {
         if state.jobs != 0
             || state.active_shared_voice_pins != 0
             || state.reservation.as_ref().is_some_and(|reservation| {
-                reservation.operation_lock.is_some() || reservation.active_voice_pins != 0
+                reservation.operation_lock.is_some()
+                    || reservation.active_voice_pins != 0
+                    || !cleanup && reservation.purpose == Purpose::Esim
             })
         {
             return Err(Failure::busy());
@@ -1107,29 +1124,8 @@ impl Service {
     }
 
     pub(crate) async fn reserve_esim(&self) -> Result<EsimReservation, Failure> {
-        let sequence = NEXT_NATIVE_ESIM_RESERVATION.fetch_add(1, Ordering::Relaxed);
-        if sequence == 0 || sequence == u64::MAX {
-            return Err(Failure::new(
-                StatusCode::SERVICE_UNAVAILABLE,
-                "module_esim_reservation_exhausted",
-                "eSIM 模块事务序号不可用",
-            ));
-        }
-        let producer_id = self.0.state.lock().unwrap().producer.clone();
-        let token = format!("rust-esim-{sequence}");
-        self.submit(Job::Reservation(ReservationRequest {
-            producer_id: producer_id.clone(),
-            action: "acquire".into(),
-            purpose: Purpose::Esim,
-            token: token.clone(),
-            sequence,
-        }))
-        .await?;
-        Ok(EsimReservation {
-            producer_id,
-            token,
-            sequence,
-        })
+        self.reserve_esim_bound(self.capture_esim_acquire_binding())
+            .await
     }
 
     /// Reads USB and IMS/VoLTE call-mode facts under one physical radio
@@ -1507,17 +1503,6 @@ impl Service {
             deadline: Instant::now() + Duration::from_secs(24),
         })
         .await
-    }
-    pub(crate) async fn release_esim(&self, reservation: EsimReservation) -> Result<(), Failure> {
-        self.submit(Job::Reservation(ReservationRequest {
-            producer_id: reservation.producer_id,
-            action: "release".into(),
-            purpose: Purpose::Esim,
-            token: reservation.token,
-            sequence: reservation.sequence,
-        }))
-        .await
-        .map(|_| ())
     }
     /// Lightly reinitialize the module radio after an eUICC profile switch.
     /// The caller must retain the same eSIM reservation across the switch and
@@ -2236,6 +2221,10 @@ impl Service {
                     self.load_preferences(epoch).await?;
                 }
                 self.reservation(input)
+            }
+            Job::NativeEsimReadReservation(input) => {
+                self.load_preferences(epoch).await?;
+                self.reservation_with_read_kind(input, false, true)
             }
             Job::RestoreReservation(input) => {
                 self.load_preferences(epoch).await?;
@@ -3000,7 +2989,7 @@ impl Service {
             }
             let (send, mut waiting) = oneshot::channel();
             let result = self
-                .submit_bound(
+                .submit_usbnet_with_diagnostics(
                     Job::PublicUSBNetMode {
                         mode,
                         deadline,
@@ -3355,6 +3344,19 @@ impl Service {
         input: ReservationRequest,
         restore_required: bool,
     ) -> Result<Value, Failure> {
+        self.reservation_with_read_kind(input, restore_required, false)
+    }
+    fn reservation_with_read_kind(
+        &self,
+        input: ReservationRequest,
+        restore_required: bool,
+        waitable_read: bool,
+    ) -> Result<Value, Failure> {
+        if waitable_read
+            && (input.purpose != Purpose::Esim || input.action != "acquire" || restore_required)
+        {
+            return Err(Failure::invalid());
+        }
         let id = identity(&input.token, input.sequence)?;
         let mut state = self.0.state.lock().unwrap();
         match input.action.as_str() {
@@ -3392,6 +3394,7 @@ impl Service {
                         && current.identity == id
                         && current.operation_lock.is_some() == operation
                         && current.restore_journal_required == restore_required
+                        && current.waitable_read == waitable_read
                     {
                         Ok(json!({"token":id.token,"sequence":id.sequence,"released":false}))
                     } else {
@@ -3443,6 +3446,7 @@ impl Service {
                     identity: id.clone(),
                     attempts: BTreeMap::new(),
                     unknown: false,
+                    waitable_read,
                     operation_lock,
                     active_voice_pins: 0,
                     active_reconnect_pins: 0,
@@ -4157,18 +4161,9 @@ fn usbnet_temporary_read_owner(state: &State) -> bool {
         && !state.mutating_in_flight
         && state.active_shared_voice_pins == 0
         && state.reservation.as_ref().is_some_and(|owner| {
-            owner.purpose == Purpose::CallMode
-                && owner.operation_lock.is_none()
-                && !owner.restore_journal_required
-                && owner.restore_journal.is_none()
-                && owner.restore_reboot.is_none()
-                && !owner.restore_reboot_verified
-                && !owner.unknown
-                && owner.active_voice_pins == 0
-                && owner.active_reconnect_pins == 0
-                && owner.reconnect.is_none()
-                && owner.reconnect_reboot.is_none()
-                && owner.attempts.values().all(|attempt| {
+            let read_only = match owner.purpose {
+                Purpose::Esim => owner.waitable_read && owner.attempts.is_empty(),
+                Purpose::CallMode => owner.attempts.values().all(|attempt| {
                     matches!(
                         attempt.input.kind.as_str(),
                         "call_mode_idle_read"
@@ -4180,7 +4175,20 @@ fn usbnet_temporary_read_owner(state: &State) -> bool {
                         Ok(outcome) => !outcome.uncertain && !outcome.submitted,
                         Err(error) => !error.uncertain && !error.submitted,
                     })
-                })
+                }),
+                _ => false,
+            };
+            read_only
+                && owner.operation_lock.is_none()
+                && !owner.restore_journal_required
+                && owner.restore_journal.is_none()
+                && owner.restore_reboot.is_none()
+                && !owner.restore_reboot_verified
+                && !owner.unknown
+                && owner.active_voice_pins == 0
+                && owner.active_reconnect_pins == 0
+                && owner.reconnect.is_none()
+                && owner.reconnect_reboot.is_none()
         })
 }
 

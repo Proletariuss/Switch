@@ -14,8 +14,8 @@ settings:
     CODE_SIGN_IDENTITY: "-"
     ENABLE_APP_SANDBOX: NO
     ENABLE_HARDENED_RUNTIME: NO
-    MARKETING_VERSION: "3.53"
-    CURRENT_PROJECT_VERSION: "353"
+    MARKETING_VERSION: "3.54"
+    CURRENT_PROJECT_VERSION: "354"
     DISPLAY_NAME: "Switch"
     OTHER_LDFLAGS: "$(inherited) -force_load \"$(PROJECT_DIR)/../build/rust-target/release/libproletarius_audio_core.a\" -framework SystemConfiguration"
 

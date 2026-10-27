@@ -93,6 +93,12 @@ impl Transport for Port {
         if command == "AT+CPMS?" {
             return Ok("+CPMS: \"SM\",0,50,\"SM\",0,50,\"SM\",0,50\r\nOK\r\n".into());
         }
+        if command == "ATI" {
+            return Ok("Startup fixture firmware\r\nOK\r\n".into());
+        }
+        if command == "AT+CPIN?" {
+            return Ok("+CPIN: READY\r\nOK\r\n".into());
+        }
         Ok("OK\r\n".into())
     }
 }
@@ -609,8 +615,10 @@ async fn inbox_binding_retry_cannot_reselect_serial_after_confirmed_usb_choice()
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn warm_release_failure_keeps_sms_unready_after_actual_channel_close() {
+async fn warm_cleanup_contention_recovers_sms_metadata_and_usbnet_http_after_actual_channel_close()
+{
     let fixture = Fixture::new();
+    let mut evidence = fixture.radio.module_diagnostics_for_test();
     let gate = fixture.warm_close_gate();
     fixture.usb.claim_native_management().unwrap();
     let (_stop, stopped) = watch::channel(false);
@@ -624,8 +632,17 @@ async fn warm_release_failure_keeps_sms_unready_after_actual_channel_close() {
     assert!(fixture.radio.sim_channel_busy());
     assert!(!fixture.usb.native_sms_ready());
 
-    // Use the public retained cleanup guard to make the real reservation
-    // release fail with busy. No internal reservation/epoch state is written.
+    // Ordinary Status cannot overlap the eSIM owner; a mandatory retained
+    // cleanup still can. Neither path writes internal reservation/epoch state.
+    assert_eq!(
+        fixture
+            .radio
+            .borrow_shared_voice_operation(PRODUCER, false)
+            .err()
+            .unwrap()
+            .code,
+        "module_radio_busy"
+    );
     let shared_cleanup = tokio::time::timeout(Duration::from_secs(5), async {
         loop {
             if let Ok(guard) = fixture.radio.borrow_shared_voice_operation(PRODUCER, true) {
@@ -637,10 +654,8 @@ async fn warm_release_failure_keeps_sms_unready_after_actual_channel_close() {
     .await
     .unwrap();
     gate.release();
-    assert_eq!(
-        bootstrap.await.unwrap(),
-        Err("module_startup_warm_cleanup_unconfirmed")
-    );
+    until(|| fixture.radio.esim_release_pending_for_test()).await;
+    assert!(!bootstrap.is_finished());
     let opened = fixture.physical.channels_opened.load(Ordering::SeqCst);
     assert!(opened > 0);
     assert_eq!(
@@ -649,18 +664,98 @@ async fn warm_release_failure_keeps_sms_unready_after_actual_channel_close() {
     );
     assert!(!fixture.usb.native_sms_ready());
     assert!(fixture.usb.sms_poll_binding(PRODUCER).unwrap().is_none());
-    drop(shared_cleanup);
+    assert!(fixture.radio.sim_channel_busy());
+    let (status, body) = crate::module_radio::tests::tests::request_public_route(
+        fixture.radio.clone(),
+        "POST",
+        "/api/network/usbnet",
+        r#"{"client_request_id":"startup-cleanup-pending","mode":1}"#,
+    )
+    .await;
+    assert_eq!(status, 409);
+    assert_eq!(body["code"], "module_radio_busy");
     assert!(
-        fixture.radio.sim_channel_busy(),
-        "dropping the competing guard does not forge eSIM release confirmation"
+        !fixture
+            .physical
+            .commands
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|command| command == r#"AT+QCFG="usbnet",1"#)
     );
-    let command_count = fixture.physical.commands.lock().unwrap().len();
-    assert!(fixture.radio.bootstrap_native_usb().await.is_err());
+    drop(shared_cleanup);
+    tokio::time::timeout(Duration::from_secs(5), bootstrap)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
+    assert!(fixture.usb.native_sms_ready());
+    assert!(fixture.usb.sms_poll_binding(PRODUCER).unwrap().is_some());
+    assert!(!fixture.radio.sim_channel_busy());
+    // Use the real metadata plan after the same startup has recovered.
+    let session = fixture.radio.usb_transport_session().unwrap();
+    let reservation = fixture.radio.reserve_esim().await.unwrap();
+    let observation = fixture
+        .usb
+        .native_device_observation(&session)
+        .await
+        .unwrap();
+    fixture.radio.release_esim(reservation).await.unwrap();
+    assert_eq!(observation.status["firmware"], "Startup fixture firmware");
+    assert_eq!(observation.status["sim_inserted"], true);
+    assert!(
+        fixture
+            .physical
+            .commands
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|command| command == "ATI")
+    );
+    let (status, body) = crate::module_radio::tests::tests::request_public_route(
+        fixture.radio.clone(),
+        "POST",
+        "/api/network/usbnet",
+        r#"{"client_request_id":"startup-cleanup-recovered","mode":1}"#,
+    )
+    .await;
+    assert_eq!(status, 200);
+    assert_eq!(body["mode"], 1);
+    assert_eq!(body["needs_reboot"], true);
     assert_eq!(
-        fixture.physical.commands.lock().unwrap().len(),
-        command_count
+        fixture
+            .physical
+            .commands
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|command| command.as_str() == r#"AT+QCFG="usbnet",1"#)
+            .count(),
+        1
     );
-    assert!(!fixture.usb.native_sms_ready());
+    // The receipt proves the command, not a reboot or a usable network link.
+    let mut events = Vec::new();
+    while let Ok(event) = evidence.try_recv() {
+        events.push(event);
+    }
+    use crate::support_diagnostics::module::{Code, Owner, ResultKind, Stage};
+    assert!(
+        events
+            .iter()
+            .any(|event| event.stage == Stage::ReservationRelease
+                && event.result == ResultKind::Succeeded
+                && event.owner.owner == Owner::None)
+    );
+    assert!(events.iter().any(|event| event.stage == Stage::Admission
+        && event.result == ResultKind::Failed
+        && event.code == Code::Busy
+        && event.owner.owner == Owner::Esim
+        && event.owner.shared_voice_pins == 1));
+    assert!(
+        events
+            .iter()
+            .any(|event| event.stage == Stage::Physical && event.result == ResultKind::Succeeded)
+    );
     fixture.radio.finish_shutdown().await.unwrap();
     fixture.usb.shutdown().await.unwrap();
     fixture
@@ -668,4 +763,99 @@ async fn warm_release_failure_keeps_sms_unready_after_actual_channel_close() {
         .shutdown()
         .expect("final modem close acknowledgement");
     assert_eq!(fixture.physical.drops.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn usbnet_http_waits_for_real_startup_warm_channel_cleanup_before_one_write() {
+    use crate::support_diagnostics::module::{Code, Owner, ResultKind, Stage};
+    let fixture = Fixture::new();
+    let gate = fixture.warm_close_gate();
+    let mut evidence = fixture.radio.module_diagnostics_for_test();
+    fixture.usb.claim_native_management().unwrap();
+    let (_stop, stopped) = watch::channel(false);
+    let usb = fixture.usb.clone();
+    let radio = fixture.radio.clone();
+    let bootstrap = tokio::spawn(async move { bootstrap_usb(&usb, &radio, &stopped).await });
+    entered(&gate).await;
+    assert!(!fixture.usb.native_sms_ready());
+    assert_eq!(fixture.physical.channels_closed.load(Ordering::SeqCst), 0);
+
+    let radio = fixture.radio.clone();
+    let request = tokio::spawn(async move {
+        crate::module_radio::tests::tests::request_public_route(
+            radio,
+            "POST",
+            "/api/network/usbnet",
+            r#"{"client_request_id":"warm-read-wait-usbnet","mode":1}"#,
+        )
+        .await
+    });
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            let event = evidence.recv().await.unwrap();
+            if event.stage == Stage::Physical
+                && event.result == ResultKind::Failed
+                && event.code == Code::Busy
+                && event.owner.owner == Owner::Esim
+            {
+                break;
+            }
+        }
+    })
+    .await
+    .unwrap();
+    assert!(!request.is_finished());
+    assert!(!bootstrap.is_finished());
+    assert!(!fixture.usb.native_sms_ready());
+    assert!(
+        !fixture
+            .physical
+            .commands
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|command| command == r#"AT+QCFG="usbnet",1"#)
+    );
+    gate.release();
+    tokio::time::timeout(Duration::from_secs(5), bootstrap)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
+    let (status, receipt) = tokio::time::timeout(Duration::from_secs(5), request)
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(status, 200);
+    assert_eq!(receipt["mode"], 1);
+    assert_eq!(receipt["needs_reboot"], true);
+    assert!(fixture.usb.native_sms_ready());
+    assert!(fixture.usb.sms_poll_binding(PRODUCER).unwrap().is_some());
+    let commands = fixture.physical.commands.lock().unwrap().clone();
+    let close = commands
+        .iter()
+        .rposition(|command| command == "AT+CCHC=1")
+        .unwrap();
+    let write = commands
+        .iter()
+        .position(|command| command == r#"AT+QCFG="usbnet",1"#)
+        .unwrap();
+    assert!(close < write);
+    assert_eq!(
+        commands
+            .iter()
+            .filter(|command| command.as_str() == r#"AT+QCFG="usbnet",1"#)
+            .count(),
+        1
+    );
+    assert_eq!(
+        fixture.physical.channels_opened.load(Ordering::SeqCst),
+        fixture.physical.channels_closed.load(Ordering::SeqCst)
+    );
+    fixture.radio.finish_shutdown().await.unwrap();
+    fixture.usb.shutdown().await.unwrap();
+    fixture
+        .modem
+        .shutdown()
+        .expect("final modem close acknowledgement");
 }

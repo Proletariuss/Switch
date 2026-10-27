@@ -447,7 +447,7 @@ async fn native_projection_busy_cache_health_and_cancelled_waiter_keep_physical_
 }
 
 #[tokio::test]
-async fn esim_refresh_module_route_real_release_failure_retains_reservation_and_one_attempt() {
+async fn esim_refresh_module_route_cleanup_pending_resumes_original_receipt_without_replay() {
     let _journal = crate::esim_test_support::journal_guard().await;
     let fixture = Fixture::new().await;
     let mut receipts = crate::esim_test_support::observe_refresh_receipts();
@@ -459,13 +459,17 @@ async fn esim_refresh_module_route_real_release_failure_retains_reservation_and_
     });
     fixture.trace.wait_until_entered().await;
     assert!(fixture.state.module_radio.sim_channel_busy());
-    fixture.state.module_radio.pin_esim_release_for_test(true);
+    let cleanup = fixture
+        .state
+        .module_radio
+        .borrow_shared_voice_operation("native-module-test", true)
+        .unwrap();
     fixture.trace.release();
     let (status, body) = response.await.unwrap();
-    assert_eq!(status, StatusCode::CONFLICT, "{body}");
-    assert_eq!(body["code"], "module_radio_busy");
+    assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE, "{body}");
+    assert_eq!(body["code"], "esim_refresh_cleanup_pending");
     assert_eq!(body["refresh"]["scope"], "module");
-    assert_eq!(body["refresh"]["phase"], "failed");
+    assert_eq!(body["refresh"]["phase"], "pending");
     assert_eq!(body["refresh"]["outcome"], "cleanup_pending");
     assert_eq!(body["refresh"]["attempts"], 1);
     assert_eq!(body["refresh"]["retry_performed"], false);
@@ -475,16 +479,16 @@ async fn esim_refresh_module_route_real_release_failure_retains_reservation_and_
     let worker_receipt = crate::esim_test_support::next_refresh_receipt(
         &mut receipts,
         body["refresh"]["operation_id"].as_str().unwrap(),
-        "failed",
+        "pending",
     )
     .await;
     assert_eq!(
         worker_receipt, body["refresh"],
-        "real release/read/run_with_id/HTTP preserve one receipt"
+        "the HTTP waiter reports the still-owned refresh intent"
     );
     assert!(
         fixture.state.module_radio.sim_channel_busy(),
-        "failed real release cannot clear the owner"
+        "pending real release cannot clear the owner"
     );
     assert!(fixture.state.module_radio.reserve_esim().await.is_err());
     {
@@ -527,4 +531,39 @@ async fn esim_refresh_module_route_real_release_failure_retains_reservation_and_
         "a later HTTP request cannot enter the retained reservation"
     );
     assert!(fixture.state.module_radio.sim_channel_busy());
+
+    // The real pin drop wakes retained cleanup; the original worker publishes
+    // its completed receipt without a second CCHO/CGLA/CCHC scan.
+    drop(cleanup);
+    let completed = crate::esim_test_support::next_refresh_receipt(
+        &mut receipts,
+        body["refresh"]["operation_id"].as_str().unwrap(),
+        "completed",
+    )
+    .await;
+    assert_eq!(completed["operation_id"], body["refresh"]["operation_id"]);
+    assert_eq!(completed["scope"], "module");
+    assert_eq!(completed["outcome"], "succeeded");
+    assert_eq!(completed["attempts"], 1);
+    assert_eq!(completed["retry_performed"], false);
+    assert!(!fixture.state.module_radio.sim_channel_busy());
+    assert_eq!(
+        fixture.trace.count(),
+        count,
+        "cleanup never replays the read"
+    );
+    let lease = fixture.state.module_radio.reserve_esim().await.unwrap();
+    fixture
+        .state
+        .module_radio
+        .release_esim(lease)
+        .await
+        .unwrap();
+    assert_eq!(fixture.trace.count(), count);
+    fixture
+        .state
+        .module_radio
+        .finish_shutdown_receipt()
+        .await
+        .unwrap();
 }
