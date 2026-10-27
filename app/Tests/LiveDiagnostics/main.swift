@@ -53,6 +53,39 @@ actor ControlledAPI: LiveDiagnosticAPI {
     throw Failure.failed("condition did not become true")
 }
 
+@MainActor func scrollViews(in view: NSView) -> [NSScrollView] {
+    let current = (view as? NSScrollView).map { [$0] } ?? []
+    return current + view.subviews.flatMap { scrollViews(in: $0) }
+}
+let allRecoveryReasons = [
+    "legacy_execution_pending", "restore_journal_pending", "restore_journal_unreadable",
+    "reconciliation_pending", "reconciliation_unreadable", "legacy_call_mode_lock",
+    "legacy_adb_interface_lock", "legacy_lock_provenance_pending", "module_backup_present",
+    "legacy_voice_runtime", "managed_voice_control_pending", "invalid_pristine_marker",
+    "unreadable_evidence", "lifetime_authority_changed"
+]
+func crowdedFixture() throws -> Data {
+    try fixture(Array(1...40).map(UInt64.init)) { value in
+        value["events"] = Array(1...40).map { sequence -> [String: Any] in
+            var row = record(UInt64(sequence))
+            var event = row["event"] as! [String: Any]
+            event["status"] = 409
+            event["code"] = "http_client_error"
+            row["event"] = event
+            return row
+        }
+        value["warnings"] = ["live_current_runtime_only", "best_effort_not_lossless", "snapshot_not_atomic",
+                             "live_window_truncated", "live_records_missed", "records_dropped",
+                             "write_failed", "writer_unavailable"]
+        value["module_recovery"] = [
+            "schema_version": 1, "observation": "last_observed", "state": "legacy_recovery_required",
+            "reason_codes": allRecoveryReasons, "historical_recovery_confirmed": false,
+            "startup": ["metadata": "failed", "reconciliation": "publication_unconfirmed",
+                        "native_inspection": "failed", "cleanup": "unconfirmed"]
+        ]
+    }
+}
+
 @main enum LiveDiagnosticsTests {
     @MainActor static func main() async throws {
         let client = ClientDiagnostics()
@@ -172,8 +205,34 @@ actor ControlledAPI: LiveDiagnosticAPI {
         window.orderFront(nil)
         host.layoutSubtreeIfNeeded()
         try await waitUntil { await uiAPI.count() == 1 }
-        await uiAPI.complete(0, try fixture())
+        await uiAPI.complete(0, try crowdedFixture())
         try await waitUntil { uiStore.updatedAt != nil }
+        try expect(allRecoveryReasons.allSatisfy { uiStore.recovery?.contains($0) == true }
+            && uiStore.notices.count >= 5, "crowded layout omitted recovery reasons or retention notices")
+        try await Task.sleep(nanoseconds: 50_000_000)
+        host.layoutSubtreeIfNeeded()
+        try expect(abs(host.bounds.width - 900) <= 1 && abs(host.bounds.height - 650) <= 1,
+                   "layout fixture did not retain the requested 900x650 viewport")
+        guard let scroll = scrollViews(in: host).max(by: { $0.bounds.height < $1.bounds.height }) else {
+            throw Failure.failed("actual hosted log scroll view was not found")
+        }
+        let viewport = host.convert(scroll.bounds, from: scroll)
+        try expect(scroll.contentView.bounds.height >= 180, "crowded diagnostics collapsed the log viewport")
+        try expect(viewport.minX >= -1 && viewport.minY >= -1
+            && viewport.maxX <= host.bounds.maxX + 1 && viewport.maxY <= host.bounds.maxY + 1,
+            "crowded diagnostics overflowed the 900x650 host")
+        guard let output = ProcessInfo.processInfo.environment["LIVE_DIAGNOSTIC_SCREENSHOT_DIR"],
+              let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else {
+            throw Failure.failed("synthetic screenshot destination or bitmap unavailable")
+        }
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        guard let png = bitmap.representation(using: .png, properties: [:]) else {
+            throw Failure.failed("synthetic hosted screenshot could not be encoded")
+        }
+        let directory = URL(fileURLWithPath: output, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try png.write(to: directory.appendingPathComponent("live-diagnostics-900x650.png"), options: [.atomic])
+        print("PASS: all 14 reasons and all notices at 900x650; log viewport \(scroll.contentView.bounds.height) px; synthetic screenshot written")
         backend.state = .stopped
         try await waitUntil { uiStore.updatedAt == nil && uiStore.status.contains("后端未运行") }
         // If a poll raced the state change, retire its actual owner before closing.

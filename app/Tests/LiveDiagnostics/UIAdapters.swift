@@ -16,6 +16,7 @@ enum SwitchRuntimePaths {
 struct TestViewport {
     let sectionSpacing: CGFloat = 10
     let cardPadding: CGFloat = 12
+    let isCompactHeight = true
 }
 private struct TestViewportKey: EnvironmentKey { static let defaultValue = TestViewport() }
 extension EnvironmentValues {

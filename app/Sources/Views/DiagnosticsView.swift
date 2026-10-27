@@ -35,8 +35,10 @@ struct DiagnosticsView: View {
             .padding(.horizontal, viewport.pageInset)
             .padding(.top, viewport.pageInset)
 
-            ModuleRecoveryStatusView()
-                .padding(.horizontal, viewport.pageInset)
+            if tab != .support {
+                ModuleRecoveryStatusView()
+                    .padding(.horizontal, viewport.pageInset)
+            }
 
             Group {
                 switch tab {

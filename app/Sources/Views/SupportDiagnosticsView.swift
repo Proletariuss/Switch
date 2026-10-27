@@ -9,6 +9,7 @@ struct SupportDiagnosticsView: View {
     @State private var visible = false
     @State private var followLatest = true
     @State private var warningsOnly = true
+    @State private var detailsExpanded = false
     @State private var exporting = false
     @State private var feedback: String?
     @State private var request: Task<Void, Never>?
@@ -24,41 +25,48 @@ struct SupportDiagnosticsView: View {
                 HStack(spacing: 12) { heading; Spacer(); actions }
                 VStack(alignment: .leading, spacing: 10) { heading; actions }
             }
-            Text("后台：\(backendState) · \(live.status)")
-                .font(.callout).foregroundStyle(live.updatedAt == nil ? Color.secondary : WorkspaceColors.accent)
-            if let updated = live.updatedAt {
-                Text("最近读取 \(updated.formatted(date: .omitted, time: .standard))")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            if let recovery = live.recovery {
-                Text(recovery + "。这是最近一次观察，不代表重新核验或完成历史恢复。")
-                    .font(.caption).foregroundStyle(.secondary)
-                    .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
-            } else {
-                Text("模块恢复状态：当前未知，尚未取得有效的本次后台观察。")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
+            Text("后台：\(backendState) · \(live.status)"
+                 + (live.updatedAt.map { " · \($0.formatted(date: .omitted, time: .standard))" } ?? ""))
+                .font(.caption).foregroundStyle(live.updatedAt == nil ? Color.secondary : WorkspaceColors.accent)
+                .lineLimit(2)
+            Text(live.recovery.map { $0.components(separatedBy: " · ").prefix(2).joined(separator: " · ") }
+                 ?? "模块恢复状态：当前未知，尚未取得有效的本次后台观察。")
+                .font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                .textSelection(.enabled)
             Picker("显示记录", selection: $warningsOnly) {
                 Text("仅警告与错误").tag(true)
                 Text("全部记录").tag(false)
             }.pickerStyle(.segmented).frame(maxWidth: 300)
-            ForEach(live.notices, id: \.self) { message in
-                Text(message).font(.caption).foregroundStyle(.orange)
-            }
-            Text("合并客户端、后台、模块与安全操作事件；最多显示最近 500 项。实时窗口只属于当前会话，隐藏此页后停止轮询；导出仍包含有界持久日志。")
-                .font(.caption).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            if !followLatest {
-                Text("自动滚动已暂停，记录仍在更新；较早记录可能移出窗口。")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
             if let feedback {
-                Text(feedback).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+                Text(feedback).font(.caption).foregroundStyle(.secondary)
+                    .lineLimit(2).textSelection(.enabled)
             }
-            Divider()
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 8) {
+                        DisclosureGroup(isExpanded: $detailsExpanded) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(live.recovery ?? "当前没有可确认的后台恢复观察。")
+                                    .textSelection(.enabled)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Text("这是最近一次观察，不代表重新核验或完成历史恢复。")
+                                ForEach(live.notices, id: \.self) { message in
+                                    Text(message).foregroundStyle(.orange)
+                                }
+                                Text("合并客户端、后台、模块与安全操作事件；最多显示最近 500 项。隐藏此页后停止轮询；导出仍包含有界持久日志。")
+                                Text("仅显示闭集技术字段，不含号码、短信正文、密钥或原始通信全文。实时记录不保证已落盘。")
+                            }
+                            .font(.caption).foregroundStyle(.secondary)
+                            .padding(.vertical, 8)
+                        } label: {
+                            Text("恢复详情与保留范围" + (live.notices.isEmpty ? "" : " · \(live.notices.count) 项提示"))
+                                .font(.caption.weight(.medium))
+                        }
+                        .accessibilityIdentifier("live-diagnostics-details")
+                        if !followLatest {
+                            Text("自动滚动已暂停，记录仍在更新；较早记录可能移出窗口。")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
                         if displayedRows.isEmpty {
                             Text(warningsOnly ? "当前筛选没有警告或错误，可切换到全部记录。" : "当前实时窗口还没有可显示的记录。")
                                 .foregroundStyle(.secondary).padding(.vertical, 16)
@@ -84,6 +92,7 @@ struct SupportDiagnosticsView: View {
                     }.frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .scrollIndicators(.visible)
+                .accessibilityIdentifier("live-diagnostic-log-scroll")
                 .compatibleOnChange(of: displayedRows.last?.id ?? "") { _ in
                     if followLatest { proxy.scrollTo("live-log-bottom", anchor: .bottom) }
                 }
@@ -91,8 +100,7 @@ struct SupportDiagnosticsView: View {
                     if follow { proxy.scrollTo("live-log-bottom", anchor: .bottom) }
                 }
             }
-            Text("仅显示闭集技术字段，不含号码、短信正文、密钥或原始通信全文。诊断包的缺失、丢弃和写入失败会明确标注。")
-                .font(.caption).foregroundStyle(.secondary)
+            .frame(minHeight: viewport.isCompactHeight ? 180 : 200, maxHeight: .infinity)
         }
         .padding(viewport.cardPadding).workspaceCard()
         .onAppear {
