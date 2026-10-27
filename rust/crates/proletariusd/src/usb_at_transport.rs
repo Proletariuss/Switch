@@ -9,6 +9,7 @@ use zeroize::Zeroizing;
 
 mod reconnect;
 pub(crate) mod recovery;
+pub(crate) mod legacy_current;
 #[cfg(test)]
 mod restore_journal_tests;
 pub(crate) use reconnect::{DurableUsbBinding, ReenumerationAnchor, open_exact, open_successor};
