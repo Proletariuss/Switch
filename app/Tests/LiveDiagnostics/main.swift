@@ -61,6 +61,20 @@ actor ControlledAPI: LiveDiagnosticAPI {
     }).joined(separator: "\n")
 }
 
+@MainActor func saveScreenshot(_ host: NSView, named name: String) throws {
+    guard let output = ProcessInfo.processInfo.environment["LIVE_DIAGNOSTIC_SCREENSHOT_DIR"],
+          let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else {
+        throw Failure.failed("synthetic screenshot destination or bitmap unavailable")
+    }
+    host.cacheDisplay(in: host.bounds, to: bitmap)
+    guard let png = bitmap.representation(using: .png, properties: [:]) else {
+        throw Failure.failed("synthetic hosted screenshot could not be encoded")
+    }
+    let directory = URL(fileURLWithPath: output, isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    try png.write(to: directory.appendingPathComponent(name), options: [.atomic])
+}
+
 @MainActor func scrollViews(in view: NSView) -> [NSScrollView] {
     let current = (view as? NSScrollView).map { [$0] } ?? []
     return current + view.subviews.flatMap { scrollViews(in: $0) }
@@ -215,6 +229,39 @@ func crowdedFixture() throws -> Data {
         try expect(releasedCalls == 1, "dropped store started another poll")
         print("PASS: dropping the store releases it after the finite poll without onDisappear")
 
+        // A visible, finite ordinary row proves the default filter. Keep this
+        // separate from the large LazyVStack whose later client rows are offscreen.
+        let ordinaryClient = ClientDiagnostics()
+        ordinaryClient.lifecycle(component: "application", stage: "started")
+        let ordinary = ordinaryClient.liveSnapshot()
+        let defaultAPI = ControlledAPI()
+        let defaultStore = LiveDiagnosticStore(api: defaultAPI, client: { ordinary },
+                                               interval: 60_000_000_000)
+        let defaultBackend = BackendProcess()
+        _ = NSApplication.shared
+        let defaultHost = NSHostingView(rootView: SupportDiagnosticsView(store: defaultStore)
+            .environmentObject(defaultBackend))
+        let defaultWindow = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 650),
+                                     styleMask: [.titled], backing: .buffered, defer: false)
+        defaultWindow.contentView = defaultHost
+        defaultWindow.orderFront(nil)
+        try await waitUntil { await defaultAPI.count() == 1 }
+        await defaultAPI.complete(0, try fixture([]))
+        try await waitUntil { defaultStore.updatedAt != nil }
+        try await Task.sleep(nanoseconds: 50_000_000)
+        defaultHost.layoutSubtreeIfNeeded()
+        try saveScreenshot(defaultHost, named: "live-diagnostics-default-all.png")
+        let defaultText = accessibilityText(in: defaultHost)
+        let children = (defaultHost.accessibilityChildren() ?? []).map { String(describing: type(of: $0)) }
+        let evidence = "DEFAULT AX children: \(children)\nDEFAULT AX text: \(String(defaultText.prefix(4096)))\n"
+        FileHandle.standardError.write(Data(evidence.utf8))
+        try expect(defaultText.contains("本次客户端会话记录"),
+                   "default all-records view hid an onscreen ordinary lifecycle event")
+        defaultWindow.contentView = nil
+        defaultWindow.orderOut(nil)
+        try await waitUntil { defaultStore.status == "实时读取已暂停。" }
+        print("PASS: default all-records filter visibly includes an ordinary lifecycle event")
+
         let uiAPI = ControlledAPI()
         let uiStore = LiveDiagnosticStore(api: uiAPI, client: { local }, interval: 10_000_000)
         let backend = BackendProcess()
@@ -232,29 +279,17 @@ func crowdedFixture() throws -> Data {
             && uiStore.notices.count >= 5, "crowded layout omitted recovery reasons or retention notices")
         try await Task.sleep(nanoseconds: 50_000_000)
         host.layoutSubtreeIfNeeded()
+        try saveScreenshot(host, named: "live-diagnostics-900x650.png")
         try expect(abs(host.bounds.width - 900) <= 1 && abs(host.bounds.height - 650) <= 1,
                    "layout fixture did not retain the requested 900x650 viewport")
         guard let scroll = scrollViews(in: host).max(by: { $0.bounds.height < $1.bounds.height }) else {
             throw Failure.failed("actual hosted log scroll view was not found")
         }
-        try expect(accessibilityText(in: host).contains("本次客户端会话记录"),
-                   "default all-records view hid ordinary client lifecycle events")
         let viewport = host.convert(scroll.bounds, from: scroll)
         try expect(scroll.contentView.bounds.height >= 180, "crowded diagnostics collapsed the log viewport")
         try expect(viewport.minX >= -1 && viewport.minY >= -1
             && viewport.maxX <= host.bounds.maxX + 1 && viewport.maxY <= host.bounds.maxY + 1,
             "crowded diagnostics overflowed the 900x650 host")
-        guard let output = ProcessInfo.processInfo.environment["LIVE_DIAGNOSTIC_SCREENSHOT_DIR"],
-              let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else {
-            throw Failure.failed("synthetic screenshot destination or bitmap unavailable")
-        }
-        host.cacheDisplay(in: host.bounds, to: bitmap)
-        guard let png = bitmap.representation(using: .png, properties: [:]) else {
-            throw Failure.failed("synthetic hosted screenshot could not be encoded")
-        }
-        let directory = URL(fileURLWithPath: output, isDirectory: true)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try png.write(to: directory.appendingPathComponent("live-diagnostics-900x650.png"), options: [.atomic])
         print("PASS: all 14 reasons and all notices at 900x650; log viewport \(scroll.contentView.bounds.height) px; synthetic screenshot written")
         backend.state = .stopped
         try await waitUntil { uiStore.updatedAt == nil && uiStore.status.contains("后端未运行") }
