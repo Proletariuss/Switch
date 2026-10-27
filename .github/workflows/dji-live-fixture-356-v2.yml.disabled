@@ -1,0 +1,77 @@
+name: Gezielte Live-Diagnose-Fixtures 356
+on:
+  push:
+    branches:
+      - automation/dji-live-fixture-356-v2
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exakter gepruefter Quellcommit
+        required: true
+        default: aec3891e8e29e900f9d2e4f174ab84b5b34a3767
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: switch-dji-live-fixture-356-v2
+  cancel-in-progress: false
+
+jobs:
+  fixtures:
+    if: github.repository == 'Proletariuss/Switch' && github.ref == 'refs/heads/automation/dji-live-fixture-356-v2'
+    runs-on: macos-26
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Festen Quellcommit vor dem Checkout pruefen
+        env:
+          REQUESTED_SOURCE: ${{ inputs.source_sha || 'aec3891e8e29e900f9d2e4f174ab84b5b34a3767' }}
+        run: |
+          set -euo pipefail
+          test "$REQUESTED_SOURCE" = aec3891e8e29e900f9d2e4f174ab84b5b34a3767
+      - name: Ausschliesslich gepruefte Quellen lesen
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: aec3891e8e29e900f9d2e4f174ab84b5b34a3767
+          path: src
+          persist-credentials: false
+      - name: Quellidentitaet bestaetigen
+        id: source
+        working-directory: src
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = aec3891e8e29e900f9d2e4f174ab84b5b34a3767
+          test "$(git rev-parse 'HEAD^{tree}')" = 6949b5b375d3a010420f63810095794d7718362e
+          git diff --exit-code
+      - name: Live-Diagnose und sichtbare Oberflaeche pruefen
+        if: ${{ !cancelled() && steps.source.outcome == 'success' }}
+        working-directory: src
+        run: bash scripts/test-live-diagnostics.sh
+      - name: Endliche Startbeobachtung pruefen
+        if: ${{ !cancelled() && steps.source.outcome == 'success' }}
+        working-directory: src
+        run: bash scripts/test-backend-readiness.sh
+      - name: Geschlossene Diagnoseexporte pruefen
+        if: ${{ !cancelled() && steps.source.outcome == 'success' }}
+        working-directory: src
+        run: bash scripts/test-support-diagnostics.sh
+      - name: Quellen nach den Fixtures unveraendert pruefen
+        if: ${{ !cancelled() && steps.source.outcome == 'success' }}
+        working-directory: src
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          test -z "$(git ls-files --others --exclude-standard)"
+      - name: Nur synthetische Bildschirmbelege sichern
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: dji-live-fixture-layout-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/live-diagnostic-layout/live-diagnostics-default-all.png
+            build/live-diagnostic-layout/live-diagnostics-900x650.png
+          if-no-files-found: warn
+          retention-days: 7
