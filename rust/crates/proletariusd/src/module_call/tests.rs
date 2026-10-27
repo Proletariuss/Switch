@@ -418,7 +418,13 @@ async fn go_rotation_during_native_dial_preserves_worker_lease_audio_and_call_hi
     assert!(fake.0.releases.lock().unwrap().is_empty());
     assert_eq!(fake.0.audio_stops.load(Ordering::Acquire), 0);
 
-    *fake.0.default_state.lock().unwrap() = snapshot("active", false);
+    // The modem acknowledges ATH and then confirms voice idle. An OK
+    // command alone is not proof that the call or audio route ended.
+    fake.0.queries.lock().unwrap().extend([
+        snapshot("active", false),
+        snapshot("active", false),
+        snapshot("idle", true),
+    ]);
     assert_eq!(
         service.execute(Action::Hangup, "".into()).await.status(),
         StatusCode::OK
@@ -612,3 +618,5 @@ async fn pending_child_observer_retains_physical_job_and_never_dials_late_or_poi
     finish(service, root).await;
     std::fs::remove_dir_all(&probe.root).unwrap();
 }
+
+mod clcc_lifecycle;
