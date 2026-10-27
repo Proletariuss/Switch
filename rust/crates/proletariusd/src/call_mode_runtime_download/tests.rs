@@ -125,7 +125,16 @@ fn downloads_all_six_pinned_artifacts_with_permissions_and_reuses_verified_cache
     for (artifact, bytes) in runtime.files.iter().zip(contents) {
         transport.add(urls(&runtime, "github", artifact)[0].clone(), bytes);
     }
+    assert!(!root.0.join("voice-runtime").exists());
     let directory = RuntimeDirectory::open(&root.0).unwrap();
+    assert_eq!(
+        std::fs::metadata(root.0.join("voice-runtime"))
+            .unwrap()
+            .permissions()
+            .mode()
+            & 0o777,
+        0o700
+    );
     let mut progress = Vec::new();
     download_runtime(
         &directory,
@@ -136,6 +145,10 @@ fn downloads_all_six_pinned_artifacts_with_permissions_and_reuses_verified_cache
     )
     .unwrap();
     assert_eq!(transport.calls.lock().unwrap().len(), 6);
+    assert_eq!(
+        std::fs::metadata(root.version()).unwrap().permissions().mode() & 0o777,
+        0o700
+    );
     assert_eq!(
         progress.last().unwrap().1,
         contents.iter().map(|bytes| bytes.len() as u64).sum::<u64>()

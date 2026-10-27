@@ -195,13 +195,23 @@ fn open_runtime_directory(directory: &Path) -> Result<File, String> {
     let parent_name = parent
         .file_name()
         .ok_or_else(|| "本地语音运行时父目录不可用".to_owned())?;
-    let runtime_parent = open_child_no_follow(&root, parent_name, true)
-        .map_err(|_| "本地语音运行时父目录不可用或类型无效".to_owned())?;
+    let runtime_parent = open_child_no_follow(&root, parent_name, true).map_err(|error| {
+        if error.kind() == std::io::ErrorKind::NotFound {
+            "本地语音运行时尚未下载，请选择下载渠道".to_owned()
+        } else {
+            "本地语音运行时父目录不可用或类型无效".to_owned()
+        }
+    })?;
     let directory_name = directory
         .file_name()
         .ok_or_else(|| "本地语音运行时目录不可用".to_owned())?;
-    open_child_no_follow(&runtime_parent, directory_name, true)
-        .map_err(|_| "本地语音运行时目录不可用或类型无效".to_owned())
+    open_child_no_follow(&runtime_parent, directory_name, true).map_err(|error| {
+        if error.kind() == std::io::ErrorKind::NotFound {
+            "本地语音运行时尚未下载，请选择下载渠道".to_owned()
+        } else {
+            "本地语音运行时目录不可用或类型无效".to_owned()
+        }
+    })
 }
 
 pub(crate) fn read_verified_artifact(
@@ -329,6 +339,77 @@ mod tests {
             mode: 0o644,
             deploy: true,
         }
+    }
+
+    #[test]
+    fn absent_runtime_directories_report_pending_download_without_creating_paths() {
+        let root =
+            std::env::temp_dir().join(format!("switch-runtime-missing-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        let parent = root.join("voice-runtime");
+        let directory = parent.join("version");
+        let expected = [fixture_file("driver.ko", b"driver")];
+        let unavailable = verify_runtime_files(&directory, &expected);
+        assert!(!unavailable.runtime_downloaded);
+        assert_eq!(unavailable.error, "Switch 数据目录不可用或类型无效");
+        assert!(!root.exists());
+
+        fs::create_dir(&root).unwrap();
+        for parent_exists in [false, true] {
+            if parent_exists {
+                fs::create_dir(&parent).unwrap();
+            }
+            let result = verify_runtime_files(&directory, &expected);
+            assert!(!result.runtime_downloaded);
+            assert_eq!(result.downloaded_bytes, 0);
+            assert_eq!(result.total_bytes, 6);
+            assert_eq!(result.error, "本地语音运行时尚未下载，请选择下载渠道");
+            assert_eq!(parent.exists(), parent_exists);
+            assert!(!directory.exists());
+        }
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn invalid_runtime_directory_entries_are_not_reported_as_missing_or_modified() {
+        let root =
+            std::env::temp_dir().join(format!("switch-runtime-invalid-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(root.join("outside")).unwrap();
+        fs::write(root.join("outside/sentinel"), b"untouched").unwrap();
+        let expected = [fixture_file("driver.ko", b"driver")];
+        for (entry, directory, detail) in [
+            (
+                root.join("voice-runtime"),
+                root.join("voice-runtime/version"),
+                "本地语音运行时父目录不可用或类型无效",
+            ),
+            (
+                root.join("valid-parent/version"),
+                root.join("valid-parent/version"),
+                "本地语音运行时目录不可用或类型无效",
+            ),
+        ] {
+            fs::create_dir_all(entry.parent().unwrap()).unwrap();
+            for linked in [false, true] {
+                if linked {
+                    symlink(root.join("outside"), &entry).unwrap();
+                } else {
+                    fs::write(&entry, b"existing entry").unwrap();
+                }
+                let result = verify_runtime_files(&directory, &expected);
+                assert!(!result.runtime_downloaded);
+                assert_eq!(result.downloaded_bytes, 0);
+                assert_eq!(result.error, detail);
+                assert_eq!(fs::symlink_metadata(&entry).unwrap().is_symlink(), linked);
+                if !linked {
+                    assert_eq!(fs::read(&entry).unwrap(), b"existing entry");
+                }
+                assert_eq!(fs::read(root.join("outside/sentinel")).unwrap(), b"untouched");
+                fs::remove_file(&entry).unwrap();
+            }
+        }
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
