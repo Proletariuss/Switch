@@ -97,6 +97,39 @@ pub(crate) enum Cleanup {
     Confirmed,
     Unconfirmed,
 }
+/// Retained last observation of the startup-only current-baseline branch.
+/// No string supplied by a transport or error can enter this closed projection.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum LegacyCurrent {
+    #[default]
+    NotObserved,
+    NotApplicable,
+    Started,
+    CurrentVerified,
+    PublicationUnconfirmed,
+    #[serde(rename = "legacy_current_ineligible")]
+    Ineligible,
+    #[serde(rename = "legacy_current_evidence_changed")]
+    EvidenceChanged,
+    #[serde(rename = "legacy_current_busy")]
+    Busy,
+    #[serde(rename = "legacy_current_cancelled")]
+    Cancelled,
+    #[serde(rename = "legacy_current_timeout")]
+    Timeout,
+    #[serde(rename = "legacy_current_device_unconfirmed")]
+    DeviceUnconfirmed,
+    #[serde(rename = "legacy_current_readback_unconfirmed")]
+    ReadbackUnconfirmed,
+    #[serde(rename = "legacy_current_helper_unconfirmed")]
+    HelperUnconfirmed,
+    #[serde(rename = "legacy_current_cleanup_unconfirmed")]
+    CleanupUnconfirmed,
+    #[serde(rename = "legacy_current_worker_failed")]
+    WorkerFailed,
+}
+
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct Startup {
@@ -104,6 +137,8 @@ pub(super) struct Startup {
     reconciliation: Reconciliation,
     native_inspection: NativeInspection,
     cleanup: Cleanup,
+    #[serde(default)]
+    legacy_current: LegacyCurrent,
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -129,6 +164,13 @@ impl Observation {
         // A later observation must not hide an earlier unconfirmed cleanup.
         if self.startup.cleanup != Cleanup::Unconfirmed {
             self.startup.cleanup = result;
+        }
+    }
+
+    pub(super) fn legacy_current(&mut self, result: LegacyCurrent) {
+        if !matches!(self.startup.legacy_current,
+            LegacyCurrent::CleanupUnconfirmed | LegacyCurrent::WorkerFailed) {
+            self.startup.legacy_current = result;
         }
     }
 
@@ -186,6 +228,9 @@ pub(crate) fn reconciliation(result: Reconciliation) {
 }
 pub(crate) fn native_inspection(result: NativeInspection) {
     update(|observation| observation.startup.native_inspection = result);
+}
+pub(crate) fn legacy_current(result: LegacyCurrent) {
+    update(|observation| observation.legacy_current(result));
 }
 pub(crate) fn cleanup(result: Cleanup) {
     update(|observation| observation.cleanup(result));
@@ -315,4 +360,68 @@ mod tests {
         assert!(encoded.len() < 4096);
         assert_eq!(serde_json::from_slice::<Snapshot>(&encoded).unwrap(), value);
     }
+
+    #[test]
+    fn legacy_current_is_a_closed_optional_backward_compatible_projection() {
+        let values = [
+            LegacyCurrent::NotObserved, LegacyCurrent::NotApplicable, LegacyCurrent::Started,
+            LegacyCurrent::CurrentVerified, LegacyCurrent::PublicationUnconfirmed,
+            LegacyCurrent::Ineligible, LegacyCurrent::EvidenceChanged, LegacyCurrent::Busy,
+            LegacyCurrent::Cancelled, LegacyCurrent::Timeout, LegacyCurrent::DeviceUnconfirmed,
+            LegacyCurrent::ReadbackUnconfirmed, LegacyCurrent::HelperUnconfirmed,
+            LegacyCurrent::CleanupUnconfirmed, LegacyCurrent::WorkerFailed,
+        ];
+        let names = [
+            "not_observed", "not_applicable", "started", "current_verified", "publication_unconfirmed",
+            "legacy_current_ineligible", "legacy_current_evidence_changed", "legacy_current_busy",
+            "legacy_current_cancelled", "legacy_current_timeout", "legacy_current_device_unconfirmed",
+            "legacy_current_readback_unconfirmed", "legacy_current_helper_unconfirmed",
+            "legacy_current_cleanup_unconfirmed", "legacy_current_worker_failed",
+        ];
+        for (value, name) in values.into_iter().zip(names) {
+            let mut observation = Observation::default();
+            observation.legacy_current(value);
+            let snapshot = observation.snapshot();
+            let encoded = serde_json::to_value(&snapshot).unwrap();
+            assert_eq!(encoded["startup"]["legacy_current"], name);
+            assert_eq!(serde_json::from_value::<Snapshot>(encoded).unwrap(), snapshot);
+            assert!(!snapshot.historical_recovery_confirmed);
+            assert!(serde_json::to_vec(&snapshot).unwrap().len() < 4096);
+        }
+        let mut old = serde_json::to_value(Observation::default().snapshot()).unwrap();
+        old["startup"].as_object_mut().unwrap().remove("legacy_current");
+        assert_eq!(serde_json::from_value::<Snapshot>(old.clone()).unwrap().startup.legacy_current,
+            LegacyCurrent::NotObserved);
+        for unsupported in [serde_json::json!("legacy_current_raw_AT+CGSN"),
+            serde_json::json!("CURRENT_VERIFIED"), serde_json::json!(null),
+            serde_json::json!(false), serde_json::json!({"imei":"private"}), serde_json::json!(17)] {
+            let mut changed = old.clone();
+            changed["startup"]["legacy_current"] = unsupported;
+            assert!(serde_json::from_value::<Snapshot>(changed).is_err());
+        }
+    }
+
+    #[test]
+    fn current_baseline_failure_is_retained_without_any_module_event_or_probe() {
+        let mut observation = Observation::default();
+        observation.bind(&Gate::quarantined_for_tests());
+        observation.legacy_current(LegacyCurrent::Started);
+        observation.legacy_current(LegacyCurrent::HelperUnconfirmed);
+        for _ in 0..8192 {
+            let snapshot = observation.snapshot();
+            assert_eq!(snapshot.startup.legacy_current, LegacyCurrent::HelperUnconfirmed);
+            assert_eq!(snapshot.state, State::LegacyRecoveryRequired);
+            assert!(!snapshot.historical_recovery_confirmed);
+        }
+        for sticky in [LegacyCurrent::CleanupUnconfirmed, LegacyCurrent::WorkerFailed] {
+            let mut observation = Observation::default();
+            observation.legacy_current(sticky);
+            for later in [LegacyCurrent::NotApplicable, LegacyCurrent::CurrentVerified,
+                LegacyCurrent::DeviceUnconfirmed, LegacyCurrent::Started] {
+                observation.legacy_current(later);
+                assert_eq!(observation.snapshot().startup.legacy_current, sticky);
+            }
+        }
+    }
+
 }

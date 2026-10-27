@@ -362,3 +362,18 @@ async fn completion_deadline_and_same_cancellation_cover_activation_and_first_op
     assert!(gate.consume_legacy_current(completed).is_err());
     assert!(gate.is_quarantined());
 }
+
+#[test]
+fn retained_failure_projection_is_closed_and_never_accepts_transport_text() {
+    for failure in [Failure::Ineligible, Failure::EvidenceChanged, Failure::Busy,
+        Failure::Cancelled, Failure::Timeout, Failure::DeviceUnconfirmed,
+        Failure::ReadbackUnconfirmed, Failure::HelperUnconfirmed,
+        Failure::CleanupUnconfirmed, Failure::WorkerFailed] {
+        assert_eq!(serde_json::to_value(failure.retained()).unwrap(), failure.code());
+    }
+    let unknown = TransportError { code:"/private/AT+CGSN", message:"private identity".into(),
+        response:"private raw response".into(), uncertain:false };
+    assert_eq!(Failure::from_transport(&unknown), Failure::ReadbackUnconfirmed);
+    let unknown = TransportError { uncertain:true, ..unknown };
+    assert_eq!(Failure::from_transport(&unknown), Failure::CleanupUnconfirmed);
+}

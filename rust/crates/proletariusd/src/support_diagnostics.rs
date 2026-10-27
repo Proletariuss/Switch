@@ -698,6 +698,7 @@ mod tests {
         let shared = shared(&root);
         let gate = crate::module_recovery::Gate::quarantined_for_tests();
         shared.recovery.lock().unwrap().bind(&gate);
+        shared.recovery.lock().unwrap().legacy_current(recovery::LegacyCurrent::HelperUnconfirmed);
         let mut storage = Storage::open(&root.0, 512).unwrap();
         for sequence in 1..=40 {
             storage.append(&record(sequence)).unwrap();
@@ -717,6 +718,7 @@ mod tests {
             serde_json::json!(["legacy_call_mode_lock"])
         );
         assert_eq!(value["module_recovery"]["startup"]["cleanup"], "not_observed");
+        assert_eq!(value["module_recovery"]["startup"]["legacy_current"], "legacy_current_helper_unconfirmed");
         assert_eq!(value["module_recovery"]["historical_recovery_confirmed"], false);
         let events = value["events"].as_array().unwrap();
         assert!(!events.is_empty());

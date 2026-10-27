@@ -720,6 +720,11 @@ async fn run_with_sms_stores(
                     let gate = module_recovery.clone();
                     let activation = tokio::task::spawn_blocking(move ||
                         gate.consume_legacy_current(completion)).await.unwrap_or(Err(()));
+                    recovery_diagnostics::legacy_current(if activation.is_ok() {
+                        recovery_diagnostics::LegacyCurrent::CurrentVerified
+                    } else {
+                        recovery_diagnostics::LegacyCurrent::PublicationUnconfirmed
+                    });
                     return activation.map(StartupInspection::LegacyCurrent).map_err(|()|
                         StartupInspectionFailure::LegacyCurrent(startup_recovery::legacy_current::Failure::EvidenceChanged));
                 }

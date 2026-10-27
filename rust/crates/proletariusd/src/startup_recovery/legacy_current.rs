@@ -43,7 +43,37 @@ impl Failure {
             Self::WorkerFailed => "legacy_current_worker_failed",
         }
     }
+    fn retained(self) -> crate::support_diagnostics::recovery::LegacyCurrent {
+        use crate::support_diagnostics::recovery::LegacyCurrent;
+        match self {
+            Self::Ineligible => LegacyCurrent::Ineligible,
+            Self::EvidenceChanged => LegacyCurrent::EvidenceChanged,
+            Self::Busy => LegacyCurrent::Busy,
+            Self::Cancelled => LegacyCurrent::Cancelled,
+            Self::Timeout => LegacyCurrent::Timeout,
+            Self::DeviceUnconfirmed => LegacyCurrent::DeviceUnconfirmed,
+            Self::ReadbackUnconfirmed => LegacyCurrent::ReadbackUnconfirmed,
+            Self::HelperUnconfirmed => LegacyCurrent::HelperUnconfirmed,
+            Self::CleanupUnconfirmed => LegacyCurrent::CleanupUnconfirmed,
+            Self::WorkerFailed => LegacyCurrent::WorkerFailed,
+        }
+    }
+    fn from_transport(error: &TransportError) -> Self {
+        if error.code == Self::WorkerFailed.code() { return Self::WorkerFailed; }
+        if error.uncertain { return Self::CleanupUnconfirmed; }
+        match error.code {
+            "legacy_current_ineligible" => Self::Ineligible,
+            "legacy_current_evidence_changed" => Self::EvidenceChanged,
+            "legacy_current_busy" => Self::Busy,
+            "legacy_current_cancelled" => Self::Cancelled,
+            "legacy_current_timeout" => Self::Timeout,
+            "legacy_current_device_unconfirmed" => Self::DeviceUnconfirmed,
+            "legacy_current_helper_unconfirmed" => Self::HelperUnconfirmed,
+            _ => Self::ReadbackUnconfirmed,
+        }
+    }
     fn record(self) {
+        crate::support_diagnostics::recovery::legacy_current(self.retained());
         use crate::support_diagnostics::module::{self as diagnostic, Code, ResultKind, Stage, Transport};
         let code = match self {
             Self::Ineligible => Code::PolicyUnavailable,
@@ -269,9 +299,10 @@ impl Seed {
             .unwrap_or_else(|_| Err(ReadScope::error(Failure::WorkerFailed)));
         if let Err(error) = &result {
             self.claim.revoke(gate);
-            if error.uncertain { Failure::CleanupUnconfirmed.record(); }
-            else if error.code == Failure::Timeout.code() { Failure::Timeout.record(); }
-            else { Failure::DeviceUnconfirmed.record(); }
+            Failure::from_transport(error).record();
+        } else {
+            crate::support_diagnostics::recovery::legacy_current(
+                crate::support_diagnostics::recovery::LegacyCurrent::CurrentVerified);
         }
         result
     }
@@ -322,7 +353,12 @@ impl super::Coordinator {
     pub(crate) async fn inspect_legacy_current(
         gate: &Gate, root: &Path, cancelled: Arc<AtomicBool>,
     ) -> Result<Option<Completed>, Failure> {
-        if !gate.legacy_current_eligible() { return Ok(None); }
+        use crate::support_diagnostics::recovery::{legacy_current, LegacyCurrent};
+        if !gate.legacy_current_eligible() {
+            legacy_current(LegacyCurrent::NotApplicable);
+            return Ok(None);
+        }
+        legacy_current(LegacyCurrent::Started);
         use crate::support_diagnostics::module::{self as diagnostic, Code, ResultKind, Stage, Transport};
         diagnostic::startup(Stage::Startup, ResultKind::Started, Code::None, Transport::Usb);
         let result = Self::inspect_legacy_current_inner(gate, root, cancelled, crate::usb_at_transport::legacy_current::inspect).await;
