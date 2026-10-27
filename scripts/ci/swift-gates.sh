@@ -25,6 +25,7 @@ case "${1:-}" in
     bash scripts/test-device-call-correctness.sh
     bash scripts/test-diagnostic-events.sh
     bash scripts/test-support-diagnostics.sh
+    bash scripts/test-live-diagnostics.sh
     bash scripts/test-module-recovery-status.sh
     bash scripts/test-bounded-ble-diagnostic-log.sh
     bash scripts/test-reader-ble-selection.sh
