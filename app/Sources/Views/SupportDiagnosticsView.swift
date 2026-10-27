@@ -8,7 +8,7 @@ struct SupportDiagnosticsView: View {
     @StateObject private var live: LiveDiagnosticStore
     @State private var visible = false
     @State private var followLatest = true
-    @State private var warningsOnly = true
+    @State private var warningsOnly = false
     @State private var detailsExpanded = false
     @State private var exporting = false
     @State private var feedback: String?
