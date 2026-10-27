@@ -151,6 +151,15 @@ fn release_all(claimed: &mut Vec<u8>,
     else if disconnected { Ok(CloseDisposition::DisconnectedAndHandleDropped) }
     else { Ok(CloseDisposition::ReleasedAndHandleDropped) }
 }
+// Perform retirement first, but never downgrade an already uncertain result
+// to a definite disconnection or a later admission failure.
+fn settle<T>(result: Result<T, TransportError>, closed: Result<(), TransportError>)
+    -> Result<T, TransportError> {
+    if closed.as_ref().err().is_some_and(|error| error.uncertain) { return Err(closed.err().expect("uncertain close")); }
+    if result.as_ref().err().is_some_and(|error| error.uncertain) { return result; }
+    closed?;
+    result
+}
 fn checked_close(port: NativeTransport) -> Result<(), TransportError> {
     match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| Box::new(port).checked_close())) {
         Ok(Ok(CloseDisposition::ReleasedAndHandleDropped)) => Ok(()),
@@ -185,11 +194,8 @@ fn inspect_port(mut port: NativeTransport, scope: &ReadScope,
     -> Result<VerifiedDevice, TransportError> {
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| examine(&mut port, scope, idle)))
         .unwrap_or_else(|_| Err(cleanup_error()));
-    checked_close(port)?;
-    // An uncertain callback/cleanup result cannot be downgraded by revocation.
-    if result.as_ref().err().is_some_and(|error| error.uncertain) { return Err(result.err().expect("uncertain error")); }
+    let (target, facts, idle) = settle(result, checked_close(port))?;
     scope.check()?;
-    let (target, facts, idle) = result?;
     Ok(VerifiedDevice { target, facts, idle })
 }
 fn reopen_port(mut port: NativeTransport, scope: &ReadScope, verified: &VerifiedDevice,
@@ -202,8 +208,7 @@ fn reopen_port(mut port: NativeTransport, scope: &ReadScope, verified: &Verified
         scope.check()
     })).unwrap_or_else(|_| Err(cleanup_error()));
     if let Err(error) = result {
-        checked_close(port)?;
-        return Err(error);
+        return settle(Err(error), checked_close(port));
     }
     // Scope guards are transient at each read boundary. The ordinary owner
     // receives its native handle, not an expired startup admission closure.
@@ -359,10 +364,11 @@ mod native {
             Ok(())
         })).unwrap_or_else(|_| Err(cleanup_error()));
         if let Err(error) = result {
-            match io.close()? {
-                CloseDisposition::ReleasedAndHandleDropped => return Err(error),
-                CloseDisposition::DisconnectedAndHandleDropped => return Err(device_error()),
-            }
+            let closed = io.close().and_then(|disposition| match disposition {
+                CloseDisposition::ReleasedAndHandleDropped => Ok(()),
+                CloseDisposition::DisconnectedAndHandleDropped => Err(device_error()),
+            });
+            return settle(Err(error), closed);
         }
         Ok(NativeTransport::new(Box::new(io), "Verified current USB AT owner".into(), Some(owner)))
     }

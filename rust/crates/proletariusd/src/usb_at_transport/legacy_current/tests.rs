@@ -43,6 +43,14 @@ impl Io for Wire {
             "AT+CFUN?" => format!("+CFUN: {}\r\nOK\r\n", self.cfun),
             "AT+CLCC" if self.active_call => "+CLCC: 1,0,0,0,0\r\nOK\r\n".to_owned(),
             "AT+CLCC" => "OK\r\n".to_owned(),
+            // Ordinary startup's best-effort eUICC probe only. Baseline reads
+            // still use their separate fixed allowlist; arbitrary CCHO fails.
+            value if proletarius_euicc::KNOWN_ISDR_APPLICATION_AIDS.iter().any(|aid| {
+                let hex = aid.iter().map(|byte| format!("{byte:02X}")).collect::<String>();
+                value == format!("AT+CCHO=\"{hex}\"")
+            }) => "ERROR\r\n".to_owned(),
+            "AT+CPMS?" => "+CPMS: \"ME\",0,100,\"ME\",0,100,\"ME\",0,100\r\nOK\r\n".to_owned(),
+            "AT+CPIN?" => "+CPIN: READY\r\nOK\r\n".to_owned(),
             _ => return Err(IoError::Other),
         };
         self.incoming.extend(response.as_bytes());
@@ -194,4 +202,33 @@ fn release_failure_never_skips_other_claims_or_becomes_disconnection_success() {
     assert!(error.uncertain);
     assert_eq!(released, [5,4,3,2]);
     assert!(claimed.is_empty());
+}
+
+#[test]
+fn uncertain_observation_survives_definite_disconnect_and_failed_release_wins() {
+    let error = settle::<()>(Err(cleanup_error()), Err(device_error())).unwrap_err();
+    assert!(error.uncertain);
+    let error = settle::<()>(Err(read_error()), Err(cleanup_error())).unwrap_err();
+    assert!(error.uncertain);
+    let error = settle::<()>(Ok(()), Err(device_error())).unwrap_err();
+    assert!(!error.uncertain);
+    assert_eq!(error.code, "legacy_current_device_unconfirmed");
+}
+#[test]
+fn ordinary_startup_fixture_is_limited_to_known_aids_and_fixed_reads() {
+    let trace = Arc::new(Mutex::new(Trace::default()));
+    let mut transport = port(PhysicalTarget::synthetic_for_tests(), 4, false, false, trace.clone());
+    for aid in proletarius_euicc::KNOWN_ISDR_APPLICATION_AIDS {
+        let hex = aid.iter().map(|byte| format!("{byte:02X}")).collect::<String>();
+        let result = transport.execute_command(&format!("AT+CCHO=\"{hex}\""), None,
+            Duration::from_secs(1), 4096, true).unwrap();
+        assert!(result.contains("ERROR"));
+    }
+    for command in ["AT+CPMS?", "AT+CPIN?"] {
+        assert!(transport.execute_command(command, None, Duration::from_secs(1), 4096, true).unwrap().contains("OK"));
+    }
+    for command in ["AT+CFUN=1", "AT+CCHO=\"A00000\""] {
+        assert!(transport.execute_command(command, None, Duration::from_secs(1), 4096, true).is_err());
+    }
+    checked_close(transport).unwrap();
 }

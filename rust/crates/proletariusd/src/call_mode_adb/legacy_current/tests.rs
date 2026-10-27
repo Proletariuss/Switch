@@ -166,7 +166,9 @@ fn real_read_only_shell_accepts_calibration_and_stale_pid_without_removal() {
 }
 #[test]
 fn real_shell_rejects_live_bridge_supervisor_unknown_sessions_and_bad_pidfiles() {
-    for helper in [MODULE_VOICE_HELPER, "/tmp/proletarius-call/switch-voice-supervisor.armv7"] {
+    for helper in [MODULE_VOICE_HELPER, "/tmp/proletarius-call/switch-voice-supervisor.armv7",
+        "/bin/sh\0-c\0./mavo-pcm-bridge.armv7 --voice-route-session",
+        "/bin/sh\0-c\0sleep 1; /tmp/proletarius-call/switch-voice-supervisor.armv7"] {
         let f = Fixture::new();
         f.write("proc/2/cmdline", format!("{helper}\0--voice-route-session\0"));
         assert!(!f.run().status.success());
@@ -182,4 +184,11 @@ fn real_shell_rejects_live_bridge_supervisor_unknown_sessions_and_bad_pidfiles()
     let command = no_live_command();
     assert!(command.len() + 200 < MAX_PAYLOAD);
     for mutation in ["kill ", "rm ", "pkill ", "audio_enable >"] { assert!(!command.contains(mutation)); }
+}
+
+#[test]
+fn uncertain_probe_survives_definite_disconnect_and_failed_release_wins() {
+    assert!(settle::<()>(Err(cleanup()), Err(pending())).unwrap_err().uncertain);
+    assert!(settle::<()>(Err(pending()), Err(cleanup())).unwrap_err().uncertain);
+    assert!(!settle::<()>(Ok(()), Err(pending())).unwrap_err().uncertain);
 }
