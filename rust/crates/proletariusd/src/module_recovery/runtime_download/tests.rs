@@ -223,3 +223,21 @@ fn unknown_runtime_is_not_adopted_even_when_it_looks_like_an_empty_download() {
         assert!(f.gate().is_quarantined());
     }
 }
+
+#[test]
+fn retired_download_obligation_survives_removal_of_original_slots() {
+    for legacy in [false, true] {
+        let mut f = Fixture::new(legacy);
+        drop(f.begin().unwrap().unwrap());
+        crate::call_mode_lifecycle::invalidate_pristine_marker(&f.root).unwrap();
+        for name in LOCKS {
+            fs::remove_file(f.root.join(name)).unwrap();
+        }
+        fs::remove_dir_all(f.root.join(RUNTIME)).unwrap();
+        f.restart();
+        let gate = f.gate();
+        assert!(gate.is_quarantined());
+        assert!(gate.status().unwrap().reason_codes.contains(&super::super::Reason::ReconciliationPending));
+        assert!(gate.admit_operation("normal").is_err());
+    }
+}
