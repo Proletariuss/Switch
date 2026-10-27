@@ -188,7 +188,8 @@ func crowdedFixture() throws -> Data {
         print("PASS: memory-only client window, closed live DTO, byte/record/runtime bounds and dedup")
 
         let api = ControlledAPI()
-        let store = LiveDiagnosticStore(api: api, client: { local }, interval: 10_000_000)
+        var failureClient = local
+        let store = LiveDiagnosticStore(api: api, client: { failureClient }, interval: 10_000_000)
         store.setLifecycle(visible: true, running: true, instance: 1)
         try await waitUntil { await api.count() == 1 }
         // PID changes while state still reads running; do not overlap old/new requests.
@@ -202,10 +203,16 @@ func crowdedFixture() throws -> Data {
         try expect(Set(store.rows.map(\.id)).count == store.rows.count, "merged list has duplicate IDs")
         try expect(zip(store.rows, store.rows.dropFirst()).allSatisfy { pair in pair.0.timeMS <= pair.1.timeMS }, "unordered backend response was not sorted")
         try await waitUntil { await api.count() == 3 }
+        failureClient = ClientDiagnosticLiveSnapshot(session: local.session, records: local.records,
+            evicted: local.evicted, dropped: 2, writeFailures: 3)
         await api.fail(2)
         try await waitUntil { store.updatedAt == nil && store.status.contains("读取失败") }
         try expect(!store.status.contains("raw-secret") && store.rows.allSatisfy { $0.id.hasPrefix("client:") },
                    "read failure leaked raw error or retained backend data as current")
+        try expect(store.notices.contains("客户端较早记录已移出实时窗口。")
+            && store.notices.contains("客户端持久日志有记录丢弃。")
+            && store.notices.contains("客户端持久日志写入失败；实时记录不代表已落盘。"),
+            "backend read failure cleared fresh client retention or persistence warnings")
         try await waitUntil { await api.count() == 4 }
         store.setLifecycle(visible: false, running: true, instance: 2)
         await api.complete(3, try fixture([999], runtime: secondRuntime))

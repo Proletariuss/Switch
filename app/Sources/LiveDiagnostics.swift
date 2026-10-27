@@ -327,8 +327,9 @@ private struct NativeLiveDiagnosticAPI: LiveDiagnosticAPI {
             backendRows = []
             recovery = nil
             updatedAt = nil
-            notices = []
-            merge(client())
+            let fresh = client()
+            notices = clientNotices(fresh)
+            merge(fresh)
             status = "后台实时记录读取失败，当前后台状态未知；正在自动重试。"
         }
     }
