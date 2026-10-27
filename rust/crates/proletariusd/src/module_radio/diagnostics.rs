@@ -103,6 +103,41 @@ impl Service {
         }
     }
 
+    /// Records a completed attempt, including exact cleanup ACK replay. Owner
+    /// facts are a later snapshot, not a claim about the atomic rejection cause.
+    pub(super) fn record_call_result<T>(
+        &self,
+        stage: Stage,
+        result: &Result<T, Failure>,
+        elapsed: Duration,
+    ) {
+        let (result, code) = match result {
+            Ok(_) => (ResultKind::Succeeded, Code::None),
+            Err(error) => (ResultKind::Failed, Code::from_error(error.code)),
+        };
+        self.record_module_snapshot(stage, result, code, self.module_diagnostic_snapshot(), elapsed);
+    }
+
+    pub(super) fn record_call_query(
+        &self,
+        stage: Stage,
+        result: &Result<CallStateSnapshot, Failure>,
+        elapsed: Duration,
+    ) {
+        let (result, code) = match result {
+            Ok(snapshot) => (ResultKind::Succeeded, if snapshot.safe_idle {
+                Code::CallVoiceIdle
+            } else if matches!(snapshot.display.get("state").and_then(Value::as_str),
+                Some("active" | "dialing" | "alerting" | "incoming")) {
+                Code::CallVoicePresent
+            } else {
+                Code::CallUnconfirmed
+            }),
+            Err(error) => (ResultKind::Failed, Code::from_error(error.code)),
+        };
+        self.record_module_snapshot(stage, result, code, self.module_diagnostic_snapshot(), elapsed);
+    }
+
     pub(super) async fn submit_usbnet_with_diagnostics(
         &self,
         job: Job,
