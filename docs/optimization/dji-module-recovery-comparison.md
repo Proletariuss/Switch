@@ -151,3 +151,71 @@ kein Nachweis einer neuen physischen Geräteprüfung.
 Der separate Export bleibt verfügbar und enthält das begrenzte persistente
 Zeitfenster. Die Live-Ansicht darf weder Geräteoperationen auslösen noch
 SMS-Inhalte, Identitäten, Zugangsdaten oder ungeprüftes stderr übernehmen.
+
+## Aktuelle Altzustandsprüfung (noch ohne Geräteabnahme)
+
+Für begrenzte alte Sicherungs- und Cachebestände ohne aktive physische
+Wiederherstellungspflicht gibt es einen separaten Rust-Startpfad. Er hält die
+ursprüngliche Datenwurzel und beide tatsächlichen Locks, liest die bekannte
+Metadatenstruktur und prüft anschließend dieselbe physische USB-Verbindung.
+Alle unterstützten AT-Schnittstellen bleiben exklusiv beansprucht. Ein Wechsel
+zwischen Kandidaten derselben Verbindung ist nur nach vollständigem AT-Schreiben
+mit leerem Antwortfenster oder einer vollständigen ERROR-Antwort zulässig.
+Ein ungewisser Schreibvorgang erlaubt keinen weiteren Kandidaten.
+
+Die Prüfung liest Identität, vollständige USB-Konfiguration, IMS/VoLTE,
+CFUN und den vollständigen Gesprächsstatus. Hinzu kommen begrenzte feste
+ADB-Leseabfragen auf derselben Verbindung zur Bestätigung des Bootvorgangs
+und eines ruhenden Sprachdienstes. Es werden weder Geräteeinstellungen
+zurückgeschrieben noch fremde Prozesse beendet oder alte Dateien entfernt.
+Alle Schritte einschließlich Aktivierung und erster Wiederöffnung teilen sich
+eine absolute Frist von 30 Sekunden und dasselbe Abbruchsignal.
+Blockierende Dateiarbeit läuft außerhalb des asynchronen Haupttasks.
+
+Das Ergebnis ist eine kurzlebige aktuelle Beobachtung, kein nachträglicher
+Beleg für historische Wiederherstellung. Der erste normale Besitzer muss
+dieselbe Geräteverbindung und die bereits gewählte AT-Schnittstelle erneut
+bestätigen; serielle Ausweichsuche und eine unabhängige automatische
+QMI-Geräteauswahl sind in diesem Übergang deaktiviert. CFUN 0, 1 und 4 werden
+als tatsächlich beobachtete Zustände erhalten, bis eine ausdrückliche
+erfolgreiche Benutzeroperation die normale Präferenzverwaltung übernimmt.
+
+Aktive oder archivierte Restore-Journale, ausstehende alte Ausführung,
+verwaltete Sprachsteuerung und unbekannte physische Transaktionen bleiben
+gesperrt. Die neue Prüfung akzeptiert derzeit nur Sicherungen einer einzigen
+IMEI und benötigt eine überprüfbare ADB-Verbindung. Fehlendes ADB, ein
+nicht bestätigter Sprachdienst, ein Gerätewechsel, ein abgelaufener Zeitrahmen
+oder eine unbestätigte Ressourcenfreigabe bleiben konkrete Fehler.
+Diese Einschränkungen dürfen nicht als erfolgreiche Modulabnahme ausgegeben
+werden. Die vorhandenen Nutzerdaten wurden nicht gelöscht oder verändert.
+
+Der geschlossene Status `startup.legacy_current` wird unabhängig von den
+begrenzten Ereignisfenstern gespeichert. Damit bleibt auch nach Rotation oder
+vollem Ereignispuffer erkennbar, welcher aktuelle Prüfschritt nicht bestätigt
+wurde. Alte Diagnosepakete ohne dieses Feld bleiben lesbar. Unbestätigte
+Ressourcenfreigabe überschreibt keine frühere Fehlermeldung mit einem späteren
+Erfolgsstatus; technische Identitäten, Rohantworten und Geheimnisse bleiben
+außerhalb der Anzeige und des Exports.
+
+## Live-Ansicht und offene Validierung
+
+Das Laufzeitprotokoll zeigt standardmäßig alle zulässigen technischen Einträge;
+Warnungen und Fehler lassen sich gesondert filtern. Die letzte aktuelle
+Prüfungsursache steht vor den historischen Ursachencodes. Die Liste wird alle
+zwei Sekunden ohne parallele Folgeabfragen aktualisiert, solange die Ansicht
+sichtbar ist. Ein ausgeschaltetes automatisches Scrollen beendet die Erfassung
+nicht; das Verlassen der Ansicht beendet deren Abfragen.
+
+Die GUI beobachtet denselben Backend-Prozess bis zu 210 Sekunden während
+begrenzter Start- und Wiederherstellungsarbeit. Ein früher tatsächlicher
+Prozessausgang wird sofort gemeldet. Ein lebender, danach noch nicht bereiter
+Prozess bleibt erhalten; aus einer Zeitüberschreitung entsteht weder eine neue
+Prozessinstanz noch eine erfundene Abschlussbestätigung.
+
+Die Software-Fixtures decken virtuelle Startzeiten, veraltete Antworten,
+geschlossene Diagnosefelder, überfüllte Ereignisfenster, echte Dateileases,
+normalen Besitzerstart, Sicherungstransaktionen, bestätigten Shutdown und eine
+neue Lifetime ab. Ein isolierter 900×650-Hosting-Test prüft die Log-Unteransicht;
+er beweist nicht das Layout des gesamten App-Fensters. Diese Tests und die
+gemeinsamen finalen Gates müssen auf GitHub noch vollständig erfolgreich
+ausgeführt werden. Fehlgeschlagene Testläufe bleiben als solche sichtbar.
