@@ -1153,11 +1153,7 @@ impl Plan {
             Stage::CallModeIdleCalls => {
                 if reply.ok
                     && !contains_explicit_at_error_line(&reply.text)
-                    && calls_idle(&reply.text)
-                    && !reply
-                        .text
-                        .lines()
-                        .any(|line| line.trim().starts_with("+CLCC:"))
+                    && crate::module_radio::call_snapshot(reply.text.to_owned()).safe_idle
                 {
                     self.outcome.verified = true;
                     self.success();
@@ -2688,13 +2684,11 @@ mod call_mode_identity_tests {
         assert_eq!(outcome.module_identity.unwrap().imei, "123456789012345");
     }
     #[test]
-    fn fixed_idle_admission_requires_fresh_successful_empty_clcc() {
+    fn fixed_idle_admission_accepts_confirmed_empty_or_packet_data_clcc() {
         for response in [
             "OK\r\n",
-            "ERROR\r\n",
-            "+CLCC: 1,0,1,0,0\r\nOK\r\n",
-            "+CLCC: 1,0,0,0,0,\"\",129\r\nOK\r\n",
-            "RING\r\nOK\r\n",
+            "+CLCC: 1,0,0,1,0,\"\",128\r\nOK\r\n",
+            "AT+CLCC\r\n+CLCC: 1,0,0,1,0,\"\",128\r\nOK\r\n",
         ] {
             let mut plan = Plan::new(Action::CallModeIdleRead);
             let step = plan.next().unwrap();
@@ -2702,8 +2696,41 @@ mod call_mode_identity_tests {
             assert!(!step.write);
             plan.accept(Reply::response(response.into()));
             let outcome = plan.finish();
-            assert_eq!(outcome.complete, response == "OK\r\n");
-            assert_eq!(outcome.verified, response == "OK\r\n");
+            assert!(outcome.complete, "{response:?}");
+            assert!(outcome.verified, "{response:?}");
+            assert!(!outcome.submitted);
+        }
+    }
+
+    #[test]
+    fn fixed_idle_admission_rejects_voice_and_unconfirmed_clcc() {
+        for response in [
+            "+CLCC: 1,0,0,0,0,\"123\",129\r\nOK\r\n",
+            "+CLCC: 1,0,0,0,0,\"\",129\r\nOK\r\n",
+            "+CLCC: 1,0,1,0,0\r\nOK\r\n",
+            "+CLCC: 1,1,4,0,0,\"\",128\r\nOK\r\n",
+            "+CLCC: 1,1,5,0,0\r\nOK\r\n",
+            "+CLCC: 1,0,0,1,0,\"\",128\r\n+CLCC: 2,1,4,0,0,\"\",128\r\nOK\r\n",
+            "+CLCC: 1,0,0,9,0,\"\",128\r\nOK\r\n",
+            "+CLCC: invalid\r\nOK\r\n",
+            "ERROR\r\n",
+            "+CLCC: 1,0,0,1,0,\"\",128\r\nERROR\r\n",
+            "+CME ERROR: 3\r\nOK\r\n",
+            "+CLCC: 1,0,0,1,0,\"\",128\r\n",
+            "RING\r\nOK\r\n",
+            "+CLIP: \"\",128\r\nOK\r\n",
+            "CONNECT\r\nOK\r\n",
+            "MO CONNECTED\r\nOK\r\n",
+            "+CLCC: 1,0,0,1,0,\"\",128\r\nRING\r\nOK\r\n",
+        ] {
+            let mut plan = Plan::new(Action::CallModeIdleRead);
+            let step = plan.next().unwrap();
+            assert_eq!(step.command, "AT+CLCC");
+            assert!(!step.write);
+            plan.accept(Reply::response(response.into()));
+            let outcome = plan.finish();
+            assert!(!outcome.complete, "{response:?}");
+            assert!(!outcome.verified, "{response:?}");
             assert!(!outcome.submitted);
         }
     }
