@@ -304,7 +304,7 @@ private func expect(_ condition: @autoclosure () throws -> Bool, _ message: Stri
     ]
 
     static func recoverySnapshot() -> [String: Any] {
-        ["schema_version": 1, "state": "legacy_recovery_required",
+        ["schema_version": 1, "observation": "last_observed", "state": "legacy_recovery_required",
          "reason_codes": ["restore_journal_pending", "module_backup_present"],
          "historical_recovery_confirmed": false,
          "startup": ["metadata": "inspected", "reconciliation": "failed",
@@ -329,9 +329,11 @@ private func expect(_ condition: @autoclosure () throws -> Bool, _ message: Stri
             try expect(warnings.contains("backend_module_recovery_invalid") == (input != nil && !accepted),
                        "invalid recovery metadata warning mismatch")
             if let safe {
-                try expect(Set(safe.keys) == Set(["schema_version", "state", "reason_codes",
+                try expect(Set(safe.keys) == Set(["schema_version", "observation", "state", "reason_codes",
                                                  "historical_recovery_confirmed", "startup"]),
                            "unknown recovery fields survived export")
+                try expect(safe["observation"] as? String == "last_observed",
+                           "export timestamp was allowed to imply a fresh recovery probe")
                 let startup = safe["startup"] as! [String: Any]
                 try expect(Set(startup.keys) == Set(["metadata", "reconciliation", "native_inspection", "cleanup"]),
                            "unknown startup fields survived export")
@@ -402,6 +404,8 @@ private func expect(_ condition: @autoclosure () throws -> Bool, _ message: Stri
         for (field, invalid) in [
             ("schema_version", 2 as Any), ("schema_version", true as Any),
             ("schema_version", -1 as Any), ("schema_version", 1.5 as Any),
+            ("observation", "live_verified" as Any), ("observation", secret as Any),
+            ("observation", 1 as Any), ("observation", false as Any), ("observation", NSNull()),
             ("state", secret as Any), ("state", false as Any),
             ("reason_codes", [secret] as Any), ("reason_codes", [] as [String]),
             ("reason_codes", [1] as Any),
@@ -413,7 +417,7 @@ private func expect(_ condition: @autoclosure () throws -> Bool, _ message: Stri
             var value = recoverySnapshot(); value[field] = invalid
             try check(value, accepted: false)
         }
-        for field in ["schema_version", "state", "reason_codes", "historical_recovery_confirmed", "startup"] {
+        for field in ["schema_version", "observation", "state", "reason_codes", "historical_recovery_confirmed", "startup"] {
             var value = recoverySnapshot(); value.removeValue(forKey: field)
             try check(value, accepted: false)
         }

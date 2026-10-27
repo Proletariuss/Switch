@@ -112,6 +112,7 @@ enum SupportBundleBuilder {
         guard let object = input as? [String: Any],
               let encoded = try? JSONSerialization.data(withJSONObject: object), encoded.count <= 4096,
               number(object["schema_version"])?.uint64Value == 1,
+              let observation = object["observation"] as? String, observation == "last_observed",
               let state = object["state"] as? String,
               ["not_observed", "open", "legacy_recovery_required"].contains(state),
               let reasons = object["reason_codes"] as? [String], reasons.count <= 14,
@@ -133,7 +134,7 @@ enum SupportBundleBuilder {
         // Rebuild only the closed vocabulary: unknown nested fields, paths,
         // identities and raw errors never cross this export boundary.
         return [
-            "schema_version": 1, "state": state,
+            "schema_version": 1, "observation": observation, "state": state,
             "reason_codes": reasons.filter { seen.insert($0).inserted },
             "historical_recovery_confirmed": false,
             "startup": ["metadata": metadata, "reconciliation": reconciliation,
