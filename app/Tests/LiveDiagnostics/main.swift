@@ -64,12 +64,19 @@ actor ControlledAPI: LiveDiagnosticAPI {
             && local.records.first?.sequence == 45 && local.records.last?.sequence == 300,
             "current-session in-memory ring is unbounded or retained invalid fields")
         // No writer/start/root was installed: this path cannot read or create a file.
+        let lifecycleRows = LiveDiagnosticSnapshot.clientRows(local)
+        try expect(lifecycleRows.allSatisfy { !$0.detail.contains("HTTP") && !$0.warning
+            && $0.title.contains("已启动") }, "normal lifecycle was mislabeled as an incomplete HTTP request")
         let clean = try LiveDiagnosticSnapshot.decode(fixture([3, 1, 2, 2]))
         try expect(clean.rows.count == 3, "repeated backend sequence was not deduplicated")
         let text = clean.rows.map { $0.title + $0.detail }.joined() + clean.notices.joined()
         try expect(!text.contains("synthetic") && !text.contains("private"), "untrusted fields reached live UI")
         for input in [
             try fixture { $0["view"] = "export" },
+            try fixture { $0["events"] = [1] },
+            try fixture { $0["events"] = [NSNull()] },
+            try fixture { $0["events"] = ["string"] },
+            try fixture { $0["events"] = [[]] },
             try fixture(Array(1...257).map(UInt64.init)),
             try fixture { $0["events"] = [record(1, runtime: secondRuntime)] },
             try fixture { value in
@@ -118,7 +125,7 @@ actor ControlledAPI: LiveDiagnosticAPI {
         try expect(store.runtimeID == nil && store.updatedAt == nil, "old backend observation survived instance change")
         await api.complete(0, try fixture([100]))
         try await waitUntil { await api.count() == 2 }
-        try expect(store.rows.allSatisfy { $0.source == "客户端" }, "old response published into replacement instance")
+        try expect(store.rows.allSatisfy { $0.source.hasPrefix("客户端") }, "old response published into replacement instance")
         await api.complete(1, try fixture(Array(1...256).map(UInt64.init), runtime: secondRuntime))
         try await waitUntil { store.runtimeID == secondRuntime && store.rows.count == 500 }
         try expect(Set(store.rows.map(\.id)).count == store.rows.count, "merged list has duplicate IDs")
@@ -140,6 +147,19 @@ actor ControlledAPI: LiveDiagnosticAPI {
         try expect(stoppedCount == 4, "stopped backend received a poll")
         store.setLifecycle(visible: false, running: false)
         print("PASS: serial PID/revision ownership, late cancellation, failure unknown state and 500-row bound")
+
+        let releaseAPI = ControlledAPI()
+        var transient: LiveDiagnosticStore? = LiveDiagnosticStore(api: releaseAPI, client: { local })
+        weak var releasedStore = transient
+        transient?.setLifecycle(visible: true, running: true, instance: 1)
+        try await waitUntil { await releaseAPI.count() == 1 }
+        transient = nil
+        try expect(releasedStore != nil, "finite in-flight poll lost its owner before retiring")
+        await releaseAPI.complete(0, try fixture())
+        try await waitUntil { releasedStore == nil }
+        let releasedCalls = await releaseAPI.count()
+        try expect(releasedCalls == 1, "dropped store started another poll")
+        print("PASS: dropping the store releases it after the finite poll without onDisappear")
 
         let uiAPI = ControlledAPI()
         let uiStore = LiveDiagnosticStore(api: uiAPI, client: { local }, interval: 10_000_000)

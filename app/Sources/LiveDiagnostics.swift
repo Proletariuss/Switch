@@ -41,7 +41,9 @@ struct LiveDiagnosticSnapshot {
             throw Failure.invalid
         }
         var recordBytes = 0
-        for record in records {
+        for item in records {
+            guard let record = item as? [String: Any],
+                  JSONSerialization.isValidJSONObject(record) else { throw Failure.invalid }
             let bytes = try JSONSerialization.data(withJSONObject: record)
             guard bytes.count <= 4096 else { throw Failure.invalid }
             recordBytes += bytes.count
@@ -180,6 +182,16 @@ struct LiveDiagnosticSnapshot {
         snapshot.records.suffix(256).compactMap { record in
             let event = record.event
             guard event.validated(), event.timeMS <= 253_402_300_799_999 else { return nil }
+            if event.method == "NONE", ["application", "backend"].contains(event.route) {
+                let labels = ["started": "已启动", "starting": "启动中", "running": "运行中",
+                              "stopping": "正在退出", "stopped": "已停止", "failed": "运行失败"]
+                let component = event.route == "application" ? "客户端" : "后台进程"
+                return LiveDiagnosticRow(id: "client:\(snapshot.session):\(record.sequence)",
+                    timeMS: UInt64(event.timeMS), source: "客户端生命周期",
+                    title: "\(component) · \(labels[event.stage] ?? "状态已更新")",
+                    detail: "本次客户端会话记录 · 关联 \(event.correlationID.prefix(12))",
+                    warning: event.stage == "failed")
+            }
             return LiveDiagnosticRow(id: "client:\(snapshot.session):\(record.sequence)",
                 timeMS: UInt64(event.timeMS), source: "客户端",
                 title: "\(event.method == "NONE" ? "" : event.method + " ")\(event.route) · \(event.stage)",
@@ -250,16 +262,23 @@ private struct NativeLiveDiagnosticAPI: LiveDiagnosticAPI {
     private func launchIfNeeded() {
         guard visible, worker == nil else { return }
         let captured = revision
+        let delay = interval
         worker = Task { @MainActor [weak self] in
-            guard let self else { return }
-            while !Task.isCancelled, self.visible, self.revision == captured {
-                await self.poll(captured)
-                guard !Task.isCancelled, self.revision == captured else { break }
-                do { try await Task.sleep(nanoseconds: self.interval) } catch { break }
+            while !Task.isCancelled {
+                // Optional chaining retains the owner only for this finite poll.
+                // No strong self binding survives into the sleep or next iteration.
+                guard await self?.pollIfCurrent(captured) == true else { break }
+                do { try await Task.sleep(nanoseconds: delay) } catch { break }
             }
-            self.worker = nil
-            self.launchIfNeeded()
+            self?.worker = nil
+            self?.launchIfNeeded()
         }
+    }
+
+    private func pollIfCurrent(_ captured: UInt64) async -> Bool {
+        guard !Task.isCancelled, visible, revision == captured else { return false }
+        await poll(captured)
+        return !Task.isCancelled && visible && revision == captured
     }
 
     private func poll(_ captured: UInt64) async {
