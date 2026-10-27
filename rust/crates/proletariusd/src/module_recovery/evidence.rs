@@ -178,7 +178,8 @@ fn inspect_with_hook(
     let journal_present = matches!(&journal, Ok(Some(_)));
     let journal_unreadable = journal.is_err();
     let mut runtime =
-        if matches!(before[1], Ok(Some(stamp)) if stamp.marker()) && present(before[5]) {
+        if matches!(before[1], Ok(Some(stamp)) if stamp.marker()) && present(before[5])
+            && download.as_ref().is_ok_and(Option::is_none) {
             RuntimeEvidence::capture(directory, artifacts, &mut hook).ok()
         } else {
             None
@@ -189,6 +190,12 @@ fn inspect_with_hook(
         None
     };
     hook(Phase::BeforeFinalCheck);
+    // Revalidate once for the complete observation interval, not once per
+    // covered slot. Each pass pins directory identities and hashes every
+    // installed artifact; no successful result is cached across startups.
+    let download_after = super::runtime_download::coverage(directory, artifacts);
+    let download_stable = download.as_ref().ok() == download_after.as_ref().ok()
+        && download.is_ok() && download_after.is_ok();
     let fresh_backups_valid = fresh_backups
         .as_ref()
         .ok()
@@ -205,7 +212,7 @@ fn inspect_with_hook(
     let root_stable = Stamp::of(directory).is_ok_and(|stamp| stamp == root_before);
     let pristine = before[1] == after[1] && matches!(before[1], Ok(Some(stamp)) if stamp.marker());
     let mut reasons = Vec::new();
-    if download.is_err() {
+    if !download_stable {
         add(&mut reasons, Reason::UnreadableEvidence);
     }
     // A pending/revoked migration namespace cannot disappear merely because
@@ -300,9 +307,7 @@ fn inspect_with_hook(
             && download.as_ref().is_ok_and(|coverage| {
                 coverage.is_some() && (index == 5 || matches!(index, 2 | 3) && *coverage == Some(true))
             })
-            && super::runtime_download::coverage(directory, artifacts).is_ok_and(|current| {
-                download.as_ref().is_ok_and(|original| *original == current)
-            });
+            && download_stable;
         let allowed = covered
             || download_valid
             || (matches!(index, 2 | 3)

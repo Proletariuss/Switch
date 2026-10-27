@@ -559,3 +559,93 @@ fn stale_generation_after_staging_removes_temporary_file_without_replacing_cache
     );
     assert_eq!(std::fs::read_dir(root.version()).unwrap().count(), 1);
 }
+
+#[test]
+fn failed_controlled_network_download_keeps_native_admission_and_exact_legacy_source_after_restart() {
+    for legacy in [false, true] {
+        let root = TestRoot::new();
+        let owned = root.0.join("owned");
+        let lease = crate::daemon_lifetime::Lease::acquire(&owned).unwrap();
+        for name in ["call-mode-operation.lock", ".module-adb-interface.lock"] {
+            std::fs::write(owned.join(name), []).unwrap();
+            std::fs::set_permissions(owned.join(name), std::fs::Permissions::from_mode(0o600)).unwrap();
+        }
+        if legacy {
+            assert!(crate::module_recovery::legacy_locks::migrate(&owned, &lease.root_proof()).unwrap());
+        } else {
+            std::fs::write(owned.join(".call-mode-pristine-v1"), []).unwrap();
+            std::fs::set_permissions(owned.join(".call-mode-pristine-v1"), std::fs::Permissions::from_mode(0o600)).unwrap();
+        }
+        let gate = crate::module_recovery::Gate::inspect_with_lifetime(&lease);
+        let controlled = crate::module_recovery::runtime_download::begin(&owned, &gate).unwrap().unwrap();
+        let directory = RuntimeDirectory {
+            parent: controlled.runtime,
+            staging: Some(controlled.staging),
+        };
+        let transport = FakeTransport::new();
+        let lock = directory.try_lock().unwrap();
+        assert!(download_runtime_fenced(
+            &directory, manifest(), &input("github"), &transport, |_, _, _| {}, &|| true,
+        ).is_err());
+        assert!(!transport.calls.lock().unwrap().is_empty());
+        drop(lock);
+        drop(directory);
+        drop(gate);
+        drop(lease);
+        let restarted = crate::daemon_lifetime::Lease::acquire(&owned).unwrap();
+        let gate = crate::module_recovery::Gate::inspect_with_lifetime(&restarted);
+        assert!(!gate.is_quarantined());
+        assert!(gate.admit_operation("native-download-retry").is_ok());
+        if legacy {
+            assert!(gate.has_clean_legacy_lock_provenance(&owned));
+        }
+        let retried = crate::module_recovery::runtime_download::begin(&owned, &gate).unwrap().unwrap();
+        assert!(proletarius_platform_fs::directory_names(&retried.staging, 0).unwrap().is_empty());
+        drop(retried);
+        drop(gate);
+        drop(restarted);
+    }
+}
+
+#[test]
+fn retired_download_receipt_allows_only_current_admitted_worker_retry_and_not_restart() {
+    for legacy in [false, true] {
+        let root = TestRoot::new();
+        let owned = root.0.join("owned-retry");
+        let lease = crate::daemon_lifetime::Lease::acquire(&owned).unwrap();
+        for name in ["call-mode-operation.lock", ".module-adb-interface.lock"] {
+            std::fs::write(owned.join(name), []).unwrap();
+            std::fs::set_permissions(owned.join(name), std::fs::Permissions::from_mode(0o600)).unwrap();
+        }
+        if legacy {
+            assert!(crate::module_recovery::legacy_locks::migrate(&owned, &lease.root_proof()).unwrap());
+        } else {
+            std::fs::write(owned.join(".call-mode-pristine-v1"), []).unwrap();
+            std::fs::set_permissions(owned.join(".call-mode-pristine-v1"), std::fs::Permissions::from_mode(0o600)).unwrap();
+        }
+        let gate = crate::module_recovery::Gate::inspect_with_lifetime(&lease);
+        drop(crate::module_recovery::runtime_download::begin(&owned, &gate).unwrap().unwrap());
+        crate::call_mode_lifecycle::invalidate_pristine_marker(&owned).unwrap();
+        assert!(gate.admit_operation("normal-download-retry").is_ok());
+        assert!(crate::module_recovery::runtime_download::begin(&owned, &gate).unwrap().is_none());
+        // This is the same fallback writer selected by run_native. The retired
+        // receipt must not preempt its actual bounded network attempt.
+        let directory = RuntimeDirectory::open(&owned).unwrap();
+        let transport = FakeTransport::new();
+        let lock = directory.try_lock().unwrap();
+        assert!(download_runtime_fenced(
+            &directory, manifest(), &input("github"), &transport, |_, _, _| {}, &|| true,
+        ).is_err());
+        assert!(!transport.calls.lock().unwrap().is_empty());
+        drop(lock);
+        drop(directory);
+        drop(gate);
+        drop(lease);
+        let restarted = crate::daemon_lifetime::Lease::acquire(&owned).unwrap();
+        let new_gate = crate::module_recovery::Gate::inspect_with_lifetime(&restarted);
+        assert!(new_gate.is_quarantined());
+        assert!(crate::module_recovery::runtime_download::begin(&owned, &new_gate).is_err());
+        drop(new_gate);
+        drop(restarted);
+    }
+}
