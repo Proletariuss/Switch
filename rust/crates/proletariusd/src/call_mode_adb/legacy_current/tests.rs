@@ -17,12 +17,13 @@ struct Inert<'a> {
     closed: bool,
     close_count: Arc<AtomicUsize>,
     invalid_dsp: bool,
+    non_root: bool,
     different_boot: bool,
 }
 impl Inert<'_> {
     fn fence(&self) -> Result<(), ProbeError> {
         if self.closed { return Err(managed_control::failure()); }
-        if let Some(scope) = self.scope { scope.check().map_err(|_| managed_control::failure())?; }
+        if let Some(scope) = self.scope { scope.io_fence().map_err(|_| managed_control::failure())?; }
         Ok(())
     }
 }
@@ -51,14 +52,15 @@ impl BulkIo for Inert<'_> {
                 let token = service.split("__SWITCH_ADB_STATUS_").nth(1)
                     .and_then(|s| s.split("_%u__").next()).ok_or_else(managed_control::failure)?;
                 let output = match self.commands {
-                    0 if service.contains(&no_live_command()) => {
+                    0 if service.contains("{ id -u; }") => if self.non_root { "2000\n".into() } else { "0\n".into() },
+                    1 if service.contains(&no_live_command()) => {
                         let hex = boot_hex();
                         format!("SWNOVOICE1\n{hex}\n1,2,\n{hex}\n")
                     }
-                    1 if service.contains("SWDSP1") => if self.invalid_dsp {
+                    2 if service.contains("SWDSP1") => if self.invalid_dsp {
                         "SWDSP1\n310a\n636c6f7365640a\n636c6f7365640a\n".into()
                     } else { "SWDSP1\n300a\n636c6f7365640a\n636c6f7365640a\n".into() },
-                    2 if service.contains("cat /proc/sys/kernel/random/boot_id") => {
+                    3 if service.contains("cat /proc/sys/kernel/random/boot_id") => {
                         if self.different_boot { "10112233-4455-6677-8899-aabbccddeeff\n".into() }
                         else { format!("{BOOT}\n") }
                     }
@@ -87,7 +89,7 @@ impl IdleIo for Inert<'_> {
 fn inert(scope: Option<&ReadScope>) -> Inert<'_> {
     Inert { scope, incoming: VecDeque::new(), outgoing: Vec::new(), commands: 0,
         closed: false, close_count: Arc::new(AtomicUsize::new(0)),
-        invalid_dsp: false, different_boot: false }
+        invalid_dsp: false, non_root: false, different_boot: false }
 }
 pub(crate) fn fixture_idle(scope: &ReadScope, _: &PhysicalTarget) -> Result<IdleEvidence, TransportError> {
     let io = inert(Some(scope));
@@ -98,16 +100,17 @@ pub(crate) fn fixture_idle(scope: &ReadScope, _: &PhysicalTarget) -> Result<Idle
 }
 #[test]
 fn byte_peer_uses_the_real_adb_protocol_and_closed_idle_decoders() {
-    for (bad_dsp, changed_boot) in [(false, false), (true, false), (false, true)] {
+    for (bad_dsp, changed_boot, non_root) in [(false, false, false), (true, false, false), (false, true, false), (false, false, true)] {
         let mut io = inert(None);
         io.invalid_dsp = bad_dsp;
         io.different_boot = changed_boot;
+        io.non_root = non_root;
         let result = {
             let mut adb = AdbProbe::with_deadline(&mut io, Instant::now() + Duration::from_secs(60));
             adb.connect().unwrap();
             inspect_protocol(&mut adb)
         };
-        assert_eq!(result.is_ok(), !bad_dsp && !changed_boot);
+        assert_eq!(result.is_ok(), !bad_dsp && !changed_boot && !non_root);
         io.checked_close().unwrap();
         assert!(io.closed);
         assert_eq!(io.close_count.load(Ordering::Acquire), 1);

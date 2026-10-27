@@ -147,3 +147,51 @@ pub(crate) fn fixture_reopen(scope: &ReadScope, verified: &VerifiedDevice)
         Arc::new(Mutex::new(Trace::default())));
     reopen_port(transport, scope, verified, crate::call_mode_adb::legacy_current::fixture_idle)
 }
+
+#[test]
+fn all_interface_claims_and_checked_release_share_the_native_ordering() {
+    struct Claims { taken: Vec<u8>, fail: Option<u8>, wrong_alt: bool }
+    impl InterfaceClaims for Claims {
+        fn claim(&mut self, interface: u8) -> Result<(), TransportError> {
+            if self.fail == Some(interface) { return Err(device_error()); }
+            self.taken.push(interface);
+            Ok(())
+        }
+        fn alternate(&mut self, _: u8, _: Duration) -> Result<u8, TransportError> {
+            Ok(u8::from(self.wrong_alt))
+        }
+    }
+    let expected = [2, 3].map(|interface| Candidate {
+        interface, alternate: 0, endpoint_in: 0x81, endpoint_out: 1 });
+    for (fail, wrong_alt, expected_claims) in [
+        (None, false, vec![2,3]), (Some(3), false, vec![2]), (None, true, vec![2])
+    ] {
+        let mut io = Claims { taken: Vec::new(), fail, wrong_alt };
+        let mut claimed = Vec::new();
+        assert_eq!(claim_all(&Scope::new(), &expected, &mut io, &mut claimed).is_ok(),
+            fail.is_none() && !wrong_alt);
+        assert_eq!(claimed, expected_claims);
+        assert_eq!(io.taken, expected_claims);
+        let mut released = Vec::new();
+        release_all(&mut claimed, |interface| {
+            released.push(interface);
+            Ok(CloseDisposition::ReleasedAndHandleDropped)
+        }).unwrap();
+        assert_eq!(released, expected_claims.into_iter().rev().collect::<Vec<_>>());
+        assert!(claimed.is_empty());
+    }
+}
+#[test]
+fn release_failure_never_skips_other_claims_or_becomes_disconnection_success() {
+    let mut claimed = vec![2,3,4,5];
+    let mut released = Vec::new();
+    let result = release_all(&mut claimed, |interface| {
+        released.push(interface);
+        if interface == 4 { Err(device_error()) }
+        else { Ok(CloseDisposition::DisconnectedAndHandleDropped) }
+    });
+    let error = result.unwrap_err();
+    assert!(error.uncertain);
+    assert_eq!(released, [5,4,3,2]);
+    assert!(claimed.is_empty());
+}

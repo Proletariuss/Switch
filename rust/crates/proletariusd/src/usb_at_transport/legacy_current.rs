@@ -117,6 +117,40 @@ fn read_facts(port: &mut NativeTransport, scope: &impl Authority) -> Result<Fact
     read_plan(port, scope, Action::CallModeIdleRead)?;
     Ok(Facts { identity, usb, voice, cfun })
 }
+// The native handle and software claim peer use this same ordered boundary.
+// A successful claim is recorded before GET_INTERFACE can fail or revoke.
+trait InterfaceClaims {
+    fn claim(&mut self, interface: u8) -> Result<(), TransportError>;
+    fn alternate(&mut self, interface: u8, timeout: Duration) -> Result<u8, TransportError>;
+}
+fn claim_all(scope: &impl Authority, expected: &[Candidate], io: &mut impl InterfaceClaims,
+    claimed: &mut Vec<u8>) -> Result<(), TransportError> {
+    for candidate in expected {
+        scope.check()?;
+        io.claim(candidate.interface)?;
+        claimed.push(candidate.interface);
+        let current = io.alternate(candidate.interface, remaining(scope)?.min(Duration::from_secs(1)))?;
+        scope.check()?;
+        if current != candidate.alternate { return Err(device_error()); }
+    }
+    Ok(())
+}
+fn release_all(claimed: &mut Vec<u8>,
+    mut release: impl FnMut(u8) -> Result<CloseDisposition, TransportError>)
+    -> Result<CloseDisposition, TransportError> {
+    let mut disconnected = false;
+    let mut failed = false;
+    for interface in claimed.drain(..).rev() {
+        match release(interface) {
+            Ok(CloseDisposition::ReleasedAndHandleDropped) => {},
+            Ok(CloseDisposition::DisconnectedAndHandleDropped) => disconnected = true,
+            Err(_) => failed = true,
+        }
+    }
+    if failed { Err(cleanup_error()) }
+    else if disconnected { Ok(CloseDisposition::DisconnectedAndHandleDropped) }
+    else { Ok(CloseDisposition::ReleasedAndHandleDropped) }
+}
 fn checked_close(port: NativeTransport) -> Result<(), TransportError> {
     match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| Box::new(port).checked_close())) {
         Ok(Ok(CloseDisposition::ReleasedAndHandleDropped)) => Ok(()),
@@ -129,6 +163,17 @@ fn examine(port: &mut NativeTransport, scope: &ReadScope,
     -> Result<(PhysicalTarget, Facts, crate::call_mode_adb::legacy_current::IdleEvidence), TransportError> {
     let first = read_facts(port, scope)?;
     let target = port.physical_target().map_err(|_| device_error())?;
+    match &target.connection {
+        #[cfg(target_os = "macos")]
+        PhysicalConnection::Native(device) => {
+            let descriptor = device.device_descriptor().map_err(|_| device_error())?;
+            if (descriptor.vendor_id(), descriptor.product_id()) != (first.usb.vendor_id, first.usb.product_id) {
+                return Err(device_error());
+            }
+        }
+        #[cfg(test)]
+        PhysicalConnection::Synthetic(_) => {}
+    }
     let idle = idle(scope, &target)?;
     let second = read_facts(port, scope)?;
     if !first.same(&second) { return Err(read_error()); }
@@ -196,26 +241,36 @@ mod native {
     }
     impl AllAtIo {
         fn close(&mut self) -> Result<CloseDisposition, TransportError> {
-            let mut disconnected = false;
-            let mut failed = false;
-            if let Some(handle) = &self.handle {
-                for interface in self.claimed.drain(..).rev() {
+            let result = match &self.handle {
+                Some(handle) => release_all(&mut self.claimed, |interface| {
                     match handle.release_interface(interface) {
-                        Ok(()) => {},
-                        Err(rusb::Error::NoDevice) => disconnected = true,
-                        Err(_) => failed = true,
+                        Ok(()) => Ok(CloseDisposition::ReleasedAndHandleDropped),
+                        Err(rusb::Error::NoDevice) => Ok(CloseDisposition::DisconnectedAndHandleDropped),
+                        Err(_) => Err(cleanup_error()),
                     }
-                }
-            } else { failed = true; }
+                }),
+                None => Err(cleanup_error()),
+            };
             drop(self.handle.take());
-            if failed { Err(cleanup_error()) }
-            else if disconnected { Ok(CloseDisposition::DisconnectedAndHandleDropped) }
-            else { Ok(CloseDisposition::ReleasedAndHandleDropped) }
+            result
         }
     }
     impl Drop for AllAtIo {
         fn drop(&mut self) {
             if self.handle.is_some() { let _ = self.close(); }
+        }
+    }
+    struct Claims<'a>(&'a DeviceHandle<Context>);
+    impl InterfaceClaims for Claims<'_> {
+        fn claim(&mut self, interface: u8) -> Result<(), TransportError> {
+            self.0.claim_interface(interface).map_err(|_| device_error())
+        }
+        fn alternate(&mut self, interface: u8, timeout: Duration) -> Result<u8, TransportError> {
+            let mut value = [0_u8; 1];
+            let n = self.0.read_control(0x81, 10, 0, interface.into(), &mut value, timeout)
+                .map_err(|_| device_error())?;
+            if n != 1 { return Err(device_error()); }
+            Ok(value[0])
         }
     }
     fn io_error(error: rusb::Error) -> IoError {
@@ -297,16 +352,8 @@ mod native {
         let mut io = AllAtIo { handle: Some(handle), selected: expected[0],
             candidates: expected.clone(), claimed: Vec::new() };
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            for value in &expected {
-                scope.check()?;
-                let handle = io.handle.as_ref().ok_or_else(device_error)?;
-                handle.claim_interface(value.interface).map_err(|_| device_error())?;
-                io.claimed.push(value.interface);
-                let mut actual = [0_u8; 1];
-                let n = handle.read_control(0x81, 10, 0, value.interface.into(), &mut actual,
-                    remaining(scope)?.min(Duration::from_secs(1))).map_err(|_| device_error())?;
-                if n != 1 || actual[0] != value.alternate { return Err(device_error()); }
-            }
+            let handle = io.handle.as_ref().ok_or_else(device_error)?;
+            claim_all(scope, &expected, &mut Claims(handle), &mut io.claimed)?;
             scope.check()?;
             if candidates(&device)? != io.candidates { return Err(device_error()); }
             Ok(())
