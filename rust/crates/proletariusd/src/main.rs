@@ -656,6 +656,8 @@ async fn run_with_sms_stores(
             "switchd-rs: idle legacy lock provenance unavailable; module quarantine retained"
         )),
     }
+    let selected_port =
+        module_startup::explicit_port(&startup_arguments).map_err(BackendFailure::Io)?;
     let module_recovery = module_recovery::Gate::inspect_with_lifetime(lifetime);
     recovery_diagnostics::bind(&module_recovery);
     // The independent metadata owner runs before any module producer starts.
@@ -711,6 +713,25 @@ async fn run_with_sms_stores(
         }
     };
     let startup_operation = async {
+        if selected_port.is_none() {
+            match startup_recovery::Coordinator::inspect_legacy_current(
+                &module_recovery, multistandby_store.data_root(), startup_cancel.clone()).await {
+                Ok(Some(completion)) => {
+                    let gate = module_recovery.clone();
+                    let activation = tokio::task::spawn_blocking(move ||
+                        gate.consume_legacy_current(completion)).await.unwrap_or(Err(()));
+                    recovery_diagnostics::legacy_current(if activation.is_ok() {
+                        recovery_diagnostics::LegacyCurrent::CurrentVerified
+                    } else {
+                        recovery_diagnostics::LegacyCurrent::PublicationUnconfirmed
+                    });
+                    return activation.map(StartupInspection::LegacyCurrent).map_err(|()|
+                        StartupInspectionFailure::LegacyCurrent(startup_recovery::legacy_current::Failure::EvidenceChanged));
+                }
+                Ok(None) => {}
+                Err(error) => return Err(StartupInspectionFailure::LegacyCurrent(error)),
+            }
+        }
         match startup_recovery::Coordinator::reconcile_with_cancel(
             &module_recovery,
             multistandby_store.data_root(),
@@ -740,7 +761,19 @@ async fn run_with_sms_stores(
     };
     let (startup_result, startup_stopped) =
         await_startup_native(startup_operation, startup_cancel.clone(), startup_stop).await;
+    let mut legacy_current_seed = None;
     let (startup_native_inspection, mut startup_native_cleanup_error) = match startup_result {
+        Ok(StartupInspection::LegacyCurrent(seed)) => {
+            recovery_diagnostics::native_inspection(recovery_diagnostics::NativeInspection::Inspected);
+            recovery_diagnostics::cleanup(recovery_diagnostics::Cleanup::Confirmed);
+            if !startup_stopped {
+                legacy_current_seed = Some(seed);
+                startup_recovery_inspection = None;
+                diagnostics::write_line(format_args!(
+                    "switchd-rs: legacy_current_verified; current baseline only; historical_recovery_confirmed=false"));
+            }
+            (None, None)
+        }
         Ok(StartupInspection::ReadOnly(Some(inspection))) => {
             recovery_diagnostics::native_inspection(
                 recovery_diagnostics::NativeInspection::Inspected,
@@ -797,14 +830,12 @@ async fn run_with_sms_stores(
         }
         Err(error) => {
             match &error {
-                StartupInspectionFailure::Inspection(_) => recovery_diagnostics::native_inspection(
+                StartupInspectionFailure::LegacyCurrent(_) | StartupInspectionFailure::Inspection(_) => recovery_diagnostics::native_inspection(
                     recovery_diagnostics::NativeInspection::Failed,
                 ),
-                StartupInspectionFailure::Reconciliation(_) => {
-                    recovery_diagnostics::reconciliation(
-                        recovery_diagnostics::Reconciliation::Failed,
-                    )
-                }
+                StartupInspectionFailure::Reconciliation(_) => recovery_diagnostics::reconciliation(
+                    recovery_diagnostics::Reconciliation::Failed,
+                ),
             }
             if error.cleanup_unconfirmed() {
                 recovery_diagnostics::cleanup(recovery_diagnostics::Cleanup::Unconfirmed);
@@ -880,8 +911,6 @@ async fn run_with_sms_stores(
     let native_vowifi_lifecycle = Arc::new(native_vowifi_session::NativeLifecycle::default());
     let qmi_config = qmi_enhancement::NativeQmiConfig::from_backend_args(&startup_arguments)
         .map_err(BackendFailure::Io)?;
-    let selected_port =
-        module_startup::explicit_port(&startup_arguments).map_err(BackendFailure::Io)?;
     let socket_path = parse_listen_path(&startup_arguments)?;
     let callback_path = callback_socket_path(&socket_path);
     let internal_path = internal_socket_path(&socket_path);
@@ -921,12 +950,13 @@ async fn run_with_sms_stores(
     let call_archive =
         proletarius_store::ArchiveStore::new(multistandby_store.data_root().join("call-log.json"));
     let sms_inbox = message_archive::InboxState::for_go_producer(call_producer_id.clone());
-    let usb_at = usb_at::Owner::new_with_adopt_and_recovery(
-        native_module_producer_id.clone(),
-        initial_sms_adopt,
-        module_recovery.clone(),
-    )
-    .with_profile_notes(profile_notes::Store::new(multistandby_store.data_root()));
+    let legacy_current_startup = legacy_current_seed.is_some();
+    let usb_at = match legacy_current_seed {
+        Some(seed) => usb_at::Owner::with_legacy_current_seed(
+            native_module_producer_id.clone(), initial_sms_adopt, module_recovery.clone(), seed),
+        None => usb_at::Owner::new_with_adopt_and_recovery(
+            native_module_producer_id.clone(), initial_sms_adopt, module_recovery.clone()),
+    }.with_profile_notes(profile_notes::Store::new(multistandby_store.data_root()));
     let usb_sms_receive = usb_sms_receive::Service::new(
         proletarius_store::ArchiveStore::new(
             multistandby_store.data_root().join("sms-archive.json"),
@@ -943,6 +973,7 @@ async fn run_with_sms_stores(
         availability.clone(),
         native_module_producer_id.clone(),
     );
+    if legacy_current_startup { module_radio.preserve_current_startup_cfun(); }
     let network_traffic = network_traffic::Service::new(multistandby_store.data_root());
     let state = ServerState {
         call_mode: Default::default(),
@@ -1104,14 +1135,17 @@ async fn run_with_sms_stores(
     } else {
         state.module_radio.start();
         state.usb_sms_receive.start();
-        Some(module_startup::Service::start_on_port(
+        Some(if legacy_current_startup {
+            module_startup::Service::start_verified(state.modem_actor.clone(), state.usb_at.clone(),
+                state.module_radio.clone(), state.sms_inbox.clone(), native_module_producer_id)
+        } else { module_startup::Service::start_on_port(
             state.modem_actor.clone(),
             state.usb_at.clone(),
             state.module_radio.clone(),
             state.sms_inbox.clone(),
             native_module_producer_id,
             selected_port,
-        ))
+        ) })
     };
     availability.mark_ready();
     let mut connection_pools = connection_pools::Driver::default();
@@ -1121,7 +1155,16 @@ async fn run_with_sms_stores(
     // Optional QMI startup cannot gate public readiness or parent/signal
     // observation. Retain its task until shutdown, even if startup is slow.
     let qmi_owner = state.qmi_enhancement.clone();
-    let mut qmi_startup = if module_recovery.is_quarantined() {
+    if legacy_current_startup {
+        support_diagnostics::module::startup(
+            support_diagnostics::module::Stage::TransportClaim,
+            support_diagnostics::module::ResultKind::Deferred,
+            support_diagnostics::module::Code::PolicyUnavailable,
+            support_diagnostics::module::Transport::Unknown);
+        diagnostics::write_line(format_args!(
+            "switchd-rs: legacy_current_auto_qmi_deferred; independent device selection requires explicit operation"));
+    }
+    let mut qmi_startup = if module_recovery.is_quarantined() || legacy_current_startup {
         None
     } else {
         Some(tokio::task::spawn_blocking(move || {
@@ -1528,24 +1571,28 @@ async fn await_startup_native<T>(
 }
 
 enum StartupInspection {
+    LegacyCurrent(startup_recovery::legacy_current::Seed),
     ReadOnly(Option<startup_recovery::execution::PhysicalInspection>),
     Reconciled(startup_recovery::reconcile::CompletedReconciliation),
 }
 
 #[derive(Debug)]
 enum StartupInspectionFailure {
+    LegacyCurrent(startup_recovery::legacy_current::Failure),
     Inspection(startup_recovery::execution::PhysicalFailure),
     Reconciliation(startup_recovery::reconcile::PhysicalFailure),
 }
 impl StartupInspectionFailure {
     fn cleanup_unconfirmed(&self) -> bool {
         match self {
+            Self::LegacyCurrent(error) => error.cleanup_unconfirmed(),
             Self::Inspection(error) => error.cleanup_unconfirmed(),
             Self::Reconciliation(error) => error.cleanup_unconfirmed(),
         }
     }
     fn diagnostic_code(&self) -> &'static str {
         match self {
+            Self::LegacyCurrent(error) => error.code(),
             Self::Inspection(_) => "startup_native_inspection_unavailable",
             Self::Reconciliation(_) => "startup_reconciliation_unavailable",
         }
@@ -1554,6 +1601,7 @@ impl StartupInspectionFailure {
 impl std::fmt::Display for StartupInspectionFailure {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::LegacyCurrent(error) => f.write_str(error.code()),
             Self::Inspection(error) => error.fmt(f),
             Self::Reconciliation(error) => error.fmt(f),
         }
@@ -5157,7 +5205,7 @@ mod tests {
             (
                 "/api/internal/modem/execute",
                 Some("internal-fixture"),
-                r#"{"command":"AT+CMGS=2","timeout_ms":20000,"high_priority":true,"follow_up":"0011\u001a","expected_sms_generation":7}"#,
+                r#"{"command":"AT+CMGS=2","timeout_ms":20000,"high_priority":true,"follow_up":"0011^Z","expected_sms_generation":7}"#,
                 hyper::StatusCode::SERVICE_UNAVAILABLE,
             ),
             (

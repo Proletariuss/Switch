@@ -296,5 +296,39 @@ pub(crate) fn invalidate(root: &Path) -> io::Result<()> {
     write_new(&store, REVOKED, &[])
 }
 
+/// Validate provenance as immutable input to a separate physical current-state
+/// inspection. Revocation is retained, and this function never grants coverage.
+pub(crate) fn legacy_current_source(root: &File) -> io::Result<bool> {
+    let Some(before) = stamp(root, DIRECTORY)? else { return Ok(false); };
+    let store = open_directory(root, DIRECTORY)?;
+    let names = proletarius_platform_fs::directory_names(&store, 3)?;
+    if names.len() < 2 || names.iter().any(|n| n != RECEIPT && n != COMMITTED && n != REVOKED)
+        || !empty_file(&store, COMMITTED)? {
+        return Err(invalid());
+    }
+    if stamp(&store, REVOKED)?.is_some() && !empty_file(&store, REVOKED)? { return Err(invalid()); }
+    let original = stamp(&store, RECEIPT)?.ok_or_else(invalid)?;
+    if !safe_regular(&original) || !(1..=4096).contains(&original.size) { return Err(invalid()); }
+    let file = File::from(openat(&store, RECEIPT,
+        OFlag::O_RDONLY | OFlag::O_NOFOLLOW | OFlag::O_NONBLOCK | OFlag::O_CLOEXEC, Mode::empty())?);
+    let held = file.metadata()?;
+    if held.dev() != original.device || held.ino() != original.inode { return Err(invalid()); }
+    let mut bytes = Vec::new();
+    file.take(4097).read_to_end(&mut bytes)?;
+    let receipt: Provenance = serde_json::from_slice(&bytes).map_err(|_| invalid())?;
+    let root_meta = root.metadata()?;
+    let locks = [
+        stamp(root, LOCKS[0])?.ok_or_else(invalid)?,
+        stamp(root, LOCKS[1])?.ok_or_else(invalid)?,
+    ];
+    if receipt.policy != POLICY || receipt.historical_recovery_confirmed
+        || receipt.root_device != root_meta.dev() || receipt.root_inode != root_meta.ino()
+        || receipt.locks != locks || locks.iter().any(|s| !safe_regular(s) || s.size != 0)
+        || stamp(&store, RECEIPT)? != Some(original) || stamp(root, DIRECTORY)? != Some(before) {
+        return Err(invalid());
+    }
+    Ok(true)
+}
+
 #[cfg(test)]
 mod tests;

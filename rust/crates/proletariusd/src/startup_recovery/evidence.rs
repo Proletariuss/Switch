@@ -262,6 +262,7 @@ pub(super) struct EvidenceTree {
     root: File,
     root_identity: (u64, u64, u32, u32),
     entries: Vec<Option<Node>>,
+    captured_names: Vec<&'static str>,
     pub(super) nodes: usize,
     pub(super) bytes: usize,
     pub(super) sha256: String,
@@ -281,6 +282,14 @@ impl EvidenceTree {
         check: &impl Fn() -> io::Result<()>,
         limit: usize,
     ) -> io::Result<Self> {
+        Self::capture_names(root, check, limit, &NAMES)
+    }
+    pub(super) fn capture_legacy_current(root: &File, check: &impl Fn() -> io::Result<()>) -> io::Result<Self> {
+        let mut names = NAMES.to_vec();
+        names.extend(["module-legacy-locks-v1", "runtime-download-lineage-v1", "module-recovery-v1", crate::call_mode_restore_journal::ARCHIVE_NAME]);
+        Self::capture_names(root, check, 512, &names)
+    }
+    fn capture_names(root: &File, check: &impl Fn() -> io::Result<()>, limit: usize, captured_names: &[&'static str]) -> io::Result<Self> {
         check()?;
         let root_stamp = Stamp::of(root)?;
         if !root_stamp.directory() || !root_stamp.safe() || root_stamp.mode & 0o777 != 0o700 {
@@ -304,8 +313,8 @@ impl EvidenceTree {
             nodes: 0,
             bytes: 0,
         };
-        let mut entries = Vec::with_capacity(NAMES.len());
-        for name in NAMES {
+        let mut entries = Vec::with_capacity(captured_names.len());
+        for &name in captured_names {
             check()?;
             entries.push(match entry(&held, OsStr::new(name))? {
                 None => None,
@@ -316,7 +325,7 @@ impl EvidenceTree {
             return Err(invalid("recovery root changed during capture interval"));
         }
         let mut hash = Sha256::new();
-        for (name, node) in NAMES.iter().zip(&entries) {
+        for (name, node) in captured_names.iter().zip(&entries) {
             hash.update((name.len() as u64).to_le_bytes());
             hash.update(name.as_bytes());
             hash.update([u8::from(node.is_some())]);
@@ -333,6 +342,7 @@ impl EvidenceTree {
                 root_stamp.mode,
             ),
             entries,
+            captured_names: captured_names.to_vec(),
             nodes: budget.nodes,
             bytes: budget.bytes,
             sha256: format!("{:x}", hash.finalize()),
@@ -350,7 +360,7 @@ impl EvidenceTree {
         if (stamp.dev, stamp.ino, stamp.uid, stamp.mode) != self.root_identity {
             return Err(invalid("captured recovery root metadata changed"));
         }
-        for (name, node) in NAMES.iter().zip(&self.entries) {
+        for (name, node) in self.captured_names.iter().zip(&self.entries) {
             check()?;
             match node {
                 Some(node) => node.verify(&self.root, check)?,
@@ -366,6 +376,67 @@ impl EvidenceTree {
             return Err(invalid(
                 "recovery root changed during verification interval",
             ));
+        }
+        Ok(())
+    }
+}
+
+
+impl EvidenceTree {
+    /// The original parser validates schema, complete USB fields, voice fields
+    /// and restore command consistency. Filenames and bounded bytes are data,
+    /// never a claim that any historical operation finished.
+    pub(super) fn legacy_current_backups(&self) -> io::Result<Vec<crate::call_mode_backups::NativeBackup>> {
+        let Some(directory) = &self.entries[4] else { return Ok(Vec::new()); };
+        if !directory.stamp.directory() || directory.children.len() > 32 {
+            return Err(invalid("legacy backup shape"));
+        }
+        directory.children.iter().map(|node| {
+            if !node.stamp.regular()
+                || !node.name.to_str().is_some_and(crate::call_mode_backups::valid_backup_id) {
+                return Err(invalid("legacy backup entry"));
+            }
+            crate::call_mode_backups::decode_legacy_current_backup(&node.bytes)
+                .map_err(|_| invalid("legacy backup data"))
+        }).collect()
+    }
+    pub(super) fn has_legacy_current_data(&self) -> bool {
+        self.entries[4].is_some() || self.entries[5].is_some()
+    }
+    pub(super) fn verify_legacy_current_runtime(&self) -> io::Result<()> {
+        for index in [0, 6, 7] {
+            if self.entries[index].is_some() { return Err(invalid("pending current baseline obligation")); }
+        }
+        for index in [1, 2, 3] {
+            if let Some(node) = &self.entries[index] {
+                if !node.stamp.regular() || !node.bytes.is_empty() || node.stamp.mode & 0o7133 != 0 {
+                    return Err(invalid("unsafe current baseline marker or lock"));
+                }
+            }
+        }
+        let Some(runtime) = &self.entries[5] else { return Ok(()); };
+        let manifest = crate::call_mode_runtime_manifest::manifest();
+        if !runtime.stamp.directory() { return Err(invalid("legacy runtime shape")); }
+        for node in &runtime.children {
+            if node.name == ".download.lock" {
+                if !node.stamp.regular() || !node.bytes.is_empty() || node.stamp.mode & 0o7133 != 0 {
+                    return Err(invalid("legacy runtime lock"));
+                }
+                continue;
+            }
+            if node.name != manifest.version.as_str() || !node.stamp.directory()
+                || node.children.len() > manifest.files.len() {
+                return Err(invalid("legacy runtime unknown entry"));
+            }
+            for artifact in &node.children {
+                if !artifact.stamp.regular()
+                    || !manifest.files.iter().any(|known| artifact.name == known.name.as_str()) {
+                    return Err(invalid("legacy runtime unknown artifact"));
+                }
+                // Known cache bytes may be absent, partial or corrupt. They
+                // remain pinned data and are never executed by this reader.
+                // The existing deploy/download path retains full hash checks.
+            }
         }
         Ok(())
     }
@@ -410,7 +481,7 @@ impl Node {
 impl EvidenceTree {
     pub(super) fn manifest(&self) -> io::Result<serde_json::Value> {
         let mut slots = serde_json::Map::new();
-        for (name, node) in NAMES.iter().zip(&self.entries) {
+        for (name, node) in self.captured_names.iter().zip(&self.entries) {
             slots.insert(
                 (*name).into(),
                 match node {
@@ -431,7 +502,7 @@ impl EvidenceTree {
         if (stamp.dev, stamp.ino, stamp.uid, stamp.mode) != self.root_identity {
             return Err(invalid("retirement root changed"));
         }
-        for (name, node) in NAMES.iter().zip(&self.entries) {
+        for (name, node) in self.captured_names.iter().zip(&self.entries) {
             if matches!(*name, "call-mode-restore.active" | "voice-control") {
                 if entry(&self.root, OsStr::new(name))?.is_some() {
                     return Err(invalid("retired active slot occupied"));

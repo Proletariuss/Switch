@@ -11,10 +11,7 @@ struct Fixture {
 }
 impl Fixture {
     fn new(legacy: bool) -> Self {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .ancestors()
-            .nth(4)
-            .unwrap()
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).ancestors().nth(4).unwrap()
             .join("build/runtime/runtime-download-lineage")
             .join(crate::snapshot::new_instance_id());
         let lease = Lease::acquire(&root).unwrap();
@@ -29,44 +26,29 @@ impl Fixture {
             fs::set_permissions(root.join(PRISTINE), fs::Permissions::from_mode(0o600)).unwrap();
         }
         let runtime = RuntimeManifest {
-            commit: manifest().commit.clone(),
-            version: manifest().version.clone(),
+            commit: manifest().commit.clone(), version: manifest().version.clone(),
             kernel: manifest().kernel.clone(),
             files: vec![Artifact {
-                name: "fixture.bin".into(),
-                size: 3,
+                name: "fixture.bin".into(), size: 3,
                 sha256: "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad".into(),
-                mode: 0o644,
-                deploy: true,
+                mode: 0o644, deploy: true,
             }],
         };
-        Self {
-            root,
-            lease: Some(lease),
-            runtime,
-        }
+        Self { root, lease: Some(lease), runtime }
     }
     fn gate(&self) -> Gate {
         Gate::inspect_with_lifetime_and_artifacts(self.lease.as_ref().unwrap(), &self.runtime.files)
     }
     fn begin(&self) -> io::Result<Option<Directories>> {
-        self.lease
-            .as_ref()
-            .unwrap()
-            .root_proof()
-            .with_root(&self.root, |root| begin_in(root, &self.runtime, false))
-            .unwrap()
+        self.lease.as_ref().unwrap().root_proof()
+            .with_root(&self.root, |root| begin_in(root, &self.runtime, false)).unwrap()
     }
     fn restart(&mut self) {
         drop(self.lease.take());
         self.lease = Some(Lease::acquire(&self.root).unwrap());
     }
     fn install(&self) {
-        let path = self
-            .root
-            .join(RUNTIME)
-            .join(&self.runtime.version)
-            .join("fixture.bin");
+        let path = self.root.join(RUNTIME).join(&self.runtime.version).join("fixture.bin");
         fs::write(&path, b"abc").unwrap();
         fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).unwrap();
     }
@@ -83,14 +65,8 @@ fn pristine_and_migrated_downloads_survive_network_failure_and_complete_new_life
     for legacy in [false, true] {
         let mut f = Fixture::new(legacy);
         assert!(!f.gate().is_quarantined());
-        let original = f
-            .lease
-            .as_ref()
-            .unwrap()
-            .root_proof()
-            .with_root(&f.root, |root| source(root, false))
-            .unwrap()
-            .unwrap();
+        let original = f.lease.as_ref().unwrap().root_proof()
+            .with_root(&f.root, |root| source(root, false)).unwrap().unwrap();
         let directories = f.begin().unwrap().unwrap();
         // The actual worker creates its controlled directories before contacting
         // the network; a failed first request leaves the empty manifest subset.
@@ -105,20 +81,10 @@ fn pristine_and_migrated_downloads_survive_network_failure_and_complete_new_life
         let gate = f.gate();
         assert!(!gate.is_quarantined());
         assert!(gate.admit_operation("normal").is_ok());
-        let current = f
-            .lease
-            .as_ref()
-            .unwrap()
-            .root_proof()
-            .with_root(&f.root, |root| source(root, true))
-            .unwrap()
-            .unwrap();
+        let current = f.lease.as_ref().unwrap().root_proof()
+            .with_root(&f.root, |root| source(root, true)).unwrap().unwrap();
         assert_eq!(current, original);
-        assert!(
-            !f.root
-                .join(crate::call_mode_restore_journal::ACTIVE_NAME)
-                .exists()
-        );
+        assert!(!f.root.join(crate::call_mode_restore_journal::ACTIVE_NAME).exists());
         if legacy {
             assert!(!f.root.join(PRISTINE).exists());
         }
@@ -144,8 +110,7 @@ fn initial_directory_and_partial_receipt_crashes_retry_without_publishing_unknow
             }
             if phase == "partial_receipt" {
                 fs::write(store.join(RECEIPT), b"{").unwrap();
-                fs::set_permissions(store.join(RECEIPT), fs::Permissions::from_mode(0o600))
-                    .unwrap();
+                fs::set_permissions(store.join(RECEIPT), fs::Permissions::from_mode(0o600)).unwrap();
             }
             f.restart();
             assert!(!f.gate().is_quarantined(), "{phase} legacy={legacy}");
@@ -168,10 +133,7 @@ fn committed_prepublication_receipt_resumes_exact_directory_without_network_or_d
         f.restart();
         assert!(!f.gate().is_quarantined());
         drop(f.begin().unwrap().unwrap());
-        assert_eq!(
-            fs::metadata(f.root.join(RUNTIME)).unwrap().ino(),
-            runtime_inode
-        );
+        assert_eq!(fs::metadata(f.root.join(RUNTIME)).unwrap().ino(), runtime_inode);
         f.restart();
         assert!(!f.gate().is_quarantined());
     }
@@ -181,10 +143,7 @@ fn committed_prepublication_receipt_resumes_exact_directory_without_network_or_d
 fn crashed_scratch_bytes_remain_nonexecutable_and_retry_removes_only_bounded_known_parts() {
     let mut f = Fixture::new(false);
     drop(f.begin().unwrap().unwrap());
-    let part = f
-        .root
-        .join(DIRECTORY)
-        .join(FILES)
+    let part = f.root.join(DIRECTORY).join(FILES)
         .join(".fixture.bin-00000000000000000000000000000000-0000000000000000.part");
     fs::write(&part, b"a").unwrap();
     fs::set_permissions(&part, fs::Permissions::from_mode(0o600)).unwrap();
@@ -192,42 +151,21 @@ fn crashed_scratch_bytes_remain_nonexecutable_and_retry_removes_only_bounded_kno
     assert!(!f.gate().is_quarantined());
     drop(f.begin().unwrap().unwrap());
     assert!(!part.exists());
-    assert!(
-        fs::read_dir(f.root.join(RUNTIME).join(&f.runtime.version))
-            .unwrap()
-            .next()
-            .is_none()
-    );
+    assert!(fs::read_dir(f.root.join(RUNTIME).join(&f.runtime.version)).unwrap().next().is_none());
 }
 
 #[test]
 fn physical_intent_and_unsettled_history_never_inherit_download_permission() {
     for legacy in [false, true] {
-        for reason in [
-            "physical",
-            "journal",
-            "helper",
-            "legacy_execution",
-            "backup",
-        ] {
+        for reason in ["physical", "journal", "helper", "legacy_execution", "backup"] {
             let mut f = Fixture::new(legacy);
             drop(f.begin().unwrap().unwrap());
             f.install();
             match reason {
-                "physical" => {
-                    crate::call_mode_lifecycle::invalidate_pristine_marker(&f.root).unwrap()
-                }
-                "journal" => fs::write(
-                    f.root.join(crate::call_mode_restore_journal::ACTIVE_NAME),
-                    b"pending",
-                )
-                .unwrap(),
+                "physical" => crate::call_mode_lifecycle::invalidate_pristine_marker(&f.root).unwrap(),
+                "journal" => fs::write(f.root.join(crate::call_mode_restore_journal::ACTIVE_NAME), b"pending").unwrap(),
                 "helper" => fs::create_dir(f.root.join("voice-control")).unwrap(),
-                "legacy_execution" => fs::write(
-                    f.root.join(super::super::LEGACY_EXECUTION_PENDING),
-                    b"pending",
-                )
-                .unwrap(),
+                "legacy_execution" => fs::write(f.root.join(super::super::LEGACY_EXECUTION_PENDING), b"pending").unwrap(),
                 "backup" => fs::create_dir(f.root.join("module-backups")).unwrap(),
                 _ => unreachable!(),
             }
@@ -242,17 +180,7 @@ fn physical_intent_and_unsettled_history_never_inherit_download_permission() {
 
 #[test]
 fn receipt_locks_directories_and_installed_bytes_must_keep_exact_provenance() {
-    for shape in [
-        "lock",
-        "runtime_inode",
-        "receipt",
-        "extra",
-        "bad_hash",
-        "symlink",
-        "hardlink",
-        "mode",
-        "legacy_source",
-    ] {
+    for shape in ["lock", "runtime_inode", "receipt", "extra", "bad_hash", "symlink", "hardlink", "mode", "legacy_source"] {
         let mut f = Fixture::new(true);
         drop(f.begin().unwrap().unwrap());
         f.install();
@@ -276,13 +204,7 @@ fn receipt_locks_directories_and_installed_bytes_must_keep_exact_provenance() {
             }
             "hardlink" => fs::hard_link(&file, f.root.join("alias")).unwrap(),
             "mode" => fs::set_permissions(&file, fs::Permissions::from_mode(0o666)).unwrap(),
-            "legacy_source" => fs::write(
-                f.root
-                    .join(super::super::legacy_locks::DIRECTORY)
-                    .join("provenance.json"),
-                b"{}",
-            )
-            .unwrap(),
+            "legacy_source" => fs::write(f.root.join(super::super::legacy_locks::DIRECTORY).join("provenance.json"), b"{}").unwrap(),
             _ => unreachable!(),
         }
         f.restart();
@@ -315,12 +237,36 @@ fn retired_download_obligation_survives_removal_of_original_slots() {
         f.restart();
         let gate = f.gate();
         assert!(gate.is_quarantined());
-        assert!(
-            gate.status()
-                .unwrap()
-                .reason_codes
-                .contains(&super::super::Reason::ReconciliationPending)
-        );
+        assert!(gate.status().unwrap().reason_codes.contains(&super::super::Reason::ReconciliationPending));
         assert!(gate.admit_operation("normal").is_err());
+    }
+}
+
+#[test]
+fn revoked_known_partial_cache_is_only_input_for_physical_baseline_and_never_data_permission() {
+    for legacy in [false, true] {
+        let f = Fixture::new(legacy);
+        drop(f.begin().unwrap().unwrap());
+        let artifact = f.root.join(RUNTIME).join(&f.runtime.version).join("fixture.bin");
+        fs::write(&artifact, b"bad").unwrap();
+        fs::set_permissions(&artifact, fs::Permissions::from_mode(0o644)).unwrap();
+        crate::call_mode_lifecycle::invalidate_pristine_marker(&f.root).unwrap();
+        let gate = f.gate();
+        assert!(gate.is_quarantined());
+        f.lease.as_ref().unwrap().root_proof().with_root(&f.root, |root| {
+            assert!(legacy_current_source_with_manifest(root, &f.runtime).unwrap());
+            assert!(pending_intent(root).unwrap());
+            let runtime = open_dir(root, RUNTIME).unwrap();
+            let version = open_dir(&runtime, &f.runtime.version).unwrap();
+            assert!(verify_artifacts(&version, &f.runtime.files).is_err(),
+                "real deployment integrity remains required");
+        }).unwrap();
+        assert!(gate.admit_operation("metadata-only-must-not-open").is_err());
+        assert_eq!(fs::read(&artifact).unwrap(), b"bad");
+        assert!(f.root.join(DIRECTORY).join(REVOKED).exists());
+        fs::write(f.root.join(DIRECTORY).join(RECEIPT), b"{}").unwrap();
+        f.lease.as_ref().unwrap().root_proof().with_root(&f.root, |root| {
+            assert!(legacy_current_source_with_manifest(root, &f.runtime).is_err());
+        }).unwrap();
     }
 }

@@ -959,6 +959,14 @@ pub(crate) async fn capture_native_backup(
     .map_err(|error| error.to_string())?
 }
 
+pub(crate) fn decode_legacy_current_backup(payload: &[u8]) -> Result<NativeBackup, String> {
+    let backup = validate_import_payload(payload)?;
+    if !matches!(backup.schema_version, 2 | 3) {
+        return Err("legacy current backup schema unavailable".into());
+    }
+    native_backup(backup)
+}
+
 fn native_backup(backup: BackupFile) -> Result<NativeBackup, String> {
     let mut value = serde_json::to_value(backup).map_err(|error| error.to_string())?;
     // Optional legacy firmware remains display metadata, never binding identity.
