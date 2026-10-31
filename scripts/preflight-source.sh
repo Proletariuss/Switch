@@ -18,7 +18,7 @@ case "$#:${1:-}" in
 esac
 python3 scripts/check-version-contract.py
 python3 scripts/check-rust-backend-exit.py --require-go-free
-python3 scripts/check-rust-migration-contracts.py --require-rust-only
+python3 scripts/check-rust-migration-contracts.py --require-rust-only --write-inventory
 python3 scripts/verify-carrier-source-local.py
 case "$MODE" in
   final)
