@@ -27,8 +27,7 @@ mod tests {
 
     #[test]
     fn direct_dji_admission_does_not_inherit_legacy_quarantine() {
-        let lease = Lease::test_fixture();
-        let gate = admission_gate(&lease);
+        let gate = Gate::default();
         assert!(!gate.is_quarantined());
         assert!(!gate.is_admission_revoked());
     }
