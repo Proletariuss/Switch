@@ -1,6 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 scripts/preflight-source.sh
+# Temporary cloud-only inventory capture for DJI migration review.
+mkdir -p reports
+cp docs/optimization/all-rust/api-contract-inventory.json reports/api-contract-inventory.json
+git checkout -- docs/optimization/all-rust/api-contract-inventory.json
 PYTHONDONTWRITEBYTECODE=1 python3 scripts/ci/test-publish-release.py
 PYTHONDONTWRITEBYTECODE=1 python3 scripts/ci/test-package-dmg.py
 PYTHONDONTWRITEBYTECODE=1 python3 scripts/ci/test-compact-release.py
