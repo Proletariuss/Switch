@@ -489,3 +489,13 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
+
+## DJI module behavior reference
+
+The Rust DJI module adapter is a clean-room Rust implementation of transport and lifecycle behavior observed in DJOneHubNative at revision 7194ae8cd71da34e0ab3727874dafb82ffd2537b. The reference project is licensed under PolyForm Noncommercial 1.0.0; this repository retains that license and the required upstream notice:
+
+- Reference: https://github.com/cr-zhichen/DJOneHubNative/tree/7194ae8cd71da34e0ab3727874dafb82ffd2537b
+- License: https://polyformproject.org/licenses/noncommercial/1.0.0
+- Required Notice: Copyright iniwex5 (https://github.com/iniwex5/vohive)
+
+No Go source or Go binary from the reference project is embedded in the Rust backend. The module adapter and the existing reader VoWiFi stack remain separate components.

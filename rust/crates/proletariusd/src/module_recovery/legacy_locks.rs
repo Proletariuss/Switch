@@ -207,6 +207,9 @@ pub(super) fn covered_download_source(directory: &File, allow_runtime: bool) -> 
 /// Called once before Gate construction and before any producer exists. The
 /// genuine lifetime and both real kernel locks are mandatory; no hardware I/O.
 pub(crate) fn migrate(root: &Path, proof: &RootProof) -> io::Result<bool> {
+    // Production DJI migration uses direct physical ownership; legacy test fixtures stay isolated.
+    #[cfg(not(test))]
+    super::enable_direct_dji_mode();
     let initial = proof
         .with_root(root, |directory| -> io::Result<Option<Provenance>> {
             if stamp(directory, DIRECTORY)?.is_some() {

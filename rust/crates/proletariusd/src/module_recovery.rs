@@ -19,6 +19,12 @@ pub(crate) const CODE: &str = "legacy_recovery_required";
 pub(crate) const MESSAGE: &str = "模块存在未确认的旧版恢复状态；读卡器功能可继续使用";
 pub(crate) const LEGACY_EXECUTION_PENDING: &str = ".legacy-execution-pending-v1.json";
 
+static DIRECT_DJI_MODE: AtomicBool = AtomicBool::new(false);
+
+pub(crate) fn enable_direct_dji_mode() {
+    DIRECT_DJI_MODE.store(true, Ordering::Release);
+}
+
 pub(crate) fn rejection() -> hyper::Response<http_body_util::Full<bytes::Bytes>> {
     crate::json_response(
         hyper::StatusCode::CONFLICT,
@@ -372,6 +378,9 @@ impl Gate {
     }
 
     pub(crate) fn inspect_with_lifetime(lease: &crate::daemon_lifetime::Lease) -> Self {
+        if DIRECT_DJI_MODE.load(Ordering::Acquire) {
+            return Self::default();
+        }
         Self::inspect_with_lifetime_and_artifacts(
             lease,
             &crate::call_mode_runtime_manifest::manifest().files,
