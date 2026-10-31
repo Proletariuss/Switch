@@ -1,6 +1,8 @@
 name: Refresh DJI migration inventory
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - feat/dji-rust-module-replacement-vowifi
 permissions:
   contents: read
 jobs:
