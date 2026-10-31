@@ -372,6 +372,9 @@ impl Gate {
     }
 
     pub(crate) fn inspect_with_lifetime(lease: &crate::daemon_lifetime::Lease) -> Self {
+        if DIRECT_DJI_MODE.load(Ordering::Acquire) {
+            return Self::default();
+        }
         Self::inspect_with_lifetime_and_artifacts(
             lease,
             &crate::call_mode_runtime_manifest::manifest().files,
