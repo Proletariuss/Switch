@@ -36,7 +36,6 @@ mod device_sms_forwarding;
 mod device_sms_send;
 mod device_status_projection;
 mod diagnostics;
-mod dji_module;
 mod eap_identity;
 mod esim_health_projection;
 mod esim_mutation_intent;
@@ -659,7 +658,7 @@ async fn run_with_sms_stores(
     }
     let selected_port =
         module_startup::explicit_port(&startup_arguments).map_err(BackendFailure::Io)?;
-    let module_recovery = dji_module::admission_gate(lifetime);
+    let module_recovery = module_recovery::Gate::inspect_with_lifetime(lifetime);
     recovery_diagnostics::bind(&module_recovery);
     // The independent metadata owner runs before any module producer starts.
     // It releases both actual locks before returning a retained read-only
